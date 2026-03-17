@@ -1,5 +1,7 @@
 package com.tuttime.paymentservice.dto;
 
+import java.math.BigDecimal;
+
 import lombok.Data;
 
 @Data
