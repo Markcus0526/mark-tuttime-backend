@@ -1,13 +1,16 @@
 package com.tuttime.analyticsservice.service;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analyticsservice.entity.Event;
 import com.tuttime.analyticsservice.repository.EventRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import java.util.Map;
+
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
 @Service
 @RequiredArgsConstructor
@@ -15,7 +18,7 @@ public class AnalyticsService {
   private final EventRepository eventRepository;
   private final ObjectMapper objectMapper;
 
-  @KafkaListener(topics = {"order-events", "booking-events"}, groupId = "analytics-group")
+  @KafkaListener(topics = { "order-events", "booking-events" }, groupId = "analytics-group")
   @SneakyThrows
   public void handleEvent(Map<String, Object> eventData) {
     Event event = new Event();
