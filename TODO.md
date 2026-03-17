@@ -1,13 +1,10 @@
-# Auth Service Bug Fixes TODO
+# Analytics Service Fix & Compile TODO
 
 ## Steps:
-- [x] 1. Update DTOs: Add @Builder to AuthRequest, RegisterRequest, AuthResponse
-- [x] 2. Fix SecurityConfig: Remove duplicate AuthenticationProvider field, restore proper @Bean
-- [x] 3. Update JwtService: Use @Value for secret, dynamic key
-- [x] 4. Update AuthService: Add email uniqueness check in register
- - [x] 5. Update AuthController: Add @Valid to request bodies
-- [x] 6. Update application.yml: Use env var for JWT secret
-- [x] 7. Compile and test: mvn clean compile successful
-- [x] 8. Complete
-
-**Now checking booking-service**
+- [ ] Step 1: Update pom.xml with Lombok processor and Eureka client dep
+- [ ] Step 2: Fix imports in AnalyticsServiceApplication.java
+- [ ] Step 3: Fix ObjectMapper injection in AnalyticsService.java
+- [ ] Step 4: Improve Event.java with timestamp (optional)
+- [ ] Step 5: Implement real logic in AnalyticsController.java
+- [ ] Step 6: Compile and test with `cd backend && mvn clean compile -pl analytics-service -am`
+- [ ] Step 7: Run service and verify
