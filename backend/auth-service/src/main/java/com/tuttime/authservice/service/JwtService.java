@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -16,11 +17,14 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-  private static final String SECRET_KEY = "tuttime-jwt-secret-key-32-chars-minimum-change-in-prod"; // from config
+  @Value("${jwt.secret}")
+  private String secret;
 
-  private static final Key KEY = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+  private final long EXPIRATION_TIME = 86400000; // 24h
 
-  private static final long EXPIRATION_TIME = 86400000; // 24h
+  private Key getSigningKey() {
+    return Keys.hmacShaKeyFor(secret.getBytes());
+  }
 
   public String extractUsername(String token) {
     return extractClaim(token, Claims::getSubject);
@@ -36,11 +40,12 @@ public class JwtService {
   }
 
   private Claims extractAllClaims(String token) {
-    return Jwts.parserBuilder()
-        .setSigningKey(KEY)
-        .build()
-        .parseClaimsJws(token)
-        .getBody();
+    @SuppressWarnings("deprecation")
+    final var parser = io.jsonwebtoken.Jwts.parser()
+        .setSigningKey(getSigningKey())
+        .build();
+    final var jwtClaims = parser.parseClaimsJws(token);
+    return jwtClaims.getBody();
   }
 
   public String generateToken(UserDetails userDetails) {
@@ -53,7 +58,7 @@ public class JwtService {
         .setSubject(userDetails.getUsername())
         .setIssuedAt(new Date(System.currentTimeMillis()))
         .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-        .signWith(KEY, SignatureAlgorithm.HS256)
+        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
         .compact();
   }
 

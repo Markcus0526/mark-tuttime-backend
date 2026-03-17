@@ -7,6 +7,8 @@ import com.tuttime.authservice.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -15,13 +17,13 @@ public class AuthController {
 
   private final AuthService authService;
 
-  @PostMapping("/register")
-  public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+@PostMapping("/register")
+  public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest request) {
     return ResponseEntity.ok(authService.register(request));
   }
 
   @PostMapping("/authenticate")
-  public ResponseEntity<AuthResponse> authenticate(@RequestBody AuthRequest request) {
+  public ResponseEntity<AuthResponse> authenticate(@RequestBody @Valid AuthRequest request) {
     return ResponseEntity.ok(authService.authenticate(request));
   }
 }
