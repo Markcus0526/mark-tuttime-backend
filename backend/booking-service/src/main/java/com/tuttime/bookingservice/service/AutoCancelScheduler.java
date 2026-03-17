@@ -1,5 +1,6 @@
 package com.tuttime.bookingservice.service;
 
+import com.tuttime.bookingservice.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
