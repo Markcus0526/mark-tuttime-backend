@@ -1,10 +1,17 @@
 package com.tuttime.orderservice.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Entity
 @Data
@@ -23,6 +30,33 @@ public class Order {
 
   @Column(name = "items", columnDefinition = "jsonb")
   private String itemsJson;
+
+  public static OrderBuilder builder() {
+    return new OrderBuilder();
+  }
+
+  public static class OrderBuilder {
+    private Order order = new Order();
+
+    public OrderBuilder bookingId(Long bookingId) {
+      order.bookingId = bookingId;
+      return this;
+    }
+
+    public OrderBuilder status(OrderStatus status) {
+      order.status = status;
+      return this;
+    }
+
+    public OrderBuilder itemsJson(String itemsJson) {
+      order.itemsJson = itemsJson;
+      return this;
+    }
+
+    public Order build() {
+      return order;
+    }
+  }
 
   @Column(name = "total_amount")
   private BigDecimal totalAmount;
