@@ -39,10 +39,10 @@ spring:
           uri: lb://analytics-service
           predicates:
             - Path=/analytics/**
-        - id: payment-service
-          uri: lb://payment-service
+        - id: auth-service
+          uri: lb://auth-service
           predicates:
-            - Path=/payments/**
+            - Path=/auth/**
 
 management:
   endpoints:
