@@ -1,6 +1,7 @@
 package com.tuttime.bookingservice.dto;
 
 import lombok.Data;
+import java.time.LocalDateTime;
 
 @Data
 public class BookingResponse {

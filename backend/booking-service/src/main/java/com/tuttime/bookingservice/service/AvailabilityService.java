@@ -1,5 +1,8 @@
 package com.tuttime.bookingservice.service;
 
+import com.tuttime.bookingservice.dto.TableAvailabilityDto;
+import com.tuttime.bookingservice.feign.RestaurantClient;
+import com.tuttime.bookingservice.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
