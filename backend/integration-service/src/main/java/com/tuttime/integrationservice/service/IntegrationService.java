@@ -1,18 +1,20 @@
 package com.tuttime.integrationservice.service;
 
+import java.util.List;
+import java.util.Map;
+
 import com.tuttime.integrationservice.entity.IntegrationCredentials;
-import com.tuttime.integrationservice.entity.SyncLog;
 import com.tuttime.integrationservice.repository.IntegrationCredentialsRepository;
 import com.tuttime.integrationservice.repository.SyncLogRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import reactor.core.scheduler.Schedulers;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Service
@@ -32,22 +34,22 @@ public class IntegrationService {
       switch (cred.getPosSystem()) {
         case IIKO:
           iikoConnector.getMenu(cred.getRestaurantId(), cred.getApiUrl(), cred.getApiToken())
-            .publishOn(Schedulers.boundedElastic())
-            .subscribe();
+              .publishOn(Schedulers.boundedElastic())
+              .subscribe();
           break;
         case RKEEPER:
           rKeeperConnector.getMenu(cred.getRestaurantId(), cred.getApiUrl(), cred.getApiKey())
-            .publishOn(Schedulers.boundedElastic())
-            .subscribe();
+              .publishOn(Schedulers.boundedElastic())
+              .subscribe();
           break;
       }
     });
   }
 
-  public void sendOrder(Long restaurantId, Object order) {
+  public void sendOrder(Long restaurantId, Map<String, Object> order) {
     credentialsRepo.findByRestaurantIdAndPosSystem(restaurantId, IntegrationCredentials.PosSystem.IIKO)
-      .ifPresent(cred -> iikoConnector.sendOrder(restaurantId, cred.getApiUrl(), cred.getApiToken(), order)
-        .subscribe());
+        .ifPresent(cred -> iikoConnector.sendOrder(restaurantId, cred.getApiUrl(), cred.getApiToken(), order)
+            .subscribe());
     // RKeeper similar
   }
 
