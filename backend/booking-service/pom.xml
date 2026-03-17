@@ -47,13 +47,34 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <dependency>\n <groupId>org.projectlombok</groupId>\n <artifactId>lombok</artifactId>
-        \n            <scope>provided</scope>\n </dependency>\n <dependency>\n <groupId>org.springframework.cloud</groupId>\n <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-        \n        </dependency>\n <dependency>\n <groupId>org.flywaydb</groupId>\n <artifactId>flyway-core</artifactId>\n </dependency>
-        \n        <dependency>\n <groupId>org.springdoc</groupId>\n <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>\n <version>2.6.0</version>
-        \n        </dependency>\n <dependency>\n <groupId>org.springframework.boot</groupId>\n <artifactId>spring-boot-starter-validation</artifactId>\n </dependency>
-        \n        <dependency>\n <groupId>org.springframework.boot</groupId>\n <artifactId>spring-boot-starter-test</artifactId>\n <scope>test</scope>\n </dependency>
-        \n    </dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

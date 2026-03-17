@@ -1,5 +1,7 @@
 package com.tuttime.authservice.service;
 
+import com.tuttime.authservice.dto.AuthRequest;
+import com.tuttime.authservice.dto.AuthResponse;
 import com.tuttime.authservice.dto.RegisterRequest;
 import com.tuttime.authservice.entity.User;
 import com.tuttime.authservice.repository.UserRepository;
@@ -22,6 +24,9 @@ public class AuthService implements UserDetailsService {
   private final AuthenticationManager authenticationManager;
 
   public AuthResponse register(RegisterRequest request) {
+    if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+      throw new IllegalArgumentException("Email already exists");
+    }
     User user = User.builder()
         .email(request.getEmail())
         .password(passwordEncoder.encode(request.getPassword()))
@@ -29,7 +34,7 @@ public class AuthService implements UserDetailsService {
         .build();
     userRepository.save(user);
 
-    String jwt = jwtService.generateToken(user);
+    String jwt = jwtService.generateToken(loadUserByUsername(user.getEmail()));
     return AuthResponse.builder().token(jwt).build();
   }
 
