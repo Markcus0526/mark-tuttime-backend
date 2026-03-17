@@ -25,7 +25,7 @@ public class RestaurantController {
 
   @GetMapping("/tables/available")
   public ResponseEntity<List<TableAvailabilityResponse>> getAvailableTables(@ModelAttribute TableAvailabilityRequest request) {
-    return ResponseEntity.ok((List<TableAvailabilityResponse>) restaurantService.getAvailableTables(request));
+    return ResponseEntity.ok(restaurantService.getAvailableTables(request));
   }
 
 }

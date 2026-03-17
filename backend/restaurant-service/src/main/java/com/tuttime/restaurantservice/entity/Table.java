@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Entity
-@Table(name = "tables")
+@jakarta.persistence.Table(name = "tables")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,6 +17,10 @@ public class Table {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  public Long getId() {
+    return id;
+  }
 
   @ManyToOne
   @JoinColumn(name = "zone_id")

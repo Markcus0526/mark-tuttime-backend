@@ -1,0 +1,10 @@
+backend/analytics-service/target
+backend/api-gateway/target
+backend/auth-service/target
+backend/booking-service/target
+backend/integration-service/target
+backend/menu-service/target
+backend/order-service/target
+backend/payment-service/target
+backend/restaurant-service/target
+backend/review-service/target

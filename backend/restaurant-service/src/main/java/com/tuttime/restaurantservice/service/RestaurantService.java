@@ -5,6 +5,7 @@ import com.tuttime.restaurantservice.dto.TableAvailabilityRequest;
 import com.tuttime.restaurantservice.dto.TableAvailabilityResponse;
 import com.tuttime.restaurantservice.entity.Restaurant;
 import com.tuttime.restaurantservice.repository.RestaurantRepository;
+import com.tuttime.restaurantservice.entity.Table;
 import com.tuttime.restaurantservice.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,11 +20,10 @@ public class RestaurantService {
   private final TableRepository tableRepository;
 
   public Restaurant createRestaurant(RestaurantRequest request) {
-    Restaurant restaurant = Restaurant.builder()
-        .name(request.getName())
-        .description(request.getDescription())
-        .address(request.getAddress())
-        .build();
+    Restaurant restaurant = new Restaurant();
+    restaurant.setName(request.getName());
+    restaurant.setDescription(request.getDescription());
+    restaurant.setAddress(request.getAddress());
     return restaurantRepository.save(restaurant);
   }
 
