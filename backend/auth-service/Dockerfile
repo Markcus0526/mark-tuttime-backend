@@ -1,11 +1,22 @@
-FROM maven:3.9.8-eclipse-temurin-17 as build
+# Stage 1: Build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
 
+# 1. Copy parent POM from parent dir
+COPY ../pom.xml pom.xml
+
+# 2. STRIP MODULES: This prevents Maven from looking for missing folders
+RUN sed -i '/<modules>/,/<\/modules>/d' pom.xml
+
+# 3. Copy only the specific service folder
+COPY auth-service/ auth-service/
+
+# 4. Build only this project
+RUN mvn -f auth-service/pom.xml clean package -DskipTests
+
+# Stage 2: Run
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8084
+# Note the path change here to match where Maven puts the jar
+COPY --from=build /app/auth-service/target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

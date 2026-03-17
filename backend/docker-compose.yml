@@ -2,189 +2,155 @@ version: '3.8'
 
 networks:
   tuttime-net:
+    driver: bridge
 
 services:
+  # --- INFRASTRUCTURE ---
   postgres:
     image: postgres:15
+    networks: [tuttime-net]
     environment:
       POSTGRES_DB: tuttime
       POSTGRES_USER: tuttime
       POSTGRES_PASSWORD: ***REMOVED***
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    networks: [tuttime-net]
+    ports: ["6379:6379"]
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
+    networks: [tuttime-net]
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
+    networks: [tuttime-net]
+    depends_on: [zookeeper]
+    ports: ["9092:9092"]
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,LISTENER_LOCAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,LISTENER_LOCAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   eureka-server:
     image: steeltoeoss/eureka-server:latest
-    ports:
-      - "8761:8761"
+    networks: [tuttime-net]
+    ports: ["8761:8761"]
 
+  # --- MICROSERVICES ---
   api-gateway:
-    build: ./api-gateway
-    ports:
-      - "8080:8080"
-    depends_on:
-      - eureka-server
-      - restaurant-service
-      - menu-service
-      - booking-service
-      - auth-service
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    networks:
-      - tuttime-net
-
-  restaurant-service:
-    build: ./restaurant-service
-    ports:
-      - "8081:8081"
-    depends_on:
-      - postgres
-      - redis
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-      - SPRING_REDIS_HOST=redis
-    networks:
-      - tuttime-net
-
-  menu-service:
-    build: ./menu-service
-    ports:
-      - "8082:8082"
-    depends_on:
-      - postgres
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-    networks:
-      - tuttime-net
-
-  booking-service:
-    build: ./booking-service
-    ports:
-      - "8083:8083"
-    depends_on:
-      - postgres
-      - redis
-      - kafka
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-      - SPRING_REDIS_HOST=redis
-    networks:
-      - tuttime-net
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    image: tuttime/backend-api-gateway:v1
+    ports: ["8080:8080"]
+    depends_on: [eureka-server]
+    networks: [tuttime-net]
+    environment: &common-env
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tuttime
+      SPRING_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
 
   auth-service:
-    build: ./auth-service
-    ports:
-      - "8084:8084"
-    depends_on:
-      - postgres
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-    networks:
-      - tuttime-net
+    build: 
+      context: .
+      dockerfile: auth-service/Dockerfile
+    image: tuttime/backend-auth-service:v1
+    ports: ["8084:8084"]
+    depends_on: [postgres, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
+
+  booking-service:
+    build: 
+      context: .
+      dockerfile: booking-service/Dockerfile
+    image: tuttime/backend-booking-service:v1
+    ports: ["8083:8083"]
+    depends_on: [postgres, redis, kafka, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
+
+  restaurant-service:
+    build: 
+      context: .
+      dockerfile: restaurant-service/Dockerfile
+    image: tuttime/backend-restaurant-service:v1
+    ports: ["8081:8081"]
+    depends_on: [postgres, redis, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
+
+  menu-service:
+    build: 
+      context: .
+      dockerfile: menu-service/Dockerfile
+    image: tuttime/backend-menu-service:v1
+    ports: ["8082:8082"]
+    depends_on: [postgres, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
 
   order-service:
-    build: ./order-service
-    ports:
-      - "8085:8085"
-    depends_on:
-      - postgres
-      - redis
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-      - SPRING_REDIS_HOST=redis
-    networks:
-      - tuttime-net
+    build: 
+      context: .
+      dockerfile: order-service/Dockerfile
+    image: tuttime/backend-order-service:v1
+    ports: ["8085:8085"]
+    depends_on: [postgres, redis, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
 
   payment-service:
-    build: ./payment-service
-    ports:
-      - "8086:8086"
-    depends_on:
-      - postgres
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-    networks:
-      - tuttime-net
+    build: 
+      context: .
+      dockerfile: payment-service/Dockerfile
+    image: tuttime/backend-payment-service:v1
+    ports: ["8086:8086"]
+    depends_on: [postgres, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
 
   integration-service:
-    build: ./integration-service
-    ports:
-      - "8087:8087"
-    depends_on:
-      - postgres
-      - kafka
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-    networks:
-      - tuttime-net
+    build: 
+      context: .
+      dockerfile: integration-service/Dockerfile
+    image: tuttime/backend-integration-service:v1
+    ports: ["8087:8087"]
+    depends_on: [postgres, kafka, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
 
   review-service:
-    build: ./review-service
-    ports:
-      - "8088:8088"
-    depends_on:
-      - postgres
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-    networks:
-      - tuttime-net
+    build: 
+      context: .
+      dockerfile: review-service/Dockerfile
+    image: tuttime/backend-review-service:v1
+    ports: ["8088:8088"]
+    depends_on: [postgres, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
 
   analytics-service:
-    build: ./analytics-service
-    ports:
-      - "8089:8089"
-    depends_on:
-      - postgres
-      - kafka
-      - eureka-server
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/tuttime
-    networks:
-      - tuttime-net
+    build: 
+      context: .
+      dockerfile: analytics-service/Dockerfile
+    image: tuttime/backend-analytics-service:v1
+    ports: ["8089:8089"]
+    depends_on: [postgres, kafka, eureka-server]
+    networks: [tuttime-net]
+    environment: { <<: *common-env }
 
 volumes:
   postgres_data:
