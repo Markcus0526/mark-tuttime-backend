@@ -1,14 +1,17 @@
 package com.tuttime.reviewservice.service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.tuttime.reviewservice.dto.ReviewRequest;
 import com.tuttime.reviewservice.dto.ReviewResponse;
 import com.tuttime.reviewservice.entity.Review;
 import com.tuttime.reviewservice.repository.ReviewRepository;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +23,7 @@ public class ReviewService {
     Review review = Review.builder()
         .userId(request.getUserId())
         .restaurantId(request.getRestaurantId())
-        .rating(request.getRating())
+        .rating(request.getRating() != null ? BigDecimal.valueOf(request.getRating()) : null)
         .comment(request.getComment())
         .build();
     review = reviewRepository.save(review);
