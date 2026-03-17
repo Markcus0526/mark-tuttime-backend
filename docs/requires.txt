@@ -1,0 +1,270 @@
+TutTime — a pre-order and smart restaurant booking platform
+
+TutTime is a mobile platform that combines online table reservations, menu pre-orders, and dynamic discounts during off-peak hours, integrated with restaurant POS systems (iiko and R-Keeper).
+
+We transform a simple "table reservation" into a pre-paid, guaranteed seating with a table set at a specific time.
+
+⸻
+
+🚀 The Idea
+
+Guest:
+• Selects a restaurant using a map and ratings
+• Sees available tables (or time slots)
+• Pre-orders from the menu
+• Pays via the app
+• Arrives at the appointed time – the table is already set
+• Receives a lower price than in the dining room
+
+Restaurant:
+• Fills "dead hours" (low occupancy) through managed discounts
+• Receives predictable revenue (prepayment)
+• Reduces no-shows
+• Manages demand through dynamic pricing
+
+⸻
+
+💡 Market Problem
+1. 30–50% of restaurant hours are under-occupied
+2. High no-show rate
+3. Guests waste time waiting for menus, orders, and bills
+4. Discount services erode margins and are not integrated with the kitchen
+5. Lack of a flexible management tool Demand throughout the day
+
+The market needs a dynamic loading tool, not just reservations.
+
+⸻
+
+🔥 Solution
+
+TutTime is a yield management solution for restaurants, similar to how airlines manage ticket prices.
+
+Restaurant:
+• Sets its own "dead hours"
+• Sets its own discount amount (e.g., -40% from 10:00 to 12:00)
+• Limits the number of tables eligible for the promotion
+• Manages the categories of dishes included in the discount
+
+Guest:
+• Sees actual advantageous hours
+• Receives a guaranteed table
+• Receives savings
+• Saves time
+
+⸻
+
+📊 Business Model
+
+Sources of Revenue:
+1. Commission on each order (5–12%)
+2. Restaurant subscription (Pro analytics, priority, promotion)
+3. Paid promotion within the platform
+4. Financial turnover through prepayment (cash flow advantage)
+
+Unit Economics:
+• Average bill: 2,500–4,000 ₽
+• 10% commission = 250–400 ₽ per reservation
+• 20 reservations in Per day per restaurant = 5,000–8,000 rubles in revenue
+• 1,000 restaurants = 150–240 million rubles in monthly revenue in a mature market
+
+⸻
+
+📈 Why it's scalable
+• Integration with POS market leaders (iiko, R-Keeper)
+• SaaS model
+• No warehouses or logistics
+• Digital platform margins of 60–80%
+• Possibility of expanding to other countries
+
+⸻
+
+🧠 Competitive advantage
+
+TutTime ≠ a booking aggregator
+TutTime ≠ a discount service
+
+TutTime = a tool for managing restaurant occupancy and cash flow
+
+Key differences:
+• Pre-order + prepayment
+• Real-time table management
+• Dynamic hourly discounts
+• Direct integration into the kitchen
+• No-show control via Payment
+
+⸻
+
+📌 Market Potential
+
+The Russian restaurant market has an annual turnover of hundreds of billions of rubles.
+Even 3-5% penetration yields multi-billion dollar GMV.
+
+Long-term:
+• Loyalty ecosystem
+• AI-based occupancy forecasting
+• Cross-selling (events, tastings, chef's table)
+• White-label solutions for chains
+
+⸻
+
+🎯 Vision
+
+We are building:
+• Prepaid seating infrastructure
+• "Arrived and served" standard
+• Digital demand management system for restaurants
+
+TutTime can become:
+• A leader in the smart dining segment
+• A new standard for reservations
+• A platform that transforms the restaurant economy
+
+⸻
+
+💰 Investment thesis
+
+This:
+• SaaS + Marketplace
+• High-margin digital business
+• Scalable architecture
+• A replicable model in other countries
+• Huge TAM (total market)
+
+TutTime solves a specific market pain point and turns a simple table into a financial asset.
+
+⸻
+[3/17/2026 7:53 AM] Vanya: • Restaurant card (tabs: overview/menu/discounts/reviews)
+• Menu: categories → dish list → dish card
+• Cart
+• Time/number of guests selection
+• Table selection/zone selection/slot selection (2 UI options)
+• Payment + success
+• My reservations: list + detailed reservation
+• Cancellation/reschedule/refund
+• Reviews
+
+Restaurant (web)
+• Dashboard
+• Orders (list/card)
+• Seating (calendar + tables/zones)
+• Dead hours (discount calendar)
+• Menu (categories/dishes/modifiers/stop list)
+• Analytics
+• Settings (profile, integrations, payouts)
+• Users (roles: Owner/Manager/Hostess)
+
+Admin Panel
+• Restaurants, Moderation, Disputes/Refunds
+• Commission/Rate Management
+• User Support
+• Content/Banners
+
+2.4. Design Rules
+• Main focus: "Choose a time → choose a table → choose food → pay" in 60 seconds.
+• Display everywhere: final discount, readiness time, cancellation policy.
+• Components: cards, filter chips, bottom sheet, order status timeline.
+
+⸻
+
+3) Technical Specifications for Developers
+
+3.1. Architecture (system level)
+
+Clients
+• iOS / Android (Flutter/React Native or native)
+• Restaurant web account (React/Vue)
+• Admin panel
+
+Backend
+• API Gateway
+• Auth service (authorization)
+• Restaurant service (restaurants/zones/tables)
+• Menu service (menus/prices/modifiers)
+• Booking service (reservations/bookings)
+Orders/rules)
+• Order service (pre-orders/statuses/push notifications)
+• Payment service (payments/refunds/holds)
+• Integration service (iiko/r_keeper connectors)
+• Review service (reviews)
+• Analytics/event tracking (events)
+
+Storage
+• PostgreSQL (master data)
+• Redis (table/slot locks, cache)
+• S3-compatible (menu/restaurant photos)
+• Message broker (queue) Kafka/RabbitMQ for statuses and integrations
+
+3.2. Main Entities (Data Model)
+• User
+• Restaurant
+• Branch
+• Zone
+• Table
+• Schedule (Opening Hours)
+• DiscountRule (Discount Rules)
+• MenuCategory
+• MenuItem
+• Modifier / Option
+• Booking (Reservation)
+• Order (Order)
+• Payment (Payment)
+• Refund (Refund)
+• Review
+• IntegrationCredentials (Keys)
+• StopListItem (Out of Stock)
+
+3.3. Booking Logic
+
+Option A: Tables available (floor plan / seating)
+• Get a list of tables and their occupancy per slot (e.g., 15-minute increments).
+• Lock the table for 5 minutes in Redis (soft lock).
+• After payment, create a booking + order and confirm the table.
+
+Option B: No tables available, work with slots
+• The restaurant sets capacity by slots/zones. • A reservation deducts 1 "space" from the slot.
+
+Time Rules
+• Lead time (minimum time before arrival): e.g., 30–60 minutes
+• Prep time: calculated based on the cart
+• Grace period: 10–15 minutes
+• Auto-cancel: if not checked in/did not show up
+
+3.4. Order Statuses
+• CREATED
+• PAID
+• SENT_TO_RESTAURANT
+• ACCEPTED
+• PREPARING
+• READY
+• SERVED / COMPLETED
+• CANCELED (by user / by restaurant / timeout)
+• REFUNDED (partial/full)
+
+3.5. Payments
+• Apple Pay + card support (via acquiring)
+• Payment options:
+1. Full prepay
+2. Deposit + on-site surcharge (optional)
+• Refund policy:
+• Cancel N minutes/hours → full/partial refund
+• No-show → partial refund (configurable by the restaurant within the platform rules)
+
+3.6. iiko and r_keeper Integration (General Diagram)
+
+Integration Goal: Synchronize
+• Menu + Prices + Modifiers + Stop List
+• Order Creation in POS
+• Order Statuses from POS Back to TutTime
+• (Where Available) Table Occupancy/Reservations
+
+Approach
+• Connectors as Separate Modules: iikoConnector, rkeeperConnector
+• Webhooks (if any), otherwise polling every X seconds
+• Entity Mapping: MenuItemTutTime ↔ MenuItemPOS, TableTutTime ↔ TablePOS
+• Integration Logs and Dead Letter Queue for Undelivered Events
+
+The specification should immediately state that "Online Seating of All Tables" is optional and depends on the specific POS version and API availability.
+
+3.7. Admin and Moderation
+• Disputes: Restaurant "failed to serve," guest "no show," refunds
+• Restaurant/user ban

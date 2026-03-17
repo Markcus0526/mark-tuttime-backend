@@ -1,0 +1,38 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tuttime
+    username: tuttime
+    password: ***REMOVED***
+  jpa:
+    hibernate:
+      ddl-auto: update
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8089
+
+jwt:
+  secret: ***REMOVED***
+  expiration: 86400000 # 24h
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    com.tuttime: DEBUG
+    org.springframework.security: DEBUG
