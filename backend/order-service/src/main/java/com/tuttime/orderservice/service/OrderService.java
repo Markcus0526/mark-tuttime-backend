@@ -1,12 +1,18 @@
 package com.tuttime.orderservice.service;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import com.tuttime.orderservice.dto.OrderStatusUpdate;
 import com.tuttime.orderservice.dto.PreOrderRequest;
 import com.tuttime.orderservice.entity.Order;
+import com.tuttime.orderservice.entity.OrderStatus;
 import com.tuttime.orderservice.repository.OrderRepository;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -16,11 +22,10 @@ public class OrderService {
   private final KafkaTemplate<String, Object> kafkaTemplate;
 
   public Order createPreOrder(PreOrderRequest request) {
-    Order order = Order.builder()
-        .bookingId(request.getBookingId())
-        .status("CREATED")
-        .items(request.getMenuItems().toString()) // stub
-        .build();
+    Order order = new Order();
+    order.setBookingId(request.getBookingId());
+    order.setStatus(OrderStatus.CREATED);
+    order.setItemsJson(request.getMenuItems().toString()); // stub
     order = orderRepository.save(order);
 
     // Push notification stub
@@ -34,7 +39,8 @@ public class OrderService {
 
     // Validate transitions
     if (!isValidTransition(order.getStatus(), update.getStatus())) {
-      throw new IllegalArgumentException("Invalid status transition: " + order.getStatus() + " -> " + update.getStatus());
+      throw new IllegalArgumentException(
+          "Invalid status transition: " + order.getStatus() + " -> " + update.getStatus());
     }
 
     order.setStatus(OrderStatus.valueOf(update.getStatus()));
@@ -51,8 +57,10 @@ public class OrderService {
     return order;
   }
 
-  private boolean isValidTransition(OrderStatus from, OrderStatus to) {
-    // Define allowed transitions e.g. CREATED -> PAID -> SENT_TO_RESTAURANT -> ACCEPTED -> PREPARING -> READY -> SERVED | COMPLETED
+  private boolean isValidTransition(OrderStatus from, String toStr) {
+    OrderStatus to = OrderStatus.valueOf(toStr);
+    // Define allowed transitions e.g. CREATED -> PAID -> SENT_TO_RESTAURANT ->
+    // ACCEPTED -> PREPARING -> READY -> SERVED | COMPLETED
     // CANCELED from any < READY, REFUNDED post PAID
     return true; // Stub full enum logic
   }
