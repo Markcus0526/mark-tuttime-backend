@@ -9,7 +9,7 @@ import lombok.Builder;
 import java.util.List;
 
 @Entity
-@Table(name = "zones")
+@jakarta.persistence.Table(name = "zones")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

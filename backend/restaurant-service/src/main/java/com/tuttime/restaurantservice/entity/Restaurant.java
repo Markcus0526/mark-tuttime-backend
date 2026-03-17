@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "restaurants")
+@jakarta.persistence.Table(name = "restaurants")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,6 +32,18 @@ public class Restaurant {
   private BigDecimal rating = BigDecimal.ZERO;
 
   private LocalDateTime createdAt = LocalDateTime.now();
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public void setAddress(String address) {
+    this.address = address;
+  }
 
   @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL)
   private List<Branch> branches;

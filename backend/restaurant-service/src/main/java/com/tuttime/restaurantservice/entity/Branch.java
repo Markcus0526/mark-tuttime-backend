@@ -9,7 +9,7 @@ import lombok.Builder;
 import java.util.List;
 
 @Entity
-@Table(name = "branches")
+@jakarta.persistence.Table(name = "branches")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
