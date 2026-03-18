@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MiningEvent",
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "MINING_STARTED",
+        "MINING_STOPPED",
+        "AP_CREDITED",
+        "AP_BALANCE_UPDATED",
+        "MINING_SPEED_CHANGED"
+      ]
+    },
+    "user_id": {
+      "type": "integer"
+    },
+    "ap_amount": {
+      "type": "number"
+    },
+    "current_balance": {
+      "type": "number"
+    },
+    "monthly_accumulated": {
+      "type": "number"
+    },
+    "mining_speed": {
+      "type": "number"
+    },
+    "reference_type": {
+      "type": "string"
+    },
+    "reference_id": {
+      "type": "integer"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["event_type", "user_id", "timestamp"]
+}
+

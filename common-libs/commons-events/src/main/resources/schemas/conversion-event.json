@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConversionEvent",
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "CONVERSION_INITIATED",
+        "CONVERSION_COMPLETED",
+        "CONVERSION_FAILED"
+      ]
+    },
+    "user_id": {
+      "type": "integer"
+    },
+    "task_id": {
+      "type": "integer"
+    },
+    "conversion_month": {
+      "type": "string",
+      "format": "date"
+    },
+    "ap_credits_amount": {
+      "type": "number"
+    },
+    "apart_tokens_amount": {
+      "type": "number"
+    },
+    "conversion_rate": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
+    },
+    "failure_reason": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["event_type", "user_id", "timestamp"]
+}
+

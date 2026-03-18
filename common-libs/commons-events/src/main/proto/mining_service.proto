@@ -1,0 +1,239 @@
+syntax = "proto3";
+
+package com.aparttoken.common.proto;
+
+option java_multiple_files = true;
+option java_package = "com.aparttoken.common.proto";
+option java_outer_classname = "MiningServiceProto";
+
+// Mining Service gRPC
+service MiningService {
+  rpc GetApBalance (GetApBalanceRequest) returns (ApBalanceResponse);
+  rpc CreditAp (CreditApRequest) returns (CreditApResponse);
+  rpc GetMonthlyAccumulated (GetMonthlyAccumulatedRequest) returns (MonthlyAccumulatedResponse);
+  rpc GetMiningSpeed (GetMiningSpeedRequest) returns (GetMiningSpeedResponse);
+  rpc GetTotalMonthlyAccumulated (GetTotalMonthlyAccumulatedRequest) returns (GetTotalMonthlyAccumulatedResponse);
+  rpc ResetMonthlyAccumulated (ResetMonthlyAccumulatedRequest) returns (ResetMonthlyAccumulatedResponse);
+  rpc CreateVideoBoost (CreateVideoBoostRequest) returns (CreateVideoBoostResponse);
+  rpc CreateTaskBoost (CreateTaskBoostRequest) returns (CreateTaskBoostResponse);
+  
+  // Admin analytics endpoints
+  rpc GetActiveAutoMiningsCount (GetActiveAutoMiningsCountRequest) returns (GetActiveAutoMiningsCountResponse);
+  rpc GetActiveMiningSessionsCount (GetActiveMiningSessionsCountRequest) returns (GetActiveMiningSessionsCountResponse);
+  rpc GetApGrowthHistory (GetApGrowthHistoryRequest) returns (GetApGrowthHistoryResponse);
+  
+  // Leaderboard endpoints
+  rpc GetTopMinersByApCredits (GetTopMinersByApCreditsRequest) returns (GetTopMinersByApCreditsResponse);
+  
+  // Batch status endpoints
+  rpc GetUsersMiningStatus (GetUsersMiningStatusRequest) returns (GetUsersMiningStatusResponse);
+  rpc GetBatchMiningSpeeds (GetBatchMiningSpeedsRequest) returns (GetBatchMiningSpeedsResponse);
+  
+  // User statistics endpoints
+  rpc GetActiveMiningDaysCount (GetApBalanceRequest) returns (GetActiveMiningDaysCountResponse);
+  rpc GetActiveBoostsCount (GetApBalanceRequest) returns (GetActiveBoostsCountResponse);
+  
+  // Video boost history endpoint
+  rpc GetVideoBoostHistory (GetVideoBoostHistoryRequest) returns (GetVideoBoostHistoryResponse);
+}
+
+message GetApBalanceRequest {
+  int64 user_id = 1;
+}
+
+message ApBalanceResponse {
+  int64 user_id = 1;
+  string current_balance = 2;
+  string monthly_accumulated = 3;
+  string lifetime_accumulated = 4;
+  bool mining_active = 5;
+}
+
+message CreditApRequest {
+  int64 user_id = 1;
+  string amount = 2;
+  string event_type = 3;
+  string reference_id = 4;
+}
+
+message CreditApResponse {
+  bool success = 1;
+  string new_balance = 2;
+  string message = 3;
+}
+
+message GetMonthlyAccumulatedRequest {
+  int64 user_id = 1;
+}
+
+message MonthlyAccumulatedResponse {
+  int64 user_id = 1;
+  string monthly_accumulated = 2;
+}
+
+message GetMiningSpeedRequest {
+  int64 user_id = 1;
+}
+
+message GetMiningSpeedResponse {
+  double total_speed = 1;
+  double base_speed = 2;
+  double friend_bonus = 3;
+  double booking_bonus = 4; // Booking bonus (2 * booking-day-count AP/h per booking, 15 days)
+  double rental_bonus = 9; // Rental bonus (2 * rental-day-count AP/h per rental, 2 days)
+  double video_boost = 5;
+  double status_bonus = 6;
+  double task_bonus = 7; // Task completion bonus (+1.0 AP/h per task, resets daily)
+  bool is_capped = 8;
+}
+
+message GetTotalMonthlyAccumulatedRequest {
+  // Empty - gets total for all users
+}
+
+message GetTotalMonthlyAccumulatedResponse {
+  string total_monthly_accumulated = 1; // Total AP accumulated by all users for the current month
+}
+
+message ResetMonthlyAccumulatedRequest {
+  int64 user_id = 1;
+}
+
+message ResetMonthlyAccumulatedResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CreateVideoBoostRequest {
+  int64 user_id = 1;
+  int64 video_id = 2;
+  string boost_amount = 3; // AP/hour boost amount
+  int32 duration_hours = 4; // How long the boost lasts (default: 24)
+}
+
+message CreateVideoBoostResponse {
+  bool success = 1;
+  int64 boost_id = 2;
+  string message = 3;
+}
+
+message CreateTaskBoostRequest {
+  int64 user_id = 1;
+  int64 task_id = 2;
+  int64 completion_id = 3; // Reference to UserTaskCompletion
+  string boost_amount = 4; // AP/hour boost amount (default: 1.0)
+  string boost_date = 5; // Date when boost was earned (YYYY-MM-DD format for daily reset)
+}
+
+message CreateTaskBoostResponse {
+  bool success = 1;
+  int64 boost_id = 2;
+  string message = 3;
+}
+
+// Admin analytics messages
+message GetActiveAutoMiningsCountRequest {
+  // Empty - gets count for all users
+}
+
+message GetActiveAutoMiningsCountResponse {
+  int64 count = 1; // Count of users with active auto-mining enabled
+}
+
+message GetActiveMiningSessionsCountRequest {
+  // Empty - gets count for all active sessions
+}
+
+message GetActiveMiningSessionsCountResponse {
+  int64 count = 1; // Count of active mining sessions
+}
+
+message GetApGrowthHistoryRequest {
+  string start_time = 1; // ISO 8601 datetime format
+  string end_time = 2; // ISO 8601 datetime format
+}
+
+message ApGrowthDataPoint {
+  string timestamp = 1; // ISO 8601 datetime format
+  string ap_amount = 2; // AP Credits amount at this timestamp
+}
+
+message GetApGrowthHistoryResponse {
+  repeated ApGrowthDataPoint data_points = 1;
+}
+
+// Leaderboard messages
+message GetTopMinersByApCreditsRequest {
+  int32 limit = 1; // Maximum number of miners to return (default: 100)
+  string period = 2; // Optional period filter: TODAY, WEEK, MONTH, YEAR, TOTAL
+}
+
+message TopMiner {
+  int64 user_id = 1;
+  string username = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string ap_balance = 6;
+  string monthly_accumulated = 7;
+  double mining_speed = 8;
+  int32 rank = 9;
+  string country = 10;
+  string city = 11;
+  bool is_active = 12;
+}
+
+message GetTopMinersByApCreditsResponse {
+  repeated TopMiner miners = 1;
+}
+
+// Batch status messages
+message GetUsersMiningStatusRequest {
+  repeated int64 user_ids = 1; // List of user IDs to check (max 100)
+}
+
+message GetUsersMiningStatusResponse {
+  map<int64, bool> mining_status = 1; // Map of userId -> isActive (true if mining is active)
+}
+
+message GetBatchMiningSpeedsRequest {
+  repeated int64 user_ids = 1; // List of user IDs to get mining speeds for (max 100)
+}
+
+message GetBatchMiningSpeedsResponse {
+  map<int64, GetMiningSpeedResponse> mining_speeds = 1; // Map of userId -> GetMiningSpeedResponse
+}
+
+// User statistics messages
+message GetActiveMiningDaysCountResponse {
+  int64 user_id = 1;
+  int64 active_days_count = 2; // Number of distinct days with active mining sessions
+}
+
+message GetActiveBoostsCountResponse {
+  int64 user_id = 1;
+  int32 booking_boost_count = 2; // Number of active, non-expired booking boosts
+  int32 rental_boost_count = 3; // Number of active, non-expired rental boosts
+  bool has_active_booking_boost = 4; // True if at least one active booking boost exists
+  bool has_active_rental_boost = 5; // True if at least one active rental boost exists
+}
+
+// Video boost history messages
+message GetVideoBoostHistoryRequest {
+  int64 user_id = 1;
+  int32 page = 2; // Page number (0-indexed)
+  int32 size = 3; // Page size
+}message VideoBoostHistoryItem {
+  int64 boost_id = 1;
+  string boost_type = 2; // Always "VIDEO_BOOST"
+  string multiplier = 3; // Boost amount (AP/hour)
+  int32 duration_hours = 4; // Duration in hours
+  string activated_at = 5; // ISO 8601 datetime format
+  string expires_at = 6; // ISO 8601 datetime format
+}message GetVideoBoostHistoryResponse {
+  repeated VideoBoostHistoryItem items = 1;
+  int32 page = 2;
+  int32 size = 3;
+  int64 total_elements = 4;
+  int32 total_pages = 5;
+}
