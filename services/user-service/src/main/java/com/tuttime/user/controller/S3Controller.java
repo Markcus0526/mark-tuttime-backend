@@ -50,7 +50,7 @@ public class S3Controller {
     @Value("${app.image.s3.region:ru-7}")
     private String s3Region;
 
-    @Value("${app.image.s3.bucket:boostx-storage}")
+    @Value("${app.image.s3.bucket:tuttime-storage}")
     private String bucketName;
 
     @Value("${app.image.s3.access-key:}")

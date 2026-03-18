@@ -357,7 +357,7 @@ resilience4j:
       discovery:
         enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED:false}
         namespaces:
-          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:boostx}
+          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:tuttime}
         discovery-server-url: ""
       config:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
@@ -400,7 +400,7 @@ app:
     s3:
       endpoint: ${S3_ENDPOINT:https://s3.ru-7.storage.selcloud.ru}
       region: ${S3_REGION:ru-7}
-      bucket: ${S3_BUCKET:boostx-storage}
+      bucket: ${S3_BUCKET:tuttime-storage}
       access-key: ${S3_ACCESS_KEY:}
       secret-key: ${S3_SECRET_KEY:}
       base-url: ${S3_BASE_URL:} # Optional: CDN or public URL base (e.g., https://cdn.example.com)

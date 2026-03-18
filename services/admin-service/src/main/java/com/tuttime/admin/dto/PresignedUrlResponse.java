@@ -17,7 +17,7 @@ public class PresignedUrlResponse {
     private String fileKey;
     
     @Schema(description = "Pre-signed URL for uploading the file", 
-            example = "https://s3.ru-7.storage.selcloud.ru/boostx-storage/videos/admin/video-123.mp4?X-Amz-Algorithm=...")
+            example = "https://s3.ru-7.storage.selcloud.ru/tuttime-storage/videos/admin/video-123.mp4?X-Amz-Algorithm=...")
     private String presignedUrl;
     
     @Schema(description = "Expiration time in hours", example = "1")

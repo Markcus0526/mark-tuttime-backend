@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Component
 public class CorsHeaderFilter extends OncePerRequestFilter implements Ordered {
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080,https://boostx-admin.frontare.ink}")
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080,https://tuttime-admin.frontare.ink}")
     private String allowedOrigins;
 
     private List<String> allowedOriginList;

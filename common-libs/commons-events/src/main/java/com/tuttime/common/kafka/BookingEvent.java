@@ -12,11 +12,11 @@ import java.math.BigDecimal;
  * Kafka event from Apart Sharing platform for booking events.
  * 
  * <p>This event is sent from the Apart Sharing PHP backend when a booking is successful
- * (confirmed & paid). All events from boostx_booking_success topic are pre-validated
+ * (confirmed & paid). All events from tuttime_booking_success topic are pre-validated
  * and should be processed as confirmed bookings.
  * 
  * <p><b>Event Source:</b> Apart Sharing PHP Backend
- * <p><b>Topic:</b> boostx_booking_success
+ * <p><b>Topic:</b> tuttime_booking_success
  * <p><b>Broker:</b> 81.177.217.115:9092
  * 
  * <p><b>Success Criteria:</b>
@@ -74,7 +74,7 @@ public class BookingEvent {
     private Long bookingId; // Deprecated: use order_id instead
 
     @JsonProperty("confirmed")
-    private Boolean confirmed; // Deprecated: all events from boostx_booking_success are confirmed
+    private Boolean confirmed; // Deprecated: all events from tuttime_booking_success are confirmed
 
     @JsonProperty("non_refundable")
     private Boolean nonRefundable; // Deprecated: not provided by apart-sharing

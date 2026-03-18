@@ -125,7 +125,7 @@ spring:
       discovery:
         enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED:false}
         namespaces:
-          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:boostx}
+          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:tuttime}
         # Use native Kubernetes discovery (no discovery server URL needed)
         discovery-server-url: ""
       config:
@@ -237,7 +237,7 @@ app:
   s3:
     endpoint: ${APP_S3_ENDPOINT:https://s3.ru-7.storage.selcloud.ru}
     region: ${APP_S3_REGION:ru-7}
-    bucket: ${APP_S3_BUCKET:boostx-storage}
+    bucket: ${APP_S3_BUCKET:tuttime-storage}
     access-key: ${APP_S3_ACCESS_KEY:}
     secret-key: ${APP_S3_SECRET_KEY:}
     base-url: ${APP_S3_BASE_URL:}  # Optional: CDN or public URL base

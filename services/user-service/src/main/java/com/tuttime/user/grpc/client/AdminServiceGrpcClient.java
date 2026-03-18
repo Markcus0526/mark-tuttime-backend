@@ -48,7 +48,7 @@ public class AdminServiceGrpcClient {
         log.warn("Circuit breaker open, returning default app version");
         return GetAppVersionResponse.newBuilder()
                 .setAndroidVersion("1.0.0")
-                .setAndroidInstallLink("https://play.google.com/store/apps/details?id=com.boostx.app")
+                .setAndroidInstallLink("https://play.google.com/store/apps/details?id=com.tuttime.app")
                 .setIosVersion("1.0.0")
                 .setIosInstallLink("https://apps.apple.com/app/id123456789")
                 .build();

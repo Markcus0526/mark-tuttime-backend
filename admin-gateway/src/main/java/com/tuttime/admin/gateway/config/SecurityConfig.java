@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080,https://boostx-admin.frontare.ink}")
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080,https://tuttime-admin.frontare.ink}")
     private String allowedOrigins;
 
     @Bean
@@ -51,7 +51,7 @@ public class SecurityConfig {
         
         if (origins.isEmpty()) {
             log.warn("No valid CORS origins configured, using defaults");
-            origins = Arrays.asList("http://localhost:3000", "http://localhost:8080", "https://boostx-admin.frontare.ink");
+            origins = Arrays.asList("http://localhost:3000", "http://localhost:8080", "https://tuttime-admin.frontare.ink");
         }
         
         log.info("CORS allowed origins (deduplicated): {}", origins);

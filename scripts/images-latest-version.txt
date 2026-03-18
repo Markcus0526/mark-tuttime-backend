@@ -1,4 +1,4 @@
-# Service Images (cr.selcloud.ru/boostx/prod/)
+# Service Images (cr.selcloud.ru/tuttime/prod/)
 user-service: 1.0.5
 admin-service: 1.0.1
 api-gateway: 1.0.1
@@ -11,7 +11,7 @@ notification-service: 1.0.1
 social-service: 1.0.1
 cdn-proxy-service: 1.0.0
 
-# Staging Service Images (cr.selcloud.ru/boostx/staging/)
+# Staging Service Images (cr.selcloud.ru/tuttime/staging/)
 user-service: 1.0.0
 admin-service: 1.0.0
 api-gateway: 1.0.0
