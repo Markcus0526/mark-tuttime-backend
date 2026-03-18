@@ -1,0 +1,32 @@
+# Service Images (cr.selcloud.ru/boostx/prod/)
+user-service: 1.0.5
+admin-service: 1.0.1
+api-gateway: 1.0.1
+admin-gateway: 1.0.0
+messaging-service: 1.0.1
+mining-service: 1.0.11
+rewards-service: 1.0.4
+content-service: 1.0.1
+notification-service: 1.0.1
+social-service: 1.0.1
+cdn-proxy-service: 1.0.0
+
+# Staging Service Images (cr.selcloud.ru/boostx/staging/)
+user-service: 1.0.0
+admin-service: 1.0.0
+api-gateway: 1.0.0
+admin-gateway: 1.0.0
+messaging-service: 1.0.0
+mining-service: 1.0.1
+rewards-service: 1.0.0
+content-service: 1.0.0
+notification-service: 1.0.0
+social-service: 1.0.0
+cdn-proxy-service: 1.0.0
+
+# Infrastructure Images
+redis: 7.2.5
+redis-sentinel: 7.2.5
+kafka: 4.0.0-debian-12-r10
+kafka-jmx-exporter: 1.4.0-debian-12-r0
+zipkin: 2.24
