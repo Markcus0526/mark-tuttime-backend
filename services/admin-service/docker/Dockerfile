@@ -9,24 +9,20 @@ RUN rm -rf ~/.m2
 COPY pom.xml ./pom.xml
 
 # Placeholder POMs for modules not being built
-RUN mkdir -p services/user-service services/token-service services/mining-service services/staking-service \
-    services/content-service services/booking-integration-service services/notification-service \
-    services/conversion-service services/rewards-service services/cdn-proxy-service \
-    services/messaging-service services/social-service \
+RUN mkdir -p services/analytics-service services/booking-service services/integration-service \
+    services/menu-service services/order-service services/payment-service \
+    services/restaurant-service services/review-service services/user-service \
     api-gateway admin-gateway && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>analytics-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/analytics-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>booking-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/booking-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>integration-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/integration-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>menu-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/menu-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>order-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/order-integration-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>payment-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/payment-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>restaurant-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/restaurant-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>review-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/review-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>user-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/user-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>token-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/token-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>mining-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/mining-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>staking-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/staking-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>content-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/content-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>booking-integration-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/booking-integration-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>notification-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/notification-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>conversion-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/conversion-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>rewards-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/rewards-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>cdn-proxy-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/cdn-proxy-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>messaging-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/messaging-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>social-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/social-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>api-gateway</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > api-gateway/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>api-gateway</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > api-gateway/pom.xml \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>admin-gateway</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > admin-gateway/pom.xml
 
 RUN --mount=type=cache,target=/root/.m2 \
