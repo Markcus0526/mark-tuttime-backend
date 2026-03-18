@@ -1,4 +1,4 @@
-package com.aparttoken.common.dto;
+package com.tuttime.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

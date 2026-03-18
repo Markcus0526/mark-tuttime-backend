@@ -1,59 +1,838 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: api-gateway
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  main:
+    web-application-type: reactive
+  codec:
+    max-in-memory-size: 500MB  # Increase max body size for large file uploads (videos)
   cloud:
+    # Kubernetes Config (for ConfigMap support) - Discovery not needed (using direct URLs)
+    kubernetes:
+      discovery:
+        enabled: false  # Not needed - using direct URLs with Kubernetes DNS
+      config:
+        enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
     gateway:
+      httpclient:
+        max-header-size: 16KB
+        max-keep-alive-time: 3600s  # 1 hour for WebSocket connections (server timeout)
+        connect-timeout: 60000  # 60 seconds connection timeout
+        response-timeout: 300s  # 5 minutes for HTTP requests (WebSocket uses different timeout mechanism)
+        pool:
+          max-idle-time: 0
+          max-connections: 5000  # Increased to 5000 for 100M user scale (12 pods × 5000 = 60k capacity, can scale to 30 pods × 5000 = 150k)
+          eviction-interval: 30s
+      # Discovery locator disabled - using direct URLs instead of lb:// URIs
+      # Kubernetes Service provides automatic load balancing
+      discovery:
+        locator:
+          enabled: false
       routes:
-        - id: restaurant-service
-          uri: lb://restaurant-service
-          predicates:
-            - Path=/restaurants/**
-        - id: menu-service
-          uri: lb://menu-service
-          predicates:
-            - Path=/menus/**
-        - id: booking-service
-          uri: lb://booking-service
-          predicates:
-            - Path=/bookings/**
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/orders/**
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/payments/**
-        - id: integration-service
-          uri: lb://integration-service
-          predicates:
-            - Path=/integrations/**
-        - id: review-service
-          uri: lb://review-service
-          predicates:
-            - Path=/reviews/**
-        - id: analytics-service
-          uri: lb://analytics-service
-          predicates:
-            - Path=/analytics/**
-        - id: auth-service
-          uri: lb://auth-service
-          predicates:
-            - Path=/auth/**
+        # Health endpoints are handled by HealthController, not routed
+        # Note: Admin routes (/api/v1/admin/**) are handled by admin-gateway (port 28080), not this api-gateway
+        #
+        # IMPORTANT: Routes without explicit Method predicates accept ALL HTTP methods (GET, POST, PUT, PATCH, DELETE, etc.)
+        # Routes with Method predicates only match the specified methods. To allow multiple methods, specify multiple Method predicates.
 
+        # WebSocket Routes (order 1-6)
+        # Uses service name variables (e.g., USER_SERVICE) that can be set per environment:
+        #   Kubernetes (default): USER_SERVICE=user-service
+        #   Docker: USER_SERVICE=user-service
+        #   Local: USER_SERVICE=localhost
+        # Presence WebSocket - exact path (more specific, comes first)
+        - id: websocket-presence-exact
+          order: 1
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/ws/presence
+
+        # Presence WebSocket - subpaths (less specific, comes after exact path)
+        - id: websocket-presence
+          order: 2
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/ws/presence/**
+
+        # AP Credits WebSocket - exact path (more specific, comes first)
+        - id: websocket-ap-credits-exact
+          order: 3
+          uri: http://${MINING_SERVICE:mining-service}:28083
+          predicates:
+            - Path=/ws/ap-credits
+
+        # AP Credits WebSocket - subpaths (less specific, comes after exact path)
+        - id: websocket-ap-credits
+          order: 4
+          uri: http://${MINING_SERVICE:mining-service}:28083
+          predicates:
+            - Path=/ws/ap-credits/**
+
+        # Notification WebSocket - exact path (more specific, comes first)
+        - id: websocket-notifications-exact
+          order: 5
+          uri: http://${NOTIFICATION_SERVICE:notification-service}:28088
+          predicates:
+            - Path=/ws/notifications
+
+        # Notification WebSocket - subpaths (less specific, comes after exact path)
+        - id: websocket-notifications
+          order: 6
+          uri: http://${NOTIFICATION_SERVICE:notification-service}:28088
+          predicates:
+            - Path=/ws/notifications/**
+
+        # Deposit Status WebSocket
+        - id: websocket-deposit-status
+          order: 7
+          uri: http://${TOKEN_SERVICE:token-service}:28082
+          predicates:
+            - Path=/ws/deposit-status/**
+          filters:
+            - RewritePath=/ws/deposit-status/(?<segment>.*), /ws/deposit-status/$\\{segment}
+
+        # Withdrawal Status WebSocket
+        - id: websocket-withdrawal-status
+          order: 8
+          uri: http://${TOKEN_SERVICE:token-service}:28082
+          predicates:
+            - Path=/ws/withdrawal-status/**
+          filters:
+            - RewritePath=/ws/withdrawal-status/(?<segment>.*), /ws/withdrawal-status/$\\{segment}
+
+        # Messaging WebSocket - exact path (more specific, comes first)
+        - id: websocket-messaging-exact
+          order: 9
+          uri: http://${MESSAGING_SERVICE:messaging-service}:28092
+          predicates:
+            - Path=/ws/messaging
+          filters:
+            # Preserve all headers (especially Authorization) for WebSocket connections
+            - PreserveHostHeader
+            - name: AddRequestHeader
+              args:
+                name: X-Forwarded-Proto
+                value: ${X_FORWARDED_PROTO:https}
+            # Forward Authorization header explicitly (Spring Gateway should do this by default, but being explicit)
+            # Note: Spring Cloud Gateway automatically forwards all headers for WebSocket upgrades
+
+        # Messaging WebSocket - subpaths (less specific, comes after exact path)
+        - id: websocket-messaging
+          order: 10
+          uri: http://${MESSAGING_SERVICE:messaging-service}:28092
+          predicates:
+            - Path=/ws/messaging/**
+          filters:
+            # Preserve all headers (especially Authorization) for WebSocket connections
+            - PreserveHostHeader
+            - name: AddRequestHeader
+              args:
+                name: X-Forwarded-Proto
+                value: ${X_FORWARDED_PROTO:https}
+
+        # Auth Service Routes (consolidated route with filters)
+        # Methods: GET, POST
+        # Endpoints:
+        #   - POST /api/v1/auth/signup/send-sms, /api/v1/auth/signup/verify-sms, /api/v1/auth/signup
+        #   - POST /api/v1/auth/signin, /api/v1/auth/refresh, /api/v1/auth/signout
+        #   - POST /api/v1/auth/check-username, /api/v1/auth/check-email (public endpoints for signup validation)
+        #   - POST /api/v1/auth/email/send - requires request body with EmailRequest (email field)
+        #   - POST /api/v1/auth/email/verify - requires request body with VerifyEmailRequest
+        # Note: For profile email verification, use /api/v1/users/me/email/send (no body required)
+        - id: auth-service
+          order: 20
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/api/v1/auth/**
+            - Method=POST,GET,OPTION
+          filters:
+            # Temporarily comment out custom filters to debug routing issue
+            # - name: RateLimiting
+            # - name: BruteForceProtection
+            - name: JwtAuthentication
+              args:
+                skipPaths: /api/v1/auth/signup,/api/v1/auth/signup/send-sms,/api/v1/auth/signup/verify-sms,/api/v1/auth/signin,/api/v1/auth/refresh,/api/v1/auth/check-username,/api/v1/auth/check-email
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+        # Password Service Routes (consolidated route with filters)
+        # Methods: POST (all password endpoints use POST)
+        - id: password-service
+          order: 21
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/api/v1/password/**
+            - Method=POST,OPTION
+          filters:
+            # - name: RateLimiting
+            # - name: BruteForceProtection
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+        # # User Service - Image Upload Routes (MOST SPECIFIC - must come before /api/v1/users/me/**)
+        # # Longer timeout for file uploads, allow POST, GET for image operations
+        # # Matches: /api/v1/users/me/image and all subpaths (e.g., /api/v1/users/me/image/avatar)
+        # - id: user-service-image-upload
+        #   order: 12
+        #   uri: http://${USER_SERVICE:user-service}:28081
+        #   predicates:
+        #     - Path=/api/v1/users/me/image/**
+        #     - Method=POST,GET,OPTION
+        #   filters:
+        #     - name: RateLimiting
+        #     - name: JwtAuthentication
+        #     # No circuit breaker for image uploads (can be slow)
+        #     # Timeout handled by httpclient.response-timeout (60s)
+
+        # # User Service - Email Verification Routes (MOST SPECIFIC - must come before /api/v1/users/me/**)
+        # # Handles email send and verify for profile
+        # # Matches: /api/v1/users/me/email/send, /api/v1/users/me/email/verify, etc.
+        # - id: user-service-email-verification
+        #   order: 13
+        #   uri: http://${USER_SERVICE:user-service}:28081
+        #   predicates:
+        #     - Path=/api/v1/users/me/email/**
+        #     - Method=POST,OPTION
+        #   filters:
+        #     - name: RateLimiting
+        #     - name: JwtAuthentication
+        #     # No circuit breaker for email operations (can be slow)
+
+        # # User Service - Location Routes (MOST SPECIFIC - must come before /api/v1/users/me/**)
+        # # Handles location updates and privacy settings
+        # # Matches: /api/v1/users/me/location, /api/v1/users/me/location/privacy, etc.
+        # - id: user-service-location
+        #   order: 14
+        #   uri: http://${USER_SERVICE:user-service}:28081
+        #   predicates:
+        #     - Path=/api/v1/users/me/location/**
+        #     - Method=GET,PATCH,OPTION
+        #   filters:
+        #     - name: RateLimiting
+        #     - name: JwtAuthentication
+        #     - name: CircuitBreaker
+        #       args:
+        #         name: userServiceCircuitBreaker
+        #         fallbackUri: forward:/fallback/user-service
+
+        # # User Service - Profile Routes (MOST SPECIFIC - must come before /api/v1/users/**)
+        # # Handles all /api/v1/users/me/** endpoints (profile, status, devices, change-password, etc.)
+        # # Matches: /api/v1/users/me, /api/v1/users/me/status, /api/v1/users/me/devices/**, etc.
+        # # Note: Uses /** to match all subpaths to avoid route shadowing issues
+        # - id: user-service-profile
+        #   order: 15
+        #   uri: http://${USER_SERVICE:user-service}:28081
+        #   predicates:
+        #     - Path=/api/v1/users/me/**
+        #     - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+        #   filters:
+        #     - name: RateLimiting
+        #     - name: JwtAuthentication
+        #     - name: CircuitBreaker
+        #       args:
+        #         name: userServiceCircuitBreaker
+        #         fallbackUri: forward:/fallback/user-service
+
+        # User Service - Apple Language Routes (MOST SPECIFIC - must come before /api/v1/users/**)
+        # Methods: GET
+        # Endpoints: GET /api/v1/users/languages/apple/{langCode}, GET /api/v1/users/languages/apple/all
+        # Note: OPTIONS removed from Method predicate - let global CORS filter handle all OPTIONS requests
+        - id: user-service-apple-language
+          order: 15
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/api/v1/users/languages/apple/**
+            - Method=GET
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+        # User Service - App Version Routes
+        # Methods: GET
+        # Endpoints: GET /api/v1/app/version - Get app version and install links (requires authentication)
+        - id: user-service-app-version
+          order: 15
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/api/v1/app/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+        # User Service - Username Lookup Route
+        # Methods: GET
+        # Endpoints: GET /api/v1/username/{username}/id - Get user ID by username (authenticated)
+        - id: user-service-username-lookup
+          order: 15
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/api/v1/username/**
+            - Method=GET,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+        # User Service Routes (GENERAL - comes after specific routes)
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/users/{userId}, /api/v1/users/{userId}/**, /api/v1/users/map, /api/v1/users/languages/**, /api/v1/users/s3/**
+        # Note: /api/v1/users/me/** is handled by user-service-profile route (order 13)
+        - id: user-service
+          order: 16
+          uri: http://${USER_SERVICE:user-service}:28081
+          predicates:
+            - Path=/api/v1/users/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
+        # Mining Service Routes
+        # Methods: GET, POST
+        # Endpoints:
+        #   - GET /api/v1/mining/balance, /api/v1/mining/status, /api/v1/mining/daily-growth, /api/v1/mining/statistics
+        #   - POST /api/v1/mining/start, /api/v1/mining/stop, /api/v1/mining/status/public
+        - id: mining-service
+          order: 30
+          uri: http://${MINING_SERVICE:mining-service}:28083
+          predicates:
+            - Path=/api/v1/mining/**
+            - Method=GET,POST,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: miningServiceCircuitBreaker
+                fallbackUri: forward:/fallback/mining-service
+
+        # Admin Mining Service Routes (admin endpoints in mining-service)
+        # Methods: GET
+        # Endpoints:
+        #   - GET /api/v1/admin/mining/balances
+        #   - GET /api/v1/admin/mining/users/{userId}/balance
+        #   - GET /api/v1/admin/mining/users/{userId}/sessions
+        #   - GET /api/v1/admin/mining/debug/users/{userId}/mining-status
+        - id: admin-mining-service
+          order: 29
+          uri: http://${MINING_SERVICE:mining-service}:28083
+          predicates:
+            - Path=/api/v1/admin/mining/**
+            - Method=GET,POST,PUT,DELETE,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: miningServiceCircuitBreaker
+                fallbackUri: forward:/fallback/mining-service
+
+        # Content Service Routes
+        # Methods: GET, POST
+        # Endpoints:
+        #   - GET /api/v1/content/videos, /api/v1/content/videos/{videoId}, /api/v1/content/ads
+        #   - GET /api/v1/content/tasks, /api/v1/content/tasks/{taskId}
+        #   - POST /api/v1/content/videos/watch, /api/v1/content/ads/{adId}/view, /api/v1/content/ads/views/{adViewId}/click
+        #   - POST /api/v1/content/tasks/{taskId}/complete
+        - id: content-service
+          order: 40
+          uri: http://${CONTENT_SERVICE:content-service}:28086
+          predicates:
+            - Path=/api/v1/content/**
+            - Method=GET,POST,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: contentServiceCircuitBreaker
+                fallbackUri: forward:/fallback/content-service
+
+        # Content Service - Tasks Routes
+        # Methods: GET, POST
+        # Endpoints:
+        #   - GET /api/v1/tasks/completions, /api/v1/tasks/{taskId}/statistics, /api/v1/tasks/completions/statistics, /api/v1/tasks/statistics
+        #   - POST /api/v1/tasks/{taskId}/complete, /api/v1/tasks/completions/{completionId}/retry-reward
+        - id: content-service-tasks
+          order: 41
+          uri: http://${CONTENT_SERVICE:content-service}:28086
+          predicates:
+            - Path=/api/v1/tasks/**
+            - Method=GET,POST,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: contentServiceCircuitBreaker
+                fallbackUri: forward:/fallback/content-service
+
+        # Rewards Service Routes
+        # Methods: GET, POST
+        # Endpoints:
+        #   - GET /api/v1/rewards/referral-code, /api/v1/rewards/active-friends, /api/v1/rewards/active-friends/online, /api/v1/rewards/active-friends/offline
+        #   - POST /api/v1/rewards/referrals
+        - id: rewards-service
+          order: 43
+          uri: http://${REWARDS_SERVICE:rewards-service}:28085
+          predicates:
+            - Path=/api/v1/rewards/**
+            - Method=GET,POST,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: rewardsServiceCircuitBreaker
+                fallbackUri: forward:/fallback/rewards-service
+
+        # Referral Service Routes
+        # Methods: GET, POST
+        # Endpoints:
+        #   - GET /api/v1/referral/info, /api/v1/referral/friends
+        #   - POST /api/v1/referral/validate-code
+        - id: referral-service
+          order: 44
+          uri: http://${REWARDS_SERVICE:rewards-service}:28085
+          predicates:
+            - Path=/api/v1/referral/**
+            - Method=GET,POST,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: rewardsServiceCircuitBreaker
+                fallbackUri: forward:/fallback/rewards-service
+
+        # Notification Service Routes
+        # Methods: GET, POST, PATCH, DELETE
+        # Endpoints:
+        #   - GET /api/v1/notifications, /api/v1/notifications/test/errors
+        #   - POST /api/v1/notifications/mark-all-read, /api/v1/notifications/test/create, /api/v1/notifications/test/retry/{errorRequestId}, /api/v1/notifications/push/send
+        #   - PATCH /api/v1/notifications/{notificationId}
+        #   - DELETE /api/v1/notifications, /api/v1/notifications/{notificationId}
+        - id: notification-service
+          order: 45
+          uri: http://${NOTIFICATION_SERVICE:notification-service}:28088
+          predicates:
+            - Path=/api/v1/notifications/**
+            - Method=GET,POST,PATCH,DELETE,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCircuitBreaker
+                fallbackUri: forward:/fallback/notification-service
+
+        # Messaging Service Routes
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints:
+        #   - GET /api/v1/messaging/chats - Get chat list
+        #   - GET /api/v1/messaging/chats/{chatId} - Get chat details
+        #   - POST /api/v1/messaging/chats - Create or get chat
+        #   - PUT /api/v1/messaging/chats/{chatId} - Update chat info
+        #   - POST /api/v1/messaging/chats/{chatId}/messages - Send message in chat
+        #   - POST /api/v1/messaging/messages - Send message to user (auto-create chat)
+        #   - GET /api/v1/messaging/chats/{chatId}/messages - Get message history
+        #   - GET /api/v1/messaging/messages/msg/{msgId} - Get message by msg_id
+        #   - PUT /api/v1/messaging/messages/{messageId} - Edit message
+        #   - DELETE /api/v1/messaging/messages/{messageId} - Delete message
+        #   - DELETE /api/v1/messaging/groups/{groupId}/members/{memberUserId} - Remove group member
+        #   - DELETE /api/v1/messaging/groups/{groupId}/admins/{adminUserId} - Demote admin
+        #   - DELETE /api/v1/messaging/groups/{groupId}/username - Remove group username
+        #   - DELETE /api/v1/messaging/groups/{groupId}/mute - Unmute group
+        - id: messaging-service
+          order: 46
+          uri: http://${MESSAGING_SERVICE:messaging-service}:28092
+          predicates:
+            - Path=/api/v1/messaging/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: messagingServiceCircuitBreaker
+                fallbackUri: forward:/fallback/messaging-service
+        # Social Service Routes
+        # Methods: GET, POST, PUT, DELETE
+        # Endpoints:
+        #   - POST /api/v1/social/posts - Create post (multipart/form-data)
+        #   - GET /api/v1/social/posts/{postId} - Get post
+        #   - DELETE /api/v1/social/posts/{postId} - Delete post
+        #   - GET /api/v1/social/posts/user/{userId} - Get user posts
+        #   - POST /api/v1/social/posts/{postId}/comments - Create comment
+        #   - GET /api/v1/social/posts/{postId}/comments - Get comments
+        #   - PUT /api/v1/social/posts/{postId}/comments/{commentId} - Edit comment
+        #   - DELETE /api/v1/social/posts/{postId}/comments/{commentId} - Delete comment
+        #   - POST /api/v1/social/posts/{postId}/likes - Like post
+        #   - DELETE /api/v1/social/posts/{postId}/likes - Unlike post
+        #   - GET /api/v1/social/posts/{postId}/likes - Get post likes
+        #   - POST /api/v1/social/follows/{followingId} - Follow user
+        #   - DELETE /api/v1/social/follows/{followingId} - Unfollow user
+        #   - GET /api/v1/social/follows/{userId}/followers - Get followers
+        #   - GET /api/v1/social/follows/{userId}/following - Get following
+        #   - GET /api/v1/social/feed - Get user feed
+        #   - GET /api/v1/social/search/users - Search users
+        #   - GET /api/v1/social/search/posts - Search posts
+        #   - GET /api/v1/social/search/hashtags - Search hashtags
+        #   - GET /api/v1/social/explore/** - Explore trending content
+        #   - POST /api/v1/social/saved-posts/{postId} - Save post
+        #   - DELETE /api/v1/social/saved-posts/{postId} - Unsave post
+        #   - GET /api/v1/social/saved-posts - Get saved posts
+        #   - POST /api/v1/social/blocks/{blockedId} - Block user
+        #   - DELETE /api/v1/social/blocks/{blockedId} - Unblock user
+        #   - GET /api/v1/social/blocks - Get blocked users
+        #   - GET /api/v1/social/privacy - Get privacy settings
+        #   - PUT /api/v1/social/privacy - Update privacy settings
+        #   - GET /api/v1/social/hashtags/** - Hashtag operations
+        - id: social-service
+          order: 46
+          uri: http://${SOCIAL_SERVICE:social-service}:28087
+          predicates:
+            - Path=/api/v1/social/**
+            - Method=GET,POST,PUT,DELETE,OPTION
+          filters:
+            # Rate limiting disabled for mobile integration
+            # - name: RateLimiting
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: socialServiceCircuitBreaker
+                fallbackUri: forward:/fallback/social-service
+
+      # CORS is now configured via CorsConfig.java
+      # globalcors configuration removed to use programmatic configuration
+
+  # Redis Configuration for token blacklist
+  data:
+    redis:
+      # Redis Sentinel Configuration (preferred for HA)
+      # If SPRING_DATA_REDIS_SENTINEL_MASTER and SPRING_DATA_REDIS_SENTINEL_NODES are set, Sentinel mode is used
+      # Otherwise, direct connection mode is used (backward compatible)
+      # Spring Boot automatically maps SPRING_DATA_REDIS_SENTINEL_* environment variables to these properties
+      sentinel:
+        master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
+        nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
+      # Direct connection configuration (used when Sentinel is not configured)
+      host: ${REDIS_HOST:apart-token-redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:5000ms}
+      lettuce:
+        pool:
+          max-active: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE:8}
+          max-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE:8}
+          min-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE:0}
+
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      issuer: ${JWT_ISSUER:apart-token-backend} # Token issuer identifier
+      audience: ${JWT_AUDIENCE:apart-token-mobile-app} # Token audience identifier
+
+server:
+  port: 29000
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      userServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 65
+        # Record exceptions that should be considered as failures
+        recordExceptions:
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+        # Ignore 4xx client errors (not service failures)
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+      tokenServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+      miningServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 65
+      contentServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 15
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 25s
+        failureRateThreshold: 55
+      conversionServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+      rewardsServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 65
+      notificationServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 15
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 25s
+        failureRateThreshold: 55
+      bookingIntegrationServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+      stakingServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+      messagingServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 65
+        # Record exceptions that should be considered as failures
+        recordExceptions:
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+        # Ignore 4xx client errors (not service failures)
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+      socialServiceCircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 15
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 25s
+        failureRateThreshold: 55
+      # Note: Admin routes are handled by admin-gateway (port 28080), not api-gateway
+  timelimiter:
+    instances:
+      # Timeout configurations for all circuit breakers
+      # Must be longer than httpclient.response-timeout (300s) to allow requests to complete
+      userServiceCircuitBreaker:
+        timeoutDuration: 65s
+      tokenServiceCircuitBreaker:
+        timeoutDuration: 65s
+      miningServiceCircuitBreaker:
+        timeoutDuration: 65s
+      contentServiceCircuitBreaker:
+        timeoutDuration: 65s
+      conversionServiceCircuitBreaker:
+        timeoutDuration: 65s
+      rewardsServiceCircuitBreaker:
+        timeoutDuration: 65s
+      notificationServiceCircuitBreaker:
+        timeoutDuration: 65s
+      bookingIntegrationServiceCircuitBreaker:
+        timeoutDuration: 65s
+      stakingServiceCircuitBreaker:
+        timeoutDuration: 65s
+      socialServiceCircuitBreaker:
+        timeoutDuration: 300s  # 5 minutes for video uploads (videos up to 500MB) + server-side processing
+      messagingServiceCircuitBreaker:
+        timeoutDuration: 300s  # 5 minutes for media uploads (videos up to 500MB)
+  retry:
+    instances:
+      userService:
+        maxAttempts: 3
+        waitDuration: 1s
+      tokenService:
+        maxAttempts: 3
+        waitDuration: 1s
+      miningService:
+        maxAttempts: 3
+        waitDuration: 1s
+      contentService:
+        maxAttempts: 3
+        waitDuration: 1s
+      conversionService:
+        maxAttempts: 3
+        waitDuration: 1s
+      rewardsService:
+        maxAttempts: 3
+        waitDuration: 1s
+      notificationService:
+        maxAttempts: 3
+        waitDuration: 1s
+      bookingIntegrationService:
+        maxAttempts: 3
+        waitDuration: 1s
+      stakingService:
+        maxAttempts: 3
+        waitDuration: 1s
+      socialService:
+        maxAttempts: 3
+        waitDuration: 1s
+      # Note: Admin routes are handled by admin-gateway (port 28080), not api-gateway
+
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
+        include: health,info,metrics,prometheus,circuitbreakers
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://apart-token-zipkin:9411/api/v2/spans}
 
+# Logging Configuration
 logging:
   level:
-    com.tuttime: DEBUG
-    org.springframework.cloud.gateway: DEBUG
+    root: ${LOG_LEVEL:INFO}
+    com.aparttoken.gateway: INFO
+    org.springframework.cloud.gateway: INFO
+    org.springframework.web: INFO
+    org.springframework.data.redis: WARN  # Only log Redis errors/warnings
+    io.lettuce.core: WARN  # Only log Redis connection errors
+    org.hibernate.SQL: WARN  # Disable SQL query logging
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN  # Disable SQL parameter binding logging
+    io.github.resilience4j: INFO  # Log circuit breaker state changes
+    io.github.resilience4j.circuitbreaker: WARN  # Only log circuit breaker state changes (opens/closes)
+
+# Graylog Configuration
+# Note: Graylog logging is enabled via Spring profile 'graylog-enabled'
+# To enable: Add 'graylog-enabled' to spring.profiles.active
+# Example: SPRING_PROFILES_ACTIVE=local,graylog-enabled
+graylog:
+  host: ${GRAYLOG_HOST:90.156.157.241} # Graylog server host
+  port: ${GRAYLOG_PORT:12203} # Graylog UDP port
+  origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
+  facility: ${GRAYLOG_FACILITY:api-gateway} # Facility name for log categorization
+  include-source: ${GRAYLOG_INCLUDE_SOURCE:true} # Include source file and line number
+  include-mdc: ${GRAYLOG_INCLUDE_MDC:true} # Include Mapped Diagnostic Context fields
+  include-marker: ${GRAYLOG_INCLUDE_MARKER:true} # Include log markers
+  include-caller-data: ${GRAYLOG_INCLUDE_CALLER_DATA:false} # Include caller data (class, method, line)
+  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192} # Maximum GELF message size in bytes
+  compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP} # Compression type: GZIP, ZLIB, or NONE
+
+# Application-specific configuration
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://app.apart.com,http://localhost:3000,http://localhost:8080}
+
+# Rate Limiting Configuration
+# All rate limit thresholds are configurable via environment variables
+# Default values match the current hardcoded values in the codebase
+rate:
+  limit:
+    # IP-based endpoints - Sign In
+    signin:
+      capacity: ${RATE_LIMIT_SIGNIN_CAPACITY:5}
+      refill:
+        period:
+          minutes: ${RATE_LIMIT_SIGNIN_REFILL_PERIOD_MINUTES:1}
+    # IP-based endpoints - Sign Up
+    signup:
+      capacity: ${RATE_LIMIT_SIGNUP_CAPACITY:3}
+      refill:
+        period:
+          minutes: ${RATE_LIMIT_SIGNUP_REFILL_PERIOD_MINUTES:1}
+      send-sms:
+        capacity: ${RATE_LIMIT_SIGNUP_SEND_SMS_CAPACITY:3}
+        refill:
+          period:
+            hours: ${RATE_LIMIT_SIGNUP_SEND_SMS_REFILL_PERIOD_HOURS:1}
+      verify-sms:
+        capacity: ${RATE_LIMIT_SIGNUP_VERIFY_SMS_CAPACITY:10}
+        refill:
+          period:
+            hours: ${RATE_LIMIT_SIGNUP_VERIFY_SMS_REFILL_PERIOD_HOURS:1}
+    # IP-based endpoints - Password Reset
+    password:
+      forgot:
+        capacity: ${RATE_LIMIT_PASSWORD_FORGOT_CAPACITY:3}
+        refill:
+          period:
+            hours: ${RATE_LIMIT_PASSWORD_FORGOT_REFILL_PERIOD_HOURS:1}
+      verify-sms:
+        capacity: ${RATE_LIMIT_PASSWORD_VERIFY_SMS_CAPACITY:10}
+        refill:
+          period:
+            hours: ${RATE_LIMIT_PASSWORD_VERIFY_SMS_REFILL_PERIOD_HOURS:1}
+    # User-based endpoints - Auth Refresh
+    auth:
+      refresh:
+        capacity: ${RATE_LIMIT_AUTH_REFRESH_CAPACITY:10}
+        refill:
+          period:
+            minutes: ${RATE_LIMIT_AUTH_REFRESH_REFILL_PERIOD_MINUTES:1}
+    # User-based endpoints - Authenticated (default for all authenticated endpoints)
+    authenticated:
+      capacity: ${RATE_LIMIT_AUTHENTICATED_CAPACITY:500}
+      refill:
+        period:
+          minutes: ${RATE_LIMIT_AUTHENTICATED_REFILL_PERIOD_MINUTES:1}
+

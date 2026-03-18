@@ -1,4 +1,4 @@
-package com.aparttoken.common.resilience;
+package com.tuttime.common.resilience;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;

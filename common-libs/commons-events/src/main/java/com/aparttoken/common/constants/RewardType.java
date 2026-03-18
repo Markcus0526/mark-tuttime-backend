@@ -1,4 +1,4 @@
-package com.aparttoken.common.constants;
+package com.tuttime.common.constants;
 
 public enum RewardType {
     ACTIVE_PENDING,

@@ -1,4 +1,4 @@
-package com.aparttoken.common.kafka;
+package com.tuttime.common.kafka;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

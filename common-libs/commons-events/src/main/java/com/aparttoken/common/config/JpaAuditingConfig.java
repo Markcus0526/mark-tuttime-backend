@@ -1,4 +1,4 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

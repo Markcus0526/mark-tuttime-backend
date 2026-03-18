@@ -1,59 +1,106 @@
-server:
-  port: 8080
-
 spring:
   application:
-    name: api-gateway
+    name: admin-gateway
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB  # Maximum size per file (500MB for videos)
+      max-request-size: 500MB  # Maximum size of multipart request
+      file-size-threshold: 2KB  # Files larger than this will be written to disk
+  data:
+    redis:
+      # Redis Sentinel Configuration (preferred for HA)
+      # If SPRING_DATA_REDIS_SENTINEL_MASTER and SPRING_DATA_REDIS_SENTINEL_NODES are set, Sentinel mode is used
+      # Otherwise, direct connection mode is used (backward compatible)
+      # Spring Boot automatically maps SPRING_DATA_REDIS_SENTINEL_* environment variables to these properties
+      sentinel:
+        master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
+        nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
+      # Direct connection configuration (used when Sentinel is not configured)
+      host: ${REDIS_HOST:apart-token-redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+  # Kubernetes Native Discovery Configuration
   cloud:
-    gateway:
-      routes:
-        - id: restaurant-service
-          uri: lb://restaurant-service
-          predicates:
-            - Path=/restaurants/**
-        - id: menu-service
-          uri: lb://menu-service
-          predicates:
-            - Path=/menus/**
-        - id: booking-service
-          uri: lb://booking-service
-          predicates:
-            - Path=/bookings/**
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/orders/**
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/payments/**
-        - id: integration-service
-          uri: lb://integration-service
-          predicates:
-            - Path=/integrations/**
-        - id: review-service
-          uri: lb://review-service
-          predicates:
-            - Path=/reviews/**
-        - id: analytics-service
-          uri: lb://analytics-service
-          predicates:
-            - Path=/analytics/**
-        - id: auth-service
-          uri: lb://auth-service
-          predicates:
-            - Path=/auth/**
+    # Kubernetes discovery - enabled only in K8s via env var
+    kubernetes:
+      discovery:
+        enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED:false}
+        namespaces:
+          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:boostx}
+        # Use native Kubernetes discovery (no discovery server URL needed)
+        discovery-server-url: ""
+      config:
+        enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
+# Admin Service URL (for proxying requests)
+# Uses service name variables (e.g., ADMIN_SERVICE) that can be set per environment:
+#   Kubernetes (default): ADMIN_SERVICE=admin-service
+#   Docker: ADMIN_SERVICE=admin-service
+#   Local: ADMIN_SERVICE=localhost
+admin:
+  service:
+    url: http://${ADMIN_SERVICE:admin-service}:28090
+  jwt:
+    secret: ${ADMIN_JWT_SECRET:}
+    expiration: ${ADMIN_JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+
+server:
+  port: 28080
+  tomcat:
+    max-http-post-size: 500MB  # Increase Tomcat's max POST size for large video uploads
+    max-swallow-size: 500MB  # Maximum size of request body that will be swallowed
+
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
 
 logging:
   level:
-    com.tuttime: DEBUG
-    org.springframework.cloud.gateway: DEBUG
+    root: ${LOG_LEVEL:INFO}
+    com.tuttime.admin.gateway: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.web.FilterChainProxy: WARN
+    org.springframework.security.web.authentication.AnonymousAuthenticationFilter: WARN
+    org.springframework.boot.actuate: WARN
+    org.springframework.web.servlet.DispatcherServlet: INFO
+    org.hibernate.SQL: WARN  # Disable SQL query logging
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN  # Disable SQL parameter binding logging
+
+# Graylog Configuration
+# Note: Graylog logging is enabled via Spring profile 'graylog-enabled'
+# To enable: Add 'graylog-enabled' to spring.profiles.active
+# Example: SPRING_PROFILES_ACTIVE=local,graylog-enabled
+graylog:
+  host: ${GRAYLOG_HOST:90.156.157.241} # Graylog server host
+  port: ${GRAYLOG_PORT:12203} # Graylog UDP port
+  origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
+  facility: ${GRAYLOG_FACILITY:admin-gateway} # Facility name for log categorization
+  include-source: ${GRAYLOG_INCLUDE_SOURCE:true} # Include source file and line number
+  include-mdc: ${GRAYLOG_INCLUDE_MDC:true} # Include Mapped Diagnostic Context fields
+  include-marker: ${GRAYLOG_INCLUDE_MARKER:true} # Include log markers
+  include-caller-data: ${GRAYLOG_INCLUDE_CALLER_DATA:false} # Include caller data (class, method, line)
+  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192} # Maximum GELF message size in bytes
+  compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP} # Compression type: GZIP, ZLIB, or NONE
+
+# Application-specific configuration
+app:
+  cors:
+    # CORS allowed origins - comma-separated list
+    # Includes admin frontend domain: https://boostx-admin.frontare.ink
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080,https://boostx-admin.frontare.ink}
+

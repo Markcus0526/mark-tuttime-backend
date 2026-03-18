@@ -1,4 +1,4 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

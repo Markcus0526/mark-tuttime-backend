@@ -1,4 +1,4 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.annotation.NewSpan;

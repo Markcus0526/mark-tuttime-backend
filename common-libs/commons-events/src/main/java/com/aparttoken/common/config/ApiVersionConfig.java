@@ -1,6 +1,6 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
-import com.aparttoken.common.annotation.ApiVersion;
+import com.tuttime.common.annotation.ApiVersion;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.NonNull;

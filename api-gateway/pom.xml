@@ -198,7 +198,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.aparttoken.gateway.ApiGatewayApplication</mainClass>
+                    <mainClass>com.tuttime.gateway.ApiGatewayApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

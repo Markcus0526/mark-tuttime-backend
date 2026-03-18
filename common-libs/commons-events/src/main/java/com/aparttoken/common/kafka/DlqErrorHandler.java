@@ -1,4 +1,4 @@
-package com.aparttoken.common.kafka;
+package com.tuttime.common.kafka;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;

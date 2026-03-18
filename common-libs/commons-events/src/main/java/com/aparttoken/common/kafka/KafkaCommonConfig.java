@@ -1,4 +1,4 @@
-package com.aparttoken.common.kafka;
+package com.tuttime.common.kafka;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

@@ -1,4 +1,4 @@
-package com.aparttoken.common.exception;
+package com.tuttime.common.exception;
 
 /**
  * Utility class for generating shortened stack trace summaries for logging.

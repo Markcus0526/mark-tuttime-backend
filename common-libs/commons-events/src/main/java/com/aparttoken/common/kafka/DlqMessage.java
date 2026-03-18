@@ -1,4 +1,4 @@
-package com.aparttoken.common.kafka;
+package com.tuttime.common.kafka;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,4 +1,4 @@
-package com.aparttoken.common.saga.entity;
+package com.tuttime.common.saga.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
