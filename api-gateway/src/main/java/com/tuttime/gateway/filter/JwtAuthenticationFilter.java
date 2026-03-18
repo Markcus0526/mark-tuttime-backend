@@ -1,7 +1,7 @@
 package com.tuttime.gateway.filter;
 
-import com.aparttoken.gateway.service.TokenValidationService;
-import com.aparttoken.gateway.util.JwtTokenUtil;
+import com.tuttime.gateway.service.TokenValidationService;
+import com.tuttime.gateway.util.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;

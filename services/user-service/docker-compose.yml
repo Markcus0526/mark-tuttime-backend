@@ -1,7 +1,7 @@
 services:
   user-service-db:
     image: postgis/postgis:15-3.4-alpine
-    container_name: apart-token-user-service-db
+    container_name: tuttime-user-service-db
     ports:
       - "5434:5432"
     env_file:
@@ -20,14 +20,14 @@ services:
       retries: 10
       start_period: 60s
     networks:
-      - apart-token-network
+      - tuttime-network
     restart: always
 
   user-service:
     build:
       context: ../..
       dockerfile: services/user-service/docker/Dockerfile
-    container_name: apart-token-user-service
+    container_name: tuttime-user-service
     depends_on:
       user-service-db:
         condition: service_healthy
@@ -42,19 +42,19 @@ services:
       GRAYLOG_HOST: ${GRAYLOG_HOST:-90.156.157.241}
       GRAYLOG_PORT: ${GRAYLOG_PORT:-12203}
       # Redis configuration - explicitly set to ensure they're passed to container
-      REDIS_HOST: apart-token-redis
+      REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
       # REDIS_PASSWORD will be loaded from .env.docker via env_file
       # Don't set it here to avoid overriding the value from env_file
-      KAFKA_BOOTSTRAP_SERVERS: apart-token-kafka:9093
-      ZIPKIN_URL: http://apart-token-zipkin:9411/api/v2/spans
+      KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
+      ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
       GRPC_PORT: 29191
       JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
     ports:
       - "28081:28081"
       - "29191:29191"
     networks:
-      - apart-token-network
+      - tuttime-network
     healthcheck:
       # Use liveness endpoint - only checks diskSpace,ping (non-recoverable failures)
       test: ["CMD-SHELL", "wget --spider --quiet http://localhost:28081/actuator/health/liveness || exit 1"]
@@ -68,7 +68,7 @@ volumes:
   user_service_db_data:
 
 networks:
-  apart-token-network:
-    name: apart-token-network
+  tuttime-network:
+    name: tuttime-network
     external: true
 

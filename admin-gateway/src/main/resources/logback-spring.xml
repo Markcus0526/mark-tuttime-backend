@@ -108,7 +108,7 @@
     </springProfile>
 
     <!-- Application-specific Logger Levels -->
-    <logger name="com.aparttoken" level="DEBUG"/>
+    <logger name="com.tuttime" level="DEBUG"/>
     <logger name="org.springframework" level="INFO"/>
     <!-- Suppress health check related logs - set to WARN to hide DEBUG/INFO logs -->
     <logger name="org.springframework.boot.actuate" level="WARN"/>

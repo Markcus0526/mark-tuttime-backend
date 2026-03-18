@@ -65,7 +65,7 @@ spring:
         master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
         nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
       # Direct connection configuration (used when Sentinel is not configured)
-      host: ${REDIS_HOST:apart-token-redis}
+      host: ${REDIS_HOST:tuttime-redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 2000ms
@@ -97,13 +97,13 @@ spring:
     jwt:
       secret: ${JWT_SECRET:}
       expiration: ${JWT_EXPIRATION:3600000} # 1 hour default for admin
-      issuer: ${JWT_ISSUER:apart-token-admin-backend}
-      audience: ${JWT_AUDIENCE:apart-token-admin-panel}
+      issuer: ${JWT_ISSUER:tuttime-admin-backend}
+      audience: ${JWT_AUDIENCE:tuttime-admin-panel}
 
   # Kafka Configuration
   kafka:
     enabled: ${KAFKA_ENABLED:true}
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:apart-token-kafka:9093}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:tuttime-kafka:9093}
     security:
       protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
     properties:
@@ -167,12 +167,12 @@ management:
   # Note: Setting sampling probability to 0.0 disables tracing and prevents connection attempts to Zipkin
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_URL:http://apart-token-zipkin:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_URL:http://tuttime-zipkin:9411/api/v2/spans}
 
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
-    com.aparttoken: DEBUG
+    com.tuttime: DEBUG
     # Reduce Spring Security logging to INFO to avoid noisy anonymous authentication logs for health checks
     org.springframework.security: INFO
     org.springframework.security.web.authentication.AnonymousAuthenticationFilter: WARN  # Suppress anonymous auth logs

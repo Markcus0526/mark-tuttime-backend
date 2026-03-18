@@ -1,7 +1,7 @@
 package com.tuttime.gateway.filter;
 
-import com.aparttoken.gateway.config.RateLimitingConfig;
-import com.aparttoken.gateway.util.JwtTokenUtil;
+import com.tuttime.gateway.config.RateLimitingConfig;
+import com.tuttime.gateway.util.JwtTokenUtil;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;

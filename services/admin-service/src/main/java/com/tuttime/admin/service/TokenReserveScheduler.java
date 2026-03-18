@@ -172,7 +172,7 @@ public class TokenReserveScheduler {
     private BigDecimal fetchTokenPrice(String network) {
         // Example: Call CoinGecko API
         // RestTemplate restTemplate = new RestTemplate();
-        // String url = "https://api.coingecko.com/api/v3/simple/price?ids=apart-token&vs_currencies=usd";
+        // String url = "https://api.coingecko.com/api/v3/simple/price?ids=tuttime&vs_currencies=usd";
         // return price from API response
         return null;
     }

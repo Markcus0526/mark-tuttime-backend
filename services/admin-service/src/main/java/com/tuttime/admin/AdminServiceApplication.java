@@ -18,7 +18,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * referrals, conversions, and system configuration.
  */
 @SpringBootApplication(
-        scanBasePackages = "com.aparttoken",
+        scanBasePackages = "com.tuttime",
         exclude = {
                 CacheAutoConfiguration.class
         }

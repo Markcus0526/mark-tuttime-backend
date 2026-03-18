@@ -111,7 +111,7 @@
 
         <!-- Commons Libraries -->
         <dependency>
-            <groupId>com.aparttoken</groupId>
+            <groupId>com.tuttime</groupId>
             <artifactId>commons-exception</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>

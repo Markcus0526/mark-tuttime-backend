@@ -8,7 +8,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: apart-token-redis
+    container_name: tuttime-redis
     ports:
       - "6379:6379"
     volumes:
@@ -40,14 +40,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - apart-token-network
+      - tuttime-network
 
   # Kafka 4.0 - KRaft mode (no Zookeeper needed)
   # Kafka 4.0 runs exclusively in KRaft mode, eliminating Zookeeper dependency
   # Using Bitnami Kafka 4.0.0-debian-12-r10 (matches production Kubernetes deployment)
   kafka:
     image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
-    container_name: apart-token-kafka
+    container_name: tuttime-kafka
     ports:
       - "29092:9092"  # External port for localhost connections
       - "9093:9093"   # Internal listener port
@@ -63,7 +63,7 @@ services:
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9094
       # Configure listeners: Support both internal (Docker network) and external (localhost) connections
       # PLAINTEXT: For external connections via localhost:29092
-      # INTERNAL: For Docker services connecting via apart-token-kafka:9093
+      # INTERNAL: For Docker services connecting via tuttime-kafka:9093
       # CONTROLLER: For KRaft controller communication
       KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094,INTERNAL://0.0.0.0:9093
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT
@@ -71,8 +71,8 @@ services:
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       # Advertised listeners: Different addresses for different connection types
       # PLAINTEXT: localhost:29092 for host machine clients
-      # INTERNAL: apart-token-kafka:9093 for Docker network services (microservices)
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:29092,INTERNAL://apart-token-kafka:9093
+      # INTERNAL: tuttime-kafka:9093 for Docker network services (microservices)
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:29092,INTERNAL://tuttime-kafka:9093
       # Use INTERNAL listener for broker-to-broker communication
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
@@ -92,7 +92,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - apart-token-network
+      - tuttime-network
 
   # Eureka removed - Using Kubernetes Native Discovery / Docker service names
   # Services communicate directly via Docker service names (e.g., user-service:8080)
@@ -100,7 +100,7 @@ services:
   # Zipkin Distributed Tracing (Shared instance for all microservices)
   zipkin:
     image: openzipkin/zipkin:latest
-    container_name: apart-token-zipkin
+    container_name: tuttime-zipkin
     ports:
       - "9411:9411"
     environment:
@@ -121,7 +121,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - apart-token-network
+      - tuttime-network
 
 volumes:
   redis_data:
@@ -129,8 +129,8 @@ volumes:
   # Note: PostgreSQL volumes are defined in each service's docker-compose.yml
 
 networks:
-  apart-token-network:
-    name: apart-token-network
+  tuttime-network:
+    name: tuttime-network
     # Network configuration:
     # - external: true  - Network must exist (created by infra-start.ps1 script)
     # Script creates network before starting compose, so external: true is required

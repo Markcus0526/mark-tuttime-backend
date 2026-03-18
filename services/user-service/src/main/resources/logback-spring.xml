@@ -100,7 +100,7 @@
 
     <!-- Application-specific Logger Levels -->
     <!-- DEBUG level for console (local development), INFO level for Graylog (via ThresholdFilter) -->
-    <logger name="com.aparttoken" level="DEBUG" additivity="true"/>
+    <logger name="com.tuttime" level="DEBUG" additivity="true"/>
     <logger name="org.springframework" level="INFO" additivity="true"/>
     <!-- Reduce Spring Security logging to reduce noise from health checks -->
     <logger name="org.springframework.security" level="INFO" additivity="true"/>

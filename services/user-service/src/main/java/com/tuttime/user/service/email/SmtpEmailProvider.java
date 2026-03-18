@@ -19,7 +19,7 @@ public class SmtpEmailProvider {
     
     private final JavaMailSender mailSender;
     
-    @Value("${email.smtp.from-email:noreply@aparttoken.com}")
+    @Value("${email.smtp.from-email:noreply@tuttime.com}")
     private String fromEmail;
     
     @Value("${email.smtp.from-name:APART TOKEN}")

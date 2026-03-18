@@ -3,23 +3,23 @@ services:
     build:
       context: ..
       dockerfile: admin-gateway/docker/Dockerfile
-    container_name: apart-token-admin-gateway
+    container_name: tuttime-admin-gateway
     env_file:
       - ./.env.docker
     environment:
       # Explicitly set profile to ensure docker profile is active
       SPRING_PROFILES_ACTIVE: docker
       # Redis configuration - explicitly set to ensure they're passed to container
-      REDIS_HOST: apart-token-redis
+      REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
       # REDIS_PASSWORD will be loaded from .env.docker via env_file
       # Don't set it here to avoid overriding the value from env_file
-      ZIPKIN_URL: http://apart-token-zipkin:9411/api/v2/spans
+      ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
       HOSTNAME: admin-gateway
     ports:
       - "28080:28080"
     networks:
-      - apart-token-network
+      - tuttime-network
     healthcheck:
       test: ["CMD-SHELL", "wget --spider --quiet http://localhost:28080/actuator/health || exit 1"]
       interval: 30s
@@ -29,6 +29,6 @@ services:
     restart: unless-stopped
 
 networks:
-  apart-token-network:
+  tuttime-network:
     external: true
 
