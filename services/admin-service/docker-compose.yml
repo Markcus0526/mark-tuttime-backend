@@ -1,0 +1,92 @@
+services:
+  # PostgreSQL Database for Admin Service
+  admin-service-db:
+    image: postgres:15-alpine
+    container_name: apart-token-admin-service-db
+    ports:
+      - "5442:5432"  # Different port to avoid conflict
+    env_file:
+      - ./.env.docker
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-${DATABASE_USERNAME:-postgres}}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-admin_service_db}
+    volumes:
+      - admin_service_db_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d admin_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - apart-token-network
+    restart: always
+
+  # Admin Service Application
+  admin-service:
+    build:
+      context: ../..
+      dockerfile: services/admin-service/docker/Dockerfile
+    container_name: apart-token-admin-service
+    depends_on:
+      admin-service-db:
+        condition: service_healthy
+    env_file:
+      - ./.env.docker
+    environment:
+      # Explicitly set profile to ensure docker profile is active
+      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env.docker
+      # Example: SPRING_PROFILES_ACTIVE=docker,graylog-enabled
+      SPRING_PROFILES_ACTIVE: docker
+      # Graylog Configuration (optional - only used if graylog-enabled profile is active)
+      GRAYLOG_HOST: ${GRAYLOG_HOST:-90.156.157.241}
+      GRAYLOG_PORT: ${GRAYLOG_PORT:-12203}
+      # Database configuration
+      DATABASE_URL: jdbc:postgresql://apart-token-admin-service-db:5432/admin_service_db?currentSchema=admin_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC
+      JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      # DATABASE_PASSWORD will be loaded from .env.docker via env_file
+      # Redis configuration - explicitly set to ensure they're passed to container
+      REDIS_HOST: apart-token-redis
+      REDIS_PORT: 6379
+      # REDIS_PASSWORD will be loaded from .env.docker via env_file
+      # Don't set it here to avoid overriding the value from env_file
+      KAFKA_BOOTSTRAP_SERVERS: apart-token-kafka:9093
+      KAFKA_ENABLED: "true"
+      ZIPKIN_URL: http://apart-token-zipkin:9411/api/v2/spans
+      # JWT configuration - will be loaded from .env.docker via env_file
+      JWT_SECRET: ${JWT_SECRET:***REMOVED***}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+      JWT_ISSUER: ${JWT_ISSUER:-apart-token-admin-backend}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-apart-token-admin-panel}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Service name variables - ensure correct service names are used
+      MINING_SERVICE: ${MINING_SERVICE:-mining-service}
+      USER_SERVICE: ${USER_SERVICE:-user-service}
+      REWARDS_SERVICE: ${REWARDS_SERVICE:-rewards-service}
+      CONTENT_SERVICE: ${CONTENT_SERVICE:-content-service}
+      NOTIFICATION_SERVICE: ${NOTIFICATION_SERVICE:-notification-service}
+    ports:
+      - "28090:28090"  # HTTP port
+    networks:
+      - apart-token-network
+    healthcheck:
+      # Use liveness endpoint - only checks diskSpace,ping (non-recoverable failures)
+      # Readiness endpoint checks db,redis,diskSpace,ping (for load balancer decisions)
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:28090/actuator/health/liveness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    restart: always
+
+volumes:
+  admin_service_db_data:
+
+networks:
+  apart-token-network:
+    name: apart-token-network
+    external: true
+
