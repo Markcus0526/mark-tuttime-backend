@@ -55,8 +55,8 @@ admin:
 server:
   port: 28080
   tomcat:
-    max-http-post-size: 500MB  # Increase Tomcat's max POST size for large video uploads
     max-swallow-size: 500MB  # Maximum size of request body that will be swallowed
+    max-http-form-post-size: 500MB
 
 # Management endpoints
 management:
