@@ -4,12 +4,15 @@ FROM maven:3.9.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app
 
+RUN rm -rf ~/.m2
+
 COPY pom.xml ./pom.xml
 
 # Placeholder POMs for modules not being built
 RUN mkdir -p services/user-service services/token-service services/mining-service services/staking-service \
     services/content-service services/booking-integration-service services/notification-service \
-    services/conversion-service services/rewards-service services/admin-service && \
+    services/conversion-service services/rewards-service services/admin-service \
+    api-gateway && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>user-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/user-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>token-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/token-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>mining-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/mining-service/pom.xml && \
@@ -19,7 +22,8 @@ RUN mkdir -p services/user-service services/token-service services/mining-servic
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>notification-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/notification-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>conversion-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/conversion-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>rewards-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/rewards-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>admin-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/admin-service/pom.xml
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>admin-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/admin-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.aparttoken</groupId><artifactId>api-gateway</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > api-gateway/pom.xml
 
 RUN --mount=type=cache,target=/root/.m2 \
     mvn install -N -DskipTests -T 1C
@@ -56,21 +60,28 @@ COPY common-libs/commons-auth/src ./common-libs/commons-auth/src
 RUN --mount=type=cache,target=/root/.m2 \
     cd common-libs/commons-auth && mvn clean install -DskipTests -T 1C
 
-# Build api-gateway
-COPY api-gateway/pom.xml ./api-gateway/pom.xml
+# Build admin-gateway
+# Re-install parent POM to ensure it's in local repository
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -pl api-gateway -am -T 1C || true
-COPY api-gateway/src ./api-gateway/src
+    mvn install -N -DskipTests -T 1C
+COPY admin-gateway/pom.xml ./admin-gateway/pom.xml
 RUN --mount=type=cache,target=/root/.m2 \
-    cd api-gateway && mvn clean package -DskipTests -T 1C
+    mvn dependency:go-offline -pl admin-gateway -am -T 1C || true
+COPY admin-gateway/src ./admin-gateway/src
+RUN --mount=type=cache,target=/root/.m2 \
+    cd admin-gateway && mvn clean package -DskipTests -T 1C
+
+# Verify JAR file was created
+RUN ls -la /app/admin-gateway/target/ && \
+    test -n "$(ls -A /app/admin-gateway/target/admin-gateway-*.jar 2>/dev/null)" || \
+    (echo "ERROR: JAR file not found in target directory!" && ls -la /app/admin-gateway/target/ && exit 1)
 
 FROM eclipse-temurin:21-jre-jammy AS runner
 
 WORKDIR /app
 
-COPY --from=builder /app/api-gateway/target/api-gateway-*.jar app.jar
+COPY --from=builder /app/admin-gateway/target/admin-gateway-*.jar app.jar
 
-EXPOSE 29000
+EXPOSE 28080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
-

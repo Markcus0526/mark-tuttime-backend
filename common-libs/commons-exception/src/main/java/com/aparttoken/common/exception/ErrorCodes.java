@@ -1,4 +1,4 @@
-package com.aparttoken.common.exception;
+package com.tuttime.common.exception;
 
 /**
  * Standardized error codes for consistent error handling across all services.

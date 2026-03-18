@@ -1,4 +1,4 @@
-package com.aparttoken.common.auth;
+package com.tuttime.common.auth;
 
 /**
  * Authentication utility methods.

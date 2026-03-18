@@ -1,4 +1,4 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;

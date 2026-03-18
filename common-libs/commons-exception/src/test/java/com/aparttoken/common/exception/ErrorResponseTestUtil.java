@@ -1,4 +1,4 @@
-package com.aparttoken.common.exception;
+package com.tuttime.common.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

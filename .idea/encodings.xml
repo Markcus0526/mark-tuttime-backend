@@ -11,6 +11,8 @@
     <file url="file://$PROJECT_DIR$/common-libs/commons-events/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/common-libs/commons-exception/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/common-libs/commons-exception/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/admin-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/admin-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/analytics-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/analytics-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/auth-service/src/main/java" charset="UTF-8" />
@@ -29,6 +31,8 @@
     <file url="file://$PROJECT_DIR$/services/restaurant-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/review-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/review-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/user-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/user-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>

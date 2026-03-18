@@ -1,6 +1,6 @@
-package com.aparttoken.common.saga;
+package com.tuttime.common.saga;
 
-import com.aparttoken.common.saga.entity.SagaInstance;
+import com.tuttime.common.saga.entity.SagaInstance;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import java.util.function.Supplier;
  * Persists saga state to database for recovery and audit
  */
 @Slf4j
-public abstract class PersistentSagaOrchestrator<T extends SagaInstance, S extends com.aparttoken.common.saga.entity.SagaStep> {
+public abstract class PersistentSagaOrchestrator<T extends SagaInstance, S extends com.tuttime.common.saga.entity.SagaStep> {
 
     protected final ObjectMapper objectMapper = new ObjectMapper();
 

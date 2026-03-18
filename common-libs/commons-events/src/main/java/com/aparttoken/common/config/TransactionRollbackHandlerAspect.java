@@ -1,4 +1,4 @@
-package com.aparttoken.common.config;
+package com.tuttime.common.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;

@@ -1,4 +1,4 @@
-package com.aparttoken.common.exception;
+package com.tuttime.common.exception;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

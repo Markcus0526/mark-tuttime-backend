@@ -1,4 +1,4 @@
-package com.aparttoken.common.exception;
+package com.tuttime.common.exception;
 
 public class ResourceNotFoundException extends RuntimeException{
     public ResourceNotFoundException(String message){

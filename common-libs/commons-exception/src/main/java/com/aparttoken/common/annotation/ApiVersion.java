@@ -1,4 +1,4 @@
-package com.aparttoken.common.annotation;
+package com.tuttime.common.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

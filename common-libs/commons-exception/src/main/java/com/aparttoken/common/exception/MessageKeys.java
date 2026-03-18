@@ -1,4 +1,4 @@
-package com.aparttoken.common.exception;
+package com.tuttime.common.exception;
 
 /**
  * Message keys for error internationalization.

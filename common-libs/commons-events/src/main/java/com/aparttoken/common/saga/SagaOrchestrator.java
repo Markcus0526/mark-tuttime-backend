@@ -1,4 +1,4 @@
-package com.aparttoken.common.saga;
+package com.tuttime.common.saga;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
