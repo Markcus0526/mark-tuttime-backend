@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package com.aparttoken.common.proto;
+
+option java_multiple_files = true;
+option java_package = "com.aparttoken.common.proto";
+option java_outer_classname = "SocialServiceProto";
+
+// Social Service gRPC
+service SocialService {
+  // Get follower counts for a single user
+  rpc GetFollowCounts (GetFollowCountsRequest) returns (FollowCountsResponse);
+  
+  // Batch query: Get follower counts for multiple users
+  rpc GetBatchFollowCounts (GetBatchFollowCountsRequest) returns (GetBatchFollowCountsResponse);
+  
+  // Follow a user (used for automatic follow after referral signup)
+  rpc FollowUser (FollowUserRequest) returns (FollowUserResponse);
+}
+
+message GetFollowCountsRequest {
+  int64 user_id = 1;
+}
+
+message FollowCountsResponse {
+  int64 user_id = 1;
+  int64 followers_count = 2;
+  int64 following_count = 3;
+}
+
+message GetBatchFollowCountsRequest {
+  repeated int64 user_ids = 1; // List of user IDs to get follower counts for
+}
+
+message GetBatchFollowCountsResponse {
+  repeated FollowCountsResponse follow_counts = 1; // Follower counts for each requested user
+}
+
+message FollowUserRequest {
+  int64 follower_id = 1; // User ID who is following
+  int64 following_id = 2; // User ID to follow
+}
+
+message FollowUserResponse {
+  bool success = 1; // Whether the follow operation was successful
+  string message = 2; // Optional message (e.g., error message or success confirmation)
+}
+

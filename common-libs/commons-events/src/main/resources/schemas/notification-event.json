@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NotificationEvent",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "integer"
+    },
+    "notification_type": {
+      "type": "string",
+      "enum": [
+        "USER_REGISTERED",
+        "USER_VERIFIED",
+        "KYC_COMPLETED",
+        "KYC_REJECTED",
+        "TOKEN_DEPOSIT",
+        "TOKEN_WITHDRAWAL",
+        "TOKEN_TRANSFER",
+        "TRANSACTION_CONFIRMED",
+        "TRANSACTION_FAILED",
+        "STAKING_STARTED",
+        "STAKING_COMPLETED",
+        "STAKING_REWARD",
+        "MINING_STARTED",
+        "MINING_STOPPED",
+        "AP_CREDITED",
+        "CONVERSION_COMPLETED",
+        "CONVERSION_FAILED",
+        "REFERRAL_BONUS",
+        "ACTIVE_FRIEND_REWARD",
+        "BACKLOG_COMPLETED",
+        "APP_DOWNLOAD_REWARD",
+        "VIDEO_VIEW_REWARD",
+        "AD_VIEW_REWARD",
+        "BOOKING_BOOST_ACTIVATED",
+        "WITHDRAWAL_REQUESTED",
+        "WITHDRAWAL_PROCESSING",
+        "WITHDRAWAL_COMPLETED",
+        "WITHDRAWAL_FAILED",
+        "DEPOSIT_CONFIRMED",
+        "DEPOSIT_FAILED",
+        "SECURITY_ALERT",
+        "PASSWORD_CHANGED",
+        "LOGIN_ATTEMPT_FAILED",
+        "ACCOUNT_BLOCKED",
+        "ACCOUNT_UNBLOCKED"
+      ]
+    },
+    "channel": {
+      "type": "string",
+      "enum": ["EMAIL", "SMS", "PUSH", "IN_APP"]
+    },
+    "subject": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    },
+    "template_id": {
+      "type": "string"
+    },
+    "template_variables": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "NORMAL", "HIGH", "URGENT"]
+    },
+    "reference_type": {
+      "type": "string"
+    },
+    "reference_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "scheduled_at": {
+      "type": "integer"
+    }
+  },
+  "required": ["user_id", "notification_type", "channel"]
+}
+

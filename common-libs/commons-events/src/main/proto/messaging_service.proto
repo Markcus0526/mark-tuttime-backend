@@ -1,0 +1,488 @@
+syntax = "proto3";
+
+package com.aparttoken.common.proto;
+
+option java_multiple_files = true;
+option java_package = "com.aparttoken.common.proto";
+option java_outer_classname = "MessagingServiceProto";
+
+// Messaging Service gRPC
+service MessagingService {
+  // Chat operations
+  rpc GetChatList (GetChatListRequest) returns (GetChatListResponse);
+  rpc GetChat (GetChatRequest) returns (GetChatResponse);
+  rpc CreateChat (CreateChatRequest) returns (GetChatResponse);
+  
+  // Message operations
+  rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
+  rpc GetMessages (GetMessagesRequest) returns (GetMessagesResponse);
+  rpc GetMessageByMsgId (GetMessageByMsgIdRequest) returns (SendMessageResponse);
+  rpc EditMessage (EditMessageRequest) returns (SendMessageResponse);
+  rpc DeleteMessage (DeleteMessageRequest) returns (DeleteMessageResponse);
+  rpc ForwardMessage (ForwardMessageRequest) returns (ForwardMessageResponse);
+  
+  // Group Chat operations
+  rpc GetGroupChatList (GetGroupChatListRequest) returns (GetGroupChatListResponse);
+  rpc GetGroupChat (GetGroupChatRequest) returns (GetGroupChatResponse);
+  rpc CreateGroupChat (CreateGroupChatRequest) returns (GetGroupChatResponse);
+  rpc AddGroupMember (AddGroupMemberRequest) returns (GroupMemberInfo);
+  rpc RemoveGroupMember (RemoveGroupMemberRequest) returns (RemoveGroupMemberResponse);
+  rpc GetGroupMembers (GetGroupMembersRequest) returns (GetGroupMembersResponse);
+  rpc UpdateGroupChat (UpdateGroupChatRequest) returns (GetGroupChatResponse);
+  rpc GenerateGroupInviteLink (GenerateGroupInviteLinkRequest) returns (GroupChatInviteInfo);
+  rpc JoinGroupChatByInvite (JoinGroupChatByInviteRequest) returns (GroupMemberInfo);
+  rpc PromoteGroupAdmin (PromoteGroupAdminRequest) returns (GroupChatAdminInfo);
+  rpc DemoteGroupAdmin (DemoteGroupAdminRequest) returns (DemoteGroupAdminResponse);
+  
+  // Channel operations (broadcast channels)
+  rpc GetChannelList (GetChannelListRequest) returns (GetChannelListResponse);
+  rpc GetChannel (GetChannelRequest) returns (GetChannelResponse);
+  rpc SubscribeChannel (SubscribeChannelRequest) returns (GetChannelResponse);
+  rpc UnsubscribeChannel (UnsubscribeChannelRequest) returns (UnsubscribeChannelResponse);
+  
+  // Emoji operations (for admin-service)
+  rpc GetEmojiPacks (GetEmojiPacksRequest) returns (GetEmojiPacksResponse);
+  rpc GetEmojiPack (GetEmojiPackRequest) returns (GetEmojiPackResponse);
+  rpc GetEmojiItems (GetEmojiItemsRequest) returns (GetEmojiItemsResponse);
+  rpc CreateEmojiPack (CreateEmojiPackRequest) returns (GetEmojiPackResponse);
+  rpc UpdateEmojiPack (UpdateEmojiPackRequest) returns (GetEmojiPackResponse);
+  rpc DeleteEmojiPack (DeleteEmojiPackRequest) returns (DeleteEmojiPackResponse);
+  rpc CreateEmojiItem (CreateEmojiItemRequest) returns (GetEmojiItemResponse);
+  rpc UpdateEmojiItem (UpdateEmojiItemRequest) returns (GetEmojiItemResponse);
+  rpc DeleteEmojiItem (DeleteEmojiItemRequest) returns (DeleteEmojiItemResponse);
+}
+
+// Chat operations messages
+message GetChatListRequest {
+  int64 user_id = 1;
+}
+
+message GetChatListResponse {
+  repeated ChatInfo chats = 1;
+  int64 total = 2;
+}
+
+message GetChatRequest {
+  int64 chat_id = 1;
+  int64 user_id = 2; // For authorization check
+}
+
+message CreateChatRequest {
+  int64 user1_id = 1;
+  int64 user2_id = 2;
+}
+
+message ChatInfo {
+  int64 chat_id = 1;
+  int64 user1_id = 2;
+  int64 user2_id = 3;
+  string created_at = 4; // ISO 8601 timestamp
+  string updated_at = 5; // ISO 8601 timestamp
+  string last_message_at = 6; // ISO 8601 timestamp (optional)
+  int64 last_message_seqno = 7;
+}
+
+message GetChatResponse {
+  ChatInfo chat = 1;
+}
+
+// Message operations messages
+message SendMessageRequest {
+  int64 chat_id = 1; // Optional: null for new chats (auto-create)
+  int64 sender_id = 2;
+  int64 recipient_id = 3;
+  string content = 4;
+  string message_type = 5; // text, voice, photo, video, file
+  // Media fields (Phase 7) - for gRPC, media is uploaded separately and URL passed here
+  string media_url = 6; // S3 key for media file
+  string thumbnail_url = 7; // S3 key for thumbnail
+  int64 file_size = 8; // File size in bytes
+  string media_metadata = 9; // JSON string for media metadata
+}
+
+message SendMessageResponse {
+  int64 message_id = 1; // Database primary key
+  int64 chat_id = 2;
+  int64 sender_id = 3;
+  string msg_id = 4; // Protocol UUID
+  int64 seqno = 5;
+  string content = 6;
+  string message_type = 7;
+  string status = 8; // sent, delivered, read, failed
+  string created_at = 9; // ISO 8601 timestamp
+  string delivered_at = 10; // ISO 8601 timestamp (optional)
+  string read_at = 11; // ISO 8601 timestamp (optional)
+  // Media fields (Phase 7)
+  string media_url = 12;
+  string thumbnail_url = 13;
+  int64 file_size = 14;
+  string media_metadata = 15;
+  // Message operations (Phase 7)
+  string edited_at = 16;
+  string deleted_at = 17;
+  bool deleted_for_everyone = 18;
+  // Forwarding fields (Phase 7)
+  int64 forwarded_from_message_id = 19;
+  int64 forwarded_from_chat_id = 20;
+  int64 forwarded_from_user_id = 21;
+}
+
+message GetMessagesRequest {
+  int64 chat_id = 1;
+  int64 user_id = 2; // For authorization check
+  int32 page = 3; // Page number (0-based)
+  int32 size = 4; // Page size (default: 100, max: 100)
+}
+
+message GetMessagesResponse {
+  repeated SendMessageResponse messages = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 size = 4;
+  bool has_more = 5;
+}
+
+message GetMessageByMsgIdRequest {
+  string msg_id = 1; // Protocol UUID
+}
+
+message EditMessageRequest {
+  int64 message_id = 1;
+  int64 user_id = 2; // For authorization check
+  string new_content = 3;
+}
+
+message DeleteMessageRequest {
+  int64 message_id = 1;
+  int64 user_id = 2; // For authorization check
+  bool for_everyone = 3; // If true, deletes for all participants (only if user is sender)
+}
+
+message DeleteMessageResponse {
+  bool success = 1;
+  string message = 2;
+  SendMessageResponse deleted_message = 3;
+}
+
+message ForwardMessageRequest {
+  int64 message_id = 1;
+  int64 from_chat_id = 2;
+  int64 to_chat_id = 3; // Single destination chat (1:1 or group). Telegram-style.
+  int64 user_id = 4; // User forwarding the message
+}
+
+message ForwardMessageResponse {
+  SendMessageResponse forwarded_message = 1;
+}
+
+// Emoji operations messages
+message GetEmojiPacksRequest {
+  // Empty - returns all public active packs
+}
+
+message GetEmojiPacksResponse {
+  repeated EmojiPackInfo packs = 1;
+}
+
+message GetEmojiPackRequest {
+  int64 pack_id = 1;
+}
+
+message GetEmojiPackResponse {
+  EmojiPackInfo pack = 1;
+}
+
+message GetEmojiItemsRequest {
+  int64 pack_id = 1;
+}
+
+message GetEmojiItemsResponse {
+  repeated EmojiItemInfo items = 1;
+}
+
+message CreateEmojiPackRequest {
+  string pack_name = 1;
+  string pack_description = 2;
+  int64 pack_author_id = 3;
+  bool is_public = 4;
+  bool is_official = 5;
+}
+
+message UpdateEmojiPackRequest {
+  int64 pack_id = 1;
+  string pack_name = 2;
+  string pack_description = 3;
+  bool is_public = 4;
+  bool is_active = 5;
+  int64 updated_by = 6;
+}
+
+message DeleteEmojiPackRequest {
+  int64 pack_id = 1;
+}
+
+message DeleteEmojiPackResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CreateEmojiItemRequest {
+  int64 pack_id = 1;
+  string emoji_keyword = 2;
+  string emoji_type = 3; // unicode, static_image, animated_image
+  string unicode_char = 4; // For Unicode emojis
+  string image_url = 5; // For custom emoji images (S3 URL) - future
+  int32 display_order = 6;
+  int64 created_by = 7;
+}
+
+message UpdateEmojiItemRequest {
+  int64 emoji_id = 1;
+  string emoji_keyword = 2;
+  string emoji_type = 3;
+  string unicode_char = 4;
+  string image_url = 5;
+  int32 display_order = 6;
+  bool is_active = 7;
+  int64 updated_by = 8;
+}
+
+message DeleteEmojiItemRequest {
+  int64 emoji_id = 1;
+}
+
+message DeleteEmojiItemResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message EmojiPackInfo {
+  int64 pack_id = 1;
+  string pack_name = 2;
+  string pack_description = 3;
+  int64 pack_author_id = 4;
+  bool is_public = 5;
+  bool is_official = 6;
+  bool is_active = 7;
+  string created_at = 8; // ISO 8601 timestamp
+  string updated_at = 9; // ISO 8601 timestamp
+}
+
+message EmojiItemInfo {
+  int64 emoji_id = 1;
+  int64 pack_id = 2;
+  string emoji_keyword = 3;
+  string emoji_type = 4;
+  string unicode_char = 5;
+  string image_url = 6;
+  string thumbnail_url = 7;
+  int32 display_order = 8;
+  bool is_active = 9;
+  string created_at = 10; // ISO 8601 timestamp
+  string updated_at = 11; // ISO 8601 timestamp
+}
+
+message GetEmojiItemResponse {
+  EmojiItemInfo item = 1;
+}
+
+// Group Chat operations messages
+message GetGroupChatListRequest {
+  int64 user_id = 1;
+}
+
+message GetGroupChatListResponse {
+  repeated GroupChatInfo groups = 1;
+  int64 total = 2;
+}
+
+message GetGroupChatRequest {
+  int64 group_id = 1;
+  int64 user_id = 2; // For authorization check
+}
+
+message CreateGroupChatRequest {
+  int64 creator_id = 1;
+  string group_name = 2;
+  string group_description = 3;
+}
+
+message GroupChatInfo {
+  int64 group_id = 1;
+  string group_name = 2;
+  string group_description = 3;
+  string group_photo_url = 4;
+  string group_username = 5;
+  int64 creator_id = 6;
+  int64 owner_id = 7;
+  bool is_public = 8;
+  string invite_link = 9;
+  string invite_link_expires_at = 10; // ISO 8601 timestamp (optional)
+  int32 member_count = 11;
+  int32 max_members = 12;
+  string last_message_at = 13; // ISO 8601 timestamp (optional)
+  int64 last_message_seqno = 14;
+  string created_at = 15; // ISO 8601 timestamp
+  string updated_at = 16; // ISO 8601 timestamp
+}
+
+message GetGroupChatResponse {
+  GroupChatInfo group = 1;
+}
+
+message AddGroupMemberRequest {
+  int64 group_id = 1;
+  int64 user_id = 2; // User to add
+  int64 added_by = 3; // User who is adding
+}
+
+message RemoveGroupMemberRequest {
+  int64 group_id = 1;
+  int64 user_id = 2; // User to remove
+  int64 removed_by = 3; // User who is removing
+}
+
+message RemoveGroupMemberResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetGroupMembersRequest {
+  int64 group_id = 1;
+  int64 user_id = 2; // For authorization check
+}
+
+message GetGroupMembersResponse {
+  repeated GroupMemberInfo members = 1;
+  int32 total = 2;
+}
+
+message GroupMemberInfo {
+  int64 member_id = 1;
+  int64 group_id = 2;
+  int64 user_id = 3;
+  string role = 4; // member, admin, owner
+  string status = 5; // active, muted, banned, left
+  int64 added_by = 6;
+  int64 last_read_seqno = 7;
+  string joined_at = 8; // ISO 8601 timestamp
+  string left_at = 9; // ISO 8601 timestamp (optional)
+}
+
+message UpdateGroupChatRequest {
+  int64 group_id = 1;
+  string group_name = 2;
+  string group_description = 3;
+  int64 updated_by = 4;
+}
+
+message GenerateGroupInviteLinkRequest {
+  int64 group_id = 1;
+  int64 created_by = 2;
+  string expires_at = 3; // ISO 8601 timestamp (optional)
+  int32 usage_limit = 4; // Optional
+}
+
+message GroupChatInviteInfo {
+  string invite_token = 1;
+  string invite_link = 2; // Full invite link URL
+  string expires_at = 3; // ISO 8601 timestamp (optional)
+  int32 usage_limit = 4;
+  int32 usage_count = 5;
+}
+
+message JoinGroupChatByInviteRequest {
+  string invite_token = 1;
+  int64 user_id = 2;
+}
+
+message PromoteGroupAdminRequest {
+  int64 group_id = 1;
+  int64 user_id = 2; // User to promote
+  int64 promoted_by = 3;
+  bool can_add_members = 4;
+  bool can_remove_members = 5;
+  bool can_edit_group_info = 6;
+  bool can_delete_messages = 7;
+  bool can_pin_messages = 8;
+  bool can_manage_admins = 9;
+}
+
+message DemoteGroupAdminRequest {
+  int64 group_id = 1;
+  int64 user_id = 2; // User to demote
+  int64 demoted_by = 3;
+}
+
+message DemoteGroupAdminResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GroupChatAdminInfo {
+  int64 admin_id = 1;
+  int64 group_id = 2;
+  int64 user_id = 3;
+  bool can_add_members = 4;
+  bool can_remove_members = 5;
+  bool can_edit_group_info = 6;
+  bool can_delete_messages = 7;
+  bool can_pin_messages = 8;
+  bool can_manage_admins = 9;
+  int64 promoted_by = 10;
+  string promoted_at = 11; // ISO 8601 timestamp
+}
+
+// Channel operations messages
+message GetChannelListRequest {
+  int64 user_id = 1;
+}
+
+message GetChannelListResponse {
+  repeated ChannelInfo channels = 1;
+  int64 total = 2;
+}
+
+message GetChannelRequest {
+  int64 channel_id = 1;
+  int64 user_id = 2; // For authorization (subscriber or public)
+}
+
+message ChannelInfo {
+  int64 channel_id = 1;
+  string channel_name = 2;
+  string channel_description = 3;
+  string channel_photo_url = 4;
+  string channel_username = 5;
+  int64 creator_id = 6;
+  int64 owner_id = 7;
+  bool is_public = 8;
+  string invite_link = 9;
+  string invite_link_expires_at = 10; // ISO 8601 timestamp (optional)
+  int32 subscriber_count = 11;
+  int64 max_subscribers = 12; // 0 means use default / unlimited in response
+  string last_message_at = 13; // ISO 8601 timestamp (optional)
+  int64 last_message_seqno = 14;
+  string created_at = 15; // ISO 8601 timestamp
+  string updated_at = 16; // ISO 8601 timestamp
+}
+
+message GetChannelResponse {
+  ChannelInfo channel = 1;
+}
+
+message SubscribeChannelRequest {
+  int64 channel_id = 1;
+  int64 user_id = 2;
+}
+
+message UnsubscribeChannelRequest {
+  int64 channel_id = 1;
+  int64 user_id = 2;
+}
+
+message UnsubscribeChannelResponse {
+  bool success = 1;
+  string message = 2;
+}
+

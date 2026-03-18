@@ -1,0 +1,12 @@
+/**
+ * Commons Auth Module
+ * 
+ * <p>This module contains authentication and authorization utilities
+ * for the APART TOKEN platform.
+ * 
+ * <p>Currently, this module is a placeholder for future authentication
+ * utilities. Add authentication-related classes here as needed.
+ * 
+ */
+package com.aparttoken.common.auth;
+

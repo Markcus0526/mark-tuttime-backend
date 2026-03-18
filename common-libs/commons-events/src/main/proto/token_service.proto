@@ -1,0 +1,241 @@
+syntax = "proto3";
+
+package com.aparttoken.common.proto;
+
+option java_multiple_files = true;
+option java_package = "com.aparttoken.common.proto";
+option java_outer_classname = "TokenServiceProto";
+
+// Token Service gRPC
+service TokenService {
+  rpc GetBalance (GetBalanceRequest) returns (BalanceResponse);
+  rpc TransferTokens (TransferRequest) returns (TransferResponse);
+  rpc LockAmount (LockAmountRequest) returns (LockAmountResponse);
+  rpc UnlockAmount (UnlockAmountRequest) returns (UnlockAmountResponse);
+  rpc CreateTransaction (CreateTransactionRequest) returns (TransactionResponse);
+  rpc GetUserStatus (GetUserStatusRequest) returns (GetUserStatusResponse);
+  rpc BurnTokens (BurnTokensRequest) returns (BurnTokensResponse);
+  rpc GetBurnStatistics (GetBurnStatisticsRequest) returns (GetBurnStatisticsResponse);
+  
+  // Admin analytics endpoints
+  rpc GetTotalApartBalance (GetTotalApartBalanceRequest) returns (GetTotalApartBalanceResponse);
+  rpc GetApartGrowthHistory (GetApartGrowthHistoryRequest) returns (GetApartGrowthHistoryResponse);
+  
+  // Admin history endpoints
+  rpc GetDepositHistory (GetDepositHistoryRequest) returns (GetDepositHistoryResponse);
+  rpc GetWithdrawalHistory (GetWithdrawalHistoryRequest) returns (GetWithdrawalHistoryResponse);
+  rpc GetBurnHistory (GetBurnHistoryRequest) returns (GetBurnHistoryResponse);
+  rpc GetClaimHistory (GetClaimHistoryRequest) returns (GetClaimHistoryResponse);
+}
+
+message GetBalanceRequest {
+  int64 user_id = 1;
+}
+
+message BalanceResponse {
+  int64 user_id = 1;
+  string balance = 2; // Using string for BigDecimal precision
+  string locked_amount = 3;
+  string available_balance = 4;
+}
+
+message TransferRequest {
+  int64 from_user_id = 1;
+  int64 to_user_id = 2;
+  string amount = 3;
+  string type = 4; // TRANSFER_IN, TRANSFER_OUT, etc.
+  string reference_type = 5;
+  string reference_id = 6;
+}
+
+message TransferResponse {
+  bool success = 1;
+  string transaction_id = 2;
+  string message = 3;
+}
+
+message LockAmountRequest {
+  int64 user_id = 1;
+  string amount = 2;
+}
+
+message LockAmountResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UnlockAmountRequest {
+  int64 user_id = 1;
+  string amount = 2;
+}
+
+message UnlockAmountResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message CreateTransactionRequest {
+  int64 user_id = 1;
+  string type = 2;
+  string amount = 3;
+  string status = 4;
+  int64 from_user_id = 5;
+  int64 to_user_id = 6;
+  string reference_type = 7;
+  string reference_id = 8;
+}
+
+message TransactionResponse {
+  string transaction_id = 1;
+  bool success = 2;
+}
+
+message GetUserStatusRequest {
+  int64 user_id = 1;
+}
+
+message GetUserStatusResponse {
+  string status_level = 1; // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, ELITE
+  string status_bonus_ap_per_hour = 2;
+  bool premium_auto_mining_eligible = 3;
+}
+
+message BurnTokensRequest {
+  int64 user_id = 1;
+  string amount = 2; // Using string for BigDecimal precision
+  string reason = 3; // AD_VIDEO, TASK_PLACEMENT, AD_BANNER, SYSTEM, etc.
+  string reference_type = 4; // VIDEO, AD, TASK, etc.
+  int64 reference_id = 5; // video_id, ad_id, task_id, etc.
+  string metadata = 6; // Optional JSON metadata
+}
+
+message BurnTokensResponse {
+  bool success = 1;
+  int64 burn_id = 2;
+  string message = 3;
+}
+
+message GetBurnStatisticsRequest {
+  string reason = 1; // Optional: filter by reason
+  int64 user_id = 2; // Optional: filter by user
+}
+
+message GetBurnStatisticsResponse {
+  string total_burned = 1; // Total burned amount
+  string burned_by_reason = 2; // JSON map of reason -> amount
+  int64 total_burn_count = 3;
+}
+
+// Admin analytics messages
+message GetTotalApartBalanceRequest {
+  // Empty - gets total balance for all users
+}
+
+message GetTotalApartBalanceResponse {
+  string total_balance = 1; // Total APART tokens across all users
+}
+
+message GetApartGrowthHistoryRequest {
+  string start_time = 1; // ISO 8601 datetime format
+  string end_time = 2; // ISO 8601 datetime format
+}
+
+message ApartGrowthDataPoint {
+  string timestamp = 1; // ISO 8601 datetime format
+  string apart_amount = 2; // APART token amount at this timestamp
+}
+
+message GetApartGrowthHistoryResponse {
+  repeated ApartGrowthDataPoint data_points = 1;
+}
+
+// Admin history messages
+message GetDepositHistoryRequest {
+  string status = 1; // Optional: PENDING, CONFIRMED, FAILED, CANCELLED
+  string network = 2; // Optional: Ethereum, BSC, Polygon, etc.
+  string start_date = 3; // Optional: ISO 8601 datetime format
+  string end_date = 4; // Optional: ISO 8601 datetime format
+  int32 page = 5; // Page number (0-indexed)
+  int32 size = 6; // Page size
+}
+
+message GetWithdrawalHistoryRequest {
+  string status = 1; // Optional: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
+  string network = 2; // Optional: Ethereum, BSC, Polygon, etc.
+  string start_date = 3; // Optional: ISO 8601 datetime format
+  string end_date = 4; // Optional: ISO 8601 datetime format
+  int32 page = 5; // Page number (0-indexed)
+  int32 size = 6; // Page size
+}
+
+message GetBurnHistoryRequest {
+  string start_date = 1; // Optional: ISO 8601 datetime format
+  string end_date = 2; // Optional: ISO 8601 datetime format
+  int32 page = 3; // Page number (0-indexed)
+  int32 size = 4; // Page size
+}
+
+message GetClaimHistoryRequest {
+  int64 user_id = 1; // Optional: filter by user
+  string start_date = 2; // Optional: ISO 8601 datetime format
+  string end_date = 3; // Optional: ISO 8601 datetime format
+  int32 page = 4; // Page number (0-indexed)
+  int32 size = 5; // Page size
+}
+
+message GlobalTransaction {
+  int64 order_request_id = 1; // deposit_id, withdrawal_id, or burn_id
+  int64 user_id = 2;
+  string username = 3;
+  string amount = 4;
+  string wallet_address = 5; // For deposits/withdrawals
+  string tx_hash = 6;
+  string processed_state = 7; // Status
+  string network = 8;
+  string transaction_type = 9; // DEPOSIT, WITHDRAWAL, BURN
+  string created_at = 10; // ISO 8601 datetime format
+  string updated_at = 11; // ISO 8601 datetime format
+  string processed_at = 12; // ISO 8601 datetime format (optional)
+}
+
+message GetDepositHistoryResponse {
+  repeated GlobalTransaction transactions = 1;
+  int32 total_pages = 2;
+  int64 total_elements = 3;
+  bool has_next = 4;
+}
+
+message GetWithdrawalHistoryResponse {
+  repeated GlobalTransaction transactions = 1;
+  int32 total_pages = 2;
+  int64 total_elements = 3;
+  bool has_next = 4;
+}
+
+message GetBurnHistoryResponse {
+  repeated GlobalTransaction transactions = 1;
+  int32 total_pages = 2;
+  int64 total_elements = 3;
+  bool has_next = 4;
+}
+
+message StakingClaim {
+  int64 transaction_id = 1;
+  int64 user_id = 2;
+  string username = 3;
+  int64 staking_id = 4;
+  int64 pool_id = 5;
+  string pool_name = 6;
+  string claimed_amount = 7;
+  string status = 8;
+  string claimed_at = 9; // ISO 8601 datetime format
+  string created_at = 10; // ISO 8601 datetime format
+}
+
+message GetClaimHistoryResponse {
+  repeated StakingClaim claims = 1;
+  int32 total_pages = 2;
+  int64 total_elements = 3;
+  bool has_next = 4;
+}
+

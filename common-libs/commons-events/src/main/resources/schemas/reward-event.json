@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RewardEvent",
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "REFERRAL_CREATED",
+        "REFERRAL_REWARD_GRANTED",
+        "ACTIVE_FRIEND_ADDED",
+        "ACTIVE_FRIEND_REWARD_GRANTED",
+        "REWARD_GRANTED",
+        "REWARD_PAID"
+      ]
+    },
+    "user_id": {
+      "type": "integer"
+    },
+    "referrer_id": {
+      "type": "integer"
+    },
+    "referee_id": {
+      "type": "integer"
+    },
+    "referral_id": {
+      "type": "integer"
+    },
+    "reward_type": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "reference_type": {
+      "type": "string"
+    },
+    "reference_id": {
+      "type": "integer"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["event_type", "user_id", "timestamp"]
+}
+
