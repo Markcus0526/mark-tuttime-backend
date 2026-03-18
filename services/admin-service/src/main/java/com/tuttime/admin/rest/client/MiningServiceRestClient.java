@@ -512,7 +512,7 @@ public class MiningServiceRestClient {
                          "Check MINING_SERVICE environment variable.", miningServiceUrl);
                 throw new IllegalStateException(
                     String.format("Configuration error: miningServiceUrl is incorrectly set to user-service (%s) instead of mining-service. " +
-                               "Check MINING_SERVICE environment variable. Expected: mining-service.boostx.svc.cluster.local:28083", 
+                               "Check MINING_SERVICE environment variable. Expected: mining-service.tuttime.svc.cluster.local:28083",
                                miningServiceUrl));
             }
             

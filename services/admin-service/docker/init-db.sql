@@ -132,23 +132,23 @@ CREATE TYPE admin_action_type AS ENUM (
     'IP_WHITELISTED',
     'FRAUD_FLAG_VIEWED',
     'USER_BLOCKLIST_VIEWED',
-        'ADDRESS_BLOCKLIST_VIEWED',
-        'ADDRESS_WHITELIST_VIEWED',
-        'ADDRESS_BLOCKED',
-        'ADDRESS_UNBLOCKED',
-        'ADDRESS_WHITELISTED',
-        'ADDRESS_WHITELIST_REMOVED',
-        'ADMIN_USER_VIEWED',
-        'ADMIN_USER_CREATED',
-        'ADMIN_USER_UPDATED',
-        'ADMIN_USER_DELETED',
-        'ADMIN_USER_ACTIVATED',
-        'ADMIN_USER_DEACTIVATED',
-        'ADMIN_USER_UNLOCKED',
-        'ADMIN_USER_PASSWORD_CHANGED',
-        'ADMIN_USER_PASSWORD_RESET',
-        'ADMIN_USER_LOGIN_ATTEMPTS_RESET'
-    );
+    'ADDRESS_BLOCKLIST_VIEWED',
+    'ADDRESS_WHITELIST_VIEWED',
+    'ADDRESS_BLOCKED',
+    'ADDRESS_UNBLOCKED',
+    'ADDRESS_WHITELISTED',
+    'ADDRESS_WHITELIST_REMOVED',
+    'ADMIN_USER_VIEWED',
+    'ADMIN_USER_CREATED',
+    'ADMIN_USER_UPDATED',
+    'ADMIN_USER_DELETED',
+    'ADMIN_USER_ACTIVATED',
+    'ADMIN_USER_DEACTIVATED',
+    'ADMIN_USER_UNLOCKED',
+    'ADMIN_USER_PASSWORD_CHANGED',
+    'ADMIN_USER_PASSWORD_RESET',
+    'ADMIN_USER_LOGIN_ATTEMPTS_RESET'
+);
 
 CREATE TYPE reserve_alarm_type AS ENUM (
     'LOW_BALANCE',
@@ -721,7 +721,7 @@ INSERT INTO app_version (
 )
 VALUES (
     '1.0.0',
-    'https://play.google.com/store/apps/details?id=com.boostx.app',
+    'https://play.google.com/store/apps/details?id=com.tuttime.app',
     '1.0.0',
     'https://apps.apple.com/app/id123456789',
     TRUE

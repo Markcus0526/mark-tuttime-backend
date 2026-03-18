@@ -42,7 +42,7 @@ public class S3Controller {
     @Value("${app.s3.region:ru-7}")
     private String s3Region;
 
-    @Value("${app.s3.bucket:boostx-storage}")
+    @Value("${app.s3.bucket:tuttime-storage}")
     private String bucketName;
 
     @Value("${app.s3.access-key:}")

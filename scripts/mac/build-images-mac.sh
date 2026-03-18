@@ -26,7 +26,7 @@ if [ -z "$REGISTRY" ]; then
 fi
 if [ -z "$PROJECT_PATH" ]; then
     echo "Error: DOCKER_PROJECT_PATH environment variable is not set"
-    echo "Please set: export DOCKER_PROJECT_PATH='boostx/boostx-services'"
+    echo "Please set: export DOCKER_PROJECT_PATH='tuttime/tuttime-services'"
     exit 1
 fi
 if [ -z "$USERNAME" ]; then

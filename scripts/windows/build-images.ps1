@@ -10,7 +10,7 @@
 #   .\build-images.ps1 user-service -Dev
 #
 # Images are tagged as both "latest" and "<version>" when -Version is provided, so you can pull by :latest or roll back to :<version>.
-# Options: -NoCache (build without Docker cache), -Dev (k3s dev cluster tags), -Staging (push to boostx/staging instead of boostx/prod), -Version (tag for rollback, e.g. 1.2.0)
+# Options: -NoCache (build without Docker cache), -Dev (k3s dev cluster tags), -Staging (push to tuttime/staging instead of tuttime/prod), -Version (tag for rollback, e.g. 1.2.0)
 
 param(
     [Parameter(Position=0)]
@@ -49,9 +49,9 @@ if (-not $Registry -or -not $Username -or -not $Password) {
     exit 1
 }
 
-# Image path: boostx/prod (default) or boostx/staging (with -Staging)
+# Image path: tuttime/prod (default) or tuttime/staging (with -Staging)
 # Note: -Dev option adds "-dev" suffix to image name, not to the path
-$BasePath = if ($Staging) { "boostx/staging" } else { "boostx/prod" }
+$BasePath = if ($Staging) { "tuttime/staging" } else { "tuttime/prod" }
 $RegistryPath = "$Registry/$BasePath"
 
 # Enable BuildKit
@@ -62,9 +62,9 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Docker Image Build Script (Windows)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 if ($Staging) {
-    Write-Host "Environment: STAGING (boostx/staging)" -ForegroundColor Yellow
+    Write-Host "Environment: STAGING (tuttime/staging)" -ForegroundColor Yellow
 } else {
-    Write-Host "Environment: PRODUCTION (boostx/prod)" -ForegroundColor Green
+    Write-Host "Environment: PRODUCTION (tuttime/prod)" -ForegroundColor Green
 }
 if ($Dev) {
     Write-Host "Mode: DEV (k3s dev cluster)" -ForegroundColor Yellow

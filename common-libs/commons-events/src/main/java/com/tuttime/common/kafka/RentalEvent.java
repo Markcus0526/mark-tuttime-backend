@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
  * Kafka event from Apart Sharing platform for rental listing events.
  * 
  * <p>This event is sent from the Apart Sharing PHP backend when an apartment
- * is successfully listed (synced & available). All events from boostx_rental_success
+ * is successfully listed (synced & available). All events from tuttime_rental_success
  * topic are pre-validated and should be processed as confirmed rentals.
  * 
  * <p><b>Event Source:</b> Apart Sharing PHP Backend
- * <p><b>Topic:</b> boostx_rental_success
+ * <p><b>Topic:</b> tuttime_rental_success
  * <p><b>Broker:</b> 81.177.217.115:9092
  * 
  * <p><b>Success Criteria:</b>
@@ -67,7 +67,7 @@ public class RentalEvent {
     private String rentalDate; // Deprecated: use listing_date instead
 
     @JsonProperty("confirmed")
-    private Boolean confirmed; // Deprecated: all events from boostx_rental_success are confirmed
+    private Boolean confirmed; // Deprecated: all events from tuttime_rental_success are confirmed
 
     @JsonProperty("non_refundable")
     private Boolean nonRefundable; // Deprecated: not provided by apart-sharing
