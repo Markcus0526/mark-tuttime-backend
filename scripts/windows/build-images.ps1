@@ -92,7 +92,7 @@ function Get-ImageName {
     param(
         [string]$BaseImageName
     )
-    # BaseImageName is like registry/path/apart-token-user-service:latest
+    # BaseImageName is like registry/path/tuttime-user-service:latest
     $base = $BaseImageName -replace ':latest$', ''
     if ($Dev) {
         return "${base}-dev:latest"
@@ -242,7 +242,7 @@ switch ($Service.ToLower()) {
     # Services
     "admin-service" {
         $ServiceDir = Join-Path $RootDir "services\admin-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-admin-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-admin-service:latest"
         $success = Build-Service `
             -ServiceName "admin-service" `
             -ServiceDir $ServiceDir `
@@ -253,7 +253,7 @@ switch ($Service.ToLower()) {
     }
     "booking-integration-service" {
         $ServiceDir = Join-Path $RootDir "services\booking-integration-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-booking-integration-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-booking-integration-service:latest"
         $success = Build-Service `
             -ServiceName "booking-integration-service" `
             -ServiceDir $ServiceDir `
@@ -264,7 +264,7 @@ switch ($Service.ToLower()) {
     }
     "content-service" {
         $ServiceDir = Join-Path $RootDir "services\content-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-content-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-content-service:latest"
         $success = Build-Service `
             -ServiceName "content-service" `
             -ServiceDir $ServiceDir `
@@ -275,7 +275,7 @@ switch ($Service.ToLower()) {
     }
     "cdn-proxy-service" {
         $ServiceDir = Join-Path $RootDir "services\cdn-proxy-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-cdn-proxy-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-cdn-proxy-service:latest"
         $success = Build-Service `
             -ServiceName "cdn-proxy-service" `
             -ServiceDir $ServiceDir `
@@ -286,7 +286,7 @@ switch ($Service.ToLower()) {
     }
     "conversion-service" {
         $ServiceDir = Join-Path $RootDir "services\conversion-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-conversion-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-conversion-service:latest"
         $success = Build-Service `
             -ServiceName "conversion-service" `
             -ServiceDir $ServiceDir `

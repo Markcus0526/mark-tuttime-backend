@@ -20,7 +20,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Handles user registration, authentication, profile management, and KYC processing.
  */
 @SpringBootApplication(
-        scanBasePackages = "com.aparttoken",
+        scanBasePackages = "com.tuttime",
         exclude = {
                 // Exclude Spring Boot's default cache auto-configuration
                 // Our custom RedisConfig in commons-events will provide the CacheManager

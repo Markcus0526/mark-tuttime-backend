@@ -26,10 +26,10 @@ public class AdminJwtTokenUtil {
     @Value("${spring.security.jwt.expiration:3600000}")
     private Long expiration;
     
-    @Value("${spring.security.jwt.issuer:apart-token-admin-backend}")
+    @Value("${spring.security.jwt.issuer:tuttime-admin-backend}")
     private String issuer;
     
-    @Value("${spring.security.jwt.audience:apart-token-admin-panel}")
+    @Value("${spring.security.jwt.audience:tuttime-admin-panel}")
     private String audience;
 
     /** Gets secret key from configured secret string. */

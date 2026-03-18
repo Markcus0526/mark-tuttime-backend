@@ -116,17 +116,17 @@
 
         <!-- Commons Libraries -->
         <dependency>
-            <groupId>com.aparttoken</groupId>
+            <groupId>com.tuttime</groupId>
             <artifactId>commons-exception</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.aparttoken</groupId>
+            <groupId>com.tuttime</groupId>
             <artifactId>commons-events</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.aparttoken</groupId>
+            <groupId>com.tuttime</groupId>
             <artifactId>commons-auth</artifactId>
             <version>${project.version}</version>
         </dependency>

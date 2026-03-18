@@ -545,7 +545,7 @@ spring:
         master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
         nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
       # Direct connection configuration (used when Sentinel is not configured)
-      host: ${REDIS_HOST:apart-token-redis}
+      host: ${REDIS_HOST:tuttime-redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: ${SPRING_DATA_REDIS_TIMEOUT:5000ms}
@@ -558,8 +558,8 @@ spring:
   security:
     jwt:
       secret: ${JWT_SECRET:}
-      issuer: ${JWT_ISSUER:apart-token-backend} # Token issuer identifier
-      audience: ${JWT_AUDIENCE:apart-token-mobile-app} # Token audience identifier
+      issuer: ${JWT_ISSUER:tuttime-backend} # Token issuer identifier
+      audience: ${JWT_AUDIENCE:tuttime-mobile-app} # Token audience identifier
 
 server:
   port: 29000
@@ -746,13 +746,13 @@ management:
       probability: 1.0
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_URL:http://apart-token-zipkin:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_URL:http://tuttime-zipkin:9411/api/v2/spans}
 
 # Logging Configuration
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
-    com.aparttoken.gateway: INFO
+    com.tuttime.gateway: INFO
     org.springframework.cloud.gateway: INFO
     org.springframework.web: INFO
     org.springframework.data.redis: WARN  # Only log Redis errors/warnings

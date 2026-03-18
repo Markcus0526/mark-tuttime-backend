@@ -52,7 +52,7 @@ public class OpenApiConfig {
                         .version("1.0.0")
                         .contact(new io.swagger.v3.oas.models.info.Contact()
                                 .name("APART TOKEN Support")
-                                .email("support@aparttoken.com")))
+                                .email("support@tuttime.com")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()

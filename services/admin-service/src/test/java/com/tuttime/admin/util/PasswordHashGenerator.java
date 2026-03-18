@@ -52,7 +52,7 @@ public class PasswordHashGenerator {
         System.out.println("INSERT INTO admin_users (username, email, password_hash, role, is_active, created_by)");
         System.out.println("VALUES (");
         System.out.println("    'admin',");
-        System.out.println("    'admin@aparttoken.com',");
+        System.out.println("    'admin@tuttime.com',");
         System.out.println("    '" + hash + "', -- " + password);
         System.out.println("    'SUPER_ADMIN',");
         System.out.println("    true,");

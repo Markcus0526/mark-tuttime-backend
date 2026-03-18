@@ -636,7 +636,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_users_active_only
 INSERT INTO admin_users (username, email, password_hash, role, is_active, created_by)
 VALUES (
     'admin',
-    'admin@aparttoken.com',
+    'admin@tuttime.com',
     '$2a$10$Jo03LJFq2GalWjtbwpgJpeFTardfToDlYx/G8anaKkKx/1Yy6x4fu', -- admin123
     'SUPER_ADMIN',
     true,

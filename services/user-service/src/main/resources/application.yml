@@ -74,7 +74,7 @@ spring:
         master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
         nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
       # Direct connection configuration
-      host: ${REDIS_HOST:apart-token-redis}
+      host: ${REDIS_HOST:tuttime-redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 8000ms  # Increased timeout for better resilience to Redis latency spikes and replication lag (was 5000ms)
@@ -88,7 +88,7 @@ spring:
 
   # Kafka configuration (uses environment variables from docker-compose.yml)
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:apart-token-kafka:9093}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:tuttime-kafka:9093}
     security:
       protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
     properties:
@@ -97,7 +97,7 @@ spring:
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
     topics:
-      user-blocks: ${KAFKA_TOPIC_USER_BLOCKS:apart-token.user-blocks}
+      user-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.user-blocks}
     consumer:
       group-id: user-service-group
       auto-offset-reset: earliest
@@ -113,8 +113,8 @@ spring:
     jwt:
       secret: ${JWT_SECRET:}
       expiration: ${JWT_EXPIRATION:86400000} # 24 hours
-      issuer: ${JWT_ISSUER:apart-token-backend} # Token issuer identifier
-      audience: ${JWT_AUDIENCE:apart-token-mobile-app} # Token audience identifier
+      issuer: ${JWT_ISSUER:tuttime-backend} # Token issuer identifier
+      audience: ${JWT_AUDIENCE:tuttime-mobile-app} # Token audience identifier
 
   lifecycle:
     timeout-per-shutdown-phase: 30s
@@ -327,7 +327,7 @@ management:
   # All microservices use the same Zipkin instance in Docker environment
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_URL:http://apart-token-zipkin:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_URL:http://tuttime-zipkin:9411/api/v2/spans}
 
 # Resilience4j Circuit Breaker Configuration
 resilience4j:
@@ -365,7 +365,7 @@ resilience4j:
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
-    com.aparttoken: DEBUG
+    com.tuttime: DEBUG
     # Reduce Spring Security logging to INFO to avoid noisy anonymous authentication logs for health checks
     org.springframework.security: INFO
     org.springframework.security.web.authentication.AnonymousAuthenticationFilter: WARN  # Suppress anonymous auth logs

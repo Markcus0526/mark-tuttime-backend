@@ -115,7 +115,7 @@
     </appender>
     
     <!-- Logger for application packages -->
-    <logger name="com.aparttoken" level="${LOG_LEVEL_APARTTOKEN:-DEBUG}"/>
+    <logger name="com.tuttime" level="${LOG_LEVEL_APARTTOKEN:-DEBUG}"/>
     
     <!-- Logger for Spring Framework (reduce verbosity) -->
     <logger name="org.springframework" level="${LOG_LEVEL_SPRING:-INFO}"/>

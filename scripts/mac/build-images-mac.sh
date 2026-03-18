@@ -101,13 +101,13 @@ case "$SERVICE" in
         build_service \
             "user-service" \
             "services/user-service/docker/Dockerfile" \
-            "$REGISTRY/$PROJECT_PATH/apart-token-user-service:latest"
+            "$REGISTRY/$PROJECT_PATH/tuttime-user-service:latest"
         ;;
     api-gateway)
         build_service \
             "api-gateway" \
             "api-gateway/Dockerfile" \
-            "$REGISTRY/$PROJECT_PATH/apart-token-api-gateway:latest"
+            "$REGISTRY/$PROJECT_PATH/tuttime-api-gateway:latest"
         ;;
     all)
         echo "Building all services..."
@@ -116,12 +116,12 @@ case "$SERVICE" in
         build_service \
             "user-service" \
             "services/user-service/docker/Dockerfile" \
-            "$REGISTRY/$PROJECT_PATH/apart-token-user-service:latest"
+            "$REGISTRY/$PROJECT_PATH/tuttime-user-service:latest"
         
         build_service \
             "api-gateway" \
             "api-gateway/Dockerfile" \
-            "$REGISTRY/$PROJECT_PATH/apart-token-api-gateway:latest"
+            "$REGISTRY/$PROJECT_PATH/tuttime-api-gateway:latest"
         ;;
     *)
         echo "Unknown service: $SERVICE"

@@ -45,7 +45,7 @@ RUN --mount=type=cache,target=/root/.m2 \
 # Re-install parent POM to ensure it's in local repository (required for user-service's empty relativePath)
 RUN --mount=type=cache,target=/root/.m2 \
     mvn install -N -DskipTests -T 1C && \
-    ls -la /root/.m2/repository/com/aparttoken/apart-token-be/1.0-SNAPSHOT/ || echo "Parent POM install verification failed"
+    ls -la /root/.m2/repository/com/tuttime/tuttime-be/1.0-SNAPSHOT/ || echo "Parent POM install verification failed"
 COPY services/user-service/pom.xml ./services/user-service/pom.xml
 RUN --mount=type=cache,target=/root/.m2 \
     mvn dependency:go-offline -pl services/user-service -am -T 1C || true

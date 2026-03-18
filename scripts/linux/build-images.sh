@@ -183,7 +183,7 @@ case "${SERVICE,,}" in
     # Services
     "admin-service")
         SERVICE_DIR="$ROOT_DIR/services/admin-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-admin-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-admin-service:latest")
         build_service \
             "admin-service" \
             "$SERVICE_DIR" \
@@ -192,7 +192,7 @@ case "${SERVICE,,}" in
         ;;
     "booking-integration-service")
         SERVICE_DIR="$ROOT_DIR/services/booking-integration-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-booking-integration-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-booking-integration-service:latest")
         build_service \
             "booking-integration-service" \
             "$SERVICE_DIR" \
@@ -201,7 +201,7 @@ case "${SERVICE,,}" in
         ;;
     "content-service")
         SERVICE_DIR="$ROOT_DIR/services/content-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-content-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-content-service:latest")
         build_service \
             "content-service" \
             "$SERVICE_DIR" \
@@ -210,7 +210,7 @@ case "${SERVICE,,}" in
         ;;
     "conversion-service")
         SERVICE_DIR="$ROOT_DIR/services/conversion-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-conversion-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-conversion-service:latest")
         build_service \
             "conversion-service" \
             "$SERVICE_DIR" \
@@ -219,7 +219,7 @@ case "${SERVICE,,}" in
         ;;
     "mining-service")
         SERVICE_DIR="$ROOT_DIR/services/mining-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-mining-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-mining-service:latest")
         build_service \
             "mining-service" \
             "$SERVICE_DIR" \
@@ -228,7 +228,7 @@ case "${SERVICE,,}" in
         ;;
     "messaging-service")
         SERVICE_DIR="$ROOT_DIR/services/messaging-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-messaging-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-messaging-service:latest")
         build_service \
             "messaging-service" \
             "$SERVICE_DIR" \
@@ -237,7 +237,7 @@ case "${SERVICE,,}" in
         ;;
     "notification-service")
         SERVICE_DIR="$ROOT_DIR/services/notification-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-notification-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-notification-service:latest")
         build_service \
             "notification-service" \
             "$SERVICE_DIR" \
@@ -246,7 +246,7 @@ case "${SERVICE,,}" in
         ;;
     "rewards-service")
         SERVICE_DIR="$ROOT_DIR/services/rewards-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-rewards-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-rewards-service:latest")
         build_service \
             "rewards-service" \
             "$SERVICE_DIR" \
@@ -255,7 +255,7 @@ case "${SERVICE,,}" in
         ;;
     "social-service")
         SERVICE_DIR="$ROOT_DIR/services/social-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-social-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-social-service:latest")
         build_service \
             "social-service" \
             "$SERVICE_DIR" \
@@ -264,7 +264,7 @@ case "${SERVICE,,}" in
         ;;
     "staking-service")
         SERVICE_DIR="$ROOT_DIR/services/staking-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-staking-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-staking-service:latest")
         build_service \
             "staking-service" \
             "$SERVICE_DIR" \
@@ -273,7 +273,7 @@ case "${SERVICE,,}" in
         ;;
     "token-service")
         SERVICE_DIR="$ROOT_DIR/services/token-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-token-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-token-service:latest")
         build_service \
             "token-service" \
             "$SERVICE_DIR" \
@@ -282,7 +282,7 @@ case "${SERVICE,,}" in
         ;;
     "user-service")
         SERVICE_DIR="$ROOT_DIR/services/user-service"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-user-service:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-user-service:latest")
         build_service \
             "user-service" \
             "$SERVICE_DIR" \
@@ -292,7 +292,7 @@ case "${SERVICE,,}" in
     # Gateways
     "admin-gateway")
         SERVICE_DIR="$ROOT_DIR/admin-gateway"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-admin-gateway:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-admin-gateway:latest")
         build_service \
             "admin-gateway" \
             "$SERVICE_DIR" \

@@ -15,7 +15,7 @@
                 <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${PID:- } --- [%t] %-40.40logger{39} : %m%n%wEx</pattern>
             </encoder>
             <!-- Filter to exclude health check logs from console in production -->
-            <filter class="com.aparttoken.gateway.config.HealthCheckLogFilter"/>
+            <filter class="com.tuttime.gateway.config.HealthCheckLogFilter"/>
         </appender>
     </springProfile>
 
@@ -48,7 +48,7 @@
             <facility>${graylogFacility}</facility>
             
             <!-- Filter to exclude health check logs from graylog -->
-            <filter class="com.aparttoken.gateway.config.HealthCheckLogFilter"/>
+            <filter class="com.tuttime.gateway.config.HealthCheckLogFilter"/>
             
             <!-- Additional Static Fields -->
             <additionalField>
@@ -112,7 +112,7 @@
     </springProfile>
 
     <!-- Application-specific Logger Levels -->
-    <logger name="com.aparttoken" level="DEBUG"/>
+    <logger name="com.tuttime" level="DEBUG"/>
     <logger name="org.springframework" level="INFO"/>
     <logger name="org.apache.kafka" level="INFO"/>
     <logger name="com.netflix.discovery" level="INFO"/>

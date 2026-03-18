@@ -11,7 +11,7 @@
 set -e
 
 SERVICE="${1:-all}"
-NAMESPACE="apart-token"
+NAMESPACE="tuttime"
 
 # Colors for Mac terminal (ANSI escape codes)
 GREEN='\033[0;32m'

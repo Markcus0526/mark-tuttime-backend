@@ -40,7 +40,7 @@ public class AdminServiceRedisConnectionFactoryConfig {
     @Value("${spring.data.redis.sentinel.nodes:}")
     private String sentinelNodes;
 
-    @Value("${spring.data.redis.host:apart-token-redis}")
+    @Value("${spring.data.redis.host:tuttime-redis}")
     private String redisHost;
 
     @Value("${spring.data.redis.port:6379}")
