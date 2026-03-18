@@ -1,0 +1,75 @@
+# ============================================================================
+# .dockerignore for User Service
+# Excludes unnecessary files from Docker build context
+# ============================================================================
+
+# Build artifacts
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+guide/
+
+# Test files
+src/test/
+*.test
+test/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Docker files (don't need in build context)
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Maven wrapper (not needed in container)
+.mvn/wrapper/maven-wrapper.jar
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database files
+*.sql
+database-schemas/
+
+# Scripts
+*.sh
+*.ps1
+*.bat
+
+# Configuration files (keep only what's needed)
+*.properties
+!src/main/resources/application*.yml
+!src/main/resources/application*.properties
+

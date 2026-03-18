@@ -1,0 +1,443 @@
+spring:
+  application:
+    name: user-service
+  jackson:
+    time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/user_service_db?currentSchema=user_service&stringtype=unspecified&prepareThreshold=0}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:100}
+      minimum-idle: ${DB_POOL_MIN_IDLE:20}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      # Set search_path and timezone on each connection
+      connection-init-sql: SET search_path TO user_service, public; SET timezone = 'UTC';
+    # Read replica configuration (optional - enables read/write splitting)
+    # Set DATABASE_REPLICA_URL environment variable to enable read replicas
+    replica:
+      url: ${DATABASE_REPLICA_URL:}
+      username: ${DATABASE_REPLICA_USERNAME:${DATABASE_USERNAME:postgres}}
+      password: ${DATABASE_REPLICA_PASSWORD:${DATABASE_PASSWORD:}}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: ${DB_REPLICA_POOL_MAX_SIZE:50}
+        minimum-idle: ${DB_REPLICA_POOL_MIN_IDLE:10}
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        leak-detection-threshold: 60000
+        # Set search_path and timezone on each connection
+        connection-init-sql: SET search_path TO user_service, public; SET timezone = 'UTC';
+
+  jpa:
+    hibernate:
+      ddl-auto: none  # Changed from validate to none - Hibernate can't properly validate PostgreSQL enum types
+    show-sql: false  # Disable SQL logging
+    properties:
+      hibernate:
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect  # PostGIS dialect for geospatial support
+        format_sql: false  # Disable SQL formatting
+        jdbc:
+          batch_size: 50
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+        # Disable SQL logging
+        use_sql_comments: false
+
+  # Use Redis cache (default)
+  cache:
+    type: ${CACHE_TYPE:redis}
+  # Spring Data Configuration (Pagination + Redis)
+  data:
+    web:
+      pageable:
+        default-page-size: 100
+        max-page-size: 1000
+        page-parameter: page
+        size-parameter: size
+      # Note: Page serialization mode is configured via @EnableSpringDataWebSupport in WebConfig.java
+    redis:
+      # Docker environment uses direct Redis connection (no Sentinel)
+      # Sentinel is only used in Kubernetes production environment
+      # Explicitly disable Sentinel for Docker (use direct connection)
+      sentinel:
+        master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
+        nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
+      # Direct connection configuration
+      host: ${REDIS_HOST:apart-token-redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 8000ms  # Increased timeout for better resilience to Redis latency spikes and replication lag (was 5000ms)
+      lettuce:
+        pool:
+          # Reduced Redis pool size for Docker to prevent memory exhaustion
+          max-active: ${REDIS_POOL_MAX_ACTIVE:300}
+          max-idle: ${REDIS_POOL_MAX_IDLE:30}
+          min-idle: ${REDIS_POOL_MIN_IDLE:10}
+          max-wait: -1ms
+
+  # Kafka configuration (uses environment variables from docker-compose.yml)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:apart-token-kafka:9093}
+    security:
+      protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+    properties:
+      sasl:
+        mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
+        jaas:
+          config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+    topics:
+      user-blocks: ${KAFKA_TOPIC_USER_BLOCKS:apart-token.user-blocks}
+    consumer:
+      group-id: user-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      expiration: ${JWT_EXPIRATION:86400000} # 24 hours
+      issuer: ${JWT_ISSUER:apart-token-backend} # Token issuer identifier
+      audience: ${JWT_AUDIENCE:apart-token-mobile-app} # Token audience identifier
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  # Servlet Multipart Configuration - Required for profile image uploads > 1MB
+  # Default Spring Boot limit is 1MB, which blocks 1.5MB and 3MB images
+  servlet:
+    multipart:
+      enabled: ${SPRING_SERVLET_MULTIPART_ENABLED:true}
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:10MB}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:10MB}
+      file-size-threshold: ${SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD:2KB}
+
+  # Mail SMTP Configuration
+  mail:
+    host: ${EMAIL_SMTP_HOST:smtp.yandex.ru}
+    port: ${EMAIL_SMTP_PORT:465}
+    username: ${EMAIL_SMTP_USERNAME:}
+    password: ${EMAIL_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          # Enable SMTP authentication
+          auth: ${EMAIL_SMTP_AUTH:true}
+          ssl:
+            enable: ${EMAIL_SMTP_SSL_ENABLE:true}
+            trust: ${EMAIL_SMTP_SSL_TRUST:smtp.yandex.ru}
+          starttls:
+            enable: ${EMAIL_SMTP_STARTTLS_ENABLE:false}
+            required: ${EMAIL_SMTP_STARTTLS_REQUIRED:false}
+          connectiontimeout: ${EMAIL_SMTP_CONNECTION_TIMEOUT:5000} # Connection timeout in ms
+          timeout: ${EMAIL_SMTP_TIMEOUT:5000} # Read timeout in ms
+          writetimeout: ${EMAIL_SMTP_WRITE_TIMEOUT:5000} # Write timeout in ms
+
+# Brute-Force Protection Configuration
+bruteforce:
+  warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD:4} # Log warning after 4 failed attempts (increased from 3 for better UX)
+  ip-block-threshold: ${BRUTEFORCE_IP_BLOCK_THRESHOLD:7} # Block IP after 7 failed attempts (increased from 5 for better UX)
+  phone-block-threshold: ${BRUTEFORCE_PHONE_BLOCK_THRESHOLD:12} # Block phone after 12 failed attempts (increased from 10 for better UX)
+  permanent-block-threshold: ${BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD:18} # Permanent block after 18 failed attempts (increased from 15 for better UX)
+  ip-block-duration-minutes: ${BRUTEFORCE_IP_BLOCK_DURATION_MINUTES:15} # Block IP for 15 minutes
+  phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES:60} # Block phone for 1 hour
+
+# Anti-Fraud Configuration
+antifraud:
+  max-devices-per-user: ${ANTIFRAUD_MAX_DEVICES_PER_USER:3} # Maximum devices per user
+  multi-account-ip-threshold: ${ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD:3} # Alert if same IP has 3+ accounts in 24h
+
+# SMS Verification Configuration
+sms:
+  provider: ${SMS_PROVIDER:log} # SMS provider: twilio, aws-sns, or log (for development)
+  api-key: ${SMS_API_KEY:} # SMS provider API key
+  api-secret: ${SMS_API_SECRET:} # SMS provider API secret
+  from-number: ${SMS_FROM_NUMBER:} # SMS sender phone number
+  code-length: ${SMS_CODE_LENGTH:4} # SMS verification code length (default: 4 digits)
+  code:
+    expiration-minutes: ${SMS_CODE_EXPIRATION_MINUTES:5} # SMS code expiration time in minutes
+  signup:
+    token:
+      expiration-minutes: ${SMS_SIGNUP_TOKEN_EXPIRATION_MINUTES:15} # Signup token expiration time in minutes
+  max-attempts-per-hour: ${SMS_MAX_ATTEMPTS_PER_HOUR:3} # Maximum SMS send attempts per phone number per hour
+  # Telegram Gateway API configuration
+  telegram:
+    api-url: ${SMS_TELEGRAM_API_URL:https://gatewayapi.telegram.org}
+    api-token: ${SMS_TELEGRAM_API_TOKEN:}
+  # Green SMS API configuration (for Russian phone numbers)
+  # API URL: https://api3.greensms.ru
+  # Endpoints: 
+  #   - SMS: /sms/send
+  #   - Flash Call: /call/send (see https://api3.greensms.ru/#api-Call-CallSend)
+  # Authentication: Bearer token (JWT) in Authorization header
+  # Flash Call Limits: 1 call per minute, 10 calls per hour per number
+  green:
+    api-url: ${SMS_GREEN_API_URL:https://api3.greensms.ru}
+    jwt-token: ${SMS_GREEN_JWT_TOKEN:}
+    flashcall-endpoint: ${SMS_GREEN_FLASHCALL_ENDPOINT:/call/send}  # GreenSMS Flash Call endpoint
+    status-endpoint: ${SMS_GREEN_STATUS_ENDPOINT:/sms/status}  # SMS delivery status (optional, for polling)
+  # SMS delivery verification (polling + retry for signup/reset password)
+  delivery:
+    poll-interval-ms: ${SMS_DELIVERY_POLL_INTERVAL_MS:2000}  # Interval between status polls
+    max-poll-attempts: ${SMS_DELIVERY_MAX_POLL_ATTEMPTS:10}  # Max polls before considering delivered (20s total)
+    max-send-retries: ${SMS_DELIVERY_MAX_SEND_RETRIES:3}  # Retry send if not delivered (fits in ~60s resend window)
+  # Twilio Verify API configuration (for non-Russian phone numbers)
+  # Uses Twilio Verify API v2 for SMS verification
+  # Service SID can be found in Twilio Console: Verify > Services
+  twilio:
+    verify-api-url: ${SMS_TWILIO_VERIFY_API_URL:https://verify.twilio.com/v2}
+    api-url: ${SMS_TWILIO_API_URL:https://api.twilio.com/2010-04-01}
+    account-sid: ${SMS_TWILIO_ACCOUNT_SID:}
+    auth-token: ${SMS_TWILIO_AUTH_TOKEN:}
+    service-sid: ${SMS_TWILIO_SERVICE_SID:}  # Twilio Verify Service SID (e.g., VAef58d5f4959d0a3e3cdf881d09070d1d)
+  # SMS provider balance monitoring (optional - enable via SMS_BALANCE_MONITORING_ENABLED=true)
+  balance:
+    check-interval-ms: ${SMS_BALANCE_CHECK_INTERVAL_MS:1800000}  # 30 min
+    monitoring-enabled: ${SMS_BALANCE_MONITORING_ENABLED:false}
+    health-enabled: ${SMS_BALANCE_HEALTH_ENABLED:false}
+    green:
+      warning-threshold: ${SMS_BALANCE_GREEN_WARNING:500}     # in rubles
+      critical-threshold: ${SMS_BALANCE_GREEN_CRITICAL:100}   # in rubles
+      cost-per-sms: ${SMS_BALANCE_GREEN_COST_PER_SMS:2.5}    # rubles per SMS
+    twilio:
+      warning-threshold: ${SMS_BALANCE_TWILIO_WARNING:50}     # in USD
+      critical-threshold: ${SMS_BALANCE_TWILIO_CRITICAL:10}   # in USD
+      cost-per-sms: ${SMS_BALANCE_TWILIO_COST_PER_SMS:0.05}  # USD per SMS
+  # Flash Call API configuration (for Android devices without Telegram)
+  # Uses GreenSMS API for flash calls (same credentials as SMS)
+  # Flash calls are 3-10x cheaper than SMS and deliver instantly
+  # The verification code appears in the last 4 digits of the caller ID
+  flashcall:
+    # Note: Flash calls use GreenSMS API, so use the same api-url and jwt-token as green SMS
+    # If you need a separate provider, configure these:
+    api-url: ${SMS_FLASHCALL_API_URL:${sms.green.api-url}}
+
+# Email Verification Configuration
+email:
+  code-length: ${EMAIL_CODE_LENGTH:4} # Email verification code length (default: 4 digits)
+  code:
+    expiration-minutes: ${EMAIL_CODE_EXPIRATION_MINUTES:10} # Email code expiration time in minutes
+  max-attempts-per-hour: ${EMAIL_MAX_ATTEMPTS_PER_HOUR:3} # Maximum email send attempts per email per hour
+  # SMTP configuration
+  smtp:
+    from-email: ${EMAIL_SMTP_FROM_EMAIL:support@boost-x.pro} # From email address
+    from-name: ${EMAIL_SMTP_FROM_NAME:Boostx} # From name (MAIL_FROM_NAME="${APP_NAME}")
+
+server:
+  port: 28081
+  shutdown: graceful
+
+# Service URLs for REST clients
+# Uses service name variables (e.g., REWARDS_SERVICE) that can be set per environment:
+#   Docker: REWARDS_SERVICE=rewards-service (default)
+#   Kubernetes: REWARDS_SERVICE=rewards-service
+services:
+  rewards-service:
+    url: http://${REWARDS_SERVICE:rewards-service}:28085
+  token-service:
+    url: http://${TOKEN_SERVICE:token-service}:28082
+  mining-service:
+    url: http://${MINING_SERVICE:mining-service}:28083
+
+# gRPC configuration for Docker/Kubernetes
+# Uses service name variables (e.g., REWARDS_SERVICE) that can be set per environment:
+#   Docker: REWARDS_SERVICE=rewards-service (default)
+#   Kubernetes: REWARDS_SERVICE=rewards-service
+grpc:
+  server:
+    port: ${GRPC_PORT:29191}
+  # Global gRPC client deadline (seconds). Prevents indefinite hangs when remote services
+  # are unresponsive. 60s is generous for batch operations under heavy load.
+  # Used by GrpcClientDeadlineInterceptor.
+  client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS:60}
+  client:
+    rewards-service:
+      address: static://${REWARDS_SERVICE:rewards-service}:29195
+      negotiationType: plaintext
+    token-service:
+      address: static://${TOKEN_SERVICE:token-service}:29190
+      negotiationType: plaintext
+    mining-service:
+      address: static://${MINING_SERVICE:mining-service}:29193
+      negotiationType: plaintext
+    conversion-service:
+      address: static://${CONVERSION_SERVICE:conversion-service}:29197
+      negotiationType: plaintext
+    admin-service:
+      address: static://${ADMIN_SERVICE:admin-service}:29199
+      negotiationType: plaintext
+    staking-service:
+      address: static://${STAKING_SERVICE:staking-service}:29194
+      negotiationType: plaintext
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+      # Enable database health check (includes connection pool monitoring)
+      db:
+        enabled: true
+      group:
+        readiness:
+          include: db,redis,diskSpace,ping
+        liveness:
+          include: diskSpace,ping
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    # Enable HikariCP metrics
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        "[hikari.connections.*]": true
+      percentiles:
+        "[hikari.connections.*]": 0.5, 0.95, 0.99
+  health:
+    # Exclude gRPC channels from health checks
+    # gRPC channels can have TRANSIENT_FAILURE during network issues or service restarts
+    # This should not cause the entire service to be marked as DOWN
+    grpc:
+      enabled: false
+  tracing:
+    sampling:
+      probability: 1.0  # 100% sampling for development, reduce in production
+  # Shared Zipkin instance for distributed tracing
+  # All microservices use the same Zipkin instance in Docker environment
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://apart-token-zipkin:9411/api/v2/spans}
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      grpc:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 65
+        eventConsumerBufferSize: 10
+  retry:
+    instances:
+      grpc:
+        maxAttempts: 5
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+
+  # Kubernetes Discovery - Disabled in Docker
+  cloud:
+    # Kubernetes discovery - enabled only in K8s via env var
+    kubernetes:
+      discovery:
+        enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED:false}
+        namespaces:
+          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:boostx}
+        discovery-server-url: ""
+      config:
+        enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
+    com.aparttoken: DEBUG
+    # Reduce Spring Security logging to INFO to avoid noisy anonymous authentication logs for health checks
+    org.springframework.security: INFO
+    org.springframework.security.web.authentication.AnonymousAuthenticationFilter: WARN  # Suppress anonymous auth logs
+    org.hibernate.SQL: WARN  # Disable SQL query logging
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN  # Disable SQL parameter binding logging
+    org.springframework.data.redis: WARN  # Only log Redis errors/warnings
+    io.lettuce.core: WARN  # Only log Redis connection errors
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
+
+# Graylog Configuration
+# Note: Graylog logging is enabled via Spring profile 'graylog-enabled'
+# To enable: Add 'graylog-enabled' to spring.profiles.active
+# Example: SPRING_PROFILES_ACTIVE=graylog-enabled
+graylog:
+  host: ${GRAYLOG_HOST:90.156.157.241} # Graylog server host
+  port: ${GRAYLOG_PORT:12203} # Graylog UDP port
+  origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
+  facility: ${GRAYLOG_FACILITY:user-service} # Facility name for log categorization
+  include-source: ${GRAYLOG_INCLUDE_SOURCE:true} # Include source file and line number
+  include-mdc: ${GRAYLOG_INCLUDE_MDC:true} # Include Mapped Diagnostic Context fields
+  include-marker: ${GRAYLOG_INCLUDE_MARKER:true} # Include log markers
+  include-caller-data: ${GRAYLOG_INCLUDE_CALLER_DATA:false} # Include caller data (class, method, line)
+  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192} # Maximum GELF message size in bytes
+  compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP} # Compression type: GZIP, ZLIB, or NONE
+
+# Application Configuration
+app:
+  image:
+    storage:
+      type: ${IMAGE_STORAGE_TYPE:s3} # Use S3 in Docker
+    s3:
+      endpoint: ${S3_ENDPOINT:https://s3.ru-7.storage.selcloud.ru}
+      region: ${S3_REGION:ru-7}
+      bucket: ${S3_BUCKET:boostx-storage}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+      base-url: ${S3_BASE_URL:} # Optional: CDN or public URL base (e.g., https://cdn.example.com)
+      presigned-url-expiration-hours: ${S3_PRESIGNED_URL_EXPIRATION_HOURS:24}
+    max-size: ${IMAGE_MAX_SIZE:5242880} # 5MB
+    max-dimension: ${IMAGE_MAX_DIMENSION:1024} # Max width/height in pixels
+    quality: ${IMAGE_QUALITY:0.85} # JPEG quality (0.0 to 1.0)
+  language:
+    apple-user-id: ${APPLE_LANGUAGE_USER_ID:} # User ID that should receive apple language translations (empty = disabled)
+
+# Map Query Configuration
+map:
+  query:
+    # Use approximate COUNT queries for better performance (faster but less accurate)
+    # Set to true for large datasets (>1M users) to improve COUNT query performance
+    use-approximate-count: ${MAP_USE_APPROXIMATE_COUNT:false}
+
+# Rate Limiting Configuration
+ratelimit:
+  map:
+    query:
+      # Maximum number of map queries allowed per window
+      limit: ${RATELIMIT_MAP_QUERY_LIMIT:100}
+      # Time window in minutes for map query rate limiting
+      window-minutes: ${RATELIMIT_MAP_QUERY_WINDOW_MINUTES:1}
+  location:
+    update:
+      # Maximum number of location updates allowed per window
+      limit: ${RATELIMIT_LOCATION_UPDATE_LIMIT:10}
+      # Time window in hours for location update rate limiting
+      window-hours: ${RATELIMIT_LOCATION_UPDATE_WINDOW_HOURS:1}
+
+# Connection Pool Monitoring Configuration
+connection:
+  pool:
+    # Enable periodic logging of connection pool statistics (every 5 minutes)
+    # Useful for monitoring pool usage over time
+    monitoring:
+      enabled: ${CONNECTION_POOL_MONITORING_ENABLED:false}
+

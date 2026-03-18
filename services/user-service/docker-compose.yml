@@ -1,0 +1,74 @@
+services:
+  user-service-db:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: apart-token-user-service-db
+    ports:
+      - "5434:5432"
+    env_file:
+      - ./.env.docker
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-user_service_db}
+    volumes:
+      - user_service_db_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d user_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - apart-token-network
+    restart: always
+
+  user-service:
+    build:
+      context: ../..
+      dockerfile: services/user-service/docker/Dockerfile
+    container_name: apart-token-user-service
+    depends_on:
+      user-service-db:
+        condition: service_healthy
+    env_file:
+      - ./.env.docker
+    environment:
+      # Explicitly set profile to ensure docker profile is active
+      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env.docker
+      # Example: SPRING_PROFILES_ACTIVE=docker,graylog-enabled
+      SPRING_PROFILES_ACTIVE: docker
+      # Graylog Configuration (optional - only used if graylog-enabled profile is active)
+      GRAYLOG_HOST: ${GRAYLOG_HOST:-90.156.157.241}
+      GRAYLOG_PORT: ${GRAYLOG_PORT:-12203}
+      # Redis configuration - explicitly set to ensure they're passed to container
+      REDIS_HOST: apart-token-redis
+      REDIS_PORT: 6379
+      # REDIS_PASSWORD will be loaded from .env.docker via env_file
+      # Don't set it here to avoid overriding the value from env_file
+      KAFKA_BOOTSTRAP_SERVERS: apart-token-kafka:9093
+      ZIPKIN_URL: http://apart-token-zipkin:9411/api/v2/spans
+      GRPC_PORT: 29191
+      JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
+    ports:
+      - "28081:28081"
+      - "29191:29191"
+    networks:
+      - apart-token-network
+    healthcheck:
+      # Use liveness endpoint - only checks diskSpace,ping (non-recoverable failures)
+      test: ["CMD-SHELL", "wget --spider --quiet http://localhost:28081/actuator/health/liveness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+    restart: always
+
+volumes:
+  user_service_db_data:
+
+networks:
+  apart-token-network:
+    name: apart-token-network
+    external: true
+
