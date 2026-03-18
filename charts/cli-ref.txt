@@ -1,0 +1,37 @@
+# to update an existing release
+
+helm upgrade app-link-frontend ./helm -n boostx
+
+# only for a fresh install
+
+helm install app-link-frontend ./helm -n boostx 
+
+# If you need to start fresh, uninstall first:
+
+helm uninstall app-link-frontend -n boostx
+
+helm status admin-service -n boostx
+helm history admin-service -n boostx
+
+# 2. If the release is in FAILED state, rollback to last good revision first
+#    (replace N with the last DEPLOYED revision number from history)
+# helm rollback admin-service N -n boostx
+
+# 3. Upgrade with the fixed charts
+cd e:\imperial\Osnae\boostx\boostx-be\charts\services
+helm upgrade --install admin-service .\admin-service `
+  --namespace boostx `
+  -f .\admin-service\values-prod.yaml
+
+helm upgrade api-gateway ./api-gateway -n boostx -f ./api-gateway/values-prod.yaml --history-max 10
+
+# 4. Verify pods are healthy
+kubectl get pods -n boostx -l app=admin-service -w
+
+# 5. Check logs for clean startup
+kubectl logs -n boostx -l app=admin-service --tail=50
+
+
+kubectl edit hpa social-service-hpa -n boostx
+
+
