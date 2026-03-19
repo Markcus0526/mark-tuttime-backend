@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Kafka Consumer for User Block Events.
  * 
  * <p>Listens to user blocking events from any service and syncs them to user-service.
- * Topic: apart-token.user-blocks
+ * Topic: tuttime.user-blocks
  * 
  * <p>This consumer processes blocking events published by social-service or any other service.
  */
@@ -45,7 +45,7 @@ public class UserBlockEventConsumer {
     private String serviceName;
 
     @KafkaListener(
-            topics = "${spring.kafka.topics.user-blocks:apart-token.user-blocks}",
+            topics = "${spring.kafka.topics.user-blocks:tuttime.user-blocks}",
             groupId = "${spring.kafka.consumer.group-id:user-service-group}",
             containerFactory = "kafkaListenerContainerFactory"
     )

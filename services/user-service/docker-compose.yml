@@ -27,6 +27,7 @@ services:
     build:
       context: ../..
       dockerfile: services/user-service/docker/Dockerfile
+    image: tuttime/user-service:v1  # <--- Add this line
     container_name: tuttime-user-service
     depends_on:
       user-service-db:

@@ -29,6 +29,7 @@ services:
     build:
       context: ../..
       dockerfile: services/admin-service/docker/Dockerfile
+    image: tuttime/admin-service:v1  # <--- Add this line
     container_name: tuttime-admin-service
     depends_on:
       admin-service-db:

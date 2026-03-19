@@ -301,7 +301,7 @@ case "${SERVICE,,}" in
         ;;
     "api-gateway")
         SERVICE_DIR="$ROOT_DIR/api-gateway"
-        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/apart-token-api-gateway:latest")
+        IMAGE_NAME=$(get_image_name "$REGISTRY/$USERNAME/tuttime-api-gateway:latest")
         build_service \
             "api-gateway" \
             "$SERVICE_DIR" \
@@ -314,21 +314,21 @@ case "${SERVICE,,}" in
         
         # Build main services
         SERVICES=(
-            "user-service:services/user-service:apart-token-user-service"
-            "rewards-service:services/rewards-service:apart-token-rewards-service"
-            "notification-service:services/notification-service:apart-token-notification-service"
-            "mining-service:services/mining-service:apart-token-mining-service"
-            "content-service:services/content-service:apart-token-content-service"
-            "social-service:services/social-service:apart-token-social-service"
-            "booking-integration-service:services/booking-integration-service:apart-token-booking-integration-service"
-            "messaging-service:services/messaging-service:apart-token-messaging-service"
-            "admin-service:services/admin-service:apart-token-admin-service"
+            "user-service:services/user-service:tuttime-user-service"
+            "rewards-service:services/rewards-service:tuttime-rewards-service"
+            "notification-service:services/notification-service:tuttime-notification-service"
+            "mining-service:services/mining-service:tuttime-mining-service"
+            "content-service:services/content-service:tuttime-content-service"
+            "social-service:services/social-service:tuttime-social-service"
+            "booking-integration-service:services/booking-integration-service:tuttime-booking-integration-service"
+            "messaging-service:services/messaging-service:tuttime-messaging-service"
+            "admin-service:services/admin-service:tuttime-admin-service"
         )
         
         # Build main gateways
         GATEWAYS=(
-            "api-gateway:api-gateway:apart-token-api-gateway"
-            "admin-gateway:admin-gateway:apart-token-admin-gateway"
+            "api-gateway:api-gateway:tuttime-api-gateway"
+            "admin-gateway:admin-gateway:tuttime-admin-gateway"
         )
         
         for svc in "${SERVICES[@]}"; do
@@ -361,24 +361,24 @@ case "${SERVICE,,}" in
         
         # Build all services
         SERVICES=(
-            "user-service:services/user-service:apart-token-user-service"
-            "notification-service:services/notification-service:apart-token-notification-service"
-            "token-service:services/token-service:apart-token-token-service"
-            "staking-service:services/staking-service:apart-token-staking-service"
-            "rewards-service:services/rewards-service:apart-token-rewards-service"
-            "booking-integration-service:services/booking-integration-service:apart-token-booking-integration-service"
-            "mining-service:services/mining-service:apart-token-mining-service"
-            "conversion-service:services/conversion-service:apart-token-conversion-service"
-            "content-service:services/content-service:apart-token-content-service"
-            "social-service:services/social-service:apart-token-social-service"
-            "messaging-service:services/messaging-service:apart-token-messaging-service"
-            "admin-service:services/admin-service:apart-token-admin-service"
+            "user-service:services/user-service:tuttime-user-service"
+            "notification-service:services/notification-service:tuttime-notification-service"
+            "token-service:services/token-service:tuttime-token-service"
+            "staking-service:services/staking-service:tuttime-staking-service"
+            "rewards-service:services/rewards-service:tuttime-rewards-service"
+            "booking-integration-service:services/booking-integration-service:tuttime-booking-integration-service"
+            "mining-service:services/mining-service:tuttime-mining-service"
+            "conversion-service:services/conversion-service:tuttime-conversion-service"
+            "content-service:services/content-service:tuttime-content-service"
+            "social-service:services/social-service:tuttime-social-service"
+            "messaging-service:services/messaging-service:tuttime-messaging-service"
+            "admin-service:services/admin-service:tuttime-admin-service"
         )
         
         # Build all gateways
         GATEWAYS=(
-            "admin-gateway:admin-gateway:apart-token-admin-gateway"
-            "api-gateway:api-gateway:apart-token-api-gateway"
+            "admin-gateway:admin-gateway:tuttime-admin-gateway"
+            "api-gateway:api-gateway:tuttime-api-gateway"
         )
         
         for svc in "${SERVICES[@]}"; do

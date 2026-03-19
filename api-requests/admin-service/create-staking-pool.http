@@ -1,0 +1,113 @@
+### Create Staking Pool (via Admin Service)
+### Pool types: FIXED_1_MONTH, FIXED_3_MONTHS, FIXED_6_MONTHS, FIXED_12_MONTHS, FLEXIBLE
+POST http://localhost:28080/api/admin/orchestration/staking/tiers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "poolName": "Testing Pool",
+  "poolType": "FIXED_1_MONTH",
+  "minStakeAmount": 100.0,
+  "maxStakeAmount": 10000.0,
+  "lockPeriodDays": 30,
+  "apyPercentage": 5.00,
+  "boostMultiplier": 1.2,
+  "isActive": true,
+  "description": "Fixed staking pool for 1 month with 5% APY"
+}
+
+###
+
+### Create Staking Pool with ID in path (ID is ignored)
+POST http://localhost:28080/api/admin/orchestration/staking/tiers/999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "poolName": "3 Months Fixed Pool",
+  "poolType": "FIXED_3_MONTHS",
+  "minStakeAmount": 500.0,
+  "maxStakeAmount": 50000.0,
+  "lockPeriodDays": 90,
+  "apyPercentage": 8.00,
+  "boostMultiplier": 1.5,
+  "isActive": true,
+  "description": "Fixed staking pool for 3 months with 8% APY"
+}
+
+###
+
+### Create Flexible Staking Pool (no max amount, no lock period)
+POST http://localhost:28080/api/admin/orchestration/staking/tiers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "poolName": "Flexible Staking Pool",
+  "poolType": "FLEXIBLE",
+  "minStakeAmount": 10.0,
+  "maxStakeAmount": null,
+  "lockPeriodDays": 0,
+  "apyPercentage": 3.00,
+  "boostMultiplier": 1.0,
+  "isActive": true,
+  "description": "Flexible staking pool with no lock period"
+}
+
+###
+
+### Create Pool using Legacy Fields (backward compatibility)
+POST http://localhost:28080/api/admin/orchestration/staking/tiers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "tierName": "Legacy Pool Name",
+  "poolType": "FIXED_6_MONTHS",
+  "minStakeAmount": 1000.0,
+  "maxStakeAmount": 100000.0,
+  "lockPeriodDays": 180,
+  "apyPercentage": 12.00,
+  "apBoostPerHour": 2.0,
+  "isActive": true,
+  "description": "Pool created using legacy field names"
+}
+
+###
+
+### Create 6 Months Fixed Pool
+POST http://localhost:28080/api/admin/orchestration/staking/tiers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "poolName": "6 Months Fixed Pool",
+  "poolType": "FIXED_6_MONTHS",
+  "minStakeAmount": 1000.0,
+  "maxStakeAmount": 100000.0,
+  "lockPeriodDays": 180,
+  "apyPercentage": 12.00,
+  "boostMultiplier": 2.0,
+  "isActive": true,
+  "description": "Fixed staking pool for 6 months with 12% APY"
+}
+
+###
+
+### Create 12 Months Fixed Pool
+POST http://localhost:28080/api/admin/orchestration/staking/tiers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "poolName": "12 Months Fixed Pool",
+  "poolType": "FIXED_12_MONTHS",
+  "minStakeAmount": 5000.0,
+  "maxStakeAmount": 500000.0,
+  "lockPeriodDays": 365,
+  "apyPercentage": 18.00,
+  "boostMultiplier": 3.0,
+  "isActive": true,
+  "description": "Fixed staking pool for 12 months with 18% APY"
+}
+

@@ -1,0 +1,95 @@
+### ============================================
+### USER MANAGEMENT ENDPOINTS
+### ============================================
+### Base URL: http://localhost:29000/api/v1/users
+### Requires: Authorization header with Bearer token
+
+@baseUrl = http://localhost:29000
+@usersPath = /api/v1/users
+
+### ============================================
+### USER REGISTRATION & AUTHENTICATION
+### ============================================
+
+### Register New User
+POST {{baseUrl}}{{usersPath}}/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "***REMOVED***",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "phoneNumber": "+1234567890",
+  "username": "janesmith"
+}
+
+### Login (Legacy - Use /api/v1/auth/signin instead)
+POST {{baseUrl}}{{usersPath}}/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "***REMOVED***"
+}
+
+> {%
+    if (response.status === 200 && response.body.data) {
+        client.global.set("token", response.body.data.token);
+        client.global.set("refreshToken", response.body.data.refreshToken);
+    }
+%}
+
+### Refresh Token (Legacy - Use /api/v1/auth/refresh instead)
+POST {{baseUrl}}{{usersPath}}/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout (Legacy - Use /api/v1/auth/signout instead)
+POST {{baseUrl}}{{usersPath}}/logout
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### ============================================
+### USER INFORMATION
+### ============================================
+
+### Get User by ID
+GET {{baseUrl}}{{usersPath}}/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Get Current User Profile
+GET {{baseUrl}}{{usersPath}}/me
+Authorization: Bearer {{token}}
+X-User-Id: 1
+Content-Type: application/json
+
+### Update User Profile
+PUT {{baseUrl}}{{usersPath}}/me
+Authorization: Bearer {{token}}
+X-User-Id: 1
+Content-Type: application/json
+
+{
+  "firstName": "Updated",
+  "lastName": "Name",
+  "username": "updatedusername"
+}
+
+### Upload Profile Image
+POST {{baseUrl}}{{usersPath}}/me/profile-image
+Authorization: Bearer {{token}}
+X-User-Id: 1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./profile.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+

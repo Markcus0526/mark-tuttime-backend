@@ -4,7 +4,7 @@ import com.tuttime.admin.rest.client.MiningServiceRestClient;
 import com.tuttime.admin.rest.client.NotificationServiceRestClient;
 import com.tuttime.admin.service.AdminAuditService;
 import com.tuttime.admin.service.AdminUserManagementService;
-import com.tuttime.common.events.CampaignEventProducer;
+import com.tuttime.admin.kafka.CampaignEventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

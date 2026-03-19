@@ -1,0 +1,93 @@
+### Status Level Management - Admin Service
+### These endpoints proxy to token-service
+
+@baseUrl = http://localhost:28080
+@token = {{token}}
+
+### Get All Status Levels
+GET {{baseUrl}}/api/admin/orchestration/status-levels
+Authorization: Bearer {{token}}
+
+### Get Status Level by Name
+GET {{baseUrl}}/api/admin/orchestration/status-levels/SILVER
+Authorization: Bearer {{token}}
+
+### Create Status Level - SILVER
+POST {{baseUrl}}/api/admin/orchestration/status-levels
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "levelName": "Legendery",
+  "minApartBalance": 5000,
+  "apBoostPerHour": 2,
+  "includesProAutoMining": false,
+  "displayOrder": 0,
+  "isActive": true,
+  "description": "Silver / 5k -> +2 AP/hr"
+}
+
+### Create Status Level - GOLD
+POST {{baseUrl}}/api/admin/orchestration/status-levels
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "levelName": "GOLD",
+  "minApartBalance": 20000,
+  "apBoostPerHour": 3,
+  "includesProAutoMining": false,
+  "displayOrder": 1,
+  "isActive": true,
+  "description": "Gold / 20k -> +3 AP/hr"
+}
+
+### Create Status Level - PLATINUM
+POST {{baseUrl}}/api/admin/orchestration/status-levels
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "levelName": "PLATINUM",
+  "minApartBalance": 50000,
+  "apBoostPerHour": 5,
+  "includesProAutoMining": true,
+  "displayOrder": 2,
+  "isActive": true,
+  "description": "Platinum / 50k -> +5 AP/hr + pro auto-mining"
+}
+
+### Create Status Level - ELITE
+POST {{baseUrl}}/api/admin/orchestration/status-levels
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "levelName": "ELITE",
+  "minApartBalance": 100000,
+  "apBoostPerHour": 7.77,
+  "includesProAutoMining": true,
+  "displayOrder": 3,
+  "isActive": true,
+  "description": "Elite / 100k -> +7.77 AP/hr + pro auto-mining"
+}
+
+### Update Status Level
+PUT {{baseUrl}}/api/admin/orchestration/status-levels/SILVER
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "levelName": "SILVER",
+  "minApartBalance": 5000,
+  "apBoostPerHour": 2.5,
+  "includesProAutoMining": false,
+  "displayOrder": 0,
+  "isActive": true,
+  "description": "Silver / 5k -> +2.5 AP/hr (updated)"
+}
+
+### Delete Status Level
+DELETE {{baseUrl}}/api/admin/orchestration/status-levels/ELITE
+Authorization: Bearer {{token}}
+

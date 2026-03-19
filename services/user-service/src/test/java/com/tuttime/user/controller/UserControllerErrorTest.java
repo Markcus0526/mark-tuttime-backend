@@ -102,7 +102,7 @@ class UserControllerErrorTest {
                 .thenThrow(new ResourceNotFoundException("User not found with ID: " + userId));
 
         // When & Then
-        assertThatThrownBy(() -> userController.getUserById(userId))
+        assertThatThrownBy(() -> userController.getUserById(1L, userId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User not found with ID: " + userId);
     }
@@ -119,7 +119,7 @@ class UserControllerErrorTest {
         when(userQueryService.getUserById(userId)).thenReturn(userResponse);
 
         // When
-        ResponseEntity<ApiResponse<UserResponse>> response = userController.getUserById(userId);
+        ResponseEntity<ApiResponse<UserResponse>> response = userController.getUserById(1L, userId);
 
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

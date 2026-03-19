@@ -1,0 +1,215 @@
+### ============================================================================
+### User Map API - Example Requests
+### Endpoint: GET /api/v1/users/map
+### 
+### These examples use the mock data with 100,000 users in Moscow and Vladivostok
+### ============================================================================
+
+### Variables
+@baseUrl = http://localhost:29000
+@token = YOUR_JWT_TOKEN_HERE
+
+### ============================================================================
+### 1. Query by Bounds (Bounding Box) - Moscow
+### Format: minLat,minLng,maxLat,maxLng
+### ============================================================================
+
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Query by Bounds - Vladivostok
+GET {{baseUrl}}/api/v1/users/map?bounds=43.0,131.7,43.3,132.0&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Query by Bounds - Smaller area in Moscow (city center)
+GET {{baseUrl}}/api/v1/users/map?bounds=55.7,37.5,55.8,37.7&limit=50&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Query by Bounds - Smaller area in Vladivostok (city center)
+GET {{baseUrl}}/api/v1/users/map?bounds=43.1,131.8,43.2,131.9&limit=50&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 2. Query by Center Point and Radius - Moscow
+### Format: lat,lng,radiusMeters
+### ============================================================================
+
+### Moscow city center (Red Square area) - 5km radius
+GET {{baseUrl}}/api/v1/users/map?center=55.7558,37.6173,5000&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Moscow city center - 10km radius
+GET {{baseUrl}}/api/v1/users/map?center=55.7558,37.6173,10000&limit=200&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Vladivostok city center - 5km radius
+GET {{baseUrl}}/api/v1/users/map?center=43.1056,131.8735,5000&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Vladivostok city center - 10km radius
+GET {{baseUrl}}/api/v1/users/map?center=43.1056,131.8735,10000&limit=200&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 3. Query by Nearby (Same as center, alternative parameter name)
+### Format: lat,lng,radiusMeters
+### ============================================================================
+
+### Nearby Moscow city center - 2km radius
+GET {{baseUrl}}/api/v1/users/map?nearby=55.7558,37.6173,2000&limit=50&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Nearby Vladivostok city center - 2km radius
+GET {{baseUrl}}/api/v1/users/map?nearby=43.1056,131.8735,2000&limit=50&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 4. Query by Country and City
+### ============================================================================
+
+### All users in Moscow
+GET {{baseUrl}}/api/v1/users/map?country=Russia&city=Moscow&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### All users in Vladivostok
+GET {{baseUrl}}/api/v1/users/map?country=Russia&city=Vladivostok&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### All users in Russia (both cities)
+GET {{baseUrl}}/api/v1/users/map?country=Russia&limit=200&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 5. Pagination Examples
+### ============================================================================
+
+### First page - Moscow (first 100 users)
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Second page - Moscow (next 100 users)
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=100&offset=100
+Authorization: Bearer {{token}}
+
+###
+
+### Third page - Moscow (next 100 users)
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=100&offset=200
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 6. Different Limit Values
+### ============================================================================
+
+### Small limit - 10 users
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=10&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Medium limit - 50 users
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=50&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Large limit - 500 users (maximum)
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9&limit=500&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 7. Specific Area Queries (for testing different regions)
+### ============================================================================
+
+### Northern part of Moscow
+GET {{baseUrl}}/api/v1/users/map?bounds=55.8,37.3,56.0,37.9&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Southern part of Moscow
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,55.7,37.9&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Eastern part of Moscow
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.6,56.0,37.9&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### Western part of Moscow
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.6&limit=100&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### 8. Combined Queries (using default values)
+### ============================================================================
+
+### Query with default limit (100) and offset (0)
+GET {{baseUrl}}/api/v1/users/map?bounds=55.5,37.3,56.0,37.9
+Authorization: Bearer {{token}}
+
+###
+
+### Query by city with defaults
+GET {{baseUrl}}/api/v1/users/map?city=Moscow
+Authorization: Bearer {{token}}
+
+###
+
+### ============================================================================
+### Notes:
+### 
+### 1. All requests require JWT authentication via Authorization header
+### 2. Rate limit: 100 requests per minute per user/IP
+### 3. Maximum limit: 500 users per request
+### 4. Default limit: 100 users
+### 5. Default offset: 0
+### 
+### Coordinate Reference:
+### - Moscow: Latitude 55.5-56.0, Longitude 37.3-37.9
+### - Vladivostok: Latitude 43.0-43.3, Longitude 131.7-132.0
+### 
+### Mock Data:
+### - 50,000 users in Moscow (user_id 1-50000)
+### - 50,000 users in Vladivostok (user_id 50001-100000)
+### - 70% have location_sharing_enabled = true
+### - Privacy levels: 40% exact, 30% city, 20% country, 10% private
+### ============================================================================
+

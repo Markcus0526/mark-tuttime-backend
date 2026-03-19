@@ -1,0 +1,176 @@
+### ============================================
+### AUTHENTICATION ENDPOINTS
+### ============================================
+### Base URL: http://localhost:29000/api/v1/auth
+### All endpoints require proper headers and request bodies
+
+### Variables
+@baseUrl = http://localhost:29000
+@authPath = /api/v1/auth
+
+### Token Variables (set automatically after signin, or set manually)
+@accessToken = 
+@refreshToken = 
+@userId =
+
+### ============================================
+### SIGNUP FLOW
+### ============================================
+
+### 1. Send SMS Verification Code for Signup
+### Rate Limit: 3 requests/hour per IP
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Id: device-12345
+X-Forwarded-For: 192.168.1.1
+
+{
+  "phoneNumber": "+79147116738"
+}
+
+### 2. Verify SMS Code and Get Signup Token
+POST {{baseUrl}}{{authPath}}/signup/verify-sms
+Content-Type: application/json
+X-Device-Id: device-12345
+X-Forwarded-For: 192.168.1.1
+
+{
+  "phoneNumber": "+79147116738",
+  "smsCode": "8481"
+}
+
+### 3. Complete User Signup with Signup Token (without referral code)
+POST {{baseUrl}}{{authPath}}/signup
+Content-Type: application/json
+X-Device-Id: device-12345
+X-Forwarded-For: 192.168.1.1
+
+{
+  "signUpToken": "***REMOVED***",
+  "phoneNumber": "+79147116735",
+  "email": "kairosstroud1205@gmail.com",
+  "password": "***REMOVED***",
+  "username": "Kairos",
+  "firstName": "Stroud",
+  "lastName": "Doe",
+  "country": "USA",
+  "city": "New York",
+  "telegramId": "@johndoe"
+}
+
+### 4. Complete User Signup with Signup Token (WITH referral code)
+### This will automatically create a referral relationship
+POST {{baseUrl}}{{authPath}}/signup
+Content-Type: application/json
+X-Device-Id: device-12345
+X-Forwarded-For: 192.168.1.1
+
+{
+  "signUpToken": "***REMOVED***",
+  "phoneNumber": "+79147116738",
+  "email": "devboostx@gmail.com",
+  "password": "***REMOVED***",
+  "username": "stroud",
+  "firstName": "Stroud",
+  "lastName": "Doe",
+  "country": "USA",
+  "city": "Los Angeles",
+  "telegramId": "@hinokami",
+  "referralCode": "0D14A7A2"
+}
+
+### ============================================
+### EMAIL VERIFICATION FLOW
+### ============================================
+
+### 1. Send Email Verification Code
+### Rate Limit: 3 requests/hour per email
+POST {{baseUrl}}{{authPath}}/email/send
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### 2. Verify Email Code
+POST {{baseUrl}}{{authPath}}/email/verify
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "code": "1234"
+}
+
+### ============================================
+### PROFILE EMAIL VERIFICATION (AUTHENTICATED)
+### ============================================
+
+### 1. Send Email Verification Code to Profile
+### Rate Limit: 3 requests/hour
+### Requires: Authentication (Bearer token)
+POST {{baseUrl}}/api/v1/users/me/email/send
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+### 2. Verify Email Code for Profile
+### Requires: Authentication (Bearer token)
+POST {{baseUrl}}/api/v1/users/me/email/verify
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "email": "user@example.com",
+  "code": "1234"
+}
+
+### ============================================
+### SIGNIN
+### ============================================
+
+### Sign In with Phone and Password
+POST {{baseUrl}}{{authPath}}/signin
+Content-Type: application/json
+X-Device-Id: device-12345
+X-Forwarded-For: 192.168.1.1
+
+{
+  "phoneNumber": "+79147116738",
+  "password": "***REMOVED***"
+}
+
+> {%
+    // Save tokens for use in other requests
+    if (response.status === 200 && response.body.data) {
+        client.global.set("accessToken", response.body.data.accessToken);
+        client.global.set("refreshToken", response.body.data.refreshToken);
+        client.global.set("userId", response.body.data.userId);
+    }
+%}
+
+### ============================================
+### TOKEN MANAGEMENT
+### ============================================
+
+### Refresh Access Token
+POST {{baseUrl}}{{authPath}}/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+> {%
+    if (response.status === 200 && response.body.data) {
+        client.global.set("accessToken", response.body.data.accessToken);
+        client.global.set("refreshToken", response.body.data.refreshToken);
+    }
+%}
+
+### Sign Out (Invalidate Tokens)
+### Note: Run the signin request first to set accessToken and userId variables
+### The signout endpoint only requires the Authorization header, no request body needed
+POST {{baseUrl}}{{authPath}}/signout
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+X-User-Id: {{userId}}
+

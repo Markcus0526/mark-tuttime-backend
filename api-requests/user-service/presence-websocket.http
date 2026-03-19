@@ -1,0 +1,25 @@
+### WebSocket Connection Test
+### Note: This file is for documentation. Use a WebSocket client like wscat or browser console
+
+### Connection URL via API Gateway (Recommended)
+# ws://localhost:29000/ws/presence?token=YOUR_JWT_TOKEN
+
+### Connection URL direct to User Service (For testing)
+# ws://localhost:28081/ws/presence?token=YOUR_JWT_TOKEN
+
+### Connection URL (with Authorization header - if client supports)
+# ws://localhost:29000/ws/presence
+# Header: Authorization: Bearer YOUR_JWT_TOKEN
+
+### After connecting, send heartbeat message:
+# {"type": "heartbeat"}
+
+### Expected response:
+# {"type": "pong", "timestamp": 1234567890}
+
+### Test Steps:
+# 1. Get JWT token from login endpoint
+# 2. Connect to WebSocket using the token
+# 3. Send heartbeat message every 20 seconds
+# 4. Verify online status via GET /api/v1/referral/friends
+

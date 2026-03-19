@@ -1,0 +1,157 @@
+### Update Profile Endpoints Examples
+### Base URL: http://localhost:29000/api/v1/users/me (via API Gateway)
+### Authentication: Bearer token required
+
+@baseUrl = http://localhost:29000/api/v1/users/me
+@token = your_jwt_token_here
+
+### ============================================
+### 1. UPDATE PROFILE (JSON ONLY)
+### ============================================
+
+### Update Basic Information
+PATCH {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "username": "johndoe",
+  "email": "john.doe@example.com"
+}
+
+### Update Social Media Links
+PATCH {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "telegramId": "@johndoe",
+  "instagram": "johndoe_official",
+  "websites": "https://johndoe.com,https://blog.johndoe.com"
+}
+
+### Update Location and Bio
+PATCH {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "country": "United States",
+  "city": "New York",
+  "about": "Software developer passionate about blockchain technology and decentralized applications."
+}
+
+### Update Only Username
+PATCH {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "newusername"
+}
+
+### Update Multiple Fields
+PATCH {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "username": "janesmith",
+  "email": "jane.smith@example.com",
+  "telegramId": "@janesmith",
+  "instagram": "janesmith_official",
+  "country": "Canada",
+  "city": "Toronto",
+  "about": "Full-stack developer and crypto enthusiast.",
+  "websites": "https://janesmith.dev"
+}
+
+### Update Only Instagram Field
+PATCH {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "instagram": "johndoe_official"
+}
+
+### ============================================
+### 2. UPDATE PROFILE WITH IMAGE (MULTIPART)
+### ============================================
+
+### Update Profile with Image Only
+### Note: Send empty JSON object '{}' if no profile data to update
+PATCH {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="data"
+
+{}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/profile.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Update Profile Data with Image
+PATCH {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="data"
+
+{"firstName":"John","lastName":"Doe","username":"johndoe","instagram":"johndoe_official"}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/profile.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Update Profile Data Only (Multipart - No Image)
+PATCH {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="data"
+
+{"firstName":"Jane","lastName":"Smith","email":"jane.smith@example.com","instagram":"janesmith_official"}
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### Update Profile with Multiple Fields and Image
+PATCH {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="data"
+
+{"firstName":"John","lastName":"Doe","username":"johndoe","email":"john.doe@example.com","telegramId":"@johndoe","instagram":"johndoe_official","country":"United States","city":"New York","about":"Software developer passionate about blockchain technology.","websites":"https://johndoe.com"}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/profile.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### ============================================
+### NOTES:
+### ============================================
+### 1. For JSON endpoint: Use Content-Type: application/json
+### 2. For Multipart endpoint: Use Content-Type: multipart/form-data
+### 3. All fields are optional (partial update supported)
+### 4. For multipart with image only: send data='{}' (empty JSON object)
+### 5. Image formats: JPEG, PNG, GIF, WebP (max 5MB)
+### 6. Images are auto-resized to max 1024x1024 and converted to JPEG
+### 7. Username must be unique if provided
+### 8. Email must be valid format if provided
+

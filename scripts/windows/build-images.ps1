@@ -297,7 +297,7 @@ switch ($Service.ToLower()) {
     }
     "mining-service" {
         $ServiceDir = Join-Path $RootDir "services\mining-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-mining-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-mining-service:latest"
         $success = Build-Service `
             -ServiceName "mining-service" `
             -ServiceDir $ServiceDir `
@@ -308,7 +308,7 @@ switch ($Service.ToLower()) {
     }
     "notification-service" {
         $ServiceDir = Join-Path $RootDir "services\notification-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-notification-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-notification-service:latest"
         $success = Build-Service `
             -ServiceName "notification-service" `
             -ServiceDir $ServiceDir `
@@ -319,7 +319,7 @@ switch ($Service.ToLower()) {
     }
     "messaging-service" {
         $ServiceDir = Join-Path $RootDir "services\messaging-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-messaging-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-messaging-service:latest"
         $success = Build-Service `
             -ServiceName "messaging-service" `
             -ServiceDir $ServiceDir `
@@ -330,7 +330,7 @@ switch ($Service.ToLower()) {
     }
     "rewards-service" {
         $ServiceDir = Join-Path $RootDir "services\rewards-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-rewards-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-rewards-service:latest"
         $success = Build-Service `
             -ServiceName "rewards-service" `
             -ServiceDir $ServiceDir `
@@ -341,7 +341,7 @@ switch ($Service.ToLower()) {
     }
     "staking-service" {
         $ServiceDir = Join-Path $RootDir "services\staking-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-staking-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-staking-service:latest"
         $success = Build-Service `
             -ServiceName "staking-service" `
             -ServiceDir $ServiceDir `
@@ -352,7 +352,7 @@ switch ($Service.ToLower()) {
     }
     "token-service" {
         $ServiceDir = Join-Path $RootDir "services\token-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-token-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-token-service:latest"
         $success = Build-Service `
             -ServiceName "token-service" `
             -ServiceDir $ServiceDir `
@@ -363,7 +363,7 @@ switch ($Service.ToLower()) {
     }
     "user-service" {
         $ServiceDir = Join-Path $RootDir "services\user-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-user-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-user-service:latest"
         $success = Build-Service `
             -ServiceName "user-service" `
             -ServiceDir $ServiceDir `
@@ -374,7 +374,7 @@ switch ($Service.ToLower()) {
     }
     "social-service" {
         $ServiceDir = Join-Path $RootDir "services\social-service"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-social-service:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-social-service:latest"
         $success = Build-Service `
             -ServiceName "social-service" `
             -ServiceDir $ServiceDir `
@@ -386,7 +386,7 @@ switch ($Service.ToLower()) {
     # Gateways
     "admin-gateway" {
         $ServiceDir = Join-Path $RootDir "admin-gateway"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-admin-gateway:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-admin-gateway:latest"
         $success = Build-Service `
             -ServiceName "admin-gateway" `
             -ServiceDir $ServiceDir `
@@ -397,7 +397,7 @@ switch ($Service.ToLower()) {
     }
     "api-gateway" {
         $ServiceDir = Join-Path $RootDir "api-gateway"
-        $ImageName = Get-ImageName "$RegistryPath/apart-token-api-gateway:latest"
+        $ImageName = Get-ImageName "$RegistryPath/tuttime-api-gateway:latest"
         $success = Build-Service `
             -ServiceName "api-gateway" `
             -ServiceDir $ServiceDir `
@@ -412,21 +412,21 @@ switch ($Service.ToLower()) {
         
         # Build main services (user-specified list)
         $services = @(
-            @{Name="user-service"; Dir="services\user-service"; Image="apart-token-user-service"},
-            @{Name="rewards-service"; Dir="services\rewards-service"; Image="apart-token-rewards-service"},
-            @{Name="notification-service"; Dir="services\notification-service"; Image="apart-token-notification-service"},
-            @{Name="messaging-service"; Dir="services\messaging-service"; Image="apart-token-messaging-service"},
-            @{Name="mining-service"; Dir="services\mining-service"; Image="apart-token-mining-service"},
-            @{Name="content-service"; Dir="services\content-service"; Image="apart-token-content-service"},
-            @{Name="social-service"; Dir="services\social-service"; Image="apart-token-social-service"},
-            @{Name="cdn-proxy-service"; Dir="services\cdn-proxy-service"; Image="apart-token-cdn-proxy-service"},
-            @{Name="admin-service"; Dir="services\admin-service"; Image="apart-token-admin-service"}
+            @{Name="user-service"; Dir="services\user-service"; Image="tuttime-user-service"},
+            @{Name="rewards-service"; Dir="services\rewards-service"; Image="tuttime-rewards-service"},
+            @{Name="notification-service"; Dir="services\notification-service"; Image="tuttime-notification-service"},
+            @{Name="messaging-service"; Dir="services\messaging-service"; Image="tuttime-messaging-service"},
+            @{Name="mining-service"; Dir="services\mining-service"; Image="tuttime-mining-service"},
+            @{Name="content-service"; Dir="services\content-service"; Image="tuttime-content-service"},
+            @{Name="social-service"; Dir="services\social-service"; Image="tuttime-social-service"},
+            @{Name="cdn-proxy-service"; Dir="services\cdn-proxy-service"; Image="tuttime-cdn-proxy-service"},
+            @{Name="admin-service"; Dir="services\admin-service"; Image="tuttime-admin-service"}
         )
         
         # Build main gateways
         $gateways = @(
-            @{Name="api-gateway"; Dir="api-gateway"; Image="apart-token-api-gateway"},
-            @{Name="admin-gateway"; Dir="admin-gateway"; Image="apart-token-admin-gateway"}
+            @{Name="api-gateway"; Dir="api-gateway"; Image="tuttime-api-gateway"},
+            @{Name="admin-gateway"; Dir="admin-gateway"; Image="tuttime-admin-gateway"}
         )
         
         foreach ($svc in $services) {
@@ -461,25 +461,25 @@ switch ($Service.ToLower()) {
         
         # Build all services
         $services = @(
-            @{Name="user-service"; Dir="services\user-service"; Image="apart-token-user-service"},
-            @{Name="notification-service"; Dir="services\notification-service"; Image="apart-token-notification-service"},
-            @{Name="messaging-service"; Dir="services\messaging-service"; Image="apart-token-messaging-service"},
-            @{Name="token-service"; Dir="services\token-service"; Image="apart-token-token-service"},
-            @{Name="staking-service"; Dir="services\staking-service"; Image="apart-token-staking-service"},
-            @{Name="rewards-service"; Dir="services\rewards-service"; Image="apart-token-rewards-service"},
-            @{Name="social-service"; Dir="services\social-service"; Image="apart-token-social-service"},
-            @{Name="booking-integration-service"; Dir="services\booking-integration-service"; Image="apart-token-booking-integration-service"},
-            @{Name="mining-service"; Dir="services\mining-service"; Image="apart-token-mining-service"},
-            @{Name="conversion-service"; Dir="services\conversion-service"; Image="apart-token-conversion-service"},
-            @{Name="content-service"; Dir="services\content-service"; Image="apart-token-content-service"},
-            @{Name="cdn-proxy-service"; Dir="services\cdn-proxy-service"; Image="apart-token-cdn-proxy-service"},
-            @{Name="admin-service"; Dir="services\admin-service"; Image="apart-token-admin-service"}
+            @{Name="user-service"; Dir="services\user-service"; Image="tuttime-user-service"},
+            @{Name="notification-service"; Dir="services\notification-service"; Image="tuttime-notification-service"},
+            @{Name="messaging-service"; Dir="services\messaging-service"; Image="tuttime-messaging-service"},
+            @{Name="token-service"; Dir="services\token-service"; Image="tuttime-token-service"},
+            @{Name="staking-service"; Dir="services\staking-service"; Image="tuttime-staking-service"},
+            @{Name="rewards-service"; Dir="services\rewards-service"; Image="tuttime-rewards-service"},
+            @{Name="social-service"; Dir="services\social-service"; Image="tuttime-social-service"},
+            @{Name="booking-integration-service"; Dir="services\booking-integration-service"; Image="tuttime-booking-integration-service"},
+            @{Name="mining-service"; Dir="services\mining-service"; Image="tuttime-mining-service"},
+            @{Name="conversion-service"; Dir="services\conversion-service"; Image="tuttime-conversion-service"},
+            @{Name="content-service"; Dir="services\content-service"; Image="tuttime-content-service"},
+            @{Name="cdn-proxy-service"; Dir="services\cdn-proxy-service"; Image="tuttime-cdn-proxy-service"},
+            @{Name="admin-service"; Dir="services\admin-service"; Image="tuttime-admin-service"}
         )
         
         # Build all gateways
         $gateways = @(
-            @{Name="admin-gateway"; Dir="admin-gateway"; Image="apart-token-admin-gateway"},
-            @{Name="api-gateway"; Dir="api-gateway"; Image="apart-token-api-gateway"}
+            @{Name="admin-gateway"; Dir="admin-gateway"; Image="tuttime-admin-gateway"},
+            @{Name="api-gateway"; Dir="api-gateway"; Image="tuttime-api-gateway"}
         )
         
         foreach ($svc in $services) {
