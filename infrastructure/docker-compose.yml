@@ -134,4 +134,5 @@ networks:
     # Network configuration:
     # - external: true  - Network must exist (created by infra-start.ps1 script)
     # Script creates network before starting compose, so external: true is required
-    external: true  # Network is created by infra-start.ps1 script before compose starts
+    # external: true  # Network is created by infra-start.ps1 script before compose starts
+    driver: bridge

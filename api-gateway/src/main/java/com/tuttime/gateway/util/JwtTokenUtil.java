@@ -17,13 +17,13 @@ import java.util.function.Function;
 @Component
 public class JwtTokenUtil {
 
-    @Value("${spring.security.jwt.secret:apart-token-secret-key-change-in-production-min-256-bits}")
+    @Value("${spring.security.jwt.secret:tuttime-secret-key-change-in-production-min-256-bits}")
     private String secret;
 
-    @Value("${spring.security.jwt.issuer:apart-token-backend}")
+    @Value("${spring.security.jwt.issuer:tuttime-backend}")
     private String issuer;
 
-    @Value("${spring.security.jwt.audience:apart-token-mobile-app}")
+    @Value("${spring.security.jwt.audience:tuttime-mobile-app}")
     private String audience;
 
     /** Get secret key from the configured secret string (matches user-service logic). */
@@ -137,7 +137,7 @@ public class JwtTokenUtil {
     /**
      * Validate token issuer (ISS claim)
      * 
-     * <p>Ensures the token was issued by the expected issuer (apart-token-backend).
+     * <p>Ensures the token was issued by the expected issuer (tuttime-backend).
      * This prevents accepting tokens from other systems.
      *
      * @param token JWT token to validate
@@ -167,7 +167,7 @@ public class JwtTokenUtil {
     /**
      * Validate token audience (AUD claim)
      * 
-     * <p>Ensures the token is intended for the expected audience (apart-token-mobile-app).
+     * <p>Ensures the token is intended for the expected audience (tuttime-mobile-app).
      * This prevents accepting tokens intended for other applications.
      *
      * @param token JWT token to validate

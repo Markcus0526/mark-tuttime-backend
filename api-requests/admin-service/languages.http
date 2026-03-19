@@ -1,0 +1,100 @@
+### Admin Language Management Endpoints
+### 
+### IMPORTANT: You must login first to get a token!
+### Run the login.http request first to authenticate and set the {{token}} variable.
+### 
+### Template Variable Workaround:
+### REST Client interprets {{variable}} as variables. To use literal {{language}} in JSON,
+### we define a variable that contains the literal string, or use single braces {language}
+### and manually replace with {{language}} when needed.
+
+### Get All Languages
+GET http://localhost:28090/api/admin/orchestration/languages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Get Language by Code (returns translations JSON)
+GET http://localhost:28090/api/admin/orchestration/languages/ru
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Upload New Language (JSON file with 'code' field)
+### 
+### WORKAROUND: REST Client interprets {{variable}} as variables.
+### Option 1: Use single braces {language} below and manually replace with {{language}} in actual requests
+### Option 2: Define environment variable: templateVar = "{{language}}" and use {{templateVar}}
+### 
+### The actual JSON should contain {{language}} for frontend template interpolation
+POST http://localhost:28090/api/admin/orchestration/languages
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "code": "de",
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "send": "Senden",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg"
+  },
+  "language": {
+    "title": "Sprache",
+    "subtitle": "Wählen Sie Ihre bevorzugte Sprache",
+    "saveChanges": "Änderungen speichern",
+    "changeSuccess": "Sprache erfolgreich geändert zu {language}",
+    "english": "Englisch",
+    "german": "Deutsch"
+  }
+}
+
+### Update Language (upload new JSON file)
+### 
+### WORKAROUND: REST Client interprets {{variable}} as variables.
+### Use single braces {language} below and manually replace with {{language}} in actual requests
+### The actual JSON should contain {{language}} for frontend template interpolation
+PUT http://localhost:28090/api/admin/orchestration/languages/de
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "send": "Senden",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "welcome": "Willkommen"
+  },
+  "language": {
+    "title": "Sprache",
+    "subtitle": "Wählen Sie Ihre bevorzugte Sprache",
+    "saveChanges": "Änderungen speichern",
+    "changeSuccess": "Sprache erfolgreich geändert zu {language}",
+    "english": "Englisch",
+    "german": "Deutsch"
+  }
+}
+
+### Delete Language
+DELETE http://localhost:28090/api/admin/orchestration/languages/de
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Direct User-Service Endpoints (for testing)
+
+### Get All Languages from User-Service
+GET http://localhost:28081/api/v1/users/languages
+Content-Type: application/json
+
+### Get Language Translations from User-Service
+GET http://localhost:28081/api/v1/users/languages/ru
+Content-Type: application/json

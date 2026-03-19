@@ -1,0 +1,7 @@
+### Logout user and invalidate token
+### This will blacklist the current token in Redis, preventing further use
+POST http://localhost:29000/api/v1/users/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+> {% if (response.status === 200 && response.body.success) { client.global.set("token", ""); client.global.set("refreshToken", ""); } %}

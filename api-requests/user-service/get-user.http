@@ -1,0 +1,24 @@
+### Get user by ID
+### ⚠️ Note: Currently authentication is not enforced (permitAll), but token is included for future use
+GET http://localhost:29000/api/v1/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### If token variable is not set, manually set it:
+### @token = YOUR_TOKEN_HERE
+### Or run the login.http request first to automatically set the token
+
+### Example Response:
+### {
+###   "success": true,
+###   "data": {
+###     "userId": 1,
+###     "email": "user@example.com",
+###     "username": "testuser",
+###     "isVerified": false,
+###     "kycCompleted": false,
+###     "isActive": true,
+###     "isBlocked": false
+###   },
+###   "timestamp": "2025-11-25T04:30:00"
+### }

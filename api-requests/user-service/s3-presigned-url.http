@@ -1,0 +1,42 @@
+### Generate pre-signed URL for S3 file
+### This endpoint generates a pre-signed URL for accessing files stored in S3
+### The URL expiration time is configured via environment variable (S3_PRESIGNED_URL_EXPIRATION_HOURS)
+### Default: 24 hours
+GET http://localhost:29000/api/v1/users/s3/presigned-url?fileKey=jsons/cities/CC.json
+Content-Type: application/json
+
+### Example Response:
+### {
+###   "success": true,
+###   "message": "Pre-signed URL generated successfully",
+###   "data": {
+###     "fileKey": "jsons/cities/CC.json",
+###     "presignedUrl": "https://s3.ru-7.storage.selcloud.ru/boostx-storage/jsons/cities/CC.json?X-Amz-Algorithm=...",
+###     "expirationHours": 24
+###   },
+###   "timestamp": "2025-11-25T04:30:00"
+### }
+
+###
+
+### Generate pre-signed URL for another city file
+GET http://localhost:29000/api/v1/users/s3/presigned-url?fileKey=jsons/cities/CD.json
+Content-Type: application/json
+
+###
+
+### Generate pre-signed URL for user avatar
+GET http://localhost:29000/api/v1/users/s3/presigned-url?fileKey=users/123/avatar.jpg
+Content-Type: application/json
+
+###
+
+### Generate pre-signed URL for avatar file
+GET http://localhost:29000/api/v1/users/s3/presigned-url?fileKey=avatars/user-456.png
+Content-Type: application/json
+
+###
+
+### Example: File not found error
+### GET http://localhost:29000/api/v1/users/s3/presigned-url?fileKey=non-existent/file.json
+### Expected: 404 Not Found with error message

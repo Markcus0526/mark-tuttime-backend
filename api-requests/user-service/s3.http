@@ -1,0 +1,24 @@
+### ============================================
+### S3 PRE-SIGNED URL ENDPOINTS
+### ============================================
+### Base URL: http://localhost:29000/api/v1/users/s3
+
+@baseUrl = http://localhost:29000
+@s3Path = /api/v1/users/s3
+
+### ============================================
+### S3 OPERATIONS
+### ============================================
+
+### Generate Pre-signed URL for File Upload
+GET {{baseUrl}}{{s3Path}}/presigned-url?fileKey=uploads/profile/user-1/profile.jpg
+Authorization: Bearer {{token}}
+X-User-Id: 1
+Content-Type: application/json
+
+### Generate Pre-signed URL for File Download
+GET {{baseUrl}}{{s3Path}}/presigned-url/download?fileKey=uploads/profile/user-1/profile.jpg
+Authorization: Bearer {{token}}
+X-User-Id: 1
+Content-Type: application/json
+

@@ -26,7 +26,7 @@ public class NotificationProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final String NOTIFICATION_TOPIC = "apart-token.notifications";
+    private static final String NOTIFICATION_TOPIC = "tuttime.notifications";
 
     public void sendNotification(NotificationEvent event) {
         try {

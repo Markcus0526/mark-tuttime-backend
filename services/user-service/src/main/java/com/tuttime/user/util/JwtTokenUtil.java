@@ -27,9 +27,9 @@ public class JwtTokenUtil {
     @Value("${spring.security.jwt.expiration}")
     private Long expiration;
     
-    @Value("${spring.security.jwt.issuer:apart-token-backend}")
+    @Value("${spring.security.jwt.issuer:tuttime-backend}")
     private String issuer;
-    @Value("${spring.security.jwt.audience:apart-token-mobile-app}")
+    @Value("${spring.security.jwt.audience:tuttime-mobile-app}")
     private String audience;
     @Value("${sms.signup.token.expiration-minutes:15}")
     private int signupTokenExpirationMinutes;
@@ -37,7 +37,7 @@ public class JwtTokenUtil {
     @PostConstruct
     public void init() {
         if (secret == null || secret.trim().isEmpty()) {
-            secret = "apart-token-secret-key";
+            secret = "tuttime-secret-key";
             log.warn("JWT secret was empty, using fallback. Please set JWT_SECRET environment variable!");
         }
         // Note: We don't pad the secret string here - padding is done in getSigningKey() using bytes
@@ -363,7 +363,7 @@ public class JwtTokenUtil {
     /**
      * Validate token issuer (ISS claim)
      * 
-     * <p>Ensures the token was issued by the expected issuer (apart-token-backend).
+     * <p>Ensures the token was issued by the expected issuer (tuttime-backend).
      * This prevents accepting tokens from other systems.
      *
      * @param token JWT token to validate
@@ -393,7 +393,7 @@ public class JwtTokenUtil {
     /**
      * Validate token audience (AUD claim)
      * 
-     * <p>Ensures the token is intended for the expected audience (apart-token-mobile-app).
+     * <p>Ensures the token is intended for the expected audience (tuttime-mobile-app).
      * This prevents accepting tokens intended for other applications.
      *
      * @param token JWT token to validate

@@ -15,7 +15,7 @@ public class KafkaCommonConfig {
 
     /**
      * Kafka bootstrap servers
-     * Default: localhost:29092 (local) or apart-token-kafka:9092 (Docker)
+     * Default: localhost:29092 (local) or tuttime-kafka:9092 (Docker)
      */
     private String bootstrapServers = "localhost:29092";
 
@@ -23,7 +23,7 @@ public class KafkaCommonConfig {
      * Consumer group ID prefix
      * Services should append their service name: {groupPrefix}-{serviceName}
      */
-    private String consumerGroupPrefix = "apart-token";
+    private String consumerGroupPrefix = "tuttime";
 
     /**
      * Default consumer concurrency

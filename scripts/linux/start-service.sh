@@ -35,7 +35,7 @@ if [ -z "$1" ]; then
     echo "Usage: $0 <service-name>"
     echo ""
     echo "Available services:"
-    echo "  - user-service"
+    echo "  - admin-service"
     echo "  - token-service"
     echo "  - mining-service"
     echo "  - rewards-service"
@@ -44,7 +44,7 @@ if [ -z "$1" ]; then
     echo "  - notification-service"
     echo "  - conversion-service"
     echo "  - booking-integration-service"
-    echo "  - admin-service"
+    echo "  - user-service"
     echo "  - api-gateway"
     echo "  - admin-gateway"
     exit 1

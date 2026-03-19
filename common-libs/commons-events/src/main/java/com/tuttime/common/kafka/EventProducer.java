@@ -35,16 +35,16 @@ public class EventProducer {
     }
 
     // Topic names
-    private static final String TOPIC_USERS = "apart-token.users";
-    private static final String TOPIC_MINING = "apart-token.mining";
-    private static final String TOPIC_STAKING = "apart-token.staking";
-    private static final String TOPIC_CONVERSION = "apart-token.conversion";
-    private static final String TOPIC_REWARDS = "apart-token.rewards";
-    private static final String TOPIC_TOKENS = "apart-token.tokens";
+    private static final String TOPIC_USERS = "tuttime.users";
+    private static final String TOPIC_MINING = "tuttime.mining";
+    private static final String TOPIC_STAKING = "tuttime.staking";
+    private static final String TOPIC_CONVERSION = "tuttime.conversion";
+    private static final String TOPIC_REWARDS = "tuttime.rewards";
+    private static final String TOPIC_TOKENS = "tuttime.tokens";
     private static final String TOPIC_BOOKINGS = "apart-sharing.booking";
     private static final String TOPIC_RENTALS = "apart-sharing.rental";
-    private static final String TOPIC_USER_BLOCKS = "apart-token.user-blocks";
-    private static final String TOPIC_REFERRALS = "apart-token.referrals";
+    private static final String TOPIC_USER_BLOCKS = "tuttime.user-blocks";
+    private static final String TOPIC_REFERRALS = "tuttime.referrals";
 
     /**
      * Publish user event

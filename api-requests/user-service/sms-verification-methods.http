@@ -1,0 +1,237 @@
+### ============================================
+### SMS VERIFICATION METHODS TESTING
+### ============================================
+### This file tests all SMS verification methods:
+### 1. Telegram Gateway (for users with Telegram accounts)
+### 2. Flash Call (for Android devices without Telegram)
+### 3. Green SMS (for Russian phone numbers)
+### 4. Twilio (for non-Russian phone numbers)
+### ============================================
+
+### Variables
+@baseUrl = http://localhost:29000
+@authPath = /api/v1/auth
+
+### ============================================
+### METHOD 1: TELEGRAM GATEWAY
+### ============================================
+### This method is used when the phone number is registered with Telegram
+### The system will automatically check via Telegram Gateway API
+### 
+### Expected Response: verificationMethod = "Telegram Gateway"
+
+### Test Telegram Gateway - User with Telegram Account
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: iOS
+X-Device-Id: device-telegram-test-001
+
+{
+  "phoneNumber": "+1234567890"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "SMS verification code sent successfully",
+###     "verificationMethod": "Telegram Gateway"
+###   }
+### }
+
+### ============================================
+### METHOD 2: FLASH CALL (Android)
+### ============================================
+### This method is used for Android devices when user doesn't have Telegram
+### 
+### Expected Response: verificationMethod = "Flash Call"
+
+### Test Flash Call - Android Device without Telegram
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: Android
+X-Device-Id: device-android-test-001
+
+{
+  "phoneNumber": "+1987654321"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "SMS verification code sent successfully",
+###     "verificationMethod": "Flash Call"
+###   }
+### }
+
+### ============================================
+### METHOD 3: GREEN SMS (Russian Phone Numbers)
+### ============================================
+### This method is used for Russian phone numbers (+7) when:
+### - User doesn't have Telegram account
+### - Device is iOS or Web
+### 
+### Expected Response: verificationMethod = "Green SMS"
+
+### Test Green SMS - Russian Phone Number (iOS)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: iOS
+X-Device-Id: device-ios-russian-001
+
+{
+  "phoneNumber": "+79143358022"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "SMS verification code sent successfully",
+###     "verificationMethod": "Green SMS"
+###   }
+### }
+
+### Test Green SMS - Russian Phone Number (Web)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: Web
+X-Device-Id: device-web-russian-001
+
+{
+  "phoneNumber": "+79001234567"
+}
+
+### ============================================
+### METHOD 4: TWILIO (Non-Russian Phone Numbers)
+### ============================================
+### This method is used for non-Russian phone numbers when:
+### - User doesn't have Telegram account
+### - Device is iOS or Web
+### 
+### Expected Response: verificationMethod = "Twilio"
+
+### Test Twilio - US Phone Number (iOS)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: iOS
+X-Device-Id: device-ios-us-001
+
+{
+  "phoneNumber": "+15551234567"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "message": "SMS verification code sent successfully",
+###     "verificationMethod": "Twilio"
+###   }
+### }
+
+### Test Twilio - UK Phone Number (iOS)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: iOS
+X-Device-Id: device-ios-uk-001
+
+{
+  "phoneNumber": "+447911123456"
+}
+
+### Test Twilio - Web Device (Non-Russian)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Type: Web
+X-Device-Id: device-web-us-001
+
+{
+  "phoneNumber": "+14155551234"
+}
+
+### ============================================
+### FALLBACK: Request Body deviceType
+### ============================================
+### Testing fallback when header is not set
+### Device type from request body will be used
+
+### Test with deviceType in Request Body (Android)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Id: device-body-test-001
+
+{
+  "phoneNumber": "+15559998888",
+  "deviceType": "Android"
+}
+
+### Test with deviceType in Request Body (iOS)
+POST {{baseUrl}}{{authPath}}/signup/send-sms
+Content-Type: application/json
+X-Device-Id: device-body-test-002
+
+{
+  "phoneNumber": "+15559998877",
+  "deviceType": "iOS"
+}
+
+### ============================================
+### VERIFICATION FLOW
+### ============================================
+### After sending SMS, verify the code
+
+### 1. Verify SMS Code
+POST {{baseUrl}}{{authPath}}/signup/verify-sms
+Content-Type: application/json
+X-Device-Id: device-verify-001
+
+{
+  "phoneNumber": "+1234567890",
+  "smsCode": "123456"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "data": {
+###     "signupToken": "eyJhbGciOiJIUzI1NiJ9..."
+###   }
+### }
+
+### ============================================
+### TESTING NOTES
+### ============================================
+### 
+### 1. Telegram Gateway:
+###    - Requires SMS_TELEGRAM_API_TOKEN to be configured
+###    - System automatically checks if phone number is registered with Telegram
+###    - If phone number is registered, uses Telegram Gateway
+### 
+### 2. Flash Call:
+###    - Only used for Android devices
+###    - Requires SMS_FLASHCALL_API_URL and SMS_FLASHCALL_API_KEY
+###    - User receives a missed call with verification code in caller ID
+### 
+### 3. Green SMS:
+###    - Used for Russian phone numbers (+7)
+###    - Requires SMS_GREEN_JWT_TOKEN (default provided)
+###    - Works for iOS and Web devices
+### 
+### 4. Twilio:
+###    - Used for non-Russian phone numbers
+###    - Requires SMS_TWILIO_ACCOUNT_SID, SMS_TWILIO_AUTH_TOKEN, SMS_TWILIO_FROM_NUMBER
+###    - Works for iOS and Web devices
+### 
+### 5. Priority Order:
+###    a. Check if user has Telegram account (database or API)
+###    b. If Telegram → use Telegram Gateway
+###    c. If no Telegram + Android → use Flash Call
+###    d. If no Telegram + iOS/Web → use SMS (Green SMS for +7, Twilio for others)
+### 
+### 6. Device Type Priority:
+###    a. X-Device-Type HTTP header (preferred)
+###    b. deviceType in request body (fallback)
+###    c. Default to SMS if neither provided
+
