@@ -2,6 +2,7 @@
 ### ⚠️ IMPORTANT: Use /api/v1/users/register (NOT /api/users/register)
 POST http://localhost:29000/api/v1/users/register
 Content-Type: application/json
+X-Device-Id: device-12345
 
 {
   "email": "kairos@kairos.com",
@@ -9,7 +10,8 @@ Content-Type: application/json
   "username": "kairos",
   "phone": "+1234567899",
   "country": "USA",
-  "city": "New York"
+  "city": "New York",
+  "dateOfBirth": "3/19/2026"
 }
 
 ### Register a new user (Via API Gateway - requires API Gateway running on port 9000)

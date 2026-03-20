@@ -40,7 +40,8 @@ public class RateLimitingConfig {
     @Value("${spring.data.redis.password:}")
     private String redisPassword;
 
-    // Rate limit thresholds - IP-based endpoints
+    // --- Updated Property Keys (Removed brackets/quotes) ---
+
     @Value("${rate.limit.signin.capacity:5}")
     private int signinCapacity;
 
@@ -53,16 +54,16 @@ public class RateLimitingConfig {
     @Value("${rate.limit.signup.refill.period.minutes:1}")
     private int signupRefillPeriodMinutes;
 
-    @Value("${rate.limit.signup['send-sms'].capacity:3}")
+    @Value("${rate.limit.signup.sendsms.capacity:3}")
     private int signupSendSmsCapacity;
 
-    @Value("${rate.limit.signup['send-sms'].refill.period.hours:1}")
+    @Value("${rate.limit.signup.sendsms.refill.period.hours:1}")
     private int signupSendSmsRefillPeriodHours;
 
-    @Value("${rate.limit.signup['verify-sms'].capacity:10}")
+    @Value("${rate.limit.signup.verifysms.capacity:10}")
     private int signupVerifySmsCapacity;
 
-    @Value("${rate.limit.signup['verify-sms'].refill.period.hours:1}")
+    @Value("${rate.limit.signup.verifysms.refill.period.hours:1}")
     private int signupVerifySmsRefillPeriodHours;
 
     @Value("${rate.limit.password.forgot.capacity:3}")
@@ -71,11 +72,12 @@ public class RateLimitingConfig {
     @Value("${rate.limit.password.forgot.refill.period.hours:1}")
     private int passwordForgotRefillPeriodHours;
 
-    @Value("${rate.limit.password['verify-sms'].capacity:10}")
+    @Value("${rate.limit.password.verifysms.capacity:10}")
     private int passwordVerifySmsCapacity;
 
-    @Value("${rate.limit.password['verify-sms'].refill.period.hours:1}")
+    @Value("${rate.limit.password.verifysms.refill.period.hours:1}")
     private int passwordVerifySmsRefillPeriodHours;
+
     @Value("${rate.limit.auth.refresh.capacity:10}")
     private int authRefreshCapacity;
 
@@ -101,60 +103,42 @@ public class RateLimitingConfig {
     @Bean
     public RedisClient redisClient() {
         RedisURI.Builder uriBuilder;
-        boolean useSentinel;
-        
-        // Connection mode selection:
-        // - Kubernetes: Sentinel is configured (SPRING_DATA_REDIS_SENTINEL_MASTER and SPRING_DATA_REDIS_SENTINEL_NODES are set)
-        //   → Uses Redis Sentinel for high availability (no direct host connection)
-        // - Docker/Local: Sentinel is NOT configured (both master and nodes are empty)
-        //   → Uses direct Redis connection (host:port)
-        // This ensures proper Redis connection strategy for each environment.
-        if (sentinelMaster != null && !sentinelMaster.trim().isEmpty() && 
-            sentinelNodes != null && !sentinelNodes.trim().isEmpty()) {
-            // Sentinel mode
-            useSentinel = true;
-            uriBuilder = RedisURI.builder()
-                    .withSentinelMasterId(sentinelMaster);
-            
+
+        // STRICT CHECK: Must be non-null AND have actual text
+        boolean useSentinel = org.springframework.util.StringUtils.hasText(sentinelMaster) &&
+                org.springframework.util.StringUtils.hasText(sentinelNodes);
+
+
+        if (useSentinel) {
+            uriBuilder = RedisURI.builder().withSentinelMasterId(sentinelMaster.trim());
             for (String node : sentinelNodes.split(",")) {
                 String[] hostPort = node.trim().split(":");
                 if (hostPort.length == 2) {
                     uriBuilder.withSentinel(hostPort[0], Integer.parseInt(hostPort[1]));
                 }
             }
-            
-            // Connection mode logging removed to reduce log noise
         } else {
-            // Direct connection mode (default for Docker/local development)
-            useSentinel = false;
+            // Force Standalone for Docker/Local
             uriBuilder = RedisURI.builder()
                     .withHost(redisHost)
                     .withPort(redisPort);
         }
 
-        if (redisPassword != null && !redisPassword.isEmpty()) {
+        if (org.springframework.util.StringUtils.hasText(redisPassword)) {
             uriBuilder.withPassword(redisPassword.toCharArray());
         }
 
-        RedisURI redisUri = uriBuilder.build();
-        RedisClient client = RedisClient.create(redisUri);
-        
-        client.setOptions(ClientOptions.builder()
-                .autoReconnect(true)
-                .pingBeforeActivateConnection(true)
-                .build());
-
-        // Connection logging removed to reduce log noise - only errors will be logged
-
-        return client;
+        return RedisClient.create(uriBuilder.build());
     }
+
 
     /** Creates Redis connection for Bucket4j proxy manager */
     @Bean
     public StatefulRedisConnection<byte[], byte[]> redisConnection(RedisClient redisClient) {
-        boolean useSentinel = sentinelMaster != null && !sentinelMaster.trim().isEmpty() && 
-                              sentinelNodes != null && !sentinelNodes.trim().isEmpty();
-        
+        // STRICT CHECK: Must be non-null AND have actual text
+        boolean useSentinel = org.springframework.util.StringUtils.hasText(sentinelMaster) &&
+                org.springframework.util.StringUtils.hasText(sentinelNodes);
+
         try {
             StatefulRedisConnection<byte[], byte[]> connection = redisClient.connect(ByteArrayCodec.INSTANCE);
             // Connection success logging removed to reduce log noise - only errors will be logged

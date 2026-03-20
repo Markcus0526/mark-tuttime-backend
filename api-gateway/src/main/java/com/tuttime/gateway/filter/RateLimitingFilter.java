@@ -51,16 +51,16 @@ public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitin
     @Value("${rate.limit.signup.refill.period.minutes:1}")
     private int signupRefillPeriodMinutes;
 
-    @Value("${rate.limit.signup['send-sms'].capacity:3}")
+    @Value("${rate.limit.signup.sendsms.capacity:3}")
     private int signupSendSmsCapacity;
 
-    @Value("${rate.limit.signup['send-sms'].refill.period.hours:1}")
+    @Value("${rate.limit.signup.sendsms.refill.period.hours:1}")
     private int signupSendSmsRefillPeriodHours;
 
-    @Value("${rate.limit.signup['verify-sms'].capacity:10}")
+    @Value("${rate.limit.signup.verifysms.capacity:10}")
     private int signupVerifySmsCapacity;
 
-    @Value("${rate.limit.signup['verify-sms'].refill.period.hours:1}")
+    @Value("${rate.limit.signup.verifysms.refill.period.hours:1}")
     private int signupVerifySmsRefillPeriodHours;
 
     @Value("${rate.limit.password.forgot.capacity:3}")
@@ -69,10 +69,10 @@ public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitin
     @Value("${rate.limit.password.forgot.refill.period.hours:1}")
     private int passwordForgotRefillPeriodHours;
 
-    @Value("${rate.limit.password['verify-sms'].capacity:10}")
+    @Value("${rate.limit.password.verifysms.capacity:10}")
     private int passwordVerifySmsCapacity;
 
-    @Value("${rate.limit.password['verify-sms'].refill.period.hours:1}")
+    @Value("${rate.limit.password.verifysms.refill.period.hours:1}")
     private int passwordVerifySmsRefillPeriodHours;
 
     // User-based rate limit thresholds
