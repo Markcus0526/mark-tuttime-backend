@@ -286,11 +286,11 @@ grpc:
   #   Local: USER_SERVICE=localhost
   client:
     user-service:
-      address: static://${USER_SERVICE:user-service}:29191
+      address: static://${USER_SERVICE:user-service}:8001
       negotiationType: plaintext
-    mining-service:
-      address: static://${MINING_SERVICE:mining-service}:29193
-      negotiationType: plaintext
+    # mining-service:
+    #  address: static://${MINING_SERVICE:mining-service}:29193
+    #  negotiationType: plaintext
     # TODO: Uncomment when token-service is deployed
     # token-service:
     #   address: static://${TOKEN_SERVICE:token-service}:29190
@@ -299,16 +299,16 @@ grpc:
     # staking-service:
     #   address: static://${STAKING_SERVICE:staking-service}:29194
     #   negotiationType: plaintext
-    rewards-service:
-      address: static://${REWARDS_SERVICE:rewards-service}:29195
-      negotiationType: plaintext
+    # rewards-service:
+    #  address: static://${REWARDS_SERVICE:rewards-service}:29195
+    #  negotiationType: plaintext
     # TODO: Uncomment when conversion-service is deployed
     # conversion-service:
     #   address: static://${CONVERSION_SERVICE:conversion-service}:29197
     #   negotiationType: plaintext
-    content-service:
-      address: static://${CONTENT_SERVICE:content-service}:29196
-      negotiationType: plaintext
+    # content-service:
+    #  address: static://${CONTENT_SERVICE:content-service}:29196
+    #  negotiationType: plaintext
     notification-service:
       address: static://${NOTIFICATION_SERVICE:notification-service}:29198
       negotiationType: plaintext

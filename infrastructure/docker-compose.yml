@@ -94,6 +94,23 @@ services:
     networks:
       - tuttime-network
 
+  # Kafka UI - Web interface for managing topics and messages
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: tuttime-kafka-ui
+    ports:
+      - "9000:8080" # Change 9000 to whatever port you prefer
+    env_file:
+      - .env.docker
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=tuttime-local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=tuttime-kafka:9093
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - tuttime-network
+
   # Eureka removed - Using Kubernetes Native Discovery / Docker service names
   # Services communicate directly via Docker service names (e.g., user-service:8080)
 
