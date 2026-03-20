@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     container_name: tuttime-admin-service-db
     ports:
-      - "5442:5432"  # Different port to avoid conflict
+      - "5433:5432"  # Different port to avoid conflict
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-${DATABASE_USERNAME:-postgres}}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -36,10 +36,10 @@ services:
       admin-service-db:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.docker
     environment:
       # Explicitly set profile to ensure docker profile is active
-      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env
+      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env.docker
       # Example: SPRING_PROFILES_ACTIVE=docker,graylog-enabled
       SPRING_PROFILES_ACTIVE: docker
       # Graylog Configuration (optional - only used if graylog-enabled profile is active)
@@ -49,16 +49,16 @@ services:
       DATABASE_URL: jdbc:postgresql://tuttime-admin-service-db:5432/admin_service_db?currentSchema=admin_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC
       JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
-      # DATABASE_PASSWORD will be loaded from .env via env_file
+      # DATABASE_PASSWORD will be loaded from .env.docker via env_file
       # Redis configuration - explicitly set to ensure they're passed to container
       REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
-      # REDIS_PASSWORD will be loaded from .env via env_file
+      # REDIS_PASSWORD will be loaded from .env.docker via env_file
       # Don't set it here to avoid overriding the value from env_file
       KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
       KAFKA_ENABLED: "true"
       ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
-      # JWT configuration - will be loaded from .env via env_file
+      # JWT configuration - will be loaded from .env.docker via env_file
       JWT_SECRET: ${JWT_SECRET:***REMOVED***}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
       JWT_ISSUER: ${JWT_ISSUER:-tuttime-admin-backend}
