@@ -237,7 +237,7 @@ email:
   # SMTP configuration
   smtp:
     from-email: ${EMAIL_SMTP_FROM_EMAIL:support@boost-x.pro} # From email address
-    from-name: ${EMAIL_SMTP_FROM_NAME:Boostx} # From name (MAIL_FROM_NAME="${APP_NAME}")
+    from-name: ${EMAIL_SMTP_FROM_NAME:Tuttime} # From name (MAIL_FROM_NAME="${APP_NAME}")
 
 server:
   port: 28081

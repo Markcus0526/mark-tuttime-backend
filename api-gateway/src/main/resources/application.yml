@@ -541,9 +541,9 @@ spring:
       # If SPRING_DATA_REDIS_SENTINEL_MASTER and SPRING_DATA_REDIS_SENTINEL_NODES are set, Sentinel mode is used
       # Otherwise, direct connection mode is used (backward compatible)
       # Spring Boot automatically maps SPRING_DATA_REDIS_SENTINEL_* environment variables to these properties
-      sentinel:
-        master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
-        nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
+      #sentinel:
+      #  master: ${SPRING_DATA_REDIS_SENTINEL_MASTER}
+      #  nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES}
       # Direct connection configuration (used when Sentinel is not configured)
       host: ${REDIS_HOST:tuttime-redis}
       port: ${REDIS_PORT:6379}
@@ -781,7 +781,7 @@ graylog:
 # Application-specific configuration
 app:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://app.apart.com,http://localhost:3000,http://localhost:8080}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://app.tuttime.com,http://localhost:3000,http://localhost:8080}
 
 # Rate Limiting Configuration
 # All rate limit thresholds are configurable via environment variables
@@ -800,12 +800,12 @@ rate:
       refill:
         period:
           minutes: ${RATE_LIMIT_SIGNUP_REFILL_PERIOD_MINUTES:1}
-      send-sms:
+      sendsms:
         capacity: ${RATE_LIMIT_SIGNUP_SEND_SMS_CAPACITY:3}
         refill:
           period:
             hours: ${RATE_LIMIT_SIGNUP_SEND_SMS_REFILL_PERIOD_HOURS:1}
-      verify-sms:
+      verifysms:
         capacity: ${RATE_LIMIT_SIGNUP_VERIFY_SMS_CAPACITY:10}
         refill:
           period:
@@ -817,7 +817,7 @@ rate:
         refill:
           period:
             hours: ${RATE_LIMIT_PASSWORD_FORGOT_REFILL_PERIOD_HOURS:1}
-      verify-sms:
+      verifysms:
         capacity: ${RATE_LIMIT_PASSWORD_VERIFY_SMS_CAPACITY:10}
         refill:
           period:
