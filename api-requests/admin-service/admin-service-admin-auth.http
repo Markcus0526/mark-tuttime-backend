@@ -1,0 +1,70 @@
+### ============================================
+### ADMIN SERVICE ENDPOINTS
+### ============================================
+### Base URL: http://localhost:8081/api/admin
+### Requires: Admin authentication token
+
+@adminBaseUrl = http://localhost:8081
+@adminPath = /api/admin
+
+### Admin Login
+POST {{adminBaseUrl}}{{adminPath}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "***REMOVED***"
+}
+
+> {%
+    // Parse JSON response if it's a string
+    let responseData;
+    if (typeof response.body === 'string') {
+        responseData = JSON.parse(response.body);
+    } else {
+        responseData = response.body;
+    }
+    
+    // Extract token from response
+    if (responseData && responseData.data && responseData.data.token) {
+        const token = responseData.data.token;
+        client.global.set("adminToken", token);
+        client.log("Token saved successfully. Length: " + token.length);
+        client.log("Token preview: " + token.substring(0, 50) + "...");
+    } else {
+        client.log("ERROR: Token not found in response!");
+        client.log("Response body: " + JSON.stringify(responseData));
+    }
+%}
+
+
+### Admin Logout
+POST {{adminBaseUrl}}{{adminPath}}/auth/logout
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+> {%
+    // Debug: Log the token being used
+    const token = client.global.get("adminToken");
+    if (token) {
+        client.log("Using token for logout. Length: " + token.length);
+        client.log("Token preview: " + token.substring(0, 50) + "...");
+    } else {
+        client.log("ERROR: No token found! Please run login request first.");
+    }
+
+    // Clear token on successful logout
+    if (response.status === 200) {
+        let responseData;
+        if (typeof response.body === 'string') {
+            responseData = JSON.parse(response.body);
+        } else {
+            responseData = response.body;
+        }
+
+        if (responseData && responseData.success) {
+            client.global.set("token", "");
+            client.log("Logout successful. Token cleared.");
+        }
+    }
+%}

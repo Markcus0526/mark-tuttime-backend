@@ -73,6 +73,6 @@ WORKDIR /app
 
 COPY --from=builder /app/services/admin-service/target/admin-service-*.jar app.jar
 
-EXPOSE 28090
+EXPOSE 8081
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
