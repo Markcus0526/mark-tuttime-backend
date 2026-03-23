@@ -13,7 +13,7 @@ services:
       # Redis configuration - explicitly set to ensure they're passed to container
       REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
-      # REDIS_PASSWORD will be loaded from .env via env_file
+      # REDIS_PASSWORD will be loaded from .env.local via env_file
       # Don't set it here to avoid overriding the value from env_file
       ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
       HOSTNAME: admin-gateway

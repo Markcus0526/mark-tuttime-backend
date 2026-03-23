@@ -240,20 +240,20 @@ email:
     from-name: ${EMAIL_SMTP_FROM_NAME:Tuttime} # From name (MAIL_FROM_NAME="${APP_NAME}")
 
 server:
-  port: 28081
+  port: 28001
   shutdown: graceful
 
 # Service URLs for REST clients
 # Uses service name variables (e.g., REWARDS_SERVICE) that can be set per environment:
 #   Docker: REWARDS_SERVICE=rewards-service (default)
 #   Kubernetes: REWARDS_SERVICE=rewards-service
-services:
-  rewards-service:
-    url: http://${REWARDS_SERVICE:rewards-service}:28085
-  token-service:
-    url: http://${TOKEN_SERVICE:token-service}:28082
-  mining-service:
-    url: http://${MINING_SERVICE:mining-service}:28083
+#services:
+#  rewards-service:
+#    url: http://${REWARDS_SERVICE:rewards-service}:28085
+#  token-service:
+#    url: http://${TOKEN_SERVICE:token-service}:28082
+#  mining-service:
+#    url: http://${MINING_SERVICE:mining-service}:28083
 
 # gRPC configuration for Docker/Kubernetes
 # Uses service name variables (e.g., REWARDS_SERVICE) that can be set per environment:
@@ -267,24 +267,24 @@ grpc:
   # Used by GrpcClientDeadlineInterceptor.
   client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS:60}
   client:
-    rewards-service:
-      address: static://${REWARDS_SERVICE:rewards-service}:29195
-      negotiationType: plaintext
-    token-service:
-      address: static://${TOKEN_SERVICE:token-service}:29190
-      negotiationType: plaintext
-    mining-service:
-      address: static://${MINING_SERVICE:mining-service}:29193
-      negotiationType: plaintext
-    conversion-service:
-      address: static://${CONVERSION_SERVICE:conversion-service}:29197
-      negotiationType: plaintext
+#    rewards-service:
+#      address: static://${REWARDS_SERVICE:rewards-service}:29195
+#      negotiationType: plaintext
+#    token-service:
+#      address: static://${TOKEN_SERVICE:token-service}:29190
+#      negotiationType: plaintext
+#    mining-service:
+#      address: static://${MINING_SERVICE:mining-service}:29193
+#      negotiationType: plaintext
+#    conversion-service:
+#      address: static://${CONVERSION_SERVICE:conversion-service}:29197
+#      negotiationType: plaintext
     admin-service:
-      address: static://${ADMIN_SERVICE:admin-service}:29199
+      address: static://${ADMIN_SERVICE:admin-service}:28003
       negotiationType: plaintext
-    staking-service:
-      address: static://${STAKING_SERVICE:staking-service}:29194
-      negotiationType: plaintext
+#    staking-service:
+#      address: static://${STAKING_SERVICE:staking-service}:29194
+#      negotiationType: plaintext
 
 management:
   endpoints:

@@ -5,7 +5,7 @@ services:
     ports:
       - "5434:5432"
     env_file:
-      - .env
+      - .env.docker
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-${DATABASE_USERNAME:-postgres}}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
@@ -34,10 +34,10 @@ services:
       user-service-db:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.local
     environment:
       # Explicitly set profile to ensure docker profile is active
-      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env
+      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env.local
       # Example: SPRING_PROFILES_ACTIVE=docker,graylog-enabled
       SPRING_PROFILES_ACTIVE: docker
       # Graylog Configuration (optional - only used if graylog-enabled profile is active)
@@ -46,25 +46,25 @@ services:
       # Database configuration
       DATABASE_URL: jdbc:postgresql://tuttime-user-service-db:5432/user_service_db?currentSchema=user_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
-      # DATABASE_PASSWORD will be loaded from .env via env_file
+      # DATABASE_PASSWORD will be loaded from .env.local via env_file
       # Redis configuration - explicitly set to ensure they're passed to container
       REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
-      # REDIS_PASSWORD will be loaded from .env via env_file
+      # REDIS_PASSWORD will be loaded from .env.local via env_file
       # Don't set it here to avoid overriding the value from env_file
       KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
       ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
       GRPC_PORT: 29191
       JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
     ports:
-      - "28081:28081"
+      - "8001:8001"
       - "29191:29191"
     networks:
       - tuttime-network
     healthcheck:
       # Use liveness endpoint - only checks diskSpace,ping (non-recoverable failures)
-      #test: ["CMD-SHELL", "wget --spider --quiet http://localhost:28081/actuator/health/liveness || exit 1"]
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/28081' || exit 1"]
+      #test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8001/actuator/health/liveness || exit 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8001' || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 5

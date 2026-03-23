@@ -1,0 +1,45 @@
+### ============================================
+### USER SERVICE ENDPOINTS
+### ============================================
+### Requires: User authentication token
+
+@userBaseUrl = http://localhost:8080
+@userPath = /api/v1
+
+### Register a new user
+### ⚠️ IMPORTANT: Use /api/v1/users/register (NOT /api/users/register)
+POST {{userBaseUrl}}{{userPath}}/users/register
+Content-Type: application/json
+X-Device-Id: device-12345
+
+{
+  "email": "testuser01@gmail.com",
+  "password": "***REMOVED***",
+  "username": "test user 01",
+  "phone": "+1234567899",
+  "country": "USA",
+  "city": "New York",
+  "dateOfBirth": "3/19/2026"
+}
+
+### User Login
+POST {{userBaseUrl}}{{userPath}}/users/login
+Content-Type: application/json
+
+{
+  "email": "testuser01@gmail.com",
+  "password": "***REMOVED***"
+}
+
+> {%
+    client.global.set("token", response.body.data.token);
+    client.global.set("refreshToken", response.body.data.refreshToken);
+%}
+
+### Logout user and invalidate token
+### This will blacklist the current token in Redis, preventing further use
+POST {{userBaseUrl}}{{userPath}}/users/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+> {% if (response.status === 200 && response.body.success) { client.global.set("token", ""); client.global.set("refreshToken", ""); } %}

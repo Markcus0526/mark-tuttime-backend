@@ -132,7 +132,7 @@ spring:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
 server:
-  port: 8081
+  port: 28003
   tomcat:
     max-http-post-size: 500MB  # Increase Tomcat's max POST size for large video uploads
     max-swallow-size: 500MB  # Maximum size of request body that will be swallowed
@@ -250,26 +250,26 @@ app:
 #   Local: USER_SERVICE=localhost
 services:
   user-service:
-    url: http://${USER_SERVICE:user-service}:28081
-  mining-service:
-    url: http://${MINING_SERVICE:mining-service}:28083
-  social-service:
-    url: http://${SOCIAL_SERVICE:social-service}:28087
+    url: http://${USER_SERVICE:user-service}:28001
+  #mining-service:
+  #  url: http://${MINING_SERVICE:mining-service}:28083
+  #social-service:
+  #  url: http://${SOCIAL_SERVICE:social-service}:28087
   # TODO: Uncomment when token-service is deployed
   # token-service:
   #   url: http://${TOKEN_SERVICE:token-service}:28082
   # TODO: Uncomment when staking-service is deployed
   # staking-service:
   #   url: http://${STAKING_SERVICE:staking-service}:28084
-  rewards-service:
-    url: http://${REWARDS_SERVICE:rewards-service}:28085
-  content-service:
-    url: http://${CONTENT_SERVICE:content-service}:28086
+  #rewards-service:
+  #  url: http://${REWARDS_SERVICE:rewards-service}:28085
+  #content-service:
+  #  url: http://${CONTENT_SERVICE:content-service}:28086
   # TODO: Uncomment when conversion-service is deployed
   # conversion-service:
   #   url: http://${CONVERSION_SERVICE:conversion-service}:28087
-  notification-service:
-    url: http://${NOTIFICATION_SERVICE:notification-service}:28088
+  #notification-service:
+  #  url: http://${NOTIFICATION_SERVICE:notification-service}:28088
 
 # gRPC Server Configuration
 grpc:
@@ -286,7 +286,7 @@ grpc:
   #   Local: USER_SERVICE=localhost
   client:
     user-service:
-      address: static://${USER_SERVICE:user-service}:8001
+      address: static://${USER_SERVICE:user-service}:28001
       negotiationType: plaintext
     # mining-service:
     #  address: static://${MINING_SERVICE:mining-service}:29193
@@ -309,9 +309,9 @@ grpc:
     # content-service:
     #  address: static://${CONTENT_SERVICE:content-service}:29196
     #  negotiationType: plaintext
-    notification-service:
-      address: static://${NOTIFICATION_SERVICE:notification-service}:29198
-      negotiationType: plaintext
+    #notification-service:
+    #  address: static://${NOTIFICATION_SERVICE:notification-service}:29198
+    #  negotiationType: plaintext
 
 # Resilience4j Configuration - Circuit breaker and retry
 resilience4j:

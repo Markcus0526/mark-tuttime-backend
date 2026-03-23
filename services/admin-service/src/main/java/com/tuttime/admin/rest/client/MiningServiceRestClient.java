@@ -61,9 +61,9 @@ public class MiningServiceRestClient {
         }
         
         // Validate port (mining-service should be on 28083)
-        if (miningServiceUrl.contains(":28081")) {
-            log.error("CRITICAL CONFIGURATION ERROR: miningServiceUrl uses port 28081 (user-service port) instead of 28083 (mining-service port)! URL: {}", miningServiceUrl);
-            throw new IllegalStateException("miningServiceUrl uses wrong port (28081 is user-service, should be 28083 for mining-service). URL: " + miningServiceUrl);
+        if (miningServiceUrl.contains(":8001")) {
+            log.error("CRITICAL CONFIGURATION ERROR: miningServiceUrl uses port 8001 (user-service port) instead of 28083 (mining-service port)! URL: {}", miningServiceUrl);
+            throw new IllegalStateException("miningServiceUrl uses wrong port (8001 is user-service, should be 28083 for mining-service). URL: " + miningServiceUrl);
         }
         
         log.info("MiningServiceRestClient configuration validated successfully. URL: {}", miningServiceUrl);
@@ -506,7 +506,7 @@ public class MiningServiceRestClient {
                 throw new IllegalStateException("miningServiceUrl cannot be null");
             }
             String lowerUrl = miningServiceUrl.toLowerCase();
-            if (lowerUrl.contains("user-service") || lowerUrl.contains("user_service") || lowerUrl.contains(":28081")) {
+            if (lowerUrl.contains("user-service") || lowerUrl.contains("user_service") || lowerUrl.contains(":8001")) {
                 log.error("CRITICAL CONFIGURATION ERROR: miningServiceUrl is incorrectly configured! URL: {}. " +
                          "It points to user-service instead of mining-service. " +
                          "Check MINING_SERVICE environment variable.", miningServiceUrl);

@@ -47,13 +47,13 @@ spring:
 #   Local: ADMIN_SERVICE=localhost
 admin:
   service:
-    url: http://${ADMIN_SERVICE:admin-service}:8081
+    url: http://${ADMIN_SERVICE:admin-service}:28003
   jwt:
     secret: ${ADMIN_JWT_SECRET:}
     expiration: ${ADMIN_JWT_EXPIRATION:86400000} # 24 hours in milliseconds
 
 server:
-  port: 28080
+  port: 8081
   tomcat:
     max-swallow-size: 500MB  # Maximum size of request body that will be swallowed
     max-http-form-post-size: 500MB

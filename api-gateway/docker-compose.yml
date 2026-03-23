@@ -6,7 +6,7 @@ services:
     image: tuttime/api-gateway:v1  # <--- Add this line
     container_name: tuttime-api-gateway
     env_file:
-      - .env
+      - .env.docker
     environment:
       # Explicitly set profile to ensure docker profile is active
       SPRING_PROFILES_ACTIVE: docker

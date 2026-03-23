@@ -3,7 +3,7 @@
 ### Make sure 'graylog-enabled' profile is added to SPRING_PROFILES_ACTIVE before testing
 ### Example: SPRING_PROFILES_ACTIVE=local,graylog-enabled
 
-@baseUrl = http://localhost:28081
+@baseUrl = http://localhost:8001
 @correlationId = test-correlation-12345
 
 ### Test 1: Send SMS Verification (should generate logs with MDC fields)

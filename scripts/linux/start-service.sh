@@ -63,7 +63,7 @@ declare -A SERVICE_PORT
 
 SERVICE_PATH["user-service"]="services/user-service"
 SERVICE_DB_URL["user-service"]="jdbc:postgresql://localhost:5432/user_service_db?currentSchema=user_service&stringtype=unspecified&prepareThreshold=0"
-SERVICE_PORT["user-service"]="28081"
+SERVICE_PORT["user-service"]="8001"
 
 SERVICE_PATH["token-service"]="services/token-service"
 SERVICE_DB_URL["token-service"]="jdbc:postgresql://localhost:5432/token_service_db?currentSchema=token_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC"

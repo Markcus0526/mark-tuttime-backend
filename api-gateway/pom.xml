@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>api-gateway</artifactId>
-    <name>api-gateway</name>
+    <name>Api Gateway</name>
     <packaging>jar</packaging>
 
     <description>TutTime API Gateway</description>
