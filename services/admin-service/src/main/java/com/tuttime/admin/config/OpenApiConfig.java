@@ -22,7 +22,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Admin Service API")
                         .description("""
-                            Comprehensive Admin Panel API for APART TOKEN Platform
+                            Comprehensive Admin Panel API for TUTTIME Platform
                             
                             This API provides endpoints for managing users, tokens, mining, staking, conversions, and system configuration.
                             All endpoints require JWT authentication except `/api/admin/auth/login`.
@@ -51,7 +51,7 @@ public class OpenApiConfig {
                             """)
                         .version("1.0.0")
                         .contact(new io.swagger.v3.oas.models.info.Contact()
-                                .name("APART TOKEN Support")
+                                .name("TUTTIME Support")
                                 .email("support@tuttime.com")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()

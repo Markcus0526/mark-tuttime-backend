@@ -22,7 +22,7 @@ public class SmtpEmailProvider {
     @Value("${email.smtp.from-email:noreply@tuttime.com}")
     private String fromEmail;
     
-    @Value("${email.smtp.from-name:APART TOKEN}")
+    @Value("${email.smtp.from-name:TUTTIME}")
     private String fromName;
     
     public SmtpEmailProvider(JavaMailSender mailSender) {

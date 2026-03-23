@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.restaurant.entity.readmodel.RestaurantReadModel;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,7 +23,7 @@ public class Branch {
 
   @ManyToOne
   @JoinColumn(name = "restaurant_id")
-  private Restaurant restaurant;
+  private RestaurantReadModel restaurant;
 
   private String name;
 

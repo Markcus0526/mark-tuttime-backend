@@ -69,7 +69,7 @@ public class NotificationProducer {
                 .userId(userId)
                 .notificationType(NotificationEvent.NotificationType.USER_REGISTERED)
                 .channel(NotificationEvent.NotificationChannel.EMAIL)
-                .subject("Welcome to APART TOKEN Platform")
+                .subject("Welcome to TUTTIME Platform")
                 .message("Thank you for registering! Your account has been created successfully.")
                 .priority(NotificationEvent.NotificationPriority.NORMAL)
                 .referenceType("USER")
