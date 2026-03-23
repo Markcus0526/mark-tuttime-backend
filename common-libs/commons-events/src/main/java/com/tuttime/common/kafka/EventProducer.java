@@ -36,6 +36,7 @@ public class EventProducer {
 
     // Topic names
     private static final String TOPIC_USERS = "tuttime.users";
+    private static final String TOPIC_RESTAURANTS = "tuttime.restaurants";
     private static final String TOPIC_MINING = "tuttime.mining";
     private static final String TOPIC_STAKING = "tuttime.staking";
     private static final String TOPIC_CONVERSION = "tuttime.conversion";
@@ -51,6 +52,13 @@ public class EventProducer {
      */
     public void publishUserEvent(UserEvent event) {
         publishEvent(TOPIC_USERS, event.getUserId().toString(), event);
+    }
+
+    /**
+     * Publish user event
+     */
+    public void publishRestaurantEvent(RestaurantEvent event) {
+        publishEvent(TOPIC_RESTAURANTS, event.getRestaurantId().toString(), event);
     }
 
     /**

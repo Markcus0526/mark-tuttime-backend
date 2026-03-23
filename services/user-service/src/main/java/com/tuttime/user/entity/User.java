@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.OffsetDateTime;
 
 /**
- * User Entity - Represents a user in the APART TOKEN Platform.
+ * User Entity - Represents a user in the TUTTIME Platform.
  *
  * <p>This entity stores all user-related information including authentication
  * credentials, profile data, verification status, and account state.

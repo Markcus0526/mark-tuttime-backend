@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RestaurantEvent",
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "RESTAURANT_CREATED",
+        "RESTAURANT_UPDATED",
+        "RESTAURANT_VERIFIED",
+        "RESTAURANT_DEACTIVATED",
+        "RESTAURANT_BLOCKED",
+        "RESTAURANT_UNBLOCKED",
+        "EMAIL_VERIFIED",
+        "PASSWORD_CHANGED"
+      ]
+    },
+    "restaurant_id": {
+      "type": "integer"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "name": {
+      "type": "string"
+    },
+    "is_verified": {
+      "type": "boolean"
+    },
+    "is_active": {
+      "type": "boolean"
+    },
+    "is_blocked": {
+      "type": "boolean"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["event_type", "user_id", "timestamp"]
+}
+
