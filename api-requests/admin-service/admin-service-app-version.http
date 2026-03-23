@@ -1,0 +1,25 @@
+### ============================================
+### ADMIN SERVICE ENDPOINTS
+### ============================================
+### Base URL: http://localhost:8081/api/admin
+### Requires: Admin authentication token
+
+@adminBaseUrl = http://localhost:8081
+@adminPath = /api/admin
+
+### Get app version
+GET {{adminBaseUrl}}{{adminPath}}/app/version
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Update app version
+PUT {{adminBaseUrl}}{{adminPath}}/app/version
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "androidVersion": "1.1",
+  "androidInstallLink": "https://android.version.1.1",
+  "iosVersion": "1.1",
+  "iosInstallLink": "https://ios.version.1.1"
+}

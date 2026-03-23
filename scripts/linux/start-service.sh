@@ -99,7 +99,7 @@ SERVICE_PORT["booking-integration-service"]="28089"
 
 SERVICE_PATH["admin-service"]="services/admin-service"
 SERVICE_DB_URL["admin-service"]="jdbc:postgresql://localhost:5432/admin_service_db?currentSchema=admin_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC"
-SERVICE_PORT["admin-service"]="28090"
+SERVICE_PORT["admin-service"]="8081"
 
 SERVICE_PATH["api-gateway"]="api-gateway"
 SERVICE_DB_URL["api-gateway"]=""

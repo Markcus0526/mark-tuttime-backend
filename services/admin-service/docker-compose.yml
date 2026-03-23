@@ -76,14 +76,14 @@ services:
       REVIEW_SERVICE: ${REVIEW_SERVICE:-review-service}
       USER_SERVICE: ${USER_SERVICE:-user-service}
     ports:
-      - "28090:28090"  # HTTP port
+      - "8081:8081"  # HTTP port
     networks:
       - tuttime-network
     healthcheck:
       # Use liveness endpoint - only checks diskSpace,ping (non-recoverable failures)
       # Readiness endpoint checks db,redis,diskSpace,ping (for load balancer decisions)
-      #test: ["CMD-SHELL", "wget --spider --quiet http://localhost:28090/actuator/health/liveness || exit 1"]
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/28090' || exit 1"]
+      #test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8081/actuator/health/liveness || exit 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8081' || exit 1"]
       interval: 20s
       timeout: 5s
       retries: 5

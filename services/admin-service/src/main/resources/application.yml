@@ -132,7 +132,7 @@ spring:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
 server:
-  port: 28090
+  port: 8081
   tomcat:
     max-http-post-size: 500MB  # Increase Tomcat's max POST size for large video uploads
     max-swallow-size: 500MB  # Maximum size of request body that will be swallowed

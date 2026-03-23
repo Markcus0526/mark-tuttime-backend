@@ -8,7 +8,7 @@ spring:
 
 admin:
   service:
-    url: http://localhost:28090
+    url: http://localhost:8081
 
 eureka:
   client:
