@@ -45,7 +45,7 @@ public class UserServiceRestClient {
     @Qualifier("serviceCallExecutor")
     private Executor serviceCallExecutor;
 
-    @Value("${services.user-service.url:http://localhost:28081}")
+    @Value("${services.user-service.url:http://localhost:8001}")
     private String userServiceUrl;
 
     @jakarta.annotation.PostConstruct
@@ -67,10 +67,10 @@ public class UserServiceRestClient {
             throw new IllegalStateException("userServiceUrl is incorrectly configured. It points to token-service instead of user-service. URL: " + userServiceUrl);
         }
         
-        // Validate port (user-service should be on 28081)
+        // Validate port (user-service should be on 8001)
         if (userServiceUrl.contains(":28083")) {
-            log.error("CRITICAL CONFIGURATION ERROR: userServiceUrl uses port 28083 (mining-service port) instead of 28081 (user-service port)! URL: {}", userServiceUrl);
-            throw new IllegalStateException("userServiceUrl uses wrong port (28083 is mining-service, should be 28081 for user-service). URL: " + userServiceUrl);
+            log.error("CRITICAL CONFIGURATION ERROR: userServiceUrl uses port 28083 (mining-service port) instead of 8001 (user-service port)! URL: {}", userServiceUrl);
+            throw new IllegalStateException("userServiceUrl uses wrong port (28083 is mining-service, should be 8001 for user-service). URL: " + userServiceUrl);
         }
         
         log.info("UserServiceRestClient configured with URL: {}", userServiceUrl);

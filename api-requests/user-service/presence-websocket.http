@@ -5,7 +5,7 @@
 # ws://localhost:29000/ws/presence?token=YOUR_JWT_TOKEN
 
 ### Connection URL direct to User Service (For testing)
-# ws://localhost:28081/ws/presence?token=YOUR_JWT_TOKEN
+# ws://localhost:8001/ws/presence?token=YOUR_JWT_TOKEN
 
 ### Connection URL (with Authorization header - if client supports)
 # ws://localhost:29000/ws/presence
