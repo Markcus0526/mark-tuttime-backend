@@ -1,0 +1,55 @@
+### ============================================
+### MENU SERVICE ENDPOINTS
+### ============================================
+### Base URL: http://localhost:8081/api/discounts
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/discounts
+@id = 1
+@referenceId = 1
+
+### Create a discounts item
+### Request Body: DiscountDto
+### Response: Created DiscountDto
+POST {{baseUrl}}{{path}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Summer Sale",
+  "discountType": "PERCENTAGE",
+  "amount": 15.00,
+  "appliesTo": "CATEGORY",
+  "referenceId": 1,
+  "startDate": "2024-07-01T00:00:00Z",
+  "endDate": "2024-07-31T23:59:59Z",
+  "isActive": true
+}
+
+### Get discounts by ID
+### Request Body: -
+### Response: DiscountDto
+GET {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Get all discounts in a reference
+### Request Body: -
+### Response: List<DiscountDto>
+GET {{baseUrl}}{{path}}/reference/{referenceId}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Update discounts by ID
+### Request Body: DiscountDto
+### Response: Updated DiscountDto
+PUT {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Delete discounts by ID
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
