@@ -5,7 +5,6 @@ import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ErrorCodes;
 import com.tuttime.common.exception.ErrorResponse;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.user.dto.UserResponse;
 import com.tuttime.user.service.AuthService;
 import com.tuttime.user.service.query.UserQueryService;
 import org.junit.jupiter.api.BeforeEach;

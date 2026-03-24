@@ -2,7 +2,6 @@ package com.tuttime.user.controller;
 
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.RateLimitExceededException;
-import com.tuttime.user.dto.UpdateLocationRequest;
 import com.tuttime.user.service.RateLimitService;
 import com.tuttime.user.service.UserLocationService;
 import jakarta.servlet.http.HttpServletRequest;
