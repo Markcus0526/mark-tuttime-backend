@@ -280,7 +280,7 @@ grpc:
 #      address: static://${CONVERSION_SERVICE:conversion-service}:29197
 #      negotiationType: plaintext
     admin-service:
-      address: static://${ADMIN_SERVICE:admin-service}:28003
+      address: static://${ADMIN_SERVICE:admin-service}:28010
       negotiationType: plaintext
 #    staking-service:
 #      address: static://${STAKING_SERVICE:staking-service}:29194

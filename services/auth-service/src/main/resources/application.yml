@@ -1,3 +1,0 @@
-jwt:
-  secret: ${JWT_SECRET:***REMOVED***}
-
