@@ -2,15 +2,15 @@
 <project version="4">
   <component name="PortForwardingSettings">
     <ports>
-      <entry key="9000">
+      <entry key="8080">
         <ForwardedPortInfo>
-          <option name="hostPort" value="9000" />
+          <option name="hostPort" value="8080" />
           <option name="readOnly" value="false" />
         </ForwardedPortInfo>
       </entry>
-      <entry key="28080">
+      <entry key="28003">
         <ForwardedPortInfo>
-          <option name="hostPort" value="28080" />
+          <option name="hostPort" value="28003" />
           <option name="readOnly" value="false" />
         </ForwardedPortInfo>
       </entry>
