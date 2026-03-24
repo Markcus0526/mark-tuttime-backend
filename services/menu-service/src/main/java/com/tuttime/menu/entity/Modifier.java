@@ -2,12 +2,16 @@ package com.tuttime.menu.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "modifiers")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -17,16 +21,20 @@ public class Modifier {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 255)
   private String name;
 
-  @Column(precision = 6, scale = 2)
-  private BigDecimal price = BigDecimal.ZERO;
+  @Column(columnDefinition = "TEXT")
+  private String description;
 
-  private boolean required = false;
+  @Column(name = "price_adjustment", nullable = false, precision = 10, scale = 2)
+  private BigDecimal priceAdjustment = BigDecimal.ZERO;
 
-  @ManyToOne
-  @JoinColumn(name = "item_id")
-  private MenuItem item;
+  @CreationTimestamp
+  @Column(name = "created_at", updatable = false)
+  private Timestamp createdAt;
 
+  @UpdateTimestamp
+  @Column(name = "updated_at")
+  private Timestamp updatedAt;
 }
