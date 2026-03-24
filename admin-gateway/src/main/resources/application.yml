@@ -47,7 +47,7 @@ spring:
 #   Local: ADMIN_SERVICE=localhost
 admin:
   service:
-    url: http://${ADMIN_SERVICE:admin-service}:28003
+    url: http://${ADMIN_SERVICE:admin-service}:28010
   jwt:
     secret: ${ADMIN_JWT_SECRET:}
     expiration: ${ADMIN_JWT_EXPIRATION:86400000} # 24 hours in milliseconds

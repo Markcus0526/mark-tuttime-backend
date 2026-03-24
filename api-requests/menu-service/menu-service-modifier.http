@@ -1,0 +1,50 @@
+### ============================================
+### MENU SERVICE ENDPOINTS
+### ============================================
+### Base URL: http://localhost:8081/api/menu-items
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/menu-items
+
+### Create a new menu item
+### Request Body: MenuItemDto
+### Response: Created MenuItemDto
+POST {{baseUrl}}{{path}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "name": "Grilled Chicken Sandwich",
+  "description": "Served with fries",
+  "price": 9.99,
+  "isAvailable": true
+}
+
+### Get menu item by ID
+### Request Body: -
+### Response: MenuItemDto
+GET {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Get all menu items in a category
+### Request Body: -
+### Response: List<MenuItemDto>
+GET {{baseUrl}}{{path}}/category/{categoryId}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Update menu item by ID
+### Request Body: MenuItemDto
+### Response: Updated MenuItemDto
+PUT {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Delete menu item by ID
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json

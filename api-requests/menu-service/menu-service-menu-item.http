@@ -1,0 +1,48 @@
+### ============================================
+### MENU SERVICE ENDPOINTS
+### ============================================
+### Base URL: http://localhost:8081/api/modifiers
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/modifiers
+
+### Create a new modifier
+### Request Body: ModifierDto
+### Response: Created ModifierDto
+POST {{baseUrl}}{{path}}
+#Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Extra Cheese",
+  "description": "Add extra slice of cheese",
+  "priceAdjustment": 1.50
+}
+
+### Get modifier by ID
+### Request Body: -
+### Response: ModifierDto
+GET {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Get all modifiers
+### Request Body: -
+### Response: List<ModifierDto>
+GET {{baseUrl}}{{path}}/category/{categoryId}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Update modifier by ID
+### Request Body: ModifierDto
+### Response: Updated ModifierDto
+PUT {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Delete modifier by ID
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json

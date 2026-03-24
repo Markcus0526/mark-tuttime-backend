@@ -1,12 +1,12 @@
 spring:
   application:
     name: api-gateway
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   jackson:
     time-zone: UTC
     serialization:
       write-dates-as-timestamps: false
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
   main:
     web-application-type: reactive
   codec:
@@ -34,31 +34,6 @@ spring:
         locator:
           enabled: false
       routes:
-        # Health endpoints are handled by HealthController, not routed
-        # Note: Admin routes (/api/v1/admin/**) are handled by admin-gateway (port 28080), not this api-gateway
-        #
-        # IMPORTANT: Routes without explicit Method predicates accept ALL HTTP methods (GET, POST, PUT, PATCH, DELETE, etc.)
-        # Routes with Method predicates only match the specified methods. To allow multiple methods, specify multiple Method predicates.
-
-        # WebSocket Routes (order 1-6)
-        # Uses service name variables (e.g., USER_SERVICE) that can be set per environment:
-        #   Kubernetes (default): USER_SERVICE=user-service
-        #   Docker: USER_SERVICE=user-service
-        #   Local: USER_SERVICE=localhost
-        # Presence WebSocket - exact path (more specific, comes first)
-        - id: websocket-presence-exact
-          order: 1
-          uri: http://${USER_SERVICE:user-service}:28001
-          predicates:
-            - Path=/ws/presence
-
-        # Presence WebSocket - subpaths (less specific, comes after exact path)
-        - id: websocket-presence
-          order: 2
-          uri: http://${USER_SERVICE:user-service}:28001
-          predicates:
-            - Path=/ws/presence/**
-
         # Auth Service Routes (consolidated route with filters)
         # Methods: GET, POST
         # Endpoints:
@@ -70,7 +45,7 @@ spring:
         # Note: For profile email verification, use /api/v1/users/me/email/send (no body required)
         - id: auth-service
           order: 20
-          uri: http://${USER_SERVICE:user-service}:28001
+          uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTION
@@ -90,7 +65,7 @@ spring:
         # Methods: POST (all password endpoints use POST)
         - id: password-service
           order: 21
-          uri: http://${USER_SERVICE:user-service}:28001
+          uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/password/**
             - Method=POST,OPTION
@@ -108,7 +83,7 @@ spring:
         # Note: OPTIONS removed from Method predicate - let global CORS filter handle all OPTIONS requests
         - id: user-service-apple-language
           order: 15
-          uri: http://${USER_SERVICE:user-service}:28001
+          uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/users/languages/apple/**
             - Method=GET
@@ -124,7 +99,7 @@ spring:
         # Endpoints: GET /api/v1/app/version - Get app version and install links (requires authentication)
         - id: user-service-app-version
           order: 15
-          uri: http://${USER_SERVICE:user-service}:28001
+          uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/app/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -140,7 +115,7 @@ spring:
         # Endpoints: GET /api/v1/username/{username}/id - Get user ID by username (authenticated)
         - id: user-service-username-lookup
           order: 15
-          uri: http://${USER_SERVICE:user-service}:28001
+          uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/username/**
             - Method=GET,OPTION
@@ -157,7 +132,7 @@ spring:
         # Note: /api/v1/users/me/** is handled by user-service-profile route (order 13)
         - id: user-service
           order: 16
-          uri: http://${USER_SERVICE:user-service}:28001
+          uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/users/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -168,6 +143,53 @@ spring:
               args:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
+
+        # Menu Service Routes
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/menu-categories/**
+        - id: menu-service-menu-category
+          order: 31
+          uri: http://${MENU-SERVICE:localhost}:28003
+          predicates:
+            - Path=/api/v1/menu-categories/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+#            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/menu-items/**
+        - id: menu-service-menu-item
+          order: 32
+          uri: http://${MENU-SERVICE:localhost}:28003
+          predicates:
+            - Path=/api/v1/menu-items/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/menu-items/**
+        - id: menu-service-modifier
+          order: 33
+          uri: http://${MENU-SERVICE:localhost}:28003
+          predicates:
+            - Path=/api/v1/modifiers/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
 
 
       # CORS is now configured via CorsConfig.java
@@ -184,7 +206,7 @@ spring:
       #  master: ${SPRING_DATA_REDIS_SENTINEL_MASTER}
       #  nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES}
       # Direct connection configuration (used when Sentinel is not configured)
-      host: ${REDIS_HOST:tuttime-redis}
+      host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: ${SPRING_DATA_REDIS_TIMEOUT:5000ms}
@@ -224,7 +246,7 @@ resilience4j:
         # Ignore 4xx client errors (not service failures)
         ignoreExceptions:
           - org.springframework.web.client.HttpClientErrorException
-      tokenServiceCircuitBreaker:
+      restaurantServiceCircuitBreaker:
         registerHealthIndicator: true
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
@@ -232,7 +254,7 @@ resilience4j:
         automaticTransitionFromOpenToHalfOpenEnabled: true
         waitDurationInOpenState: 30s
         failureRateThreshold: 50
-      miningServiceCircuitBreaker:
+      menuServiceCircuitBreaker:
         registerHealthIndicator: true
         slidingWindowSize: 20
         minimumNumberOfCalls: 5
@@ -240,79 +262,7 @@ resilience4j:
         automaticTransitionFromOpenToHalfOpenEnabled: true
         waitDurationInOpenState: 20s
         failureRateThreshold: 65
-      contentServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 15
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 25s
-        failureRateThreshold: 55
-      conversionServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 30s
-        failureRateThreshold: 50
-      rewardsServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 20s
-        failureRateThreshold: 65
-      notificationServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 15
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 25s
-        failureRateThreshold: 55
-      bookingIntegrationServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 30s
-        failureRateThreshold: 50
-      stakingServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 30s
-        failureRateThreshold: 50
-      messagingServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 20s
-        failureRateThreshold: 65
-        # Record exceptions that should be considered as failures
-        recordExceptions:
-          - java.util.concurrent.TimeoutException
-          - java.io.IOException
-          - org.springframework.web.client.HttpServerErrorException
-          - org.springframework.web.client.ResourceAccessException
-        # Ignore 4xx client errors (not service failures)
-        ignoreExceptions:
-          - org.springframework.web.client.HttpClientErrorException
-      socialServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 15
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 25s
-        failureRateThreshold: 55
+
       # Note: Admin routes are handled by admin-gateway (port 28080), not api-gateway
   timelimiter:
     instances:
@@ -320,56 +270,20 @@ resilience4j:
       # Must be longer than httpclient.response-timeout (300s) to allow requests to complete
       userServiceCircuitBreaker:
         timeoutDuration: 65s
-      tokenServiceCircuitBreaker:
+      restaurantServiceCircuitBreaker:
         timeoutDuration: 65s
-      miningServiceCircuitBreaker:
+      menuServiceCircuitBreaker:
         timeoutDuration: 65s
-      contentServiceCircuitBreaker:
-        timeoutDuration: 65s
-      conversionServiceCircuitBreaker:
-        timeoutDuration: 65s
-      rewardsServiceCircuitBreaker:
-        timeoutDuration: 65s
-      notificationServiceCircuitBreaker:
-        timeoutDuration: 65s
-      bookingIntegrationServiceCircuitBreaker:
-        timeoutDuration: 65s
-      stakingServiceCircuitBreaker:
-        timeoutDuration: 65s
-      socialServiceCircuitBreaker:
-        timeoutDuration: 300s  # 5 minutes for video uploads (videos up to 500MB) + server-side processing
-      messagingServiceCircuitBreaker:
-        timeoutDuration: 300s  # 5 minutes for media uploads (videos up to 500MB)
+
   retry:
     instances:
       userService:
         maxAttempts: 3
         waitDuration: 1s
-      tokenService:
+      restaurantService:
         maxAttempts: 3
         waitDuration: 1s
-      miningService:
-        maxAttempts: 3
-        waitDuration: 1s
-      contentService:
-        maxAttempts: 3
-        waitDuration: 1s
-      conversionService:
-        maxAttempts: 3
-        waitDuration: 1s
-      rewardsService:
-        maxAttempts: 3
-        waitDuration: 1s
-      notificationService:
-        maxAttempts: 3
-        waitDuration: 1s
-      bookingIntegrationService:
-        maxAttempts: 3
-        waitDuration: 1s
-      stakingService:
-        maxAttempts: 3
-        waitDuration: 1s
-      socialService:
+      menuService:
         maxAttempts: 3
         waitDuration: 1s
       # Note: Admin routes are handled by admin-gateway (port 28080), not api-gateway
