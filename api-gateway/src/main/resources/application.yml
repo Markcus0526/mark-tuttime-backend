@@ -191,6 +191,36 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/discounts/**
+        - id: menu-service-discount
+          order: 33
+          uri: http://${MENU-SERVICE:localhost}:28003
+          predicates:
+            - Path=/api/v1/discounts/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/stoplists/**
+        - id: menu-service-stoplist
+          order: 33
+          uri: http://${MENU-SERVICE:localhost}:28003
+          predicates:
+            - Path=/api/v1/stoplists/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
+
 
       # CORS is now configured via CorsConfig.java
       # globalcors configuration removed to use programmatic configuration

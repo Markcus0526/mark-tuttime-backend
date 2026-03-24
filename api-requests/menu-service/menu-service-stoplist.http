@@ -1,0 +1,52 @@
+### ============================================
+### MENU SERVICE ENDPOINTS
+### ============================================
+### Base URL: http://localhost:8081/api/stoplists
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/stoplists
+@id = 1
+@menuitemId = 1
+
+### Create a discounts item
+### Request Body: StopListDto
+### Response: Created StopListDto
+POST {{baseUrl}}{{path}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "menuItemId": 1,
+  "branchId": 1,
+  "startDate": "2024-06-15",
+  "endDate": "2024-06-20",
+  "reason": "Supplier delay"
+}
+
+### Get stoplists by ID
+### Request Body: -
+### Response: StopListDto
+GET {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Get all stoplists in a menuitem
+### Request Body: -
+### Response: List<StopListDto>
+GET {{baseUrl}}{{path}}/menuitem/{menuitemId}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Update stoplists by ID
+### Request Body: StopListDto
+### Response: Updated StopListDto
+PUT {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+### Delete stoplists by ID
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{id}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
