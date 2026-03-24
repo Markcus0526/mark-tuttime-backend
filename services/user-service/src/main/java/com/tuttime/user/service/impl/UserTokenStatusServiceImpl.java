@@ -82,7 +82,7 @@ public class UserTokenStatusServiceImpl implements UserTokenStatusService {
      * 
      * <p>Status thresholds:
      * <ul>
-     *   <li>BRONZE: &lt; 50,000 APART</li>
+     *   <li>BRONZE: < 50,000 APART</li>
      *   <li>SILVER: 50,000 - 99,999 APART</li>
      *   <li>GOLD: 100,000 - 199,999 APART</li>
      *   <li>PLATINUM: 200,000 - 499,999 APART</li>

@@ -29,6 +29,122 @@ SET search_path TO restaurant_service, public;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Enable PostGIS extension for geospatial support
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- Restaurant table
+CREATE TABLE restaurants (
+    restaurant_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    contact_info JSONB,
+    rating NUMERIC(2,1),
+    location GEOGRAPHY(POINT, 4326),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_restaurant_location ON restaurants USING GIST(location);
+
+-- Branch table
+CREATE TABLE branches (
+    branch_id SERIAL PRIMARY KEY,
+    restaurant_id INT NOT NULL REFERENCES restaurants(restaurant_id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    address TEXT,
+    contact_info JSONB,
+    location GEOGRAPHY(POINT, 4326),
+    floor_plan_url VARCHAR(512),
+    floor_number INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_branch_location ON branches USING GIST(location);
+CREATE INDEX idx_branch_restaurant ON branches(restaurant_id);
+
+-- Zone table
+CREATE TABLE zones (
+    zone_id SERIAL PRIMARY KEY,
+    branch_id INT NOT NULL REFERENCES branches(branch_id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    area_geometry GEOMETRY(POLYGON, 4326),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_zone_branch ON zones(branch_id);
+CREATE INDEX idx_zone_area_geometry ON zones USING GIST(area_geometry);
+
+-- Table entity
+CREATE TABLE tables (
+    table_id SERIAL PRIMARY KEY,
+    zone_id INT NOT NULL REFERENCES zones(zone_id) ON DELETE CASCADE,
+    number VARCHAR(50) NOT NULL,
+    seats INT NOT NULL,
+    description TEXT,
+    position GEOMETRY(POINT, 4326),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_table_zone ON tables(zone_id);
+CREATE INDEX idx_table_position ON tables USING GIST(position);
+
+-- Pictures for restaurants
+CREATE TABLE restaurant_pictures (
+    picture_id SERIAL PRIMARY KEY,
+    restaurant_id INT NOT NULL REFERENCES restaurants(restaurant_id) ON DELETE CASCADE,
+    url VARCHAR(512) NOT NULL,
+    description TEXT,
+    is_primary BOOLEAN DEFAULT FALSE, -- mark main picture if needed
+    uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_restaurant_picture_restaurant ON restaurant_pictures(restaurant_id);
+
+-- Pictures for branches
+CREATE TABLE branch_pictures (
+    picture_id SERIAL PRIMARY KEY,
+    branch_id INT NOT NULL REFERENCES branches(branch_id) ON DELETE CASCADE,
+    url VARCHAR(512) NOT NULL,
+    description TEXT,
+    is_primary BOOLEAN DEFAULT FALSE,
+    uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_branch_picture_branch ON branch_pictures(branch_id);
+
+-- Pictures for zones
+CREATE TABLE zone_pictures (
+    picture_id SERIAL PRIMARY KEY,
+    zone_id INT NOT NULL REFERENCES zones(zone_id) ON DELETE CASCADE,
+    url VARCHAR(512) NOT NULL,
+    description TEXT,
+    is_primary BOOLEAN DEFAULT FALSE,
+    uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_zone_picture_zone ON zone_pictures(zone_id);
+
+-- Pictures for tables
+CREATE TABLE table_pictures (
+    picture_id SERIAL PRIMARY KEY,
+    table_id INT NOT NULL REFERENCES tables(table_id) ON DELETE CASCADE,
+    url VARCHAR(512) NOT NULL,
+    description TEXT,
+    is_primary BOOLEAN DEFAULT FALSE,
+    uploaded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_table_picture_table ON table_pictures(table_id);
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------------
 CREATE TYPE audit_action AS ENUM (
     'USER_CREATED',
     'USER_UPDATED',
