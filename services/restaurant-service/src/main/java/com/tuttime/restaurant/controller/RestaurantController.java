@@ -3,7 +3,6 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.EntityType;
-import com.tuttime.restaurant.entity.MediaType;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.RestaurantMapper;
 import com.tuttime.restaurant.service.MediaService;
