@@ -1,7 +1,6 @@
 ### ============================================
 ### MENU SERVICE ENDPOINTS
 ### ============================================
-### Base URL: http://localhost:8081/api/menu-categories
 
 @baseUrl = http://localhost:8080
 @path = /api/v1/menu-categories

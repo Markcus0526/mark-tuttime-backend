@@ -1,7 +1,6 @@
 ### ============================================
 ### MENU SERVICE ENDPOINTS
 ### ============================================
-### Base URL: http://localhost:8081/api/discounts
 
 @baseUrl = http://localhost:8080
 @path = /api/v1/discounts
@@ -30,14 +29,14 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: DiscountDto
 GET {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 ### Get all discounts in a reference
 ### Request Body: -
 ### Response: List<DiscountDto>
 GET {{baseUrl}}{{path}}/reference/{referenceId}
-Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 ### Update discounts by ID

@@ -144,7 +144,84 @@ spring:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
-        # Menu Service Routes
+        ################# Restaurant Service Routes #######################
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/restaurants/**
+        - id: restaurant-service-restaurant
+          order: 21
+          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          predicates:
+            - Path=/api/v1/restaurants/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/branches/**
+        - id: restaurant-service-branch
+          order: 22
+          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          predicates:
+            - Path=/api/v1/branches/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/zones/**
+        - id: restaurant-service-zone
+          order: 22
+          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          predicates:
+            - Path=/api/v1/zones/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/tables/**
+        - id: restaurant-service-table
+          order: 22
+          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          predicates:
+            - Path=/api/v1/tables/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/medias/**
+        - id: restaurant-service-media
+          order: 22
+          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          predicates:
+            - Path=/api/v1/medias/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        ################# Menu Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/menu-categories/**
