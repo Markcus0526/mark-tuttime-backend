@@ -1,7 +1,6 @@
 ### ============================================
 ### MENU SERVICE ENDPOINTS
 ### ============================================
-### Base URL: http://localhost:8081/api/stoplists
 
 @baseUrl = http://localhost:8080
 @path = /api/v1/stoplists
@@ -27,14 +26,14 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: StopListDto
 GET {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 ### Get all stoplists in a menuitem
 ### Request Body: -
 ### Response: List<StopListDto>
 GET {{baseUrl}}{{path}}/menuitem/{menuitemId}
-Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 ### Update stoplists by ID
