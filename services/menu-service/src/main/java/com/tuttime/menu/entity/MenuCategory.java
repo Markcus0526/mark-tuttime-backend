@@ -2,30 +2,37 @@ package com.tuttime.menu.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.sql.Timestamp;
 
 @Entity
-@Table(name = "menu_categories")
-@Data
+@Table(name = "menu_categories", schema = "menu_service")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MenuCategory {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
+  @Column(name = "branch_id", nullable = false)
+  private Long branchId;
+
+  @Column(nullable = false, length = 255)
   private String name;
 
-  private Long restaurantId;
+  @Column(columnDefinition = "TEXT")
+  private String description;
 
-  private LocalDateTime createdAt = LocalDateTime.now();
+  @CreationTimestamp
+  @Column(name = "created_at", updatable = false)
+  private Timestamp createdAt;
 
-  @OneToMany(mappedBy = "category")
-  private List<MenuItem> items;
-
+  @UpdateTimestamp
+  @Column(name = "updated_at")
+  private Timestamp updatedAt;
 }
