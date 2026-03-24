@@ -4,7 +4,6 @@ import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.EntityType;
-import com.tuttime.restaurant.entity.MediaType;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.service.BranchService;

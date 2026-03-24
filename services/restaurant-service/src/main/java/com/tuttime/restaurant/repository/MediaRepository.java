@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.repository;
 
-import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.EntityType;
+import com.tuttime.restaurant.entity.Media;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

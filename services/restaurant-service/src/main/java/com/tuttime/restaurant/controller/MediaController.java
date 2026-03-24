@@ -1,15 +1,9 @@
 package com.tuttime.restaurant.controller;
 
-import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
-import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Media;
-import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.mapper.MediaMapper;
-import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
-import com.tuttime.restaurant.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;

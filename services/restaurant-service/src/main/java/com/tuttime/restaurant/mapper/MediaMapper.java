@@ -1,11 +1,8 @@
 package com.tuttime.restaurant.mapper;
 
 import com.tuttime.restaurant.dto.MediaDto;
-import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.MediaType;
-import com.tuttime.restaurant.entity.Table;
-import com.tuttime.restaurant.entity.Zone;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring") // This is the magic line
