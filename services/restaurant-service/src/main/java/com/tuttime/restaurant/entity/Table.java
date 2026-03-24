@@ -1,13 +1,15 @@
 package com.tuttime.restaurant.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.OffsetDateTime;
 
 @Entity
-@jakarta.persistence.Table(name = "tables")
+@jakarta.persistence.Table(name = "tables", schema = "restaurant_service")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,20 +18,29 @@ public class Table {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Column(name = "table_id")
+  private Long tableId;
 
-  public Long getId() {
-    return id;
-  }
-
-  @ManyToOne
-  @JoinColumn(name = "zone_id")
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "zone_id", nullable = false)
   private Zone zone;
 
-  private int number;
+  @Column(length = 50, nullable = false)
+  private String number;
 
-  private int capacity;
+  @Column(nullable = false)
+  private Integer seats;
 
-  private String status = "AVAILABLE";
+  @Builder.Default
+  @Column(length = 20, nullable = false)
+  private String status = "active";
+
+  @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+  private OffsetDateTime createdAt;
+
+  @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+  private OffsetDateTime updatedAt;
+
+  // Getters and setters omitted for brevity
 
 }

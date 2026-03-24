@@ -13,15 +13,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(
-        scanBasePackages = "com.tuttime",
-        exclude = {
-                // Exclude Spring Boot's default cache auto-configuration
-                // Our custom RedisConfig in commons-events will provide the CacheManager
-                CacheAutoConfiguration.class
-        }
-)
-@EnableDiscoveryClient
+@SpringBootApplication(scanBasePackages = {"com.tuttime.restaurant", "com.tuttime.common"})
+//@EnableDiscoveryClient
 @EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
 @EnableScheduling
 @EntityScan("com.tuttime.restaurant.entity")

@@ -1,37 +1,51 @@
 package com.tuttime.restaurant.service;
 
-import com.tuttime.restaurant.dto.RestaurantRequest;
-import com.tuttime.restaurant.dto.TableAvailabilityRequest;
-import com.tuttime.restaurant.dto.TableAvailabilityResponse;
 import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import com.tuttime.restaurant.entity.Table;
-import com.tuttime.restaurant.repository.TableRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class RestaurantService {
 
-  private final RestaurantRepository restaurantRepository;
-  private final TableRepository tableRepository;
+  private final RestaurantRepository repository;
 
-  public Restaurant createRestaurant(RestaurantRequest request) {
-    Restaurant restaurant = new Restaurant();
-    restaurant.setName(request.getName());
-    restaurant.setDescription(request.getDescription());
-    restaurant.setAddress(request.getAddress());
-    return restaurantRepository.save(restaurant);
+  public RestaurantService(RestaurantRepository repository) {
+    this.repository = repository;
   }
 
-  public List<TableAvailabilityResponse> getAvailableTables(TableAvailabilityRequest request) {
-    List<Table> available = tableRepository.findAvailableByBranchId(request.getBranchId());
-    TableAvailabilityResponse response = new TableAvailabilityResponse();
-    response.setAvailableTableIds(available.stream().map(Table::getId).toList());
-    return List.of(response);
+  public List<Restaurant> getAllRestaurants() {
+    return repository.findAll();
   }
 
+  public Restaurant getRestaurantById(Long id) {
+    return repository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + id));
+  }
+
+  public Restaurant createRestaurant(Restaurant restaurant) {
+    return repository.save(restaurant);
+  }
+
+  public Restaurant updateRestaurant(Long id, Restaurant restaurantDetails) {
+    Restaurant restaurant = getRestaurantById(id);
+
+    restaurant.setOwnerUserId(restaurantDetails.getOwnerUserId());
+    restaurant.setName(restaurantDetails.getName());
+    restaurant.setDescription(restaurantDetails.getDescription());
+    restaurant.setAddress(restaurantDetails.getAddress());
+    restaurant.setLocation(restaurantDetails.getLocation());
+    restaurant.setPhone(restaurantDetails.getPhone());
+    restaurant.setWebsite(restaurantDetails.getWebsite());
+    restaurant.setRating(restaurantDetails.getRating());
+
+    return repository.save(restaurant);
+  }
+
+  public void deleteRestaurant(Long id) {
+    Restaurant restaurant = getRestaurantById(id);
+    repository.delete(restaurant);
+  }
 }

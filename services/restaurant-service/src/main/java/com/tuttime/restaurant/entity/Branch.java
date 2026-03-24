@@ -1,16 +1,19 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.restaurant.entity.readmodel.RestaurantReadModel;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
+import org.locationtech.jts.geom.Point;
 
-import java.util.List;
+import java.time.OffsetDateTime;
 
 @Entity
-@jakarta.persistence.Table(name = "branches")
+@jakarta.persistence.Table(name = "branches", schema = "restaurant_service")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,17 +22,35 @@ public class Branch {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  @Column(name = "branch_id")
+  private Long branchId;
 
-  @ManyToOne
-  @JoinColumn(name = "restaurant_id")
-  private RestaurantReadModel restaurant;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "restaurant_id", nullable = false)
+  private Restaurant restaurant;
 
+  @Column(length = 255, nullable = false)
   private String name;
 
+  @Column(length = 512, nullable = false)
   private String address;
 
-  @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
-  private List<Zone> zones;
+  @Column(length = 20)
+  private String phone;
+
+  @Column(length = 50, nullable = false)
+  private String timezone;
+
+  @Column(columnDefinition = "geography(Point,4326)")
+  @JdbcTypeCode(SqlTypes.GEOMETRY) // Modern alternative to @Type
+  private Point location;
+
+  @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+  private OffsetDateTime createdAt;
+
+  @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+  private OffsetDateTime updatedAt;
+
+  // Getters and setters omitted for brevity
 
 }
