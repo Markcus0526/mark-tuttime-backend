@@ -11,7 +11,7 @@
 ### Request Body: DiscountDto
 ### Response: Created DiscountDto
 POST {{baseUrl}}{{path}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -29,26 +29,26 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: DiscountDto
 GET {{baseUrl}}{{path}}/{id}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all discounts in a reference
 ### Request Body: -
 ### Response: List<DiscountDto>
 GET {{baseUrl}}{{path}}/reference/{referenceId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update discounts by ID
 ### Request Body: DiscountDto
 ### Response: Updated DiscountDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete discounts by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json

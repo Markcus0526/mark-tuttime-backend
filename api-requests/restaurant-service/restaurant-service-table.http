@@ -11,7 +11,7 @@
 ### Request Body: TableDto
 ### Response: Created TableDto
 POST {{baseUrl}}{{path}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -29,26 +29,26 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: TableDto
 GET {{baseUrl}}{{path}}/{id}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all restaurants
 ### Request Body: -
 ### Response: List<TableDto>
 GET {{baseUrl}}{{path}}/reference/{referenceId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update an existing restaurant
 ### Request Body: TableDto
 ### Response: Updated TableDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete a restaurant by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json

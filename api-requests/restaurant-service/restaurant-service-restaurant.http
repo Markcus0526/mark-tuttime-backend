@@ -11,7 +11,7 @@
 ### Request Body: RestaurantDto
 ### Response: Created RestaurantDto
 POST {{baseUrl}}{{path}}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -29,33 +29,33 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: RestaurantDto
 GET {{baseUrl}}{{path}}/{{id}}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all restaurants
 ### Request Body: -
 ### Response: List<RestaurantDto>
 GET {{baseUrl}}{{path}}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update an existing restaurant
 ### Request Body: RestaurantDto
 ### Response: Updated RestaurantDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete a restaurant by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all medias by restaurant ID
 ### Request Body: -
 ### Response: List<MediaDto>
 GET {{baseUrl}}{{path}}/{id}/media
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json

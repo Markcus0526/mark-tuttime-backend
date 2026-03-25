@@ -37,14 +37,7 @@ spring:
         ################# Restaurant Service Routes #######################
 
         # Auth Service Routes (consolidated route with filters)
-        # Methods: GET, POST
-        # Endpoints:
-        #   - POST /api/v1/auth/signup/send-sms, /api/v1/auth/signup/verify-sms, /api/v1/auth/signup
-        #   - POST /api/v1/auth/signin, /api/v1/auth/refresh, /api/v1/auth/signout
-        #   - POST /api/v1/auth/check-username, /api/v1/auth/check-email (public endpoints for signup validation)
-        #   - POST /api/v1/auth/email/send - requires request body with EmailRequest (email field)
-        #   - POST /api/v1/auth/email/verify - requires request body with VerifyEmailRequest
-        # Note: For profile email verification, use /api/v1/users/me/email/send (no body required)
+        # Endpoints include: /api/v1/auth/**
         - id: user-service-auth
           order: 11
           uri: http://${USER_SERVICE:localhost}:28001
@@ -64,9 +57,7 @@ spring:
                 fallbackUri: forward:/fallback/user-service
 
         # User Service Routes (GENERAL - comes after specific routes)
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/users/{userId}, /api/v1/users/{userId}/**, /api/v1/users/map, /api/v1/users/languages/**, /api/v1/users/s3/**
-        # Note: /api/v1/users/me/** is handled by user-service-profile route (order 13)
+        # Endpoints include: /api/v1/users/**
         - id: user-service
           order: 12
           uri: http://${USER_SERVICE:localhost}:28001
@@ -82,8 +73,7 @@ spring:
                 fallbackUri: forward:/fallback/user-service
 
         # User Service - App Version Routes
-        # Methods: GET
-        # Endpoints: GET /api/v1/app/version - Get app version and install links (requires authentication)
+        # Endpoints include: /api/v1/app/**
         - id: user-service-app-version
           order: 15
           uri: http://${USER_SERVICE:localhost}:28001
@@ -147,7 +137,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/tables/**
         - id: restaurant-service-table
-          order: 22
+          order: 23
           uri: http://${RESTAURANT-SERVICE:localhost}:28002
           predicates:
             - Path=/api/v1/tables/**
@@ -162,7 +152,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/medias/**
         - id: restaurant-service-media
-          order: 22
+          order: 24
           uri: http://${RESTAURANT-SERVICE:localhost}:28002
           predicates:
             - Path=/api/v1/medias/**
@@ -207,7 +197,7 @@ spring:
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-items/**
+        # Endpoints include: /api/v1/modifiers/**
         - id: menu-service-modifier
           order: 33
           uri: http://${MENU-SERVICE:localhost}:28003
@@ -224,7 +214,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/discounts/**
         - id: menu-service-discount
-          order: 33
+          order: 34
           uri: http://${MENU-SERVICE:localhost}:28003
           predicates:
             - Path=/api/v1/discounts/**
@@ -239,7 +229,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/stoplists/**
         - id: menu-service-stoplist
-          order: 33
+          order: 35
           uri: http://${MENU-SERVICE:localhost}:28003
           predicates:
             - Path=/api/v1/stoplists/**
@@ -251,6 +241,67 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
+        ################# Booking Service Routes #######################
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/bookings/**
+        - id: booking-service-booking
+          order: 41
+          uri: http://${BOOKING-SERVICE:localhost}:28004
+          predicates:
+           - Path=/api/v1/bookings/**
+           - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+           #            - name: JwtAuthentication
+           - name: CircuitBreaker
+             args:
+               name: bookingServiceCircuitBreaker
+               fallbackUri: forward:/fallback/booking-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/booking-locks/**
+        - id: booking-service-booking-lock
+          order: 42
+          uri: http://${BOOKING-SERVICE:localhost}:28004
+          predicates:
+            - Path=/api/v1/booking-locks/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: bookingServiceCircuitBreaker
+                fallbackUri: forward:/fallback/booking-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/booking-status-histories/**
+        - id: booking-service-booking-status-history
+          order: 43
+          uri: http://${BOOKING-SERVICE:localhost}:28004
+          predicates:
+            - Path=/api/v1/booking-status-histories/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: bookingServiceCircuitBreaker
+                fallbackUri: forward:/fallback/booking-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/booking-notifications/**
+        - id: booking-service-booking-notification
+          order: 44
+          uri: http://${BOOKING-SERVICE:localhost}:28004
+          predicates:
+            - Path=/api/v1/booking-notifications/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: bookingServiceCircuitBreaker
+                fallbackUri: forward:/fallback/booking-service
 
       # CORS is now configured via CorsConfig.java
       # globalcors configuration removed to use programmatic configuration

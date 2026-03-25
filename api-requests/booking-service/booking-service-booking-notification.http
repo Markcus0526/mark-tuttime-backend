@@ -1,0 +1,49 @@
+### ============================================
+### BOOKING SERVICE ENDPOINTS
+### ============================================
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/booking-notifications
+@lockID = 1
+
+### Acquire booking lock
+### Request Body: BookingNotificationDto
+### Response: Created BookingNotificationDto
+POST {{baseUrl}}{{path}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bookingId": "uuid-booking-123",
+  "tableId": "uuid-table-def",
+  "lockAcquiredAt": "2024-06-20T10:00:00Z",
+  "lockExpiresAt": "2024-06-20T10:05:00Z"
+}
+
+### Get booking notifications by lock ID
+### Request Body: -
+### Response: BookingNotificationDto
+GET {{baseUrl}}{{path}}/{lockID}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### List booking notifications
+### Request Body: -
+### Response: List<BookingNotificationDto>
+GET {{baseUrl}}{{path}}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Update booking lock details
+### Request Body: BookingNotificationDto
+### Response: Updated BookingNotificationDto
+PUT {{baseUrl}}{{path}}/{lockID}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Release a lock
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{lockID}
+Authorization: Bearer {{token}}
+Content-Type: application/json

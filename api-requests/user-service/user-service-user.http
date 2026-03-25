@@ -11,7 +11,7 @@
 ### Request Body: UserDto
 ### Response: Created UserDto
 POST {{baseUrl}}{{path}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -29,26 +29,26 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: UserDto
 GET {{baseUrl}}{{path}}/{id}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all useres
 ### Request Body: -
 ### Response: List<UserDto>
 GET {{baseUrl}}{{path}}/reference/{referenceId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update an existing user
 ### Request Body: UserDto
 ### Response: Updated UserDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete a user by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json

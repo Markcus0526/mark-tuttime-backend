@@ -11,7 +11,7 @@
 ### Request Body: BranchDto
 ### Response: Created BranchDto
 POST {{baseUrl}}{{path}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -29,33 +29,33 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: BranchDto
 GET {{baseUrl}}{{path}}/{id}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all branches
 ### Request Body: -
 ### Response: List<BranchDto>
 GET {{baseUrl}}{{path}}/reference/{referenceId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update an existing branch
 ### Request Body: BranchDto
 ### Response: Updated BranchDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete a branch by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all medias by branch ID
 ### Request Body: -
 ### Response: List<MediaDto>
 GET {{baseUrl}}{{path}}/{id}/media
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
