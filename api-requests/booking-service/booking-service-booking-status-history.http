@@ -1,0 +1,49 @@
+### ============================================
+### BOOKING SERVICE ENDPOINTS
+### ============================================
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/booking-status-histories
+@lockID = 1
+
+### Acquire booking status history
+### Request Body: BookingStatusHistoryDto
+### Response: Created BookingStatusHistoryDto
+POST {{baseUrl}}{{path}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bookingId": "uuid-booking-123",
+  "tableId": "uuid-table-def",
+  "lockAcquiredAt": "2024-06-20T10:00:00Z",
+  "lockExpiresAt": "2024-06-20T10:05:00Z"
+}
+
+### Get booking status histories by lock ID
+### Request Body: -
+### Response: BookingStatusHistoryDto
+GET {{baseUrl}}{{path}}/{lockID}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### List booking status histories
+### Request Body: -
+### Response: List<BookingStatusHistoryDto>
+GET {{baseUrl}}{{path}}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Update booking status history details
+### Request Body: BookingStatusHistoryDto
+### Response: Updated BookingStatusHistoryDto
+PUT {{baseUrl}}{{path}}/{lockID}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Release a lock
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{lockID}
+Authorization: Bearer {{token}}
+Content-Type: application/json

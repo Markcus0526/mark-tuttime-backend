@@ -11,7 +11,7 @@
 ### Request Body: MediaDto
 ### Response: Created MediaDto
 POST {{baseUrl}}{{path}}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -27,26 +27,26 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: MediaDto
 GET {{baseUrl}}{{path}}/{id}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all medias
 ### Request Body: -
 ### Response: List<MediaDto>
 GET {{baseUrl}}{{path}}/reference/{referenceId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update an existing media
 ### Request Body: MediaDto
 ### Response: Updated MediaDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete a media by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json

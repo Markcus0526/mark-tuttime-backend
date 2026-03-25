@@ -11,7 +11,7 @@
 ### Request Body: MenuCategoryDto
 ### Response: Created MenuCategoryDto
 POST {{baseUrl}}{{path}}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -25,26 +25,26 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: MenuCategoryDto
 GET {{baseUrl}}{{path}}/{{id}}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all menu categories for a branch
 ### Request Body: -
 ### Response: List<MenuCategoryDto>
 GET {{baseUrl}}{{path}}/branch/{branchId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update menu category by ID
 ### Request Body: MenuCategoryDto
 ### Response: Updated MenuCategoryDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete menu category by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json

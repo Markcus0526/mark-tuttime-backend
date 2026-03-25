@@ -9,7 +9,7 @@
 ### Request Body: ModifierDto
 ### Response: Created ModifierDto
 POST {{baseUrl}}{{path}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -24,26 +24,26 @@ Content-Type: application/json
 ### Request Body: -
 ### Response: ModifierDto
 GET {{baseUrl}}{{path}}/{id}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Get all menu items in a category
 ### Request Body: -
 ### Response: List<ModifierDto>
 GET {{baseUrl}}{{path}}/category/{categoryId}
-#Authorization: Bearer {{adminToken}}
+#Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update menu item by ID
 ### Request Body: ModifierDto
 ### Response: Updated ModifierDto
 PUT {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Delete menu item by ID
 ### Request Body: -
 ### Response: No content (204)
 DELETE {{baseUrl}}{{path}}/{id}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
