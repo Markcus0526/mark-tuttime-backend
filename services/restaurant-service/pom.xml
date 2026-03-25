@@ -214,7 +214,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.tuttime.content.ContentServiceApplication</mainClass>
+                    <mainClass>com.tuttime.restaurant.RestaurantServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
