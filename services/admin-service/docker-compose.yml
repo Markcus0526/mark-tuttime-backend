@@ -4,7 +4,7 @@ services:
     image: postgres:15-alpine
     container_name: tuttime-admin-service-db
     ports:
-      - "5433:5432"  # Different port to avoid conflict
+      - "5432:5432"  # Different port to avoid conflict
     env_file:
       - .env.docker
     environment:
