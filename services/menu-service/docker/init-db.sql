@@ -1,5 +1,5 @@
 -- ============================================================================
--- ADMIN SERVICE - Database Schema
+-- MENU SERVICE - Database Schema
 -- Database: menu_service_db
 -- Schema: menu_service
 -- 

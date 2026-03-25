@@ -25,7 +25,7 @@ spring:
     # Set DATABASE_REPLICA_URL environment variable to enable read replicas
     replica:
       url: ${DATABASE_REPLICA_URL:}
-      restaurantname: ${DATABASE_REPLICA_USERNAME:${DATABASE_USERNAME:postgres}}
+      username: ${DATABASE_REPLICA_USERNAME:${DATABASE_USERNAME:postgres}}
       password: ${DATABASE_REPLICA_PASSWORD:${DATABASE_PASSWORD:}}
       driver-class-name: org.postgresql.Driver
       hikari:
@@ -103,13 +103,6 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-  security:
-    jwt:
-      secret: ${JWT_SECRET:}
-      expiration: ${JWT_EXPIRATION:86400000} # 24 hours
-      issuer: ${JWT_ISSUER:tuttime-backend} # Token issuer identifier
-      audience: ${JWT_AUDIENCE:tuttime-mobile-app} # Token audience identifier
-
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -126,7 +119,7 @@ spring:
   mail:
     host: ${EMAIL_SMTP_HOST:smtp.yandex.ru}
     port: ${EMAIL_SMTP_PORT:465}
-    restaurantname: ${EMAIL_SMTP_USERNAME:}
+    username: ${EMAIL_SMTP_USERNAME:}
     password: ${EMAIL_SMTP_PASSWORD:}
     properties:
       mail:
@@ -154,7 +147,7 @@ bruteforce:
 
 # Anti-Fraud Configuration
 antifraud:
-  max-devices-per-restaurant: ${ANTIFRAUD_MAX_DEVICES_PER_USER:3} # Maximum devices per restaurant
+  max-devices-per-user: ${ANTIFRAUD_MAX_DEVICES_PER_USER:3} # Maximum devices per user
   multi-account-ip-threshold: ${ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD:3} # Alert if same IP has 3+ accounts in 24h
 
 # Email Verification Configuration
@@ -310,14 +303,12 @@ app:
     max-size: ${IMAGE_MAX_SIZE:5242880} # 5MB
     max-dimension: ${IMAGE_MAX_DIMENSION:1024} # Max width/height in pixels
     quality: ${IMAGE_QUALITY:0.85} # JPEG quality (0.0 to 1.0)
-  language:
-    apple-restaurant-id: ${APPLE_LANGUAGE_USER_ID:} # User ID that should receive apple language translations (empty = disabled)
 
 # Map Query Configuration
 map:
   query:
     # Use approximate COUNT queries for better performance (faster but less accurate)
-    # Set to true for large datasets (>1M restaurants) to improve COUNT query performance
+    # Set to true for large datasets (>1M users) to improve COUNT query performance
     use-approximate-count: ${MAP_USE_APPROXIMATE_COUNT:false}
 
 # Rate Limiting Configuration
