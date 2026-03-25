@@ -1,6 +1,6 @@
 package com.tuttime.order.controller;
 
-import com.tuttime.order.dto.OrderItemModifierDTO;
+import com.tuttime.order.dto.OrderItemModifierDto;
 import com.tuttime.order.service.OrderItemModifierService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,36 +24,36 @@ public class OrderItemModifierController {
 	// Create a new modifier
 	@Operation(summary = "Create a new modifier")
 	@PostMapping
-	public ResponseEntity<OrderItemModifierDTO> createModifier(@RequestBody OrderItemModifierDTO modifierDTO) {
-		OrderItemModifierDTO createdModifier = modifierService.createModifier(modifierDTO);
+	public ResponseEntity<OrderItemModifierDto> createModifier(@RequestBody OrderItemModifierDto modifierDTO) {
+		OrderItemModifierDto createdModifier = modifierService.createModifier(modifierDTO);
 		return new ResponseEntity<>(createdModifier, HttpStatus.CREATED);
 	}
 
 	// Update an existing modifier by ID
 	@PutMapping("/{modifierId}")
 	@Operation(summary = "Update an existing modifier by ID")
-	public ResponseEntity<OrderItemModifierDTO> updateModifier(
+	public ResponseEntity<OrderItemModifierDto> updateModifier(
 			@Parameter(description = "ID of the modifier to update") @PathVariable UUID modifierId,
-			@RequestBody OrderItemModifierDTO modifierDTO) {
-		OrderItemModifierDTO updatedModifier = modifierService.updateModifier(modifierId, modifierDTO);
+			@RequestBody OrderItemModifierDto modifierDTO) {
+		OrderItemModifierDto updatedModifier = modifierService.updateModifier(modifierId, modifierDTO);
 		return ResponseEntity.ok(updatedModifier);
 	}
 
 	// Get modifier by ID
 	@Operation(summary = "Get modifier by ID")
 	@GetMapping("/{modifierId}")
-	public ResponseEntity<OrderItemModifierDTO> getModifierById(
+	public ResponseEntity<OrderItemModifierDto> getModifierById(
 			@Parameter(description = "ID of the modifier to retrieve") @PathVariable UUID modifierId) {
-		OrderItemModifierDTO modifier = modifierService.getModifierById(modifierId);
+		OrderItemModifierDto modifier = modifierService.getModifierById(modifierId);
 		return ResponseEntity.ok(modifier);
 	}
 
 	// Get all modifiers for a specific order item by order item ID
 	@Operation(summary = "Get all modifiers for a specific order item by order item ID")
 	@GetMapping("/order-item/{orderItemId}")
-	public ResponseEntity<List<OrderItemModifierDTO>> getModifiersByOrderItemId(
+	public ResponseEntity<List<OrderItemModifierDto>> getModifiersByOrderItemId(
 			@Parameter(description = "Order item ID to filter modifiers") @PathVariable UUID orderItemId) {
-		List<OrderItemModifierDTO> modifiers = modifierService.getModifiersByOrderItemId(orderItemId);
+		List<OrderItemModifierDto> modifiers = modifierService.getModifiersByOrderItemId(orderItemId);
 		return ResponseEntity.ok(modifiers);
 	}
 

@@ -1,6 +1,5 @@
 package com.tuttime.order.dto;
 
-import com.tuttime.order.entity.OrderStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -13,15 +12,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderDTO {
+public class OrderItemDto {
 	private UUID id;
-	private UUID bookingId;
-	private UUID userId;
-	private OrderStatus status;
-	private BigDecimal totalAmount;
+	private UUID menuItemId;
+	private int quantity;
+	private BigDecimal price;
 	private Instant createdAt;
 	private Instant updatedAt;
-	private List<OrderItemDTO> orderItems;
+	private List<OrderItemModifierDto> modifiers;
 
 	// Getters and setters
 }

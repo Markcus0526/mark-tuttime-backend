@@ -1,19 +1,19 @@
 package com.tuttime.order.service;
 
-import com.tuttime.order.dto.OrderItemDTO;
+import com.tuttime.order.dto.OrderItemDto;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface OrderItemService {
 
-	OrderItemDTO createOrderItem(OrderItemDTO orderItemDTO);
+	OrderItemDto createOrderItem(OrderItemDto orderItemDto);
 
-	OrderItemDTO updateOrderItem(UUID orderItemId, OrderItemDTO orderItemDTO);
+	OrderItemDto updateOrderItem(UUID orderItemId, OrderItemDto orderItemDto);
 
-	OrderItemDTO getOrderItemById(UUID orderItemId);
+	OrderItemDto getOrderItemById(UUID orderItemId);
 
-	List<OrderItemDTO> getItemsByOrderId(UUID orderId);
+	List<OrderItemDto> getItemsByOrderId(UUID orderId);
 
 	void deleteOrderItem(UUID orderItemId);
 }

@@ -1,19 +1,19 @@
 package com.tuttime.order.service;
 
-import com.tuttime.order.dto.OrderItemModifierDTO;
+import com.tuttime.order.dto.OrderItemModifierDto;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface OrderItemModifierService {
 
-	OrderItemModifierDTO createModifier(OrderItemModifierDTO modifierDTO);
+	OrderItemModifierDto createModifier(OrderItemModifierDto modifierDTO);
 
-	OrderItemModifierDTO updateModifier(UUID modifierId, OrderItemModifierDTO modifierDTO);
+	OrderItemModifierDto updateModifier(UUID modifierId, OrderItemModifierDto modifierDTO);
 
-	OrderItemModifierDTO getModifierById(UUID modifierId);
+	OrderItemModifierDto getModifierById(UUID modifierId);
 
-	List<OrderItemModifierDTO> getModifiersByOrderItemId(UUID orderItemId);
+	List<OrderItemModifierDto> getModifiersByOrderItemId(UUID orderItemId);
 
 	void deleteModifier(UUID modifierId);
 }

@@ -1,6 +1,6 @@
 package com.tuttime.order.service.impl;
 
-import com.tuttime.order.dto.OrderItemModifierDTO;
+import com.tuttime.order.dto.OrderItemModifierDto;
 import com.tuttime.order.entity.OrderItemModifier;
 import com.tuttime.order.mapper.OrderItemModifierMapper;
 import com.tuttime.order.repository.OrderItemModifierRepository;
@@ -26,14 +26,14 @@ public class OrderItemModifierServiceImpl implements OrderItemModifierService {
 	}
 
 	@Override
-	public OrderItemModifierDTO createModifier(OrderItemModifierDTO modifierDTO) {
+	public OrderItemModifierDto createModifier(OrderItemModifierDto modifierDTO) {
 		OrderItemModifier modifier = modifierMapper.toEntity(modifierDTO);
 		OrderItemModifier saved = modifierRepository.save(modifier);
 		return modifierMapper.toDto(saved);
 	}
 
 	@Override
-	public OrderItemModifierDTO updateModifier(UUID modifierId, OrderItemModifierDTO modifierDTO) {
+	public OrderItemModifierDto updateModifier(UUID modifierId, OrderItemModifierDto modifierDTO) {
 		OrderItemModifier existing = modifierRepository.findById(modifierId)
 				.orElseThrow(() -> new IllegalArgumentException("Modifier not found: " + modifierId));
 
@@ -45,14 +45,14 @@ public class OrderItemModifierServiceImpl implements OrderItemModifierService {
 	}
 
 	@Override
-	public OrderItemModifierDTO getModifierById(UUID modifierId) {
+	public OrderItemModifierDto getModifierById(UUID modifierId) {
 		OrderItemModifier modifier = modifierRepository.findById(modifierId)
 				.orElseThrow(() -> new IllegalArgumentException("Modifier not found: " + modifierId));
 		return modifierMapper.toDto(modifier);
 	}
 
 	@Override
-	public List<OrderItemModifierDTO> getModifiersByOrderItemId(UUID orderItemId) {
+	public List<OrderItemModifierDto> getModifiersByOrderItemId(UUID orderItemId) {
 		List<OrderItemModifier> modifiers = modifierRepository.findByOrderItemId(orderItemId);
 		return modifiers.stream().map(modifierMapper::toDto).collect(Collectors.toList());
 	}

@@ -1,6 +1,6 @@
 package com.tuttime.order.service;
 
-import com.tuttime.order.dto.OrderDTO;
+import com.tuttime.order.dto.OrderDto;
 
 import java.util.List;
 import java.util.UUID;
@@ -8,17 +8,17 @@ import java.util.UUID;
 
 public interface OrderService {
 
-	OrderDTO createOrder(OrderDTO orderDTO);
+	OrderDto createOrder(OrderDto orderDto);
 
-	OrderDTO updateOrder(UUID orderId, OrderDTO orderDTO);
+	OrderDto updateOrder(UUID orderId, OrderDto orderDto);
 
-	OrderDTO getOrderById(UUID orderId);
+	OrderDto getOrderById(UUID orderId);
 
-	List<OrderDTO> getOrdersByBookingId(UUID bookingId);
+	List<OrderDto> getOrdersByBookingId(UUID bookingId);
 
-	List<OrderDTO> getOrdersByUserId(UUID userId);
+	List<OrderDto> getOrdersByUserId(UUID userId);
 
 	void deleteOrder(UUID orderId);
 
-	OrderDTO updateOrderStatus(UUID orderId, String status);
+	OrderDto updateOrderStatus(UUID orderId, String status);
 }

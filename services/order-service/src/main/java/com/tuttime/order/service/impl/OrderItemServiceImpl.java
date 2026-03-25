@@ -1,6 +1,6 @@
 package com.tuttime.order.service.impl;
 
-import com.tuttime.order.dto.OrderItemDTO;
+import com.tuttime.order.dto.OrderItemDto;
 import com.tuttime.order.entity.OrderItem;
 import com.tuttime.order.mapper.OrderItemMapper;
 import com.tuttime.order.repository.OrderItemRepository;
@@ -26,20 +26,20 @@ public class OrderItemServiceImpl implements OrderItemService {
 	}
 
 	@Override
-	public OrderItemDTO createOrderItem(OrderItemDTO orderItemDTO) {
-		OrderItem orderItem = orderItemMapper.toEntity(orderItemDTO);
+	public OrderItemDto createOrderItem(OrderItemDto orderItemDto) {
+		OrderItem orderItem = orderItemMapper.toEntity(orderItemDto);
 		OrderItem saved = orderItemRepository.save(orderItem);
 		return orderItemMapper.toDto(saved);
 	}
 
 	@Override
-	public OrderItemDTO updateOrderItem(UUID orderItemId, OrderItemDTO orderItemDTO) {
+	public OrderItemDto updateOrderItem(UUID orderItemId, OrderItemDto orderItemDto) {
 		OrderItem existing = orderItemRepository.findById(orderItemId)
 				.orElseThrow(() -> new IllegalArgumentException("OrderItem not found: " + orderItemId));
 
-		existing.setMenuItemId(orderItemDTO.getMenuItemId());
-		existing.setQuantity(orderItemDTO.getQuantity());
-		existing.setPrice(orderItemDTO.getPrice());
+		existing.setMenuItemId(orderItemDto.getMenuItemId());
+		existing.setQuantity(orderItemDto.getQuantity());
+		existing.setPrice(orderItemDto.getPrice());
 
 		// Handle modifiers update if necessary (requires extra logic)
 
@@ -48,14 +48,14 @@ public class OrderItemServiceImpl implements OrderItemService {
 	}
 
 	@Override
-	public OrderItemDTO getOrderItemById(UUID orderItemId) {
+	public OrderItemDto getOrderItemById(UUID orderItemId) {
 		OrderItem orderItem = orderItemRepository.findById(orderItemId)
 				.orElseThrow(() -> new IllegalArgumentException("OrderItem not found: " + orderItemId));
 		return orderItemMapper.toDto(orderItem);
 	}
 
 	@Override
-	public List<OrderItemDTO> getItemsByOrderId(UUID orderId) {
+	public List<OrderItemDto> getItemsByOrderId(UUID orderId) {
 		List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
 		return items.stream().map(orderItemMapper::toDto).collect(Collectors.toList());
 	}

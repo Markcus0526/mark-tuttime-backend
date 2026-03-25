@@ -309,7 +309,7 @@ spring:
         # Endpoints include: /api/v1/orders/**
         - id: booking-service-order
           order: 51
-          uri: http://${BOOKING-SERVICE:localhost}:28005
+          uri: http://${ORDER-SERVICE:localhost}:28005
           predicates:
             - Path=/api/v1/orders/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -324,7 +324,7 @@ spring:
         # Endpoints include: /api/v1/order-items/**
         - id: booking-service-order-item
           order: 52
-          uri: http://${BOOKING-SERVICE:localhost}:28005
+          uri: http://${ORDER-SERVICE:localhost}:28005
           predicates:
             - Path=/api/v1/order-items/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -339,7 +339,7 @@ spring:
         # Endpoints include: /api/v1/order-item-modifiers/**
         - id: booking-service-order-item-modifier
           order: 53
-          uri: http://${BOOKING-SERVICE:localhost}:28005
+          uri: http://${ORDER-SERVICE:localhost}:28005
           predicates:
             - Path=/api/v1/order-item-modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -349,6 +349,53 @@ spring:
               args:
                 name: orderServiceCircuitBreaker
                 fallbackUri: forward:/fallback/order-service
+
+        ################# Payment Service Routes #######################
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/payments/**
+        - id: payment-service-payment
+          order: 61
+          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          predicates:
+            - Path=/api/v1/payments/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: paymentServiceCircuitBreaker
+                fallbackUri: forward:/fallback/payment-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/refunds/**
+        - id: payment-service-refunds
+          order: 62
+          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          predicates:
+            - Path=/api/v1/refunds/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: paymentServiceCircuitBreaker
+                fallbackUri: forward:/fallback/payment-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/payment-audit-logs/**
+        - id: payment-service-payment-audit-log
+          order: 63
+          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          predicates:
+            - Path=/api/v1/payment-audit-logs/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: paymentServiceCircuitBreaker
+                fallbackUri: forward:/fallback/payment-service
 
       # CORS is now configured via CorsConfig.java
       # globalcors configuration removed to use programmatic configuration

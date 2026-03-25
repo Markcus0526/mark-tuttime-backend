@@ -54,18 +54,18 @@ EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Orders table
 CREATE TABLE orders
 (
-    id           UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
-    booking_id   UUID           NOT NULL,
-    user_id      UUID           NOT NULL,
-    status       order_status   NOT NULL DEFAULT 'CREATED',
-    total_amount NUMERIC(10, 2) NOT NULL CHECK (total_amount >= 0),
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    created_by UUID,
-    updated_by UUID,
-    deleted_at TIMESTAMP WITH TIME ZONE NULL,
-    CONSTRAINT fk_booking FOREIGN KEY (booking_id) REFERENCES bookings(id),
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id)
+    id           UUID PRIMARY KEY                  DEFAULT uuid_generate_v4(),
+    booking_id   UUID                     NOT NULL,
+    user_id      UUID                     NOT NULL,
+    status       order_status             NOT NULL DEFAULT 'CREATED',
+    total_amount NUMERIC(10, 2)           NOT NULL CHECK (total_amount >= 0),
+    created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by   UUID,
+    updated_by   UUID,
+    deleted_at   TIMESTAMP WITH TIME ZONE NULL,
+    CONSTRAINT fk_booking FOREIGN KEY (booking_id) REFERENCES bookings (id),
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
 -- Indexes for orders table
@@ -77,17 +77,17 @@ CREATE INDEX idx_orders_deleted_at ON orders (deleted_at);
 -- Order items table
 CREATE TABLE order_items
 (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_id     UUID NOT NULL,
-    menu_item_id UUID NOT NULL,
-    quantity     INT  NOT NULL CHECK (quantity > 0),
-    price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    created_by UUID,
-    updated_by UUID,
-    deleted_at TIMESTAMP WITH TIME ZONE NULL,
-    CONSTRAINT fk_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    id           UUID PRIMARY KEY                  DEFAULT uuid_generate_v4(),
+    order_id     UUID                     NOT NULL,
+    menu_item_id UUID                     NOT NULL,
+    quantity     INT                      NOT NULL CHECK (quantity > 0),
+    price        NUMERIC(10, 2)           NOT NULL CHECK (price >= 0),
+    created_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    created_by   UUID,
+    updated_by   UUID,
+    deleted_at   TIMESTAMP WITH TIME ZONE NULL,
+    CONSTRAINT fk_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
 );
 
 -- Indexes for order_items

@@ -1,4 +1,4 @@
-package com.tuttime.order.entity;
+package com.tuttime.order.enums;
 
 public enum OrderStatus {
 	CREATED,
