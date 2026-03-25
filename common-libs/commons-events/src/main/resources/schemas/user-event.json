@@ -42,7 +42,12 @@
     },
     "status_level": {
       "type": "string",
-      "enum": ["BRONZE", "GOLD", "PLATINUM", "DIAMOND"]
+      "enum": [
+        "BRONZE",
+        "GOLD",
+        "PLATINUM",
+        "DIAMOND"
+      ]
     },
     "metadata": {
       "type": "object",
@@ -53,6 +58,10 @@
       "format": "date-time"
     }
   },
-  "required": ["event_type", "user_id", "timestamp"]
+  "required": [
+    "event_type",
+    "user_id",
+    "timestamp"
+  ]
 }
 

@@ -18,8 +18,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ReorderTiersRequest {
 
-    @NotEmpty(message = "Tier IDs list is required")
-    @NotNull(message = "Tier IDs list cannot be null")
-    private List<Long> tierIds; // Ordered list of tier IDs
+	@NotEmpty(message = "Tier IDs list is required")
+	@NotNull(message = "Tier IDs list cannot be null")
+	private List<Long> tierIds; // Ordered list of tier IDs
 }
 

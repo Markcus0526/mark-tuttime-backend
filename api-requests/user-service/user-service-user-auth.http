@@ -42,4 +42,9 @@ POST {{userBaseUrl}}{{userPath}}/users/logout
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-> {% if (response.status === 200 && response.body.success) { client.global.set("token", ""); client.global.set("refreshToken", ""); } %}
+> {%
+    if (response.status === 200 && response.body.success) {
+        client.global.set("token", "");
+        client.global.set("refreshToken", "");
+    }
+%}

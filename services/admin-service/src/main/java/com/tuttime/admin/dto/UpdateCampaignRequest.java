@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Request DTO for updating notification campaign
@@ -16,15 +15,15 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateCampaignRequest {
-    
-    private String campaignName;
-    
-    private String sourceTitle;
-    
-    private String sourceMessage;
-    
-    private List<String> channels;
-    
-    private String priority;
+
+	private String campaignName;
+
+	private String sourceTitle;
+
+	private String sourceMessage;
+
+	private List<String> channels;
+
+	private String priority;
 }
 

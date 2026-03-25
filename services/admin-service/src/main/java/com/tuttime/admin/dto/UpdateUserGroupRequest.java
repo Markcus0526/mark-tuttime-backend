@@ -15,10 +15,10 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateUserGroupRequest {
-    
-    private String groupName;
-    
-    private String description;
-    
-    private Map<String, Object> criteria;
+
+	private String groupName;
+
+	private String description;
+
+	private Map<String, Object> criteria;
 }

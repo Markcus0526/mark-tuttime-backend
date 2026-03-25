@@ -10,15 +10,15 @@ option java_outer_classname = "StakingServiceProto";
 service StakingService {
   rpc GetStakingPositions (GetStakingPositionsRequest) returns (StakingPositionsResponse);
   rpc CalculateRewards (CalculateRewardsRequest) returns (CalculateRewardsResponse);
-  
+
   // Admin analytics endpoints
   rpc GetTotalStakingApy (GetTotalStakingApyRequest) returns (GetTotalStakingApyResponse);
   rpc GetTotalRewardsClaimed (GetTotalRewardsClaimedRequest) returns (GetTotalRewardsClaimedResponse);
   rpc GetTvl (GetTvlRequest) returns (GetTvlResponse);
-  
+
   // Leaderboard endpoints
   rpc GetTopStakings (GetTopStakingsRequest) returns (GetTopStakingsResponse);
-  
+
   // Admin history endpoints
   rpc GetStakingHistory (GetStakingHistoryRequest) returns (GetStakingHistoryResponse);
   rpc GetUnstakingHistory (GetUnstakingHistoryRequest) returns (GetUnstakingHistoryResponse);

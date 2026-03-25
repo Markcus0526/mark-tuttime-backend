@@ -8,6 +8,6 @@ import java.util.UUID;
 
 public interface PhoneVerificationCodeRepository extends JpaRepository<PhoneVerificationCode, UUID> {
 
-    Optional<PhoneVerificationCode> findTopByPhoneNumberAndUsedFalseOrderByCreatedAtDesc(String phoneNumber);
+	Optional<PhoneVerificationCode> findTopByPhoneNumberAndUsedFalseOrderByCreatedAtDesc(String phoneNumber);
 
 }

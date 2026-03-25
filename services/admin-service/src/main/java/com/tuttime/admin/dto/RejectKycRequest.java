@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RejectKycRequest {
-    @NotBlank(message = "Rejection reason is required")
-    private String reason;
+	@NotBlank(message = "Rejection reason is required")
+	private String reason;
 }
 

@@ -9,7 +9,7 @@ import java.util.List;
 
 @Repository
 public interface MediaRepository extends JpaRepository<Media, Long> {
-    List<Media> findByEntityTypeAndEntityId(EntityType mediaEntity, Long entityId);
+	List<Media> findByEntityTypeAndEntityId(EntityType mediaEntity, Long entityId);
 
-    List<Media> findByEntityTypeAndEntityIdAndIsPrimaryTrue(EntityType mediaEntity, Long entityId);
+	List<Media> findByEntityTypeAndEntityIdAndIsPrimaryTrue(EntityType mediaEntity, Long entityId);
 }

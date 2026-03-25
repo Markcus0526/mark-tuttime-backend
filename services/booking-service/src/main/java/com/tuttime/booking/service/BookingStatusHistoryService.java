@@ -2,7 +2,6 @@ package com.tuttime.booking.service;
 
 import com.tuttime.booking.dto.BookingStatusHistoryDto;
 import com.tuttime.booking.entity.BookingStatusHistory;
-import com.tuttime.booking.mapper.BookingLockMapper;
 import com.tuttime.booking.mapper.BookingStatusHistoryMapper;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import lombok.RequiredArgsConstructor;

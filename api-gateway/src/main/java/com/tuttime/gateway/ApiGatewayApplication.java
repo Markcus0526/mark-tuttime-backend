@@ -14,8 +14,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * <p><b>Configuration:</b>
  * <ul>
  *   <li><b>@SpringBootApplication</b> - Enables Spring Boot auto-configuration</li>
-   * </ul>
-   *
+ * </ul>
+ *
  * <p><b>Gateway Responsibilities:</b>
  * <ul>
  *   <li>Request routing to microservices</li>
@@ -30,8 +30,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 @EnableDiscoveryClient
 public class ApiGatewayApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(ApiGatewayApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(ApiGatewayApplication.class, args);
+	}
 }
 

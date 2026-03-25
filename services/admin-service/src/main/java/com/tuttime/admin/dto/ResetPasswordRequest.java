@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "New password is required")
-    @Size(min = 8, message = "New password must be at least 8 characters")
-    private String newPassword;
+	@NotBlank(message = "New password is required")
+	@Size(min = 8, message = "New password must be at least 8 characters")
+	private String newPassword;
 }
 

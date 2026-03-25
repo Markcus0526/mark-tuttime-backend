@@ -13,12 +13,12 @@ import java.util.Optional;
 @Repository
 public interface LanguageRepository extends JpaRepository<Language, Long> {
 
-    Optional<Language> findByLanguageCode(String languageCode);
+	Optional<Language> findByLanguageCode(String languageCode);
 
-    List<Language> findByIsActiveTrueOrderByDisplayOrderAsc();
+	List<Language> findByIsActiveTrueOrderByDisplayOrderAsc();
 
-    Optional<Language> findByIsDefaultTrue();
+	Optional<Language> findByIsDefaultTrue();
 
-    boolean existsByLanguageCode(String languageCode);
+	boolean existsByLanguageCode(String languageCode);
 }
 

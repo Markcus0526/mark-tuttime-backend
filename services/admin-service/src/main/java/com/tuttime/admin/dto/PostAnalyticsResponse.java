@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostAnalyticsResponse {
-    private Long totalPosts;
-    private Long totalLikes;
-    private Long totalComments;
-    private Long activeUsers;
+	private Long totalPosts;
+	private Long totalLikes;
+	private Long totalComments;
+	private Long activeUsers;
 }
 

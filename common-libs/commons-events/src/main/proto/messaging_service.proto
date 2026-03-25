@@ -12,7 +12,7 @@ service MessagingService {
   rpc GetChatList (GetChatListRequest) returns (GetChatListResponse);
   rpc GetChat (GetChatRequest) returns (GetChatResponse);
   rpc CreateChat (CreateChatRequest) returns (GetChatResponse);
-  
+
   // Message operations
   rpc SendMessage (SendMessageRequest) returns (SendMessageResponse);
   rpc GetMessages (GetMessagesRequest) returns (GetMessagesResponse);
@@ -20,7 +20,7 @@ service MessagingService {
   rpc EditMessage (EditMessageRequest) returns (SendMessageResponse);
   rpc DeleteMessage (DeleteMessageRequest) returns (DeleteMessageResponse);
   rpc ForwardMessage (ForwardMessageRequest) returns (ForwardMessageResponse);
-  
+
   // Group Chat operations
   rpc GetGroupChatList (GetGroupChatListRequest) returns (GetGroupChatListResponse);
   rpc GetGroupChat (GetGroupChatRequest) returns (GetGroupChatResponse);
@@ -33,13 +33,13 @@ service MessagingService {
   rpc JoinGroupChatByInvite (JoinGroupChatByInviteRequest) returns (GroupMemberInfo);
   rpc PromoteGroupAdmin (PromoteGroupAdminRequest) returns (GroupChatAdminInfo);
   rpc DemoteGroupAdmin (DemoteGroupAdminRequest) returns (DemoteGroupAdminResponse);
-  
+
   // Channel operations (broadcast channels)
   rpc GetChannelList (GetChannelListRequest) returns (GetChannelListResponse);
   rpc GetChannel (GetChannelRequest) returns (GetChannelResponse);
   rpc SubscribeChannel (SubscribeChannelRequest) returns (GetChannelResponse);
   rpc UnsubscribeChannel (UnsubscribeChannelRequest) returns (UnsubscribeChannelResponse);
-  
+
   // Emoji operations (for admin-service)
   rpc GetEmojiPacks (GetEmojiPacksRequest) returns (GetEmojiPacksResponse);
   rpc GetEmojiPack (GetEmojiPackRequest) returns (GetEmojiPackResponse);

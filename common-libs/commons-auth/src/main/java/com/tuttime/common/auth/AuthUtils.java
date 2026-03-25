@@ -5,9 +5,9 @@ package com.tuttime.common.auth;
  */
 public final class AuthUtils {
 
-    private AuthUtils() {
-        // Prevent instantiation
-    }
+	private AuthUtils() {
+		// Prevent instantiation
+	}
 
 }
 

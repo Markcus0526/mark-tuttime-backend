@@ -17,31 +17,31 @@ import java.time.LocalDateTime;
 @Builder
 public class StopList {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "menu_item_id", nullable = false)
-  private MenuItem menuItem;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "menu_item_id", nullable = false)
+	private MenuItem menuItem;
 
-  @Column(name = "branch_id", nullable = false)
-  private Long branchId;
+	@Column(name = "branch_id", nullable = false)
+	private Long branchId;
 
-  @Column(name = "start_date", nullable = false)
-  private LocalDate startDate;
+	@Column(name = "start_date", nullable = false)
+	private LocalDate startDate;
 
-  @Column(name = "end_date")
-  private LocalDate endDate;
+	@Column(name = "end_date")
+	private LocalDate endDate;
 
-  @Column(length = 255)
-  private String reason;
+	@Column(length = 255)
+	private String reason;
 
-  @Column(name = "created_at", updatable = false)
-  @CreationTimestamp
-  private LocalDateTime createdAt;
+	@Column(name = "created_at", updatable = false)
+	@CreationTimestamp
+	private LocalDateTime createdAt;
 
-  @Column(name = "updated_at")
-  @UpdateTimestamp
-  private LocalDateTime updatedAt;
+	@Column(name = "updated_at")
+	@UpdateTimestamp
+	private LocalDateTime updatedAt;
 }

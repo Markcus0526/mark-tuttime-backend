@@ -16,14 +16,14 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppVersionResponse {
-    private String androidVersion;
-    private String androidInstallLink;
-    private String iosVersion;
-    private String iosInstallLink;
-    
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-    private OffsetDateTime updatedAt;
-    
-    private Long updatedBy;
+	private String androidVersion;
+	private String androidInstallLink;
+	private String iosVersion;
+	private String iosInstallLink;
+
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+	private OffsetDateTime updatedAt;
+
+	private Long updatedBy;
 }
 

@@ -15,10 +15,10 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class HashtagResponse {
-    
-    private Long hashtagId;
-    private String tag;
-    private Long postCount;
-    private OffsetDateTime createdAt;
+
+	private Long hashtagId;
+	private String tag;
+	private Long postCount;
+	private OffsetDateTime createdAt;
 }
 

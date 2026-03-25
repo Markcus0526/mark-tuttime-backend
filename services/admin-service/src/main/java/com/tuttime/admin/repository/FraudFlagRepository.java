@@ -15,28 +15,28 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FraudFlagRepository extends JpaRepository<FraudFlag, Long>, JpaSpecificationExecutor<FraudFlag> {
 
-    /**
-     * Count total fraud flags
-     */
-    @Query("SELECT COUNT(f) FROM FraudFlag f")
-    long countTotalFlags();
+	/**
+	 * Count total fraud flags
+	 */
+	@Query("SELECT COUNT(f) FROM FraudFlag f")
+	long countTotalFlags();
 
-    /**
-     * Count unresolved fraud flags
-     */
-    @Query("SELECT COUNT(f) FROM FraudFlag f WHERE f.resolved = false")
-    long countUnresolvedFlags();
+	/**
+	 * Count unresolved fraud flags
+	 */
+	@Query("SELECT COUNT(f) FROM FraudFlag f WHERE f.resolved = false")
+	long countUnresolvedFlags();
 
-    /**
-     * Count fraud flags by category
-     */
-    @Query("SELECT COUNT(f) FROM FraudFlag f WHERE f.category = :category")
-    long countByCategory(@Param("category") WarningCategory category);
+	/**
+	 * Count fraud flags by category
+	 */
+	@Query("SELECT COUNT(f) FROM FraudFlag f WHERE f.category = :category")
+	long countByCategory(@Param("category") WarningCategory category);
 
-    /**
-     * Count fraud flags by severity
-     */
-    @Query("SELECT COUNT(f) FROM FraudFlag f WHERE f.severity = :severity")
-    long countBySeverity(@Param("severity") WarningSeverity severity);
+	/**
+	 * Count fraud flags by severity
+	 */
+	@Query("SELECT COUNT(f) FROM FraudFlag f WHERE f.severity = :severity")
+	long countBySeverity(@Param("severity") WarningSeverity severity);
 }
 

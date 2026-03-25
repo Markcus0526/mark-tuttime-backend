@@ -16,20 +16,20 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserStatsResponse {
-    private Long totalUsers;
-    private Long newUsers;
-    private Long activeUsers;
-    private Long blockedUsers;
-    private List<DailyUserGrowth> dailyGrowth;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DailyUserGrowth {
-        private LocalDate date;
-        private Long newUsers;
-        private Long activeUsers;
-    }
+	private Long totalUsers;
+	private Long newUsers;
+	private Long activeUsers;
+	private Long blockedUsers;
+	private List<DailyUserGrowth> dailyGrowth;
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class DailyUserGrowth {
+		private LocalDate date;
+		private Long newUsers;
+		private Long activeUsers;
+	}
 }
 

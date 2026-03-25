@@ -15,36 +15,36 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Discounts", description = "Operations related to discounts")
 public class DiscountController {
-    private final DiscountService discountService;
+	private final DiscountService discountService;
 
-    @PostMapping
-    @Operation(summary = "Create a new discount")
-    public ResponseEntity<DiscountDto> create(@RequestBody DiscountDto discount) {
-        return ResponseEntity.ok(discountService.create(discount));
-    }
+	@PostMapping
+	@Operation(summary = "Create a new discount")
+	public ResponseEntity<DiscountDto> create(@RequestBody DiscountDto discount) {
+		return ResponseEntity.ok(discountService.create(discount));
+	}
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get discount by ID")
-    public ResponseEntity<DiscountDto> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(discountService.getById(id));
-    }
+	@GetMapping("/{id}")
+	@Operation(summary = "Get discount by ID")
+	public ResponseEntity<DiscountDto> getById(@PathVariable Long id) {
+		return ResponseEntity.ok(discountService.getById(id));
+	}
 
-    @GetMapping("/reference/{referenceId}")
-    @Operation(summary = "Get discounts by reference ID")
-    public ResponseEntity<List<DiscountDto>> getByReferenceId(@PathVariable Long referenceId) {
-        return ResponseEntity.ok(discountService.getByReferenceId(referenceId));
-    }
+	@GetMapping("/reference/{referenceId}")
+	@Operation(summary = "Get discounts by reference ID")
+	public ResponseEntity<List<DiscountDto>> getByReferenceId(@PathVariable Long referenceId) {
+		return ResponseEntity.ok(discountService.getByReferenceId(referenceId));
+	}
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update discount by ID")
-    public ResponseEntity<DiscountDto> update(@PathVariable Long id, @RequestBody DiscountDto discount) {
-        return ResponseEntity.ok(discountService.update(id, discount));
-    }
+	@PutMapping("/{id}")
+	@Operation(summary = "Update discount by ID")
+	public ResponseEntity<DiscountDto> update(@PathVariable Long id, @RequestBody DiscountDto discount) {
+		return ResponseEntity.ok(discountService.update(id, discount));
+	}
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete discount by ID")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        discountService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+	@DeleteMapping("/{id}")
+	@Operation(summary = "Delete discount by ID")
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
+		discountService.delete(id);
+		return ResponseEntity.noContent().build();
+	}
 }

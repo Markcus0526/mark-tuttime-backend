@@ -13,14 +13,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MediaDto {
-    
-    private Long mediaId;
-    private String mediaType; // IMAGE, VIDEO
-    private String mediaUrl;
-    private String thumbnailUrl;
-    private Integer width;
-    private Integer height;
-    private Integer durationSeconds;
-    private Integer displayOrder;
+
+	private Long mediaId;
+	private String mediaType; // IMAGE, VIDEO
+	private String mediaUrl;
+	private String thumbnailUrl;
+	private Integer width;
+	private Integer height;
+	private Integer durationSeconds;
+	private Integer displayOrder;
 }
 

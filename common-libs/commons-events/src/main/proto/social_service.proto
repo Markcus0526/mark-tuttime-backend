@@ -10,10 +10,10 @@ option java_outer_classname = "SocialServiceProto";
 service SocialService {
   // Get follower counts for a single user
   rpc GetFollowCounts (GetFollowCountsRequest) returns (FollowCountsResponse);
-  
+
   // Batch query: Get follower counts for multiple users
   rpc GetBatchFollowCounts (GetBatchFollowCountsRequest) returns (GetBatchFollowCountsResponse);
-  
+
   // Follow a user (used for automatic follow after referral signup)
   rpc FollowUser (FollowUserRequest) returns (FollowUserResponse);
 }

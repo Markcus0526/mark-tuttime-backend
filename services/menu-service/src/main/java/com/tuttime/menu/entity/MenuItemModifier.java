@@ -17,26 +17,26 @@ import java.time.LocalDateTime;
 @Builder
 public class MenuItemModifier {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "menu_item_id", nullable = false)
-  private MenuItem menuItem;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "menu_item_id", nullable = false)
+	private MenuItem menuItem;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "modifier_id", nullable = false)
-  private Modifier modifier;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "modifier_id", nullable = false)
+	private Modifier modifier;
 
-  @Column(name = "is_default")
-  private Boolean isDefault = false;
+	@Column(name = "is_default")
+	private Boolean isDefault = false;
 
-  @Column(name = "created_at", updatable = false)
-  @CreationTimestamp
-  private LocalDateTime createdAt;
+	@Column(name = "created_at", updatable = false)
+	@CreationTimestamp
+	private LocalDateTime createdAt;
 
-  @Column(name = "updated_at")
-  @UpdateTimestamp
-  private LocalDateTime updatedAt;
+	@Column(name = "updated_at")
+	@UpdateTimestamp
+	private LocalDateTime updatedAt;
 }

@@ -14,10 +14,10 @@ POST {{baseUrl}}{{path}}/signup
 Content-Type: application/json
 
 {
-    "fullName": "Markcus",
-    "phoneNumber": "+1234567890",
-    "email": "markcus0526@atomicmail.io",
-    "password": "***REMOVED***"
+  "fullName": "Markcus",
+  "phoneNumber": "+1234567890",
+  "email": "markcus0526@atomicmail.io",
+  "password": "***REMOVED***"
 }
 
 ### User signin with phone + SMS code or email + password

@@ -16,23 +16,23 @@ service MiningService {
   rpc ResetMonthlyAccumulated (ResetMonthlyAccumulatedRequest) returns (ResetMonthlyAccumulatedResponse);
   rpc CreateVideoBoost (CreateVideoBoostRequest) returns (CreateVideoBoostResponse);
   rpc CreateTaskBoost (CreateTaskBoostRequest) returns (CreateTaskBoostResponse);
-  
+
   // Admin analytics endpoints
   rpc GetActiveAutoMiningsCount (GetActiveAutoMiningsCountRequest) returns (GetActiveAutoMiningsCountResponse);
   rpc GetActiveMiningSessionsCount (GetActiveMiningSessionsCountRequest) returns (GetActiveMiningSessionsCountResponse);
   rpc GetApGrowthHistory (GetApGrowthHistoryRequest) returns (GetApGrowthHistoryResponse);
-  
+
   // Leaderboard endpoints
   rpc GetTopMinersByApCredits (GetTopMinersByApCreditsRequest) returns (GetTopMinersByApCreditsResponse);
-  
+
   // Batch status endpoints
   rpc GetUsersMiningStatus (GetUsersMiningStatusRequest) returns (GetUsersMiningStatusResponse);
   rpc GetBatchMiningSpeeds (GetBatchMiningSpeedsRequest) returns (GetBatchMiningSpeedsResponse);
-  
+
   // User statistics endpoints
   rpc GetActiveMiningDaysCount (GetApBalanceRequest) returns (GetActiveMiningDaysCountResponse);
   rpc GetActiveBoostsCount (GetApBalanceRequest) returns (GetActiveBoostsCountResponse);
-  
+
   // Video boost history endpoint
   rpc GetVideoBoostHistory (GetVideoBoostHistoryRequest) returns (GetVideoBoostHistoryResponse);
 }

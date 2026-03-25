@@ -20,23 +20,23 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Slf4j
 public class RestaurantServiceApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(RestaurantServiceApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(RestaurantServiceApplication.class, args);
+	}
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void logStartupInfo(ApplicationReadyEvent event) {
-        Environment env = event.getApplicationContext().getEnvironment();
-        String[] activeProfiles = env.getActiveProfiles();
-        String graylogHost = env.getProperty("graylog.host");
-        String graylogPort = env.getProperty("graylog.port");
+	@EventListener(ApplicationReadyEvent.class)
+	public void logStartupInfo(ApplicationReadyEvent event) {
+		Environment env = event.getApplicationContext().getEnvironment();
+		String[] activeProfiles = env.getActiveProfiles();
+		String graylogHost = env.getProperty("graylog.host");
+		String graylogPort = env.getProperty("graylog.port");
 
-        log.info("==========================================");
-        log.info("Active Spring Profiles: {}", String.join(", ", activeProfiles.length > 0 ? activeProfiles : new String[]{"default"}));
-        log.info("Graylog Host: {}", graylogHost);
-        log.info("Graylog Port: {}", graylogPort);
-        log.info("Graylog Enabled: {}", java.util.Arrays.asList(activeProfiles).contains("graylog-enabled"));
-        log.info("Test log message to verify Graylog integration");
-        log.info("==========================================");
-    }
+		log.info("==========================================");
+		log.info("Active Spring Profiles: {}", String.join(", ", activeProfiles.length > 0 ? activeProfiles : new String[]{"default"}));
+		log.info("Graylog Host: {}", graylogHost);
+		log.info("Graylog Port: {}", graylogPort);
+		log.info("Graylog Enabled: {}", java.util.Arrays.asList(activeProfiles).contains("graylog-enabled"));
+		log.info("Test log message to verify Graylog integration");
+		log.info("==========================================");
+	}
 }

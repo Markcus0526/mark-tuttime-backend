@@ -16,17 +16,17 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentResponse {
-    
-    private Long commentId;
-    private Long postId;
-    private UserSummaryResponse author;
-    private String content;
-    private Long parentCommentId;
-    private Long likeCount;
-    private Boolean isLiked;
-    private Long replyCount;
-    private List<CommentResponse> replies;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+
+	private Long commentId;
+	private Long postId;
+	private UserSummaryResponse author;
+	private String content;
+	private Long parentCommentId;
+	private Long likeCount;
+	private Boolean isLiked;
+	private Long replyCount;
+	private List<CommentResponse> replies;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
 }
 

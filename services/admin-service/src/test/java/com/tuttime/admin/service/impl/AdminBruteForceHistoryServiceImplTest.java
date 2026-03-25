@@ -15,7 +15,9 @@ import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,235 +27,235 @@ import static org.mockito.Mockito.*;
 @DisplayName("AdminBruteForceHistoryServiceImpl Tests")
 class AdminBruteForceHistoryServiceImplTest {
 
-    @Mock
-    private RedisTemplate<String, String> redisTemplate;
+	@Mock
+	private RedisTemplate<String, String> redisTemplate;
 
-    @Mock
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private ValueOperations valueOperations;
+	@Mock
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private ValueOperations valueOperations;
 
-    @InjectMocks
-    private AdminBruteForceHistoryServiceImpl bruteForceHistoryService;
+	@InjectMocks
+	private AdminBruteForceHistoryServiceImpl bruteForceHistoryService;
 
-    private PageRequest pageable;
+	private PageRequest pageable;
 
-    @BeforeEach
-    void setUp() {
-        pageable = PageRequest.of(0, 10);
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-    }
+	@BeforeEach
+	void setUp() {
+		pageable = PageRequest.of(0, 10);
+		when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+	}
 
-    @Test
-    @DisplayName("Should get brute-force history with blocked IPs")
-    void testGetBruteForceHistory_WithBlockedIps_ReturnsHistory() {
-        // Given
-        Set<String> blockedIpKeys = new HashSet<>();
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        long blockUntil = (System.currentTimeMillis() / 1000) + 3600; // 1 hour from now
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil));
-        when(redisTemplate.getExpire("bruteforce:blocked:ip:192.168.1.100")).thenReturn(3600L);
-        when(valueOperations.get("bruteforce:login:192.168.1.100:")).thenReturn("5");
+	@Test
+	@DisplayName("Should get brute-force history with blocked IPs")
+	void testGetBruteForceHistory_WithBlockedIps_ReturnsHistory() {
+		// Given
+		Set<String> blockedIpKeys = new HashSet<>();
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, null, null);
+		long blockUntil = (System.currentTimeMillis() / 1000) + 3600; // 1 hour from now
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil));
+		when(redisTemplate.getExpire("bruteforce:blocked:ip:192.168.1.100")).thenReturn(3600L);
+		when(valueOperations.get("bruteforce:login:192.168.1.100:")).thenReturn("5");
 
-        // Then
-        assertThat(result).isNotNull();
-        verify(redisTemplate, atLeastOnce()).keys("bruteforce:blocked:ip:*");
-    }
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, null, null);
 
-    @Test
-    @DisplayName("Should get brute-force history with blocked phone numbers")
-    void testGetBruteForceHistory_WithBlockedPhones_ReturnsHistory() {
-        // Given
-        Set<String> blockedPhoneKeys = new HashSet<>();
-        blockedPhoneKeys.add("bruteforce:blocked:phone:+1234567890");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(blockedPhoneKeys);
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        long blockUntil = (System.currentTimeMillis() / 1000) + 7200; // 2 hours from now
-        when(valueOperations.get("bruteforce:blocked:phone:+1234567890")).thenReturn(String.valueOf(blockUntil));
-        when(redisTemplate.getExpire("bruteforce:blocked:phone:+1234567890")).thenReturn(7200L);
-        when(valueOperations.get(anyString())).thenReturn("10");
+		// Then
+		assertThat(result).isNotNull();
+		verify(redisTemplate, atLeastOnce()).keys("bruteforce:blocked:ip:*");
+	}
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, null, null);
+	@Test
+	@DisplayName("Should get brute-force history with blocked phone numbers")
+	void testGetBruteForceHistory_WithBlockedPhones_ReturnsHistory() {
+		// Given
+		Set<String> blockedPhoneKeys = new HashSet<>();
+		blockedPhoneKeys.add("bruteforce:blocked:phone:+1234567890");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(blockedPhoneKeys);
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
 
-        // Then
-        assertThat(result).isNotNull();
-        verify(redisTemplate, atLeastOnce()).keys("bruteforce:blocked:phone:*");
-    }
+		long blockUntil = (System.currentTimeMillis() / 1000) + 7200; // 2 hours from now
+		when(valueOperations.get("bruteforce:blocked:phone:+1234567890")).thenReturn(String.valueOf(blockUntil));
+		when(redisTemplate.getExpire("bruteforce:blocked:phone:+1234567890")).thenReturn(7200L);
+		when(valueOperations.get(anyString())).thenReturn("10");
 
-    @Test
-    @DisplayName("Should filter brute-force history by IP address")
-    void testGetBruteForceHistory_FilterByIp_ReturnsFiltered() {
-        // Given
-        Set<String> blockedIpKeys = new HashSet<>();
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.200");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        long blockUntil = (System.currentTimeMillis() / 1000) + 3600;
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil));
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.200")).thenReturn(String.valueOf(blockUntil));
-        when(redisTemplate.getExpire(anyString())).thenReturn(3600L);
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, null, null);
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, "192.168.1.100", null);
+		// Then
+		assertThat(result).isNotNull();
+		verify(redisTemplate, atLeastOnce()).keys("bruteforce:blocked:phone:*");
+	}
 
-        // Then
-        assertThat(result).isNotNull();
-        // Should only return entries for the specified IP
-    }
+	@Test
+	@DisplayName("Should filter brute-force history by IP address")
+	void testGetBruteForceHistory_FilterByIp_ReturnsFiltered() {
+		// Given
+		Set<String> blockedIpKeys = new HashSet<>();
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.200");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
 
-    @Test
-    @DisplayName("Should filter brute-force history by phone number")
-    void testGetBruteForceHistory_FilterByPhone_ReturnsFiltered() {
-        // Given
-        Set<String> blockedPhoneKeys = new HashSet<>();
-        blockedPhoneKeys.add("bruteforce:blocked:phone:+1234567890");
-        blockedPhoneKeys.add("bruteforce:blocked:phone:+0987654321");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(blockedPhoneKeys);
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        long blockUntil = (System.currentTimeMillis() / 1000) + 3600;
-        when(valueOperations.get("bruteforce:blocked:phone:+1234567890")).thenReturn(String.valueOf(blockUntil));
-        when(valueOperations.get("bruteforce:blocked:phone:+0987654321")).thenReturn(String.valueOf(blockUntil));
-        when(redisTemplate.getExpire(anyString())).thenReturn(3600L);
+		long blockUntil = (System.currentTimeMillis() / 1000) + 3600;
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil));
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.200")).thenReturn(String.valueOf(blockUntil));
+		when(redisTemplate.getExpire(anyString())).thenReturn(3600L);
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, null, "+1234567890");
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, "192.168.1.100", null);
 
-        // Then
-        assertThat(result).isNotNull();
-        // Should only return entries for the specified phone
-    }
+		// Then
+		assertThat(result).isNotNull();
+		// Should only return entries for the specified IP
+	}
 
-    @Test
-    @DisplayName("Should filter brute-force history by date range")
-    void testGetBruteForceHistory_FilterByDateRange_ReturnsFiltered() {
-        // Given
-        Set<String> blockedIpKeys = new HashSet<>();
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        long blockUntil = (System.currentTimeMillis() / 1000) + 3600;
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil));
-        when(redisTemplate.getExpire("bruteforce:blocked:ip:192.168.1.100")).thenReturn(3600L);
+	@Test
+	@DisplayName("Should filter brute-force history by phone number")
+	void testGetBruteForceHistory_FilterByPhone_ReturnsFiltered() {
+		// Given
+		Set<String> blockedPhoneKeys = new HashSet<>();
+		blockedPhoneKeys.add("bruteforce:blocked:phone:+1234567890");
+		blockedPhoneKeys.add("bruteforce:blocked:phone:+0987654321");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(blockedPhoneKeys);
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
 
-        OffsetDateTime startDate = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1);
-        OffsetDateTime endDate = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
+		long blockUntil = (System.currentTimeMillis() / 1000) + 3600;
+		when(valueOperations.get("bruteforce:blocked:phone:+1234567890")).thenReturn(String.valueOf(blockUntil));
+		when(valueOperations.get("bruteforce:blocked:phone:+0987654321")).thenReturn(String.valueOf(blockUntil));
+		when(redisTemplate.getExpire(anyString())).thenReturn(3600L);
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, startDate, endDate, null, null);
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, null, "+1234567890");
 
-        // Then
-        assertThat(result).isNotNull();
-    }
+		// Then
+		assertThat(result).isNotNull();
+		// Should only return entries for the specified phone
+	}
 
-    @Test
-    @DisplayName("Should handle Redis unavailable gracefully")
-    void testGetBruteForceHistory_RedisUnavailable_ReturnsEmpty() {
-        // Given
-        AdminBruteForceHistoryServiceImpl service = new AdminBruteForceHistoryServiceImpl();
-        // Service with null RedisTemplate
+	@Test
+	@DisplayName("Should filter brute-force history by date range")
+	void testGetBruteForceHistory_FilterByDateRange_ReturnsFiltered() {
+		// Given
+		Set<String> blockedIpKeys = new HashSet<>();
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
 
-        // When
-        Page<BruteForceHistoryResponse> result = service.getBruteForceHistory(
-                pageable, null, null, null, null);
+		long blockUntil = (System.currentTimeMillis() / 1000) + 3600;
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil));
+		when(redisTemplate.getExpire("bruteforce:blocked:ip:192.168.1.100")).thenReturn(3600L);
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).isEmpty();
-    }
+		OffsetDateTime startDate = OffsetDateTime.now(ZoneOffset.UTC).minusDays(1);
+		OffsetDateTime endDate = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
 
-    @Test
-    @DisplayName("Should determine severity based on attempt count")
-    void testGetBruteForceHistory_DifferentAttemptCounts_ReturnsCorrectSeverity() {
-        // Given
-        Set<String> attemptKeys = new HashSet<>();
-        attemptKeys.add("bruteforce:login:192.168.1.100:+1234567890");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(attemptKeys);
-        
-        when(valueOperations.get("bruteforce:login:192.168.1.100:+1234567890")).thenReturn("15");
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, startDate, endDate, null, null);
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, null, null);
+		// Then
+		assertThat(result).isNotNull();
+	}
 
-        // Then
-        assertThat(result).isNotNull();
-        if (result.getTotalElements() > 0) {
-            BruteForceHistoryResponse entry = result.getContent().get(0);
-            assertThat(entry.getAttemptCount()).isGreaterThanOrEqualTo(3L);
-            assertThat(entry.getSeverity()).isNotNull();
-        }
-    }
+	@Test
+	@DisplayName("Should handle Redis unavailable gracefully")
+	void testGetBruteForceHistory_RedisUnavailable_ReturnsEmpty() {
+		// Given
+		AdminBruteForceHistoryServiceImpl service = new AdminBruteForceHistoryServiceImpl();
+		// Service with null RedisTemplate
 
-    @Test
-    @DisplayName("Should handle expired blocks")
-    void testGetBruteForceHistory_ExpiredBlocks_ExcludesExpired() {
-        // Given
-        Set<String> blockedIpKeys = new HashSet<>();
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        // Expired block (in the past)
-        long expiredBlockUntil = (System.currentTimeMillis() / 1000) - 3600;
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(expiredBlockUntil));
+		// When
+		Page<BruteForceHistoryResponse> result = service.getBruteForceHistory(
+				pageable, null, null, null, null);
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, null, null);
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getContent()).isEmpty();
+	}
 
-        // Then
-        assertThat(result).isNotNull();
-        // Expired blocks should be excluded (blockUntil < now)
-    }
+	@Test
+	@DisplayName("Should determine severity based on attempt count")
+	void testGetBruteForceHistory_DifferentAttemptCounts_ReturnsCorrectSeverity() {
+		// Given
+		Set<String> attemptKeys = new HashSet<>();
+		attemptKeys.add("bruteforce:login:192.168.1.100:+1234567890");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(attemptKeys);
 
-    @Test
-    @DisplayName("Should sort history by detected date")
-    void testGetBruteForceHistory_SortedByDate_ReturnsSorted() {
-        // Given
-        Set<String> blockedIpKeys = new HashSet<>();
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
-        blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.200");
-        when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
-        when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
-        when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
-        
-        long blockUntil1 = (System.currentTimeMillis() / 1000) + 3600;
-        long blockUntil2 = (System.currentTimeMillis() / 1000) + 7200;
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil1));
-        when(valueOperations.get("bruteforce:blocked:ip:192.168.1.200")).thenReturn(String.valueOf(blockUntil2));
-        when(redisTemplate.getExpire(anyString())).thenReturn(3600L);
+		when(valueOperations.get("bruteforce:login:192.168.1.100:+1234567890")).thenReturn("15");
 
-        // When
-        Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
-                pageable, null, null, null, null);
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, null, null);
 
-        // Then
-        assertThat(result).isNotNull();
-        // Should be sorted by detected date (newest first)
-    }
+		// Then
+		assertThat(result).isNotNull();
+		if (result.getTotalElements() > 0) {
+			BruteForceHistoryResponse entry = result.getContent().get(0);
+			assertThat(entry.getAttemptCount()).isGreaterThanOrEqualTo(3L);
+			assertThat(entry.getSeverity()).isNotNull();
+		}
+	}
+
+	@Test
+	@DisplayName("Should handle expired blocks")
+	void testGetBruteForceHistory_ExpiredBlocks_ExcludesExpired() {
+		// Given
+		Set<String> blockedIpKeys = new HashSet<>();
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
+
+		// Expired block (in the past)
+		long expiredBlockUntil = (System.currentTimeMillis() / 1000) - 3600;
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(expiredBlockUntil));
+
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, null, null);
+
+		// Then
+		assertThat(result).isNotNull();
+		// Expired blocks should be excluded (blockUntil < now)
+	}
+
+	@Test
+	@DisplayName("Should sort history by detected date")
+	void testGetBruteForceHistory_SortedByDate_ReturnsSorted() {
+		// Given
+		Set<String> blockedIpKeys = new HashSet<>();
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.100");
+		blockedIpKeys.add("bruteforce:blocked:ip:192.168.1.200");
+		when(redisTemplate.keys("bruteforce:blocked:ip:*")).thenReturn(blockedIpKeys);
+		when(redisTemplate.keys("bruteforce:blocked:phone:*")).thenReturn(Collections.emptySet());
+		when(redisTemplate.keys("bruteforce:login:*")).thenReturn(Collections.emptySet());
+
+		long blockUntil1 = (System.currentTimeMillis() / 1000) + 3600;
+		long blockUntil2 = (System.currentTimeMillis() / 1000) + 7200;
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.100")).thenReturn(String.valueOf(blockUntil1));
+		when(valueOperations.get("bruteforce:blocked:ip:192.168.1.200")).thenReturn(String.valueOf(blockUntil2));
+		when(redisTemplate.getExpire(anyString())).thenReturn(3600L);
+
+		// When
+		Page<BruteForceHistoryResponse> result = bruteForceHistoryService.getBruteForceHistory(
+				pageable, null, null, null, null);
+
+		// Then
+		assertThat(result).isNotNull();
+		// Should be sorted by detected date (newest first)
+	}
 }
 

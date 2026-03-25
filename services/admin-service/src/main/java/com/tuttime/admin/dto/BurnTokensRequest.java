@@ -17,10 +17,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BurnTokensRequest {
-    @NotNull(message = "Amount is required")
-    private BigDecimal amount;
-    
-    @NotBlank(message = "Reason is required")
-    private String reason;
+	@NotNull(message = "Amount is required")
+	private BigDecimal amount;
+
+	@NotBlank(message = "Reason is required")
+	private String reason;
 }
 

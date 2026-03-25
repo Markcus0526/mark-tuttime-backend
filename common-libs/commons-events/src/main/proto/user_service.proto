@@ -18,36 +18,36 @@ service UserService {
   rpc GetUserStatus (GetUserRequest) returns (UserStatusResponse);
   rpc IsKycVerified (GetUserRequest) returns (KycStatusResponse);
   rpc GetUserEmail (GetUserRequest) returns (UserEmailResponse);
-  
+
   // Admin analytics endpoints
   rpc GetUserStatistics (GetUserStatisticsRequest) returns (GetUserStatisticsResponse);
   rpc GetUsersByLevel (GetUsersByLevelRequest) returns (GetUsersByLevelResponse);
   rpc GetRegistrationsPerDay (GetRegistrationsPerDayRequest) returns (GetRegistrationsPerDayResponse);
   rpc GetRegistrationsPerMonth (GetRegistrationsPerMonthRequest) returns (GetRegistrationsPerMonthResponse);
-  
+
   // Leaderboard endpoints
   rpc GetTopUsersByApCredits (GetTopUsersByApCreditsRequest) returns (GetTopUsersByApCreditsResponse);
   rpc GetTopUsersByApartBalance (GetTopUsersByApartBalanceRequest) returns (GetTopUsersByApartBalanceResponse);
   rpc GetGeolocationStats (GetGeolocationStatsRequest) returns (GetGeolocationStatsResponse);
-  
+
   // Admin endpoints
   rpc GetBlockedUsers (GetBlockedUsersRequest) returns (GetBlockedUsersResponse);
-  
+
   // Online status endpoints
   rpc GetUsersOnlineStatus (GetUsersOnlineStatusRequest) returns (GetUsersOnlineStatusResponse);
   rpc GetOnlineUsersCount (GetOnlineUsersCountRequest) returns (GetOnlineUsersCountResponse);
-  
+
   // User-to-user block endpoints
   rpc CheckUserBlocks (CheckUserBlocksRequest) returns (CheckUserBlocksResponse);
-  
+
   // Apart-sharing integration endpoints
   rpc GetApartSharingStatus (GetUserRequest) returns (ApartSharingStatusResponse);
   rpc RefreshApartSharingStatus (GetUserRequest) returns (ApartSharingStatusResponse);
-  
+
   // FCM token management endpoints
   rpc GetUserFcmTokens (GetUserRequest) returns (GetUserFcmTokensResponse);
   rpc RemoveInvalidFcmTokens (RemoveInvalidFcmTokensRequest) returns (RemoveInvalidFcmTokensResponse);
-  
+
   // Username lookup for mentions
   rpc GetUserIdsByUsernames (GetUserIdsByUsernamesRequest) returns (GetUserIdsByUsernamesResponse);
 }
@@ -102,22 +102,22 @@ message UserResponse {
   bool is_active = 6;
   bool is_blocked = 7;
   int64 registration_date = 13; // Unix timestamp in milliseconds when user registered
-  
+
   // Contact information
   string phone = 14;              // Phone number
   string telegram = 15;           // Telegram username
   string instagram = 16;          // Instagram username
-  
+
   // Location information
   string country = 17;            // Country name
   string city = 18;               // City name
   double latitude = 19;           // Latitude for location-based features
   double longitude = 20;          // Longitude for location-based features
-  
+
   // Personal information
   string date_of_birth = 21;      // Date of birth (ISO 8601 format: YYYY-MM-DD)
   string gender = 22;             // Gender: MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
-  
+
   // Language preference
   string preferred_language = 23; // User preferred language code (e.g., en, ko, ja, zh-CN) for notification translation
 }

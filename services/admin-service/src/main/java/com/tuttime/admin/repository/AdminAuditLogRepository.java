@@ -17,40 +17,40 @@ import java.util.List;
 @Repository
 public interface AdminAuditLogRepository extends JpaRepository<AdminAuditLog, Long> {
 
-    /**
-     * Find audit logs by admin ID
-     */
-    Page<AdminAuditLog> findByAdminIdOrderByCreatedAtDesc(Long adminId, Pageable pageable);
+	/**
+	 * Find audit logs by admin ID
+	 */
+	Page<AdminAuditLog> findByAdminIdOrderByCreatedAtDesc(Long adminId, Pageable pageable);
 
-    /**
-     * Find audit logs by action type
-     */
-    Page<AdminAuditLog> findByActionTypeOrderByCreatedAtDesc(
-            AdminAuditLog.AdminActionType actionType, Pageable pageable);
+	/**
+	 * Find audit logs by action type
+	 */
+	Page<AdminAuditLog> findByActionTypeOrderByCreatedAtDesc(
+			AdminAuditLog.AdminActionType actionType, Pageable pageable);
 
-    /**
-     * Find audit logs by resource type and ID
-     */
-    List<AdminAuditLog> findByResourceTypeAndResourceIdOrderByCreatedAtDesc(
-            String resourceType, Long resourceId);
+	/**
+	 * Find audit logs by resource type and ID
+	 */
+	List<AdminAuditLog> findByResourceTypeAndResourceIdOrderByCreatedAtDesc(
+			String resourceType, Long resourceId);
 
-    /**
-     * Find audit logs within date range
-     */
-    @Query("SELECT a FROM AdminAuditLog a WHERE a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
-    Page<AdminAuditLog> findByDateRange(
-            @Param("startDate") OffsetDateTime startDate,
-            @Param("endDate") OffsetDateTime endDate,
-            Pageable pageable);
+	/**
+	 * Find audit logs within date range
+	 */
+	@Query("SELECT a FROM AdminAuditLog a WHERE a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
+	Page<AdminAuditLog> findByDateRange(
+			@Param("startDate") OffsetDateTime startDate,
+			@Param("endDate") OffsetDateTime endDate,
+			Pageable pageable);
 
-    /**
-     * Find audit logs by admin and date range
-     */
-    @Query("SELECT a FROM AdminAuditLog a WHERE a.adminId = :adminId AND a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
-    Page<AdminAuditLog> findByAdminAndDateRange(
-            @Param("adminId") Long adminId,
-            @Param("startDate") OffsetDateTime startDate,
-            @Param("endDate") OffsetDateTime endDate,
-            Pageable pageable);
+	/**
+	 * Find audit logs by admin and date range
+	 */
+	@Query("SELECT a FROM AdminAuditLog a WHERE a.adminId = :adminId AND a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
+	Page<AdminAuditLog> findByAdminAndDateRange(
+			@Param("adminId") Long adminId,
+			@Param("startDate") OffsetDateTime startDate,
+			@Param("endDate") OffsetDateTime endDate,
+			Pageable pageable);
 }
 

@@ -19,54 +19,54 @@ import java.util.stream.Collectors;
 @Tag(name = "Tables", description = "Operations related to menu tables")
 public class TableController {
 
-    private final TableService tableService;
-    private final ZoneService zoneService;
-    private final TableMapper tableMapper;
+	private final TableService tableService;
+	private final ZoneService zoneService;
+	private final TableMapper tableMapper;
 
-    public TableController(TableService tableService, ZoneService zoneService, TableMapper tableMapper) {
-        this.tableService = tableService;
-        this.zoneService = zoneService;
-        this.tableMapper = tableMapper;
-    }
+	public TableController(TableService tableService, ZoneService zoneService, TableMapper tableMapper) {
+		this.tableService = tableService;
+		this.zoneService = zoneService;
+		this.tableMapper = tableMapper;
+	}
 
-    @GetMapping
-    @Operation(summary = "Get all tables")
-    public List<TableDto> getAll() {
-        return tableService.getAll()
-                .stream()
-                .map(tableMapper::toDto)
-                .collect(Collectors.toList());
-    }
+	@GetMapping
+	@Operation(summary = "Get all tables")
+	public List<TableDto> getAll() {
+		return tableService.getAll()
+				.stream()
+				.map(tableMapper::toDto)
+				.collect(Collectors.toList());
+	}
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get a table by ID")
-    public ResponseEntity<TableDto> getById(@PathVariable Long id) {
-        Table table = tableService.getById(id);
-        return ResponseEntity.ok(tableMapper.toDto(table));
-    }
+	@GetMapping("/{id}")
+	@Operation(summary = "Get a table by ID")
+	public ResponseEntity<TableDto> getById(@PathVariable Long id) {
+		Table table = tableService.getById(id);
+		return ResponseEntity.ok(tableMapper.toDto(table));
+	}
 
-    @PostMapping
-    @Operation(summary = "Create a new table")
-    public ResponseEntity<TableDto> create(@RequestBody TableDto dto) {
-        Zone zone = zoneService.getById(dto.getZoneId());
-        Table table = tableMapper.toEntity(dto, zone);
-        Table saved = tableService.create(table);
-        return ResponseEntity.ok(tableMapper.toDto(saved));
-    }
+	@PostMapping
+	@Operation(summary = "Create a new table")
+	public ResponseEntity<TableDto> create(@RequestBody TableDto dto) {
+		Zone zone = zoneService.getById(dto.getZoneId());
+		Table table = tableMapper.toEntity(dto, zone);
+		Table saved = tableService.create(table);
+		return ResponseEntity.ok(tableMapper.toDto(saved));
+	}
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update an existing table")
-    public ResponseEntity<TableDto> update(@PathVariable Long id, @RequestBody TableDto dto) {
-        Zone zone = zoneService.getById(dto.getZoneId());
-        Table table = tableMapper.toEntity(dto, zone);
-        Table updated = tableService.update(id, table);
-        return ResponseEntity.ok(tableMapper.toDto(updated));
-    }
+	@PutMapping("/{id}")
+	@Operation(summary = "Update an existing table")
+	public ResponseEntity<TableDto> update(@PathVariable Long id, @RequestBody TableDto dto) {
+		Zone zone = zoneService.getById(dto.getZoneId());
+		Table table = tableMapper.toEntity(dto, zone);
+		Table updated = tableService.update(id, table);
+		return ResponseEntity.ok(tableMapper.toDto(updated));
+	}
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a table by ID")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        tableService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+	@DeleteMapping("/{id}")
+	@Operation(summary = "Delete a table by ID")
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
+		tableService.delete(id);
+		return ResponseEntity.noContent().build();
+	}
 }

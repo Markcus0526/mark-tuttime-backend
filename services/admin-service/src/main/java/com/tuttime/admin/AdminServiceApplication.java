@@ -18,10 +18,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * referrals, conversions, and system configuration.
  */
 @SpringBootApplication(
-        scanBasePackages = "com.tuttime",
-        exclude = {
-                CacheAutoConfiguration.class
-        }
+		scanBasePackages = "com.tuttime",
+		exclude = {
+				CacheAutoConfiguration.class
+		}
 )
 @EnableDiscoveryClient
 @EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
@@ -31,13 +31,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaRepositories("com.tuttime.admin.repository")
 public class AdminServiceApplication {
 
-    /**
-     * Main method to start the Admin Service application.
-     *
-     * @param args Command-line arguments
-     */
-    public static void main(String[] args) {
-        SpringApplication.run(AdminServiceApplication.class, args);
-    }
+	/**
+	 * Main method to start the Admin Service application.
+	 *
+	 * @param args Command-line arguments
+	 */
+	public static void main(String[] args) {
+		SpringApplication.run(AdminServiceApplication.class, args);
+	}
 }
 

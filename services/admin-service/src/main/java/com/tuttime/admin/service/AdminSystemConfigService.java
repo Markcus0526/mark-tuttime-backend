@@ -11,14 +11,19 @@ import java.util.List;
  * Admin System Config Service Interface
  */
 public interface AdminSystemConfigService {
-    SystemConfigResponse getSystemConfig();
-    SystemConfigResponse updateSystemConfig(UpdateSystemConfigRequest request, Long updatedBy);
-    
-    // Status Level Management
-    List<StatusLevelResponse> getAllStatusLevels();
-    StatusLevelResponse getStatusLevelByLevelName(String levelName);
-    StatusLevelResponse createStatusLevel(StatusLevelRequest request, Long createdBy);
-    StatusLevelResponse updateStatusLevel(String levelName, StatusLevelRequest request);
-    void deleteStatusLevel(String levelName);
+	SystemConfigResponse getSystemConfig();
+
+	SystemConfigResponse updateSystemConfig(UpdateSystemConfigRequest request, Long updatedBy);
+
+	// Status Level Management
+	List<StatusLevelResponse> getAllStatusLevels();
+
+	StatusLevelResponse getStatusLevelByLevelName(String levelName);
+
+	StatusLevelResponse createStatusLevel(StatusLevelRequest request, Long createdBy);
+
+	StatusLevelResponse updateStatusLevel(String levelName, StatusLevelRequest request);
+
+	void deleteStatusLevel(String levelName);
 }
 

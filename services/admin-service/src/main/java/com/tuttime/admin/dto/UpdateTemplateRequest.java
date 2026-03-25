@@ -15,13 +15,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateTemplateRequest {
-    
-    private String sourceTitle;
-    
-    private String sourceMessage;
-    
-    private List<String> variables;
-    
-    private Boolean isActive;
+
+	private String sourceTitle;
+
+	private String sourceMessage;
+
+	private List<String> variables;
+
+	private Boolean isActive;
 }
 

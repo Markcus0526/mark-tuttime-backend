@@ -10,10 +10,10 @@ option java_outer_classname = "ConversionServiceProto";
 service ConversionService {
   rpc GetConversionInfo (GetConversionInfoRequest) returns (GetConversionInfoResponse);
   rpc GetUserConversions (GetUserConversionsRequest) returns (GetUserConversionsResponse);
-  
+
   // Admin analytics endpoints
   rpc GetLastConversionSummary (GetLastConversionSummaryRequest) returns (GetLastConversionSummaryResponse);
-  
+
   // Admin history endpoints
   rpc GetMonthlyConversionLedger (GetMonthlyConversionLedgerRequest) returns (GetMonthlyConversionLedgerResponse);
 }

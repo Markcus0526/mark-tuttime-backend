@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for UserController error handling scenarios.
- * 
+ *
  * <p>These tests verify that the controller properly throws exceptions
  * that are handled by GlobalExceptionHandler, ensuring consistent error
  * responses with proper error codes and HTTP status codes.
@@ -36,124 +36,124 @@ import static org.mockito.Mockito.when;
 @DisplayName("UserController Error Handling Tests")
 class UserControllerErrorTest {
 
-    @Mock
-    private UserQueryService userQueryService;
+	@Mock
+	private UserQueryService userQueryService;
 
-    @Mock
-    private AuthService authService;
+	@Mock
+	private AuthService authService;
 
-    @InjectMocks
-    private UserController userController;
+	@InjectMocks
+	private UserController userController;
 
-    private MockMvc mockMvc;
+	private MockMvc mockMvc;
 
-    @BeforeEach
-    void setUp() {
-        // Create a test exception handler to capture exceptions
-        mockMvc = MockMvcBuilders.standaloneSetup(userController)
-                .setControllerAdvice(new TestExceptionHandler())
-                .build();
-    }
+	@BeforeEach
+	void setUp() {
+		// Create a test exception handler to capture exceptions
+		mockMvc = MockMvcBuilders.standaloneSetup(userController)
+				.setControllerAdvice(new TestExceptionHandler())
+				.build();
+	}
 
-    @Test
-    @DisplayName("logout should throw AuthenticationException when authorization header is missing")
-    void testLogout_MissingAuthorizationHeader_ThrowsAuthenticationException() {
-        // Given
-        String authorizationHeader = null;
+	@Test
+	@DisplayName("logout should throw AuthenticationException when authorization header is missing")
+	void testLogout_MissingAuthorizationHeader_ThrowsAuthenticationException() {
+		// Given
+		String authorizationHeader = null;
 
-        // When & Then
-        assertThatThrownBy(() -> userController.logout(authorizationHeader))
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessage("Authorization token is required");
-    }
+		// When & Then
+		assertThatThrownBy(() -> userController.logout(authorizationHeader))
+				.isInstanceOf(AuthenticationException.class)
+				.hasMessage("Authorization token is required");
+	}
 
-    @Test
-    @DisplayName("logout should throw AuthenticationException when authorization header doesn't start with Bearer")
-    void testLogout_InvalidAuthorizationHeader_ThrowsAuthenticationException() {
-        // Given
-        String authorizationHeader = "Invalid token";
+	@Test
+	@DisplayName("logout should throw AuthenticationException when authorization header doesn't start with Bearer")
+	void testLogout_InvalidAuthorizationHeader_ThrowsAuthenticationException() {
+		// Given
+		String authorizationHeader = "Invalid token";
 
-        // When & Then
-        assertThatThrownBy(() -> userController.logout(authorizationHeader))
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessage("Authorization token is required");
-    }
+		// When & Then
+		assertThatThrownBy(() -> userController.logout(authorizationHeader))
+				.isInstanceOf(AuthenticationException.class)
+				.hasMessage("Authorization token is required");
+	}
 
-    @Test
-    @DisplayName("logout should throw AuthenticationException when token is invalid")
-    void testLogout_InvalidToken_ThrowsAuthenticationException() {
-        // Given
-        String authorizationHeader = "Bearer invalid-token";
-        when(authService.getUserIdFromToken("invalid-token")).thenReturn(null);
+	@Test
+	@DisplayName("logout should throw AuthenticationException when token is invalid")
+	void testLogout_InvalidToken_ThrowsAuthenticationException() {
+		// Given
+		String authorizationHeader = "Bearer invalid-token";
+		when(authService.getUserIdFromToken("invalid-token")).thenReturn(null);
 
-        // When & Then
-        assertThatThrownBy(() -> userController.logout(authorizationHeader))
-                .isInstanceOf(AuthenticationException.class)
-                .hasMessage("Invalid token");
-    }
+		// When & Then
+		assertThatThrownBy(() -> userController.logout(authorizationHeader))
+				.isInstanceOf(AuthenticationException.class)
+				.hasMessage("Invalid token");
+	}
 
-    @Test
-    @DisplayName("getUserById should propagate ResourceNotFoundException when user not found")
-    void testGetUserById_UserNotFound_ThrowsResourceNotFoundException() {
-        // Given
-        Long userId = 999L;
-        when(userQueryService.getUserById(userId))
-                .thenThrow(new ResourceNotFoundException("User not found with ID: " + userId));
+	@Test
+	@DisplayName("getUserById should propagate ResourceNotFoundException when user not found")
+	void testGetUserById_UserNotFound_ThrowsResourceNotFoundException() {
+		// Given
+		Long userId = 999L;
+		when(userQueryService.getUserById(userId))
+				.thenThrow(new ResourceNotFoundException("User not found with ID: " + userId));
 
-        // When & Then
-        assertThatThrownBy(() -> userController.getUserById(1L, userId))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("User not found with ID: " + userId);
-    }
+		// When & Then
+		assertThatThrownBy(() -> userController.getUserById(1L, userId))
+				.isInstanceOf(ResourceNotFoundException.class)
+				.hasMessage("User not found with ID: " + userId);
+	}
 
-    @Test
-    @DisplayName("getUserById should return success when user exists")
-    void testGetUserById_UserExists_ReturnsSuccess() {
-        // Given
-        Long userId = 1L;
-        UserResponse userResponse = UserResponse.builder()
-                .userId(userId)
-                .email("test@example.com")
-                .build();
-        when(userQueryService.getUserById(userId)).thenReturn(userResponse);
+	@Test
+	@DisplayName("getUserById should return success when user exists")
+	void testGetUserById_UserExists_ReturnsSuccess() {
+		// Given
+		Long userId = 1L;
+		UserResponse userResponse = UserResponse.builder()
+				.userId(userId)
+				.email("test@example.com")
+				.build();
+		when(userQueryService.getUserById(userId)).thenReturn(userResponse);
 
-        // When
-        ResponseEntity<ApiResponse<UserResponse>> response = userController.getUserById(1L, userId);
+		// When
+		ResponseEntity<ApiResponse<UserResponse>> response = userController.getUserById(1L, userId);
 
-        // Then
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getSuccess()).isTrue();
-        assertThat(response.getBody().getData()).isEqualTo(userResponse);
-    }
+		// Then
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isNotNull();
+		assertThat(response.getBody().getSuccess()).isTrue();
+		assertThat(response.getBody().getData()).isEqualTo(userResponse);
+	}
 
-    /**
-     * Test exception handler to verify exceptions are thrown correctly.
-     * In real scenarios, GlobalExceptionHandler will handle these.
-     */
-    @RestControllerAdvice
-    static class TestExceptionHandler {
-        @ExceptionHandler(AuthenticationException.class)
-        public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex) {
-            ErrorResponse error = ErrorResponse.builder()
-                    .status(HttpStatus.UNAUTHORIZED.value())
-                    .error("Unauthorized")
-                    .errorCode(ErrorCodes.UNAUTHORIZED)
-                    .message(ex.getMessage())
-                    .build();
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        }
+	/**
+	 * Test exception handler to verify exceptions are thrown correctly.
+	 * In real scenarios, GlobalExceptionHandler will handle these.
+	 */
+	@RestControllerAdvice
+	static class TestExceptionHandler {
+		@ExceptionHandler(AuthenticationException.class)
+		public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex) {
+			ErrorResponse error = ErrorResponse.builder()
+					.status(HttpStatus.UNAUTHORIZED.value())
+					.error("Unauthorized")
+					.errorCode(ErrorCodes.UNAUTHORIZED)
+					.message(ex.getMessage())
+					.build();
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+		}
 
-        @ExceptionHandler(ResourceNotFoundException.class)
-        public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-            ErrorResponse error = ErrorResponse.builder()
-                    .status(HttpStatus.NOT_FOUND.value())
-                    .error("Resource Not Found")
-                    .errorCode(ErrorCodes.RESOURCE_NOT_FOUND)
-                    .message(ex.getMessage())
-                    .build();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        }
-    }
+		@ExceptionHandler(ResourceNotFoundException.class)
+		public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+			ErrorResponse error = ErrorResponse.builder()
+					.status(HttpStatus.NOT_FOUND.value())
+					.error("Resource Not Found")
+					.errorCode(ErrorCodes.RESOURCE_NOT_FOUND)
+					.message(ex.getMessage())
+					.build();
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+		}
+	}
 }
 

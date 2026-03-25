@@ -8,75 +8,75 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("RateLimitExceededException Tests")
 class RateLimitExceededExceptionTest {
 
-    @Test
-    @DisplayName("Should create exception with message and retry after seconds")
-    void testConstructor_WithMessageAndRetryAfter() {
-        // Given
-        String message = "Rate limit exceeded";
-        int retryAfterSeconds = 60;
+	@Test
+	@DisplayName("Should create exception with message and retry after seconds")
+	void testConstructor_WithMessageAndRetryAfter() {
+		// Given
+		String message = "Rate limit exceeded";
+		int retryAfterSeconds = 60;
 
-        // When
-        RateLimitExceededException exception = new RateLimitExceededException(message, retryAfterSeconds);
+		// When
+		RateLimitExceededException exception = new RateLimitExceededException(message, retryAfterSeconds);
 
-        // Then
-        assertThat(exception).isNotNull();
-        assertThat(exception.getMessage()).isEqualTo(message);
-        assertThat(exception.getRetryAfterSeconds()).isEqualTo(retryAfterSeconds);
-        assertThat(exception.getCause()).isNull();
-    }
+		// Then
+		assertThat(exception).isNotNull();
+		assertThat(exception.getMessage()).isEqualTo(message);
+		assertThat(exception.getRetryAfterSeconds()).isEqualTo(retryAfterSeconds);
+		assertThat(exception.getCause()).isNull();
+	}
 
-    @Test
-    @DisplayName("Should create exception with message, retry after seconds and cause")
-    void testConstructor_WithMessageRetryAfterAndCause() {
-        // Given
-        String message = "Rate limit exceeded";
-        int retryAfterSeconds = 30;
-        Throwable cause = new RuntimeException("Root cause");
+	@Test
+	@DisplayName("Should create exception with message, retry after seconds and cause")
+	void testConstructor_WithMessageRetryAfterAndCause() {
+		// Given
+		String message = "Rate limit exceeded";
+		int retryAfterSeconds = 30;
+		Throwable cause = new RuntimeException("Root cause");
 
-        // When
-        RateLimitExceededException exception = new RateLimitExceededException(message, retryAfterSeconds, cause);
+		// When
+		RateLimitExceededException exception = new RateLimitExceededException(message, retryAfterSeconds, cause);
 
-        // Then
-        assertThat(exception).isNotNull();
-        assertThat(exception.getMessage()).isEqualTo(message);
-        assertThat(exception.getRetryAfterSeconds()).isEqualTo(retryAfterSeconds);
-        assertThat(exception.getCause()).isEqualTo(cause);
-    }
+		// Then
+		assertThat(exception).isNotNull();
+		assertThat(exception.getMessage()).isEqualTo(message);
+		assertThat(exception.getRetryAfterSeconds()).isEqualTo(retryAfterSeconds);
+		assertThat(exception.getCause()).isEqualTo(cause);
+	}
 
-    @Test
-    @DisplayName("Should return correct retry after seconds")
-    void testGetRetryAfterSeconds_ReturnsCorrectValue() {
-        // Given
-        int retryAfterSeconds = 120;
+	@Test
+	@DisplayName("Should return correct retry after seconds")
+	void testGetRetryAfterSeconds_ReturnsCorrectValue() {
+		// Given
+		int retryAfterSeconds = 120;
 
-        // When
-        RateLimitExceededException exception = new RateLimitExceededException("Rate limit exceeded", retryAfterSeconds);
+		// When
+		RateLimitExceededException exception = new RateLimitExceededException("Rate limit exceeded", retryAfterSeconds);
 
-        // Then
-        assertThat(exception.getRetryAfterSeconds()).isEqualTo(retryAfterSeconds);
-    }
+		// Then
+		assertThat(exception.getRetryAfterSeconds()).isEqualTo(retryAfterSeconds);
+	}
 
-    @Test
-    @DisplayName("Should handle zero retry after seconds")
-    void testConstructor_WithZeroRetryAfter() {
-        // Given
-        int retryAfterSeconds = 0;
+	@Test
+	@DisplayName("Should handle zero retry after seconds")
+	void testConstructor_WithZeroRetryAfter() {
+		// Given
+		int retryAfterSeconds = 0;
 
-        // When
-        RateLimitExceededException exception = new RateLimitExceededException("Rate limit exceeded", retryAfterSeconds);
+		// When
+		RateLimitExceededException exception = new RateLimitExceededException("Rate limit exceeded", retryAfterSeconds);
 
-        // Then
-        assertThat(exception.getRetryAfterSeconds()).isEqualTo(0);
-    }
+		// Then
+		assertThat(exception.getRetryAfterSeconds()).isEqualTo(0);
+	}
 
-    @Test
-    @DisplayName("Should be instance of RuntimeException")
-    void testInstanceOf_RuntimeException() {
-        // When
-        RateLimitExceededException exception = new RateLimitExceededException("Test", 60);
+	@Test
+	@DisplayName("Should be instance of RuntimeException")
+	void testInstanceOf_RuntimeException() {
+		// When
+		RateLimitExceededException exception = new RateLimitExceededException("Test", 60);
 
-        // Then
-        assertThat(exception).isInstanceOf(RuntimeException.class);
-    }
+		// Then
+		assertThat(exception).isInstanceOf(RuntimeException.class);
+	}
 }
 

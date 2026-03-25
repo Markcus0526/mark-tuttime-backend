@@ -27,12 +27,20 @@
     },
     "event_type": {
       "type": "string",
-      "enum": ["CREATED", "CONFIRMED", "CANCELLED"]
+      "enum": [
+        "CREATED",
+        "CONFIRMED",
+        "CANCELLED"
+      ]
     },
     "timestamp": {
       "type": "integer"
     }
   },
-  "required": ["booking_id", "user_id", "event_type"]
+  "required": [
+    "booking_id",
+    "user_id",
+    "event_type"
+  ]
 }
 

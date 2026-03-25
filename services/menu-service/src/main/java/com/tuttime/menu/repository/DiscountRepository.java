@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface DiscountRepository extends JpaRepository<Discount, Long> {
-    List<Discount> findByReferenceId(Long referenceId);
+	List<Discount> findByReferenceId(Long referenceId);
 }

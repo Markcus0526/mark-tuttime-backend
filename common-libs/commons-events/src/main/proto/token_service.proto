@@ -16,11 +16,11 @@ service TokenService {
   rpc GetUserStatus (GetUserStatusRequest) returns (GetUserStatusResponse);
   rpc BurnTokens (BurnTokensRequest) returns (BurnTokensResponse);
   rpc GetBurnStatistics (GetBurnStatisticsRequest) returns (GetBurnStatisticsResponse);
-  
+
   // Admin analytics endpoints
   rpc GetTotalApartBalance (GetTotalApartBalanceRequest) returns (GetTotalApartBalanceResponse);
   rpc GetApartGrowthHistory (GetApartGrowthHistoryRequest) returns (GetApartGrowthHistoryResponse);
-  
+
   // Admin history endpoints
   rpc GetDepositHistory (GetDepositHistoryRequest) returns (GetDepositHistoryResponse);
   rpc GetWithdrawalHistory (GetWithdrawalHistoryRequest) returns (GetWithdrawalHistoryResponse);

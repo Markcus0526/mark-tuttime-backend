@@ -9,8 +9,10 @@ import java.util.List;
  * Admin Token Management Service Interface
  */
 public interface AdminTokenManagementService {
-    TokenRevocationResponse revokeAllUserTokens(Long userId);
-    void revokeToken(String jti);
-    List<TokenInfoResponse> listUserTokens(Long userId);
+	TokenRevocationResponse revokeAllUserTokens(Long userId);
+
+	void revokeToken(String jti);
+
+	List<TokenInfoResponse> listUserTokens(Long userId);
 }
 

@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BlockIpRequest {
-    private String reason;
+	private String reason;
 }
 

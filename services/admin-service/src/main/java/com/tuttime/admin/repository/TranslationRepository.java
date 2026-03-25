@@ -16,16 +16,16 @@ import java.util.Optional;
 @Repository
 public interface TranslationRepository extends JpaRepository<Translation, Long> {
 
-    Optional<Translation> findByLanguageCodeAndTranslationKey(String languageCode, String translationKey);
+	Optional<Translation> findByLanguageCodeAndTranslationKey(String languageCode, String translationKey);
 
-    List<Translation> findByLanguageCode(String languageCode);
+	List<Translation> findByLanguageCode(String languageCode);
 
-    List<Translation> findByLanguageCodeAndNamespace(String languageCode, String namespace);
+	List<Translation> findByLanguageCodeAndNamespace(String languageCode, String namespace);
 
-    @Modifying
-    @Query("DELETE FROM Translation t WHERE t.languageCode = :languageCode")
-    void deleteByLanguageCode(@Param("languageCode") String languageCode);
+	@Modifying
+	@Query("DELETE FROM Translation t WHERE t.languageCode = :languageCode")
+	void deleteByLanguageCode(@Param("languageCode") String languageCode);
 
-    long countByLanguageCode(String languageCode);
+	long countByLanguageCode(String languageCode);
 }
 

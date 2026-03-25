@@ -15,10 +15,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenBalanceResponse {
-    private Long userId;
-    private String username;
-    private BigDecimal balance;
-    private BigDecimal lockedAmount;
-    private BigDecimal availableBalance;
+	private Long userId;
+	private String username;
+	private BigDecimal balance;
+	private BigDecimal lockedAmount;
+	private BigDecimal availableBalance;
 }
 

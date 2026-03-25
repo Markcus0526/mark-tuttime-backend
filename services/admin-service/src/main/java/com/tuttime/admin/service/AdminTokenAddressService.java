@@ -10,11 +10,16 @@ import org.springframework.data.domain.Pageable;
  * Manages blocking and whitelisting of token/wallet addresses
  */
 public interface AdminTokenAddressService {
-    Page<BlockedAddressResponse> listBlockedAddresses(Pageable pageable);
-    Page<WhitelistedAddressResponse> listWhitelistedAddresses(Pageable pageable);
-    void blockAddress(String address, String reason, Long adminId);
-    void unblockAddress(String address);
-    void whitelistAddress(String address, String reason, Long adminId);
-    void removeAddressFromWhitelist(String address);
+	Page<BlockedAddressResponse> listBlockedAddresses(Pageable pageable);
+
+	Page<WhitelistedAddressResponse> listWhitelistedAddresses(Pageable pageable);
+
+	void blockAddress(String address, String reason, Long adminId);
+
+	void unblockAddress(String address);
+
+	void whitelistAddress(String address, String reason, Long adminId);
+
+	void removeAddressFromWhitelist(String address);
 }
 

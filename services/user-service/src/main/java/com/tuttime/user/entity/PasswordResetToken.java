@@ -11,27 +11,27 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "password_reset_tokens", schema = "user_service",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"token"}))
+		uniqueConstraints = @UniqueConstraint(columnNames = {"token"}))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PasswordResetToken {
-    @Id
-    @GeneratedValue(generator = "gen_random_uuid")
-    private UUID id;
+	@Id
+	@GeneratedValue(generator = "gen_random_uuid")
+	private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
-    @Column(nullable = false, unique = true)
-    private String token;
+	@Column(nullable = false, unique = true)
+	private String token;
 
-    @Column(name = "expires_at", nullable = false)
-    private Instant expiresAt;
+	@Column(name = "expires_at", nullable = false)
+	private Instant expiresAt;
 
-    @Builder.Default
-    @Column(nullable = false)
-    private boolean used = false;
+	@Builder.Default
+	@Column(nullable = false)
+	private boolean used = false;
 }

@@ -10,12 +10,18 @@ import org.springframework.data.domain.Pageable;
  * Admin Ad Service Interface
  */
 public interface AdminAdService {
-    Page<AdResponse> listAds(Pageable pageable, String status);
-    AdResponse getAd(Long id);
-    AdResponse createAd(AdRequest request);
-    AdResponse updateAd(Long id, AdRequest request);
-    void deleteAd(Long id);
-    AdResponse approveAd(Long id, Long adminId);
-    AdResponse rejectAd(Long id, Long adminId, RejectRequest request);
+	Page<AdResponse> listAds(Pageable pageable, String status);
+
+	AdResponse getAd(Long id);
+
+	AdResponse createAd(AdRequest request);
+
+	AdResponse updateAd(Long id, AdRequest request);
+
+	void deleteAd(Long id);
+
+	AdResponse approveAd(Long id, Long adminId);
+
+	AdResponse rejectAd(Long id, Long adminId, RejectRequest request);
 }
 

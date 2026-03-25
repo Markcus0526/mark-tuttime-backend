@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserSocialAnalyticsResponse {
-    private Long totalPosts;
-    private Long totalFollowers;
-    private Long totalFollowing;
-    private Long totalLikesReceived;
-    private Long totalCommentsReceived;
+	private Long totalPosts;
+	private Long totalFollowers;
+	private Long totalFollowing;
+	private Long totalLikesReceived;
+	private Long totalCommentsReceived;
 }
 

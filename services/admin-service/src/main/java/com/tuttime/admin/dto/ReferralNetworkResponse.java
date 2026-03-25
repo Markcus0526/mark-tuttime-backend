@@ -15,23 +15,23 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReferralNetworkResponse {
-    private Long userId;
-    private String username;
-    private Integer totalReferrals;
-    private Integer activeReferrals;
-    private List<ReferralNode> referralTree;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ReferralNode {
-        private Long userId;
-        private String username;
-        private Boolean isActive;
-        private Integer referralCount;
-        private java.math.BigDecimal totalMiningSpeed; // Current total mining speed in AP/hour
-        private List<ReferralNode> children;
-    }
+	private Long userId;
+	private String username;
+	private Integer totalReferrals;
+	private Integer activeReferrals;
+	private List<ReferralNode> referralTree;
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class ReferralNode {
+		private Long userId;
+		private String username;
+		private Boolean isActive;
+		private Integer referralCount;
+		private java.math.BigDecimal totalMiningSpeed; // Current total mining speed in AP/hour
+		private List<ReferralNode> children;
+	}
 }
 

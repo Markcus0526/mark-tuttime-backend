@@ -15,11 +15,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenStatsResponse {
-    private BigDecimal totalSupply;
-    private BigDecimal totalCirculating;
-    private BigDecimal totalStaked;
-    private BigDecimal totalBurned;
-    private Long totalHolders;
-    private Long activeStakers;
+	private BigDecimal totalSupply;
+	private BigDecimal totalCirculating;
+	private BigDecimal totalStaked;
+	private BigDecimal totalBurned;
+	private Long totalHolders;
+	private Long activeStakers;
 }
 

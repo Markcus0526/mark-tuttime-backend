@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface StopListRepository extends JpaRepository<StopList, Long> {
-    List<StopList> findByMenuItemId(Long menuItemId);
+	List<StopList> findByMenuItemId(Long menuItemId);
 }

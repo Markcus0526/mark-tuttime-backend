@@ -80,7 +80,7 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
         </dependency>
-        
+
         <!-- Distributed Tracing -->
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -167,9 +167,11 @@
                     <!-- Linux: downloads protoc-<version>-linux-x86_64 (no .exe) -->
                     <!-- Windows: downloads protoc-<version>-windows-x86_64.exe (with .exe) -->
                     <!-- macOS: downloads protoc-<version>-osx-x86_64 (no .exe) -->
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
+                    </protocArtifact>
                     <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
+                    </pluginArtifact>
                 </configuration>
                 <executions>
                     <execution>

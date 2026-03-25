@@ -11,12 +11,12 @@ import lombok.*;
 @Builder
 public class MediaDto {
 
-    private Long mediaId;
-    private EntityType entityType;
-    private Long entityId;
-    private String url;
-    private String altText;
-    private Boolean isPrimary;
-    private MediaType mediaType;
+	private Long mediaId;
+	private EntityType entityType;
+	private Long entityId;
+	private String url;
+	private String altText;
+	private Boolean isPrimary;
+	private MediaType mediaType;
 
 }

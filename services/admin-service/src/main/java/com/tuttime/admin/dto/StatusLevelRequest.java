@@ -20,25 +20,25 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class StatusLevelRequest {
 
-    @NotBlank(message = "Level name is required")
-    @Size(max = 50, message = "Level name must not exceed 50 characters")
-    private String levelName; // e.g., "SILVER", "GOLD", "PLATINUM", "ELITE", "XXX"
+	@NotBlank(message = "Level name is required")
+	@Size(max = 50, message = "Level name must not exceed 50 characters")
+	private String levelName; // e.g., "SILVER", "GOLD", "PLATINUM", "ELITE", "XXX"
 
-    @NotNull(message = "Minimum APART balance is required")
-    @DecimalMin(value = "0", inclusive = true, message = "Minimum APART balance must be non-negative")
-    private BigDecimal minApartBalance;
+	@NotNull(message = "Minimum APART balance is required")
+	@DecimalMin(value = "0", inclusive = true, message = "Minimum APART balance must be non-negative")
+	private BigDecimal minApartBalance;
 
-    @NotNull(message = "AP boost per hour is required")
-    @DecimalMin(value = "0", inclusive = true, message = "AP boost per hour must be non-negative")
-    private BigDecimal apBoostPerHour;
+	@NotNull(message = "AP boost per hour is required")
+	@DecimalMin(value = "0", inclusive = true, message = "AP boost per hour must be non-negative")
+	private BigDecimal apBoostPerHour;
 
-    private Boolean includesProAutoMining;
+	private Boolean includesProAutoMining;
 
-    private Integer displayOrder;
+	private Integer displayOrder;
 
-    private Boolean isActive;
+	private Boolean isActive;
 
-    @Size(max = 1000, message = "Description must not exceed 1000 characters")
-    private String description;
+	@Size(max = 1000, message = "Description must not exceed 1000 characters")
+	private String description;
 }
 

@@ -9,11 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Admin Token Management Service Implementation
@@ -23,44 +20,44 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AdminTokenManagementServiceImpl implements AdminTokenManagementService {
 
-    private final AdminTokenWhitelistService tokenWhitelistService;
-    private final AdminTokenBlacklistService tokenBlacklistService;
+	private final AdminTokenWhitelistService tokenWhitelistService;
+	private final AdminTokenBlacklistService tokenBlacklistService;
 
-    @Override
-    public TokenRevocationResponse revokeAllUserTokens(Long userId) {
-        try {
-            int revokedCount = tokenWhitelistService.revokeAllAdminTokens(userId);
-            // Note: For regular user tokens, we need to call user-service's token revocation
-            // This is a placeholder - actual implementation should call user-service
-            
-            return TokenRevocationResponse.builder()
-                    .userId(userId)
-                    .revokedCount(revokedCount)
-                    .build();
-        } catch (Exception e) {
-            log.error("Error revoking all user tokens: userId={}", userId, e);
-            throw new RuntimeException("Failed to revoke user tokens: " + e.getMessage(), e);
-        }
-    }
+	@Override
+	public TokenRevocationResponse revokeAllUserTokens(Long userId) {
+		try {
+			int revokedCount = tokenWhitelistService.revokeAllAdminTokens(userId);
+			// Note: For regular user tokens, we need to call user-service's token revocation
+			// This is a placeholder - actual implementation should call user-service
 
-    @Override
-    public void revokeToken(String jti) {
-        try {
-            // Remove from whitelist
-            tokenWhitelistService.removeFromWhitelist(jti);
-            // Add to blacklist
-            tokenBlacklistService.addToBlacklist(jti);
-        } catch (Exception e) {
-            log.error("Error revoking token: jti={}", jti, e);
-            throw new RuntimeException("Failed to revoke token: " + e.getMessage(), e);
-        }
-    }
+			return TokenRevocationResponse.builder()
+					.userId(userId)
+					.revokedCount(revokedCount)
+					.build();
+		} catch (Exception e) {
+			log.error("Error revoking all user tokens: userId={}", userId, e);
+			throw new RuntimeException("Failed to revoke user tokens: " + e.getMessage(), e);
+		}
+	}
 
-    @Override
-    public List<TokenInfoResponse> listUserTokens(Long userId) {
-        // TODO: Implement token listing - requires access to token metadata
-        log.info("Listing user tokens: userId={}", userId);
-        return new ArrayList<>();
-    }
+	@Override
+	public void revokeToken(String jti) {
+		try {
+			// Remove from whitelist
+			tokenWhitelistService.removeFromWhitelist(jti);
+			// Add to blacklist
+			tokenBlacklistService.addToBlacklist(jti);
+		} catch (Exception e) {
+			log.error("Error revoking token: jti={}", jti, e);
+			throw new RuntimeException("Failed to revoke token: " + e.getMessage(), e);
+		}
+	}
+
+	@Override
+	public List<TokenInfoResponse> listUserTokens(Long userId) {
+		// TODO: Implement token listing - requires access to token metadata
+		log.info("Listing user tokens: userId={}", userId);
+		return new ArrayList<>();
+	}
 }
 

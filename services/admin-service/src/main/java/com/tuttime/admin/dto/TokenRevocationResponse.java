@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TokenRevocationResponse {
-    private Long userId;
-    private Integer revokedCount;
+	private Long userId;
+	private Integer revokedCount;
 }
 

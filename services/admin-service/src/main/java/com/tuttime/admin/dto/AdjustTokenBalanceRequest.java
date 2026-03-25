@@ -17,10 +17,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdjustTokenBalanceRequest {
-    @NotNull(message = "Amount is required")
-    private BigDecimal amount; // Positive to add, negative to subtract
-    
-    @NotBlank(message = "Reason is required")
-    private String reason;
+	@NotNull(message = "Amount is required")
+	private BigDecimal amount; // Positive to add, negative to subtract
+
+	@NotBlank(message = "Reason is required")
+	private String reason;
 }
 
