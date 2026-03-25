@@ -1,12 +1,12 @@
 spring:
   application:
     name: user-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   jackson:
     time-zone: UTC
     serialization:
       write-dates-as-timestamps: false
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/user_service_db?currentSchema=user_service&stringtype=unspecified&prepareThreshold=0}
     username: ${DATABASE_USERNAME:postgres}
@@ -70,9 +70,6 @@ spring:
       # Docker environment uses direct Redis connection (no Sentinel)
       # Sentinel is only used in Kubernetes production environment
       # Explicitly disable Sentinel for Docker (use direct connection)
-      sentinel:
-        master: ${SPRING_DATA_REDIS_SENTINEL_MASTER:}
-        nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES:}
       # Direct connection configuration
       host: ${REDIS_HOST:tuttime-redis}
       port: ${REDIS_PORT:6379}
