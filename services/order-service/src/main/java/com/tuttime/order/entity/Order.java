@@ -1,68 +1,74 @@
 package com.tuttime.order.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Data
 @Table(name = "orders")
+@SQLDelete(sql = "UPDATE orders SET deleted_at = now() WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Order {
+
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@GeneratedValue(generator = "uuid2")
+	@GenericGenerator(name = "uuid2", strategy = "uuid2")
+//	@Type(type = "uuid-char")
+	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
+	private UUID id;
 
-	@Column(name = "booking_id")
-	private Long bookingId;
+	@Column(name = "booking_id", nullable = false, columnDefinition = "uuid")
+	private UUID bookingId;
 
+	@Column(name = "user_id", nullable = false, columnDefinition = "uuid")
+	private UUID userId;
+
+	@Builder.Default
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status")
+	@Column(nullable = false)
 	private OrderStatus status = OrderStatus.CREATED;
 
-	@Column(name = "items", columnDefinition = "jsonb")
-	private String itemsJson;
-
-	public static OrderBuilder builder() {
-		return new OrderBuilder();
-	}
-
-	public static class OrderBuilder {
-		private Order order = new Order();
-
-		public OrderBuilder bookingId(Long bookingId) {
-			order.bookingId = bookingId;
-			return this;
-		}
-
-		public OrderBuilder status(OrderStatus status) {
-			order.status = status;
-			return this;
-		}
-
-		public OrderBuilder itemsJson(String itemsJson) {
-			order.itemsJson = itemsJson;
-			return this;
-		}
-
-		public Order build() {
-			return order;
-		}
-	}
-
-	@Column(name = "total_amount")
+	@Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
 	private BigDecimal totalAmount;
 
-	@Column(name = "paid_amount")
-	private BigDecimal paidAmount;
+	@Builder.Default
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt = Instant.now();
 
-	@Column(name = "cancel_reason")
-	private String cancelReason;
+	@Builder.Default
+	@Column(name = "updated_at", nullable = false)
+	private Instant updatedAt = Instant.now();
 
-	@Column(name = "created_at")
-	private LocalDateTime createdAt = LocalDateTime.now();
+	@Column(name = "created_by", columnDefinition = "uuid")
+	private UUID createdBy;
 
-	@Column(name = "updated_at")
-	private LocalDateTime updatedAt = LocalDateTime.now();
+	@Column(name = "updated_by", columnDefinition = "uuid")
+	private UUID updatedBy;
+
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
+	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<OrderItem> orderItems;
+
+	// Getters and setters omitted for brevity
+
+	@PreUpdate
+	public void preUpdate() {
+		this.updatedAt = Instant.now();
+	}
 }
