@@ -14,7 +14,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>payment-service</name>
+    <name>Payment Service</name>
     <description>TutTime Payment Service - payments, refunds, deposits</description>
 
     <properties>

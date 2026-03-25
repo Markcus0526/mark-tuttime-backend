@@ -1,61 +1,25 @@
 package com.tuttime.payment.service;
 
-import com.tuttime.payment.dto.PaymentMethodRequest;
-import com.tuttime.payment.dto.PaymentRequest;
-import com.tuttime.payment.dto.PaymentResponse;
-import com.tuttime.payment.dto.RefundRequest;
 import com.tuttime.payment.entity.Payment;
-import com.tuttime.payment.repository.PaymentRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
+import com.tuttime.payment.entity.PaymentAuditLog;
+import com.tuttime.payment.enums.PaymentStatus;
 
-import java.math.BigDecimal;
-import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 
-@Service
-@RequiredArgsConstructor
-public class PaymentService {
+public interface PaymentService {
 
-	private final PaymentRepository paymentRepository;
-	private final KafkaTemplate<String, Object> kafkaTemplate;
+	Payment initiatePayment(Payment payment);
 
-	public PaymentResponse processPayment(PaymentRequest request, PaymentMethodRequest method) {
-		BigDecimal payAmount = "FULL_PREPAY".equals(method.getMethod()) ? request.getAmount()
-				: request.getAmount().multiply(method.getDepositPercentage());
-		Payment payment = Payment.builder()
-				.orderId(request.getOrderId())
-				.amount(payAmount)
-				.status("HELD")
-				.transactionId(UUID.randomUUID().toString())
-				.build();
-		payment = paymentRepository.save(payment);
+	Optional<Payment> getPaymentById(Long id);
 
-		// Kafka to order
-		kafkaTemplate.send("payment-events", "payment.held", payment.getId());
+	List<Payment> getPaymentsByBookingId(Long bookingId);
 
-		return mapToResponse(payment);
-	}
+	List<Payment> getPaymentsByStatus(PaymentStatus status);
 
-	public PaymentResponse refund(Long paymentId, RefundRequest request, RefundPolicyService policy) {
-		Payment payment = paymentRepository.findById(paymentId).orElseThrow();
-		// Apply policy
-		BigDecimal refundAmount = request.getAmount();
-		// Stub: N min full/partial
-		payment.setStatus("REFUNDED");
-		payment = paymentRepository.save(payment);
+	Payment updatePaymentStatus(Long paymentId, PaymentStatus status);
 
-		kafkaTemplate.send("payment-events", "payment.refunded", paymentId);
+	void logPaymentEvent(Long paymentId, String eventType, String eventData);
 
-		return mapToResponse(payment);
-	}
-
-	private PaymentResponse mapToResponse(Payment payment) {
-		PaymentResponse response = new PaymentResponse();
-		response.setId(payment.getId());
-		response.setStatus(payment.getStatus());
-		response.setTransactionId(payment.getTransactionId());
-		return response;
-	}
-
+	List<PaymentAuditLog> getAuditLogsForPayment(Long paymentId);
 }
