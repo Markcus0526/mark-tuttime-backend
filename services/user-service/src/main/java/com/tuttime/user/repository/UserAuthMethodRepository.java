@@ -3,11 +3,13 @@ package com.tuttime.user.repository;
 import com.tuttime.user.entity.AuthProvider;
 import com.tuttime.user.entity.UserAuthMethod;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
 public interface UserAuthMethodRepository extends JpaRepository<UserAuthMethod, Integer> {
 	// Find all auth methods for a specific user (e.g., Google, Email, etc.)
 	List<UserAuthMethod> findByUserId(UUID userId);

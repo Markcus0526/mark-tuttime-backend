@@ -1,24 +1,18 @@
 package com.tuttime.order.mapper;
 
-import com.tuttime.order.dto.OrderItemDTO;
+import com.tuttime.order.dto.OrderItemDto;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.entity.OrderItem;
-
-import org.mapstruct.AfterMapping;
-import org.mapstruct.Context;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.WARN, uses = OrderItemModifierMapper.class)
 public interface OrderItemMapper {
 
 	@Mapping(source = "modifiers", target = "modifiers")
-	OrderItemDTO toDto(OrderItem orderItem);
+	OrderItemDto toDto(OrderItem orderItem);
 
 	@Mapping(target = "order", ignore = true)
-	OrderItem toEntity(OrderItemDTO dto);
+	OrderItem toEntity(OrderItemDto dto);
 
 	@AfterMapping
 	default void setBackReference(@MappingTarget OrderItem item, @Context Order order) {

@@ -1,5 +1,6 @@
 package com.tuttime.order.entity;
 
+import com.tuttime.order.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;

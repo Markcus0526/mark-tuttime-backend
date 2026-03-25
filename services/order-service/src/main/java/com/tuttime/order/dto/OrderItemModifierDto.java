@@ -4,7 +4,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -12,14 +11,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrderItemDTO {
+public class OrderItemModifierDto {
 	private UUID id;
-	private UUID menuItemId;
-	private int quantity;
-	private BigDecimal price;
+	private UUID modifierId;
+	private BigDecimal priceAdjustment;
 	private Instant createdAt;
 	private Instant updatedAt;
-	private List<OrderItemModifierDTO> modifiers;
 
 	// Getters and setters
 }

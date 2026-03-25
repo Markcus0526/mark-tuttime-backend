@@ -1,21 +1,19 @@
 package com.tuttime.order.service.impl;
 
+import com.tuttime.order.dto.OrderDto;
+import com.tuttime.order.entity.Order;
+import com.tuttime.order.enums.OrderStatus;
+import com.tuttime.order.mapper.OrderMapper;
+import com.tuttime.order.repository.OrderRepository;
+import com.tuttime.order.service.OrderService;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import com.tuttime.order.dto.OrderDTO;
-import com.tuttime.order.entity.Order;
-import com.tuttime.order.entity.OrderStatus;
-import com.tuttime.order.mapper.OrderMapper;
-import com.tuttime.order.repository.OrderRepository;
-import com.tuttime.order.service.OrderService;
-
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-
-import jakarta.transaction.Transactional;
 
 @Service
 @Transactional
@@ -25,14 +23,14 @@ public class OrderServiceImpl implements OrderService {
 	private final OrderMapper orderMapper;
 
 	public OrderServiceImpl(OrderRepository orderRepository,
-			OrderMapper orderMapper) {
+	                        OrderMapper orderMapper) {
 		this.orderRepository = orderRepository;
 		this.orderMapper = orderMapper;
 	}
 
 	@Override
-	public OrderDTO createOrder(OrderDTO orderDTO) {
-		Order order = orderMapper.toEntity(orderDTO);
+	public OrderDto createOrder(OrderDto orderDto) {
+		Order order = orderMapper.toEntity(orderDto);
 		order.setStatus(OrderStatus.CREATED);
 		// Additional business logic here (e.g., validate booking exists)
 		Order saved = orderRepository.save(order);
@@ -40,24 +38,24 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public OrderDTO updateOrder(UUID orderId, OrderDTO orderDTO) {
+	public OrderDto updateOrder(UUID orderId, OrderDto orderDto) {
 		Order existingOrder = orderRepository.findById(orderId)
 				.orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
 
 		// Basic validation
-		if (orderDTO.getTotalAmount() == null || orderDTO.getTotalAmount().compareTo(BigDecimal.ZERO) < 0) {
+		if (orderDto.getTotalAmount() == null || orderDto.getTotalAmount().compareTo(BigDecimal.ZERO) < 0) {
 			throw new IllegalArgumentException("Total amount must be non-negative");
 		}
 
 		// Update fields
-		existingOrder.setTotalAmount(orderDTO.getTotalAmount());
-		existingOrder.setBookingId(orderDTO.getBookingId());
-		existingOrder.setUserId(orderDTO.getUserId());
+		existingOrder.setTotalAmount(orderDto.getTotalAmount());
+		existingOrder.setBookingId(orderDto.getBookingId());
+		existingOrder.setUserId(orderDto.getUserId());
 
 		// Update items with mapper context
-		if (orderDTO.getOrderItems() != null && !orderDTO.getOrderItems().isEmpty()) {
+		if (orderDto.getOrderItems() != null && !orderDto.getOrderItems().isEmpty()) {
 			existingOrder.getOrderItems().clear();
-			Order tempOrder = orderMapper.toEntity(orderDTO);
+			Order tempOrder = orderMapper.toEntity(orderDto);
 			existingOrder.getOrderItems().addAll(tempOrder.getOrderItems());
 			// Mapper handles backrefs
 		}
@@ -67,20 +65,20 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public OrderDTO getOrderById(UUID orderId) {
+	public OrderDto getOrderById(UUID orderId) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
 		return orderMapper.toDto(order);
 	}
 
 	@Override
-	public List<OrderDTO> getOrdersByBookingId(UUID bookingId) {
+	public List<OrderDto> getOrdersByBookingId(UUID bookingId) {
 		List<Order> orders = orderRepository.findByBookingId(bookingId);
 		return orders.stream().map(orderMapper::toDto).collect(Collectors.toList());
 	}
 
 	@Override
-	public List<OrderDTO> getOrdersByUserId(UUID userId) {
+	public List<OrderDto> getOrdersByUserId(UUID userId) {
 		List<Order> orders = orderRepository.findByUserId(userId);
 		return orders.stream().map(orderMapper::toDto).collect(Collectors.toList());
 	}
@@ -94,7 +92,7 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
-	public OrderDTO updateOrderStatus(UUID orderId, String status) {
+	public OrderDto updateOrderStatus(UUID orderId, String status) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
 		if (!StringUtils.hasText(status)) {

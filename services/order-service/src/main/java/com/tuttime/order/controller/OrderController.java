@@ -1,6 +1,6 @@
 package com.tuttime.order.controller;
 
-import com.tuttime.order.dto.OrderDTO;
+import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,45 +24,45 @@ public class OrderController {
 	// Create a new order
 	@Operation(summary = "Create a new order")
 	@PostMapping
-	public ResponseEntity<OrderDTO> createOrder(@RequestBody OrderDTO orderDTO) {
-		OrderDTO createdOrder = orderService.createOrder(orderDTO);
+	public ResponseEntity<OrderDto> createOrder(@RequestBody OrderDto orderDto) {
+		OrderDto createdOrder = orderService.createOrder(orderDto);
 		return new ResponseEntity<>(createdOrder, HttpStatus.CREATED);
 	}
 
 	// Update an existing order by ID
 	@Operation(summary = "Update an existing order by ID")
 	@PutMapping("/{orderId}")
-	public ResponseEntity<OrderDTO> updateOrder(
+	public ResponseEntity<OrderDto> updateOrder(
 			@Parameter(description = "ID of the order to update") @PathVariable UUID orderId,
-			@RequestBody OrderDTO orderDTO) {
-		OrderDTO updatedOrder = orderService.updateOrder(orderId, orderDTO);
+			@RequestBody OrderDto orderDto) {
+		OrderDto updatedOrder = orderService.updateOrder(orderId, orderDto);
 		return ResponseEntity.ok(updatedOrder);
 	}
 
 	// Get order by ID
 	@Operation(summary = "Get order by ID")
 	@GetMapping("/{orderId}")
-	public ResponseEntity<OrderDTO> getOrderById(
+	public ResponseEntity<OrderDto> getOrderById(
 			@Parameter(description = "ID of the order to retrieve") @PathVariable UUID orderId) {
-		OrderDTO order = orderService.getOrderById(orderId);
+		OrderDto order = orderService.getOrderById(orderId);
 		return ResponseEntity.ok(order);
 	}
 
 	// Get orders by booking ID
 	@Operation(summary = "Get orders by booking ID")
 	@GetMapping("/booking/{bookingId}")
-	public ResponseEntity<List<OrderDTO>> getOrdersByBookingId(
+	public ResponseEntity<List<OrderDto>> getOrdersByBookingId(
 			@Parameter(description = "Booking ID to filter orders") @PathVariable UUID bookingId) {
-		List<OrderDTO> orders = orderService.getOrdersByBookingId(bookingId);
+		List<OrderDto> orders = orderService.getOrdersByBookingId(bookingId);
 		return ResponseEntity.ok(orders);
 	}
 
 	// Get orders by user ID
 	@Operation(summary = "Get orders by user ID")
 	@GetMapping("/user/{userId}")
-	public ResponseEntity<List<OrderDTO>> getOrdersByUserId(
+	public ResponseEntity<List<OrderDto>> getOrdersByUserId(
 			@Parameter(description = "User ID to filter orders") @PathVariable UUID userId) {
-		List<OrderDTO> orders = orderService.getOrdersByUserId(userId);
+		List<OrderDto> orders = orderService.getOrdersByUserId(userId);
 		return ResponseEntity.ok(orders);
 	}
 
@@ -78,10 +78,10 @@ public class OrderController {
 	// Update order status
 	@Operation(summary = "Update order status")
 	@PatchMapping("/{orderId}/status")
-	public ResponseEntity<OrderDTO> updateOrderStatus(
+	public ResponseEntity<OrderDto> updateOrderStatus(
 			@Parameter(description = "ID of the order to update status") @PathVariable UUID orderId,
 			@Parameter(description = "New status value") @RequestParam String status) {
-		OrderDTO updatedOrder = orderService.updateOrderStatus(orderId, status);
+		OrderDto updatedOrder = orderService.updateOrderStatus(orderId, status);
 		return ResponseEntity.ok(updatedOrder);
 	}
 }

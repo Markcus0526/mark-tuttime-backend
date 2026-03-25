@@ -1,6 +1,6 @@
 package com.tuttime.order.controller;
 
-import com.tuttime.order.dto.OrderItemDTO;
+import com.tuttime.order.dto.OrderItemDto;
 import com.tuttime.order.service.OrderItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,36 +24,36 @@ public class OrderItemController {
 	// Create a new order item
 	@Operation(summary = "Create a new order item")
 	@PostMapping
-	public ResponseEntity<OrderItemDTO> createOrderItem(@RequestBody OrderItemDTO orderItemDTO) {
-		OrderItemDTO createdItem = orderItemService.createOrderItem(orderItemDTO);
+	public ResponseEntity<OrderItemDto> createOrderItem(@RequestBody OrderItemDto orderItemDto) {
+		OrderItemDto createdItem = orderItemService.createOrderItem(orderItemDto);
 		return new ResponseEntity<>(createdItem, HttpStatus.CREATED);
 	}
 
 	// Update an existing order item by ID
 	@Operation(summary = "Update an existing order item by ID")
 	@PutMapping("/{orderItemId}")
-	public ResponseEntity<OrderItemDTO> updateOrderItem(
+	public ResponseEntity<OrderItemDto> updateOrderItem(
 			@Parameter(description = "ID of the order item to update") @PathVariable UUID orderItemId,
-			@RequestBody OrderItemDTO orderItemDTO) {
-		OrderItemDTO updatedItem = orderItemService.updateOrderItem(orderItemId, orderItemDTO);
+			@RequestBody OrderItemDto orderItemDto) {
+		OrderItemDto updatedItem = orderItemService.updateOrderItem(orderItemId, orderItemDto);
 		return ResponseEntity.ok(updatedItem);
 	}
 
 	// Get order item by ID
 	@Operation(summary = "Get order item by ID")
 	@GetMapping("/{orderItemId}")
-	public ResponseEntity<OrderItemDTO> getOrderItemById(
+	public ResponseEntity<OrderItemDto> getOrderItemById(
 			@Parameter(description = "ID of the order item to retrieve") @PathVariable UUID orderItemId) {
-		OrderItemDTO item = orderItemService.getOrderItemById(orderItemId);
+		OrderItemDto item = orderItemService.getOrderItemById(orderItemId);
 		return ResponseEntity.ok(item);
 	}
 
 	// Get all items for a specific order by order ID
 	@Operation(summary = "Get all items for a specific order by order ID")
 	@GetMapping("/order/{orderId}")
-	public ResponseEntity<List<OrderItemDTO>> getItemsByOrderId(
+	public ResponseEntity<List<OrderItemDto>> getItemsByOrderId(
 			@Parameter(description = "Order ID to filter items") @PathVariable UUID orderId) {
-		List<OrderItemDTO> items = orderItemService.getItemsByOrderId(orderId);
+		List<OrderItemDto> items = orderItemService.getItemsByOrderId(orderId);
 		return ResponseEntity.ok(items);
 	}
 
