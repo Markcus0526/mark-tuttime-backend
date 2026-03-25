@@ -8,7 +8,7 @@ spring:
     serialization:
       write-dates-as-timestamps: false
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5435/restaurant_service_db?currentSchema=restaurant_service&stringtype=unspecified&prepareThreshold=0}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5402/restaurant_service_db?currentSchema=restaurant_service&stringtype=unspecified&prepareThreshold=0}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
