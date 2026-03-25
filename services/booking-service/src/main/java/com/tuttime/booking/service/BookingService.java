@@ -1,74 +1,62 @@
 package com.tuttime.booking.service;
 
-import com.tuttime.booking.dto.BookingRequest;
-import com.tuttime.booking.dto.BookingResponse;
+import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.entity.Booking;
+import com.tuttime.booking.mapper.BookingMapper;
 import com.tuttime.booking.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
-  private final BookingRepository bookingRepository;
-  private final RedisTableLockService redisTableLockService;
-  private final AvailabilityService availabilityService;
-  private final RedisTemplate<String, String> redisTemplate;
-  private final KafkaTemplate<String, Object> kafkaTemplate;
+	private final BookingRepository bookingRepository;
+	private final BookingMapper bookingMapper;
+	private final RedisTableLockService redisTableLockService;
+	private final AvailabilityService availabilityService;
+	private final RedisTemplate<String, String> redisTemplate;
+	private final KafkaTemplate<String, Object> kafkaTemplate;
 
-  public BookingResponse createBooking(BookingRequest request) {
-    // Availability check
-    if (!availabilityService.checkAvailability(request.getBranchId(), request.getBookingTime(), request.getNumGuests())) {
-      throw new RuntimeException("No availability");
-    }
+	public List<BookingDto> getAllBookings() {
+		return bookingRepository.findAll()
+				.stream()
+				.map(bookingMapper::toDto)
+				.collect(Collectors.toList());
+	}
 
-    // Lead time 30-60min
-    long leadTime = 30;
-    if (request.getBookingTime().isBefore(LocalDateTime.now().plusMinutes(leadTime))) {
-      throw new RuntimeException("Too soon - min " + leadTime + "min");
-    }
+	public Optional<BookingDto> getBookingById(UUID id) {
+		return bookingRepository.findById(id)
+				.map(bookingMapper::toDto);
+	}
 
-    // Prep time stub 20min/order size
-    int prepTime = 20 + request.getNumGuests() * 5;
+	public BookingDto createBooking(BookingDto dto) {
+		Booking booking = bookingMapper.toEntity(dto);
+		booking = bookingRepository.save(booking);
+		return bookingMapper.toDto(booking);
+	}
 
-    // Lock Redis
-    if (!redisTableLockService.lockTable(request.getTableId(), String.valueOf(request.getUserId()), Duration.ofMinutes(10))) {
-      throw new RuntimeException("Table locked");
-    }
+	public Optional<BookingDto> updateBooking(UUID id, BookingDto dto) {
+		return bookingRepository.findById(id).map(existing -> {
+			// Update fields; example below (add more as needed)
+			existing.setBookingStatus(dto.getBookingStatus());
+			existing.setBookingDatetime(dto.getBookingDatetime());
+			existing.setPartySize(dto.getPartySize());
+			existing.setUpdatedAt(Instant.now());
+			bookingRepository.save(existing);
+			return bookingMapper.toDto(existing);
+		});
+	}
 
-    Booking booking = Booking.builder()
-        .userId(request.getUserId())
-        .restaurantId(request.getRestaurantId())
-        .branchId(request.getBranchId())
-        .tableId(request.getTableId())
-        .bookingTime(request.getBookingTime())
-        .numGuests(request.getNumGuests())
-        .prepTime(prepTime)
-        .status("PENDING_PAYMENT")
-        .build();
-
-    booking = bookingRepository.save(booking);
-
-    // Kafka to payment/order
-    kafkaTemplate.send("booking-events", "booking.created", Map.of("bookingId", booking.getId()));
-
-    return mapToResponse(booking);
-  }
-
-  private BookingResponse mapToResponse(Booking booking) {
-    BookingResponse response = new BookingResponse();
-    response.setId(booking.getId());
-    response.setUserId(booking.getUserId());
-    response.setTableId(booking.getTableId());
-    response.setStatus(booking.getStatus());
-    response.setPrepTime(booking.getPrepTime());
-    return response;
-  }
-
+	public void deleteBooking(UUID id) {
+		bookingRepository.deleteById(id);
+	}
 }

@@ -1,10 +1,15 @@
 package com.tuttime.booking.dto;
 
-import lombok.Data;
+import lombok.*;
+
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AvailabilityResponse {
-  private List<TableAvailabilityDto> availableTables;
-  private boolean slotCapacityOk;
+	private List<TableAvailabilityDto> availableTables;
+	private boolean slotCapacityOk;
 }
