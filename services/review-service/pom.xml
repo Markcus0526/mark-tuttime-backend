@@ -14,7 +14,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>review-service</name>
+    <name>Review Service</name>
     <description>TutTime Review Service - reviews, ratings</description>
 
     <properties>
@@ -160,7 +160,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.tuttime.content.ContentServiceApplication</mainClass>
+                    <mainClass>com.tuttime.review.ReviewServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
