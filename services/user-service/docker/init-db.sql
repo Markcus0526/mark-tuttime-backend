@@ -53,6 +53,14 @@ CREATE TABLE roles (
     description TEXT
 );
 
+INSERT INTO roles (name) VALUES ('ADMIN'); -- for Admin panel
+INSERT INTO roles (name) VALUES ('OWNER'); -- for Restaurant
+INSERT INTO roles (name) VALUES ('MANAGER'); -- for Restaurant
+INSERT INTO roles (name) VALUES ('HOSTESS'); -- for Restaurant
+INSERT INTO roles (name) VALUES ('USER'); -- for Mobile user
+INSERT INTO roles (name) VALUES ('GUEST'); -- for Mobile user, not signed
+
+
 CREATE TABLE user_roles (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role_id INT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
@@ -106,3 +114,4 @@ CREATE INDEX idx_active_phone_codes ON phone_verification_codes(phone_number) WH
 CREATE TRIGGER trg_users_updated
     BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+

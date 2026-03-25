@@ -1,12 +1,18 @@
 package com.tuttime.user.service;
 
+import com.tuttime.user.dto.SignupRequest;
 import com.tuttime.user.dto.UserDto;
-import com.tuttime.user.entity.User;
+import com.tuttime.user.entity.*;
 import com.tuttime.user.mapper.UserMapper;
+import com.tuttime.user.repository.RoleRepository;
+import com.tuttime.user.repository.UserAuthMethodRepository;
 import com.tuttime.user.repository.UserRepository;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,6 +25,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final UserAuthMethodRepository userAuthMethodRepository; // add this repo
+    private final RoleRepository roleRepository;
 
     public UserDto getUserById(UUID id) {
         User user = userRepository.findById(id)
@@ -58,6 +67,53 @@ public class UserService {
 
     public void deleteUser(UUID id) {
         userRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void signup(SignupRequest request) {
+        if ((request.getPhoneNumber() == null || request.getPhoneNumber().isBlank()) &&
+        (request.getEmail() == null || request.getEmail().isBlank())) {
+            throw new IllegalArgumentException("Phone number or email must be provided");
+        }
+
+        if (request.getPhoneNumber() != null && userRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
+            throw new EntityExistsException("Phone number already in use");
+        }
+        if (request.getEmail() != null && userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new EntityExistsException("Email already in use");
+        }
+
+        User user = User.builder()
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .fullName(request.getFullName())
+                .status(UserStatus.PENDING_VERIFICATION)
+                .build();
+
+        user = userRepository.save(user);
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            // Save email/password auth method
+            UserAuthMethod authMethod = UserAuthMethod.builder()
+                    .user(user)
+                    .authType(AuthProvider.EMAIL_PASS)
+                    .credential(passwordEncoder.encode(request.getPassword()))
+                    .verified(false)
+                    .build();
+            userAuthMethodRepository.save(authMethod);
+        }
+
+        // Assign default role GUEST
+        Role userRole = roleRepository.findByName("GUEST")
+                .orElseThrow(() -> new IllegalStateException("Default role GUEST not found"));
+        user.getRoles().add(UserRole.builder()
+                .user(user)
+                .role(userRole)
+                .assignedAt(java.time.Instant.now())
+                .build());
+        userRepository.save(user);
+
+        // TODO: trigger SMS or email verification (via AuthService)
     }
 }
 

@@ -1,10 +1,7 @@
 package com.tuttime.user.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -33,6 +30,8 @@ public class UserRole {
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("userId")
     @JoinColumn(name = "user_id")
+    @ToString.Exclude         // <--- ADD THIS
+    @EqualsAndHashCode.Exclude // <--- ADD THIS
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
