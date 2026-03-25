@@ -14,7 +14,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>booking-service</name>
+    <name>Booking Service</name>
     <description>TutTime Booking Service - handles reservations, table locks, slots</description>
 
     <properties>
