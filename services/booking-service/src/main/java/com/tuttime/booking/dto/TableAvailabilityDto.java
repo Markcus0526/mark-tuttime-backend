@@ -1,12 +1,16 @@
 package com.tuttime.booking.dto;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TableAvailabilityDto {
-  private Long tableId;
-  private String name;
-  private int seats;
-  private boolean available;
-  private String lockedBy;
+	private Long tableId;
+	private String name;
+	private int seats;
+	private boolean available;
+	private String lockedBy;
 }

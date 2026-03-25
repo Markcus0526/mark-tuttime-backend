@@ -126,7 +126,7 @@ bruteforce:
   phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES:60} # Block phone for 1 hour
 
 server:
-  port: 28003
+  port: 28004
   shutdown: graceful
 
 grpc:

@@ -1,10 +1,13 @@
 package com.tuttime.booking.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "bookings")
@@ -14,28 +17,60 @@ import java.time.LocalDateTime;
 @Builder
 public class Booking {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+	@Id
+	@Column(name = "booking_id", columnDefinition = "UUID")
+	private UUID bookingId;
 
-  private Long userId;
+	@Column(name = "user_id", nullable = false, columnDefinition = "UUID")
+	private UUID userId;
 
-  private Long restaurantId;
+	@Column(name = "restaurant_id", nullable = false, columnDefinition = "UUID")
+	private UUID restaurantId;
 
-  private Long branchId;
+	@Column(name = "branch_id", nullable = false, columnDefinition = "UUID")
+	private UUID branchId;
 
-  private Long tableId;
+	@Column(name = "zone_id", nullable = false, columnDefinition = "UUID")
+	private UUID zoneId;
 
-  private String status = "PENDING";
+	@Column(name = "table_id", nullable = false, columnDefinition = "UUID")
+	private UUID tableId;
 
-  private LocalDateTime bookingTime;
+	@Column(name = "booking_status", nullable = false, length = 20)
+	private String bookingStatus;
 
-  private int numGuests;
+	@Column(name = "booking_datetime", nullable = false)
+	private Instant bookingDatetime;
 
-  private int prepTime;
+	@Column(name = "party_size", nullable = false)
+	private int partySize;
 
-  private BigDecimal totalDiscount = BigDecimal.ZERO;
+	@Column(name = "lead_time_minutes")
+	private Integer leadTimeMinutes;
 
-  private LocalDateTime createdAt = LocalDateTime.now();
+	@Column(name = "grace_period_mins")
+	private Integer gracePeriodMins;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt;
+
+	@Column(name = "updated_at")
+	private Instant updatedAt;
+
+	@Column(name = "cancellation_reason", length = 255)
+	private String cancellationReason;
+
+	@Column(name = "auto_cancelled")
+	private Boolean autoCancelled;
+
+	@PrePersist
+	protected void onCreate() {
+		createdAt = Instant.now();
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		updatedAt = Instant.now();
+	}
 
 }
