@@ -34,6 +34,8 @@ spring:
         locator:
           enabled: false
       routes:
+        ################# Restaurant Service Routes #######################
+
         # Auth Service Routes (consolidated route with filters)
         # Methods: GET, POST
         # Endpoints:
@@ -43,8 +45,8 @@ spring:
         #   - POST /api/v1/auth/email/send - requires request body with EmailRequest (email field)
         #   - POST /api/v1/auth/email/verify - requires request body with VerifyEmailRequest
         # Note: For profile email verification, use /api/v1/users/me/email/send (no body required)
-        - id: auth-service
-          order: 20
+        - id: user-service-auth
+          order: 11
           uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/auth/**
@@ -61,33 +63,18 @@ spring:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
-        # Password Service Routes (consolidated route with filters)
-        # Methods: POST (all password endpoints use POST)
-        - id: password-service
-          order: 21
+        # User Service Routes (GENERAL - comes after specific routes)
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/users/{userId}, /api/v1/users/{userId}/**, /api/v1/users/map, /api/v1/users/languages/**, /api/v1/users/s3/**
+        # Note: /api/v1/users/me/** is handled by user-service-profile route (order 13)
+        - id: user-service
+          order: 12
           uri: http://${USER_SERVICE:localhost}:28001
           predicates:
-            - Path=/api/v1/password/**
-            - Method=POST,OPTION
+            - Path=/api/v1/users/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             # - name: RateLimiting
-            # - name: BruteForceProtection
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
-
-        # User Service - Apple Language Routes (MOST SPECIFIC - must come before /api/v1/users/**)
-        # Methods: GET
-        # Endpoints: GET /api/v1/users/languages/apple/{langCode}, GET /api/v1/users/languages/apple/all
-        # Note: OPTIONS removed from Method predicate - let global CORS filter handle all OPTIONS requests
-        - id: user-service-apple-language
-          order: 15
-          uri: http://${USER_SERVICE:localhost}:28001
-          predicates:
-            - Path=/api/v1/users/languages/apple/**
-            - Method=GET
-          filters:
             - name: JwtAuthentication
             - name: CircuitBreaker
               args:
@@ -104,40 +91,6 @@ spring:
             - Path=/api/v1/app/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
-
-        # User Service - Username Lookup Route
-        # Methods: GET
-        # Endpoints: GET /api/v1/username/{username}/id - Get user ID by username (authenticated)
-        - id: user-service-username-lookup
-          order: 15
-          uri: http://${USER_SERVICE:localhost}:28001
-          predicates:
-            - Path=/api/v1/username/**
-            - Method=GET,OPTION
-          filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
-
-        # User Service Routes (GENERAL - comes after specific routes)
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/users/{userId}, /api/v1/users/{userId}/**, /api/v1/users/map, /api/v1/users/languages/**, /api/v1/users/s3/**
-        # Note: /api/v1/users/me/** is handled by user-service-profile route (order 13)
-        - id: user-service
-          order: 16
-          uri: http://${USER_SERVICE:localhost}:28001
-          predicates:
-            - Path=/api/v1/users/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            # - name: RateLimiting
             - name: JwtAuthentication
             - name: CircuitBreaker
               args:
