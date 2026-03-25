@@ -9,6 +9,6 @@ import org.springframework.data.domain.Pageable;
  * Provides user management functionality for admin panel
  */
 public interface AdminUserService {
-    Page<BlockedUserResponse> listBlockedUsers(Pageable pageable);
+	Page<BlockedUserResponse> listBlockedUsers(Pageable pageable);
 }
 

@@ -20,24 +20,24 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BulkTokenAdjustmentRequest {
-    
-    @NotEmpty(message = "User IDs list cannot be empty")
-    @Size(min = 1, max = 1000, message = "Can process 1-1000 users at a time")
-    @NotNull(message = "User IDs are required")
-    private List<Long> userIds;
-    
-    @NotNull(message = "Amount is required")
-    private BigDecimal amount;
-    
-    @NotNull(message = "Type is required")
-    private AdjustmentType type;
-    
-    @NotBlank(message = "Reason is required")
-    @Size(min = 5, max = 500, message = "Reason must be between 5 and 500 characters")
-    private String reason;
-    
-    public enum AdjustmentType {
-        CREDIT, DEBIT
-    }
+
+	@NotEmpty(message = "User IDs list cannot be empty")
+	@Size(min = 1, max = 1000, message = "Can process 1-1000 users at a time")
+	@NotNull(message = "User IDs are required")
+	private List<Long> userIds;
+
+	@NotNull(message = "Amount is required")
+	private BigDecimal amount;
+
+	@NotNull(message = "Type is required")
+	private AdjustmentType type;
+
+	@NotBlank(message = "Reason is required")
+	@Size(min = 5, max = 500, message = "Reason must be between 5 and 500 characters")
+	private String reason;
+
+	public enum AdjustmentType {
+		CREDIT, DEBIT
+	}
 }
 

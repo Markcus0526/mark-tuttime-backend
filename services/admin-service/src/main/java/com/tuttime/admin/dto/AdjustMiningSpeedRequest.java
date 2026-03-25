@@ -15,10 +15,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdjustMiningSpeedRequest {
-    @NotNull(message = "Speed is required")
-    private Double speed; // AP/hour
-    
-    @NotBlank(message = "Reason is required")
-    private String reason;
+	@NotNull(message = "Speed is required")
+	private Double speed; // AP/hour
+
+	@NotBlank(message = "Reason is required")
+	private String reason;
 }
 

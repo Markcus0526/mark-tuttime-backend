@@ -14,16 +14,16 @@ import java.util.Optional;
 @Repository
 public interface StatusLevelRepository extends JpaRepository<StatusLevel, Long> {
 
-    Optional<StatusLevel> findByLevelName(String levelName);
+	Optional<StatusLevel> findByLevelName(String levelName);
 
-    List<StatusLevel> findByIsActiveTrueOrderByDisplayOrderAsc();
+	List<StatusLevel> findByIsActiveTrueOrderByDisplayOrderAsc();
 
-    List<StatusLevel> findAllByOrderByDisplayOrderAsc();
+	List<StatusLevel> findAllByOrderByDisplayOrderAsc();
 
-    Optional<StatusLevel> findByMinApartBalance(BigDecimal minApartBalance);
+	Optional<StatusLevel> findByMinApartBalance(BigDecimal minApartBalance);
 
-    boolean existsByLevelName(String levelName);
+	boolean existsByLevelName(String levelName);
 
-    boolean existsByMinApartBalance(BigDecimal minApartBalance);
+	boolean existsByMinApartBalance(BigDecimal minApartBalance);
 }
 

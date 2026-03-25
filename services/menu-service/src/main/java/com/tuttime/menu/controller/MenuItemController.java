@@ -16,36 +16,36 @@ import java.util.List;
 @Tag(name = "Menu Items", description = "Operations related to menu items")
 public class MenuItemController {
 
-    private final MenuItemService service;
+	private final MenuItemService service;
 
-    @PostMapping
-    @Operation(summary = "Create a new menu item")
-    public ResponseEntity<MenuItemDto> create(@RequestBody MenuItemDto dto) {
-        return ResponseEntity.ok(service.create(dto));
-    }
+	@PostMapping
+	@Operation(summary = "Create a new menu item")
+	public ResponseEntity<MenuItemDto> create(@RequestBody MenuItemDto dto) {
+		return ResponseEntity.ok(service.create(dto));
+	}
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get menu item by ID")
-    public ResponseEntity<MenuItemDto> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getById(id));
-    }
+	@GetMapping("/{id}")
+	@Operation(summary = "Get menu item by ID")
+	public ResponseEntity<MenuItemDto> getById(@PathVariable Long id) {
+		return ResponseEntity.ok(service.getById(id));
+	}
 
-    @GetMapping("/category/{categoryId}")
-    @Operation(summary = "Get all menu items in a category")
-    public ResponseEntity<List<MenuItemDto>> getByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(service.getByCategoryId(categoryId));
-    }
+	@GetMapping("/category/{categoryId}")
+	@Operation(summary = "Get all menu items in a category")
+	public ResponseEntity<List<MenuItemDto>> getByCategory(@PathVariable Long categoryId) {
+		return ResponseEntity.ok(service.getByCategoryId(categoryId));
+	}
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Update menu item by ID")
-    public ResponseEntity<MenuItemDto> update(@PathVariable Long id, @RequestBody MenuItemDto dto) {
-        return ResponseEntity.ok(service.update(id, dto));
-    }
+	@PutMapping("/{id}")
+	@Operation(summary = "Update menu item by ID")
+	public ResponseEntity<MenuItemDto> update(@PathVariable Long id, @RequestBody MenuItemDto dto) {
+		return ResponseEntity.ok(service.update(id, dto));
+	}
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete menu item by ID")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+	@DeleteMapping("/{id}")
+	@Operation(summary = "Delete menu item by ID")
+	public ResponseEntity<Void> delete(@PathVariable Long id) {
+		service.delete(id);
+		return ResponseEntity.noContent().build();
+	}
 }

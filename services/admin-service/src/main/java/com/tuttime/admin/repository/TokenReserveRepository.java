@@ -11,15 +11,15 @@ import java.util.Optional;
  */
 @Repository
 public interface TokenReserveRepository extends JpaRepository<TokenReserve, Long> {
-    
-    /**
-     * Find token reserve by network
-     */
-    Optional<TokenReserve> findByNetwork(String network);
-    
-    /**
-     * Check if reserve exists for network
-     */
-    boolean existsByNetwork(String network);
+
+	/**
+	 * Find token reserve by network
+	 */
+	Optional<TokenReserve> findByNetwork(String network);
+
+	/**
+	 * Check if reserve exists for network
+	 */
+	boolean existsByNetwork(String network);
 }
 

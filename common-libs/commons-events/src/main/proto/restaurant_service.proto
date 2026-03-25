@@ -69,12 +69,12 @@ message RestaurantResponse {
   bool is_active = 8;
   bool is_blocked = 9;
   int64 registration_date = 10; // Unix timestamp in milliseconds when restaurant registered
-  
+
   // Contact information
   string phone = 11;              // Phone number
   string telegram = 12;           // Telegram name
   string instagram = 13;          // Instagram name
-  
+
   // Location information
   string country = 14;            // Country name
   string city = 15;               // City name

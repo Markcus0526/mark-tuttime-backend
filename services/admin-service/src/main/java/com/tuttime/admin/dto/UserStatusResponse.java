@@ -15,8 +15,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserStatusResponse {
-    private Long userId;
-    private String statusLevel; // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, ELITE
-    private BigDecimal statusBonusApPerHour;
+	private Long userId;
+	private String statusLevel; // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND, ELITE
+	private BigDecimal statusBonusApPerHour;
 }
 

@@ -18,32 +18,32 @@ import org.springframework.transaction.annotation.Transactional;
 @ConditionalOnProperty(name = "spring.datasource.replica.url")
 public class ReadOnlyTransactionInterceptor {
 
-    @Around("@annotation(transactional)")
-    public Object routeToReadReplica(ProceedingJoinPoint pjp, Transactional transactional) throws Throwable {
-        try {
-            if (transactional != null && transactional.readOnly()) {
-                ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("read");
-            } else {
-                ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("write");
-            }
-            return pjp.proceed();
-        } finally {
-            ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.clearDataSourceType();
-        }
-    }
+	@Around("@annotation(transactional)")
+	public Object routeToReadReplica(ProceedingJoinPoint pjp, Transactional transactional) throws Throwable {
+		try {
+			if (transactional != null && transactional.readOnly()) {
+				ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("read");
+			} else {
+				ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("write");
+			}
+			return pjp.proceed();
+		} finally {
+			ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.clearDataSourceType();
+		}
+	}
 
-    @Around("@within(transactional)")
-    public Object routeToReadReplicaClass(ProceedingJoinPoint pjp, Transactional transactional) throws Throwable {
-        try {
-            if (transactional != null && transactional.readOnly()) {
-                ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("read");
-            } else {
-                ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("write");
-            }
-            return pjp.proceed();
-        } finally {
-            ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.clearDataSourceType();
-        }
-    }
+	@Around("@within(transactional)")
+	public Object routeToReadReplicaClass(ProceedingJoinPoint pjp, Transactional transactional) throws Throwable {
+		try {
+			if (transactional != null && transactional.readOnly()) {
+				ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("read");
+			} else {
+				ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.setDataSourceType("write");
+			}
+			return pjp.proceed();
+		} finally {
+			ReadWriteDataSourceConfig.ReadWriteRoutingDataSourceContext.clearDataSourceType();
+		}
+	}
 }
 

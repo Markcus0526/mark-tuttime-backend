@@ -18,26 +18,26 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MiningStatsResponse {
-    private BigDecimal totalApCredits;
-    private BigDecimal monthlyApCredits;
-    private Long activeMiningSessions;
-    private Long activeMinerCount;
-    private Long inactiveMinerCount;
-    private Long neverStartedMiningCount;
-    private BigDecimal averageMiningSpeed;
-    private OffsetDateTime lastNotificationSentAt; // Deprecated: use lastInactiveNotificationSentAt
-    private OffsetDateTime lastInactiveNotificationSentAt; // Last time notification sent to inactive mining users
-    private OffsetDateTime lastNeverStartedNotificationSentAt; // Last time notification sent to never-started users
-    private List<DailyMiningStats> dailyStats;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DailyMiningStats {
-        private LocalDate date;
-        private BigDecimal apEarned;
-        private Long activeSessions;
-    }
+	private BigDecimal totalApCredits;
+	private BigDecimal monthlyApCredits;
+	private Long activeMiningSessions;
+	private Long activeMinerCount;
+	private Long inactiveMinerCount;
+	private Long neverStartedMiningCount;
+	private BigDecimal averageMiningSpeed;
+	private OffsetDateTime lastNotificationSentAt; // Deprecated: use lastInactiveNotificationSentAt
+	private OffsetDateTime lastInactiveNotificationSentAt; // Last time notification sent to inactive mining users
+	private OffsetDateTime lastNeverStartedNotificationSentAt; // Last time notification sent to never-started users
+	private List<DailyMiningStats> dailyStats;
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class DailyMiningStats {
+		private LocalDate date;
+		private BigDecimal apEarned;
+		private Long activeSessions;
+	}
 }
 

@@ -14,11 +14,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateTranslationRequest {
-    
-    @NotBlank(message = "Translated title is required")
-    private String translatedTitle;
-    
-    @NotBlank(message = "Translated message is required")
-    private String translatedMessage;
+
+	@NotBlank(message = "Translated title is required")
+	private String translatedTitle;
+
+	@NotBlank(message = "Translated message is required")
+	private String translatedMessage;
 }
 

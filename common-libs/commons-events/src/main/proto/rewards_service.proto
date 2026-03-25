@@ -17,7 +17,7 @@ service RewardsService {
   rpc UpdateLastActiveCheckForReferrers (UpdateLastActiveCheckForReferrersRequest) returns (UpdateLastActiveCheckForReferrersResponse);
   rpc GetFriendsStatus (GetFriendsStatusRequest) returns (GetFriendsStatusResponse);
   rpc GetReferralStatistics (GetReferralStatisticsRequest) returns (GetReferralStatisticsResponse);
-  
+
   // Admin analytics endpoints
   rpc GetTotalReferralsCount (GetTotalReferralsCountRequest) returns (GetTotalReferralsCountResponse);
 }

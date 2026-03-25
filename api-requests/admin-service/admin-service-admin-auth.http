@@ -24,7 +24,7 @@ Content-Type: application/json
     } else {
         responseData = response.body;
     }
-    
+
     // Extract token from response
     if (responseData && responseData.data && responseData.data.token) {
         const token = responseData.data.token;

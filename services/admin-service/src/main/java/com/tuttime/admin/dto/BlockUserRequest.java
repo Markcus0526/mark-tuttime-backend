@@ -15,8 +15,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BlockUserRequest {
-    @NotBlank(message = "Reason is required")
-    @Size(min = 3, max = 500, message = "Reason must be between 3 and 500 characters")
-    private String reason;
+	@NotBlank(message = "Reason is required")
+	@Size(min = 3, max = 500, message = "Reason must be between 3 and 500 characters")
+	private String reason;
 }
 

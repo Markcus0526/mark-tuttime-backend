@@ -15,13 +15,13 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PrivacySettingsResponse {
-    
-    private Long userId;
-    private String accountPrivacy; // PUBLIC, PRIVATE
-    private String commentRestriction; // EVERYONE, FOLLOWERS, NONE
-    private Boolean hideLikes;
-    private Boolean hideFollowers;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+
+	private Long userId;
+	private String accountPrivacy; // PUBLIC, PRIVATE
+	private String commentRestriction; // EVERYONE, FOLLOWERS, NONE
+	private Boolean hideLikes;
+	private Boolean hideFollowers;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
 }
 

@@ -14,48 +14,48 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class DiscountService {
-  private final DiscountRepository discountRepository;
+	private final DiscountRepository discountRepository;
 
-  public List<DiscountDto> getByReferenceId(Long referenceId) {
-    return discountRepository.findByReferenceId(referenceId)
-            .stream()
-            .map(MenuMapper::toDto)
-            .collect(Collectors.toList());
-  }
+	public List<DiscountDto> getByReferenceId(Long referenceId) {
+		return discountRepository.findByReferenceId(referenceId)
+				.stream()
+				.map(MenuMapper::toDto)
+				.collect(Collectors.toList());
+	}
 
-  public DiscountDto getById(Long id) {
-    Discount discount = discountRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Discount not found with id: " + id));
+	public DiscountDto getById(Long id) {
+		Discount discount = discountRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Discount not found with id: " + id));
 
-    return MenuMapper.toDto(discount);
-  }
+		return MenuMapper.toDto(discount);
+	}
 
-  public DiscountDto create(DiscountDto dto) {
-    // TODO:
-    Discount entity = MenuMapper.toEntity(dto);
-    Discount saved = discountRepository.save(entity);
-    return MenuMapper.toDto(saved);
-  }
+	public DiscountDto create(DiscountDto dto) {
+		// TODO:
+		Discount entity = MenuMapper.toEntity(dto);
+		Discount saved = discountRepository.save(entity);
+		return MenuMapper.toDto(saved);
+	}
 
-  public DiscountDto update(Long id, DiscountDto dto) {
-    Discount existing = discountRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Discount not found with id: " + id));
-    existing.setName(dto.getName());
-    existing.setDiscountType(dto.getDiscountType());
-    existing.setAmount(dto.getAmount());
-    existing.setAppliesTo(dto.getAppliesTo());
-    existing.setReferenceId(dto.getReferenceId());
-    existing.setStartDate(dto.getStartDate());
-    existing.setEndDate(dto.getEndDate());
-    existing.setIsActive(dto.getIsActive());
-    Discount updated = discountRepository.save(existing);
-    return MenuMapper.toDto(updated);
-  }
+	public DiscountDto update(Long id, DiscountDto dto) {
+		Discount existing = discountRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Discount not found with id: " + id));
+		existing.setName(dto.getName());
+		existing.setDiscountType(dto.getDiscountType());
+		existing.setAmount(dto.getAmount());
+		existing.setAppliesTo(dto.getAppliesTo());
+		existing.setReferenceId(dto.getReferenceId());
+		existing.setStartDate(dto.getStartDate());
+		existing.setEndDate(dto.getEndDate());
+		existing.setIsActive(dto.getIsActive());
+		Discount updated = discountRepository.save(existing);
+		return MenuMapper.toDto(updated);
+	}
 
-  public void delete(Long id) {
-    if (!discountRepository.existsById(id)) {
-      throw new ResourceNotFoundException("Discount not found with id: " + id);
-    }
-    discountRepository.deleteById(id);
-  }
+	public void delete(Long id) {
+		if (!discountRepository.existsById(id)) {
+			throw new ResourceNotFoundException("Discount not found with id: " + id);
+		}
+		discountRepository.deleteById(id);
+	}
 }

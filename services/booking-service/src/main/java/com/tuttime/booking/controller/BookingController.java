@@ -1,7 +1,8 @@
 package com.tuttime.booking.controller;
 
-import com.tuttime.booking.dto.*;
-import com.tuttime.booking.service.AvailabilityService;
+import com.tuttime.booking.dto.BookingDto;
+import com.tuttime.booking.dto.BookingNotificationDto;
+import com.tuttime.booking.dto.BookingStatusHistoryDto;
 import com.tuttime.booking.service.BookingNotificationService;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.booking.service.BookingStatusHistoryService;

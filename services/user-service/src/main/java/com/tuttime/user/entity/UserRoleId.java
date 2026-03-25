@@ -11,6 +11,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserRoleId implements Serializable {
-    private UUID userId;
-    private Integer roleId;
+	private UUID userId;
+	private Integer roleId;
 }

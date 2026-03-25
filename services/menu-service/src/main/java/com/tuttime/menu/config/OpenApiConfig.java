@@ -8,12 +8,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("TutTime Menu Service API")
-                        .version("1.0")
-                        .description("API documentation for the Menu Service of TutTime platform"));
-    }
+	@Bean
+	public OpenAPI customOpenAPI() {
+		return new OpenAPI()
+				.info(new Info()
+						.title("TutTime Menu Service API")
+						.version("1.0")
+						.description("API documentation for the Menu Service of TutTime platform"));
+	}
 }

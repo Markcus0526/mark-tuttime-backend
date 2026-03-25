@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdatePrivacySettingsRequest {
-    
-    private String accountPrivacy; // PUBLIC, PRIVATE
-    private String commentRestriction; // EVERYONE, FOLLOWERS, NONE
-    private Boolean hideLikes;
-    private Boolean hideFollowers;
+
+	private String accountPrivacy; // PUBLIC, PRIVATE
+	private String commentRestriction; // EVERYONE, FOLLOWERS, NONE
+	private Boolean hideLikes;
+	private Boolean hideFollowers;
 }
 

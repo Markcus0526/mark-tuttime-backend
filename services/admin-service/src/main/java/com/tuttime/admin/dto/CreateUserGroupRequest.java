@@ -16,12 +16,12 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateUserGroupRequest {
-    
-    @NotBlank(message = "Group name is required")
-    private String groupName;
-    
-    private String description;
-    
-    private Map<String, Object> criteria;
+
+	@NotBlank(message = "Group name is required")
+	private String groupName;
+
+	private String description;
+
+	private Map<String, Object> criteria;
 }
 

@@ -44,6 +44,10 @@
       "format": "date-time"
     }
   },
-  "required": ["event_type", "user_id", "timestamp"]
+  "required": [
+    "event_type",
+    "user_id",
+    "timestamp"
+  ]
 }
 

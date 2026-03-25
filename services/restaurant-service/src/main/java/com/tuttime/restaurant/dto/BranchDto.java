@@ -10,12 +10,12 @@ import org.locationtech.jts.geom.Point;
 @Builder
 public class BranchDto {
 
-    private Long branchId;
-    private Long restaurantId;
-    private String name;
-    private String address;
-    private String phone;
-    private String timezone;
-    private Point location;
+	private Long branchId;
+	private Long restaurantId;
+	private String name;
+	private String address;
+	private String phone;
+	private String timezone;
+	private Point location;
 
 }

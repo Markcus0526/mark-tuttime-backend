@@ -2,7 +2,6 @@ package com.tuttime.booking.service;
 
 import com.tuttime.booking.dto.BookingNotificationDto;
 import com.tuttime.booking.entity.BookingNotification;
-import com.tuttime.booking.mapper.BookingLockMapper;
 import com.tuttime.booking.mapper.BookingNotificationMapper;
 import com.tuttime.booking.repository.BookingNotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 public class BookingNotificationService {
 
 	private final BookingNotificationRepository repository;
-    private final BookingNotificationMapper bookingNotificationMapper;
+	private final BookingNotificationMapper bookingNotificationMapper;
 
 	public List<BookingNotificationDto> getAllNotifications() {
 		return repository.findAll().stream()

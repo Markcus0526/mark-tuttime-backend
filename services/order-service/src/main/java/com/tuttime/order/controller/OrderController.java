@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class OrderController {
 
-  private final OrderService orderService;
+	private final OrderService orderService;
 
-  @PostMapping("/preorder")
-  public ResponseEntity<Order> createPreOrder(@RequestBody PreOrderRequest request) {
-    return ResponseEntity.ok(orderService.createPreOrder(request));
-  }
+	@PostMapping("/preorder")
+	public ResponseEntity<Order> createPreOrder(@RequestBody PreOrderRequest request) {
+		return ResponseEntity.ok(orderService.createPreOrder(request));
+	}
 
-  @PatchMapping("/{id}/status")
-  public ResponseEntity<Order> updateStatus(@PathVariable Long id, @RequestBody OrderStatusUpdate update) {
-    return ResponseEntity.ok(orderService.updateStatus(id, update));
-  }
+	@PatchMapping("/{id}/status")
+	public ResponseEntity<Order> updateStatus(@PathVariable Long id, @RequestBody OrderStatusUpdate update) {
+		return ResponseEntity.ok(orderService.updateStatus(id, update));
+	}
 
 }

@@ -16,19 +16,19 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostResponse {
-    
-    private Long postId;
-    private UserSummaryResponse author;
-    private String caption;
-    private List<MediaDto> media;
-    private String locationName;
-    private java.math.BigDecimal latitude;
-    private java.math.BigDecimal longitude;
-    private Long likeCount;
-    private Long commentCount;
-    private Boolean isLiked;
-    private Boolean isSaved;
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
+
+	private Long postId;
+	private UserSummaryResponse author;
+	private String caption;
+	private List<MediaDto> media;
+	private String locationName;
+	private java.math.BigDecimal latitude;
+	private java.math.BigDecimal longitude;
+	private Long likeCount;
+	private Long commentCount;
+	private Boolean isLiked;
+	private Boolean isSaved;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
 }
 

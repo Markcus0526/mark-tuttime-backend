@@ -10,29 +10,29 @@ import java.util.Map;
  */
 public interface AdminLanguageService {
 
-    /**
-     * List all languages
-     */
-    List<LanguageResponse> listLanguages();
+	/**
+	 * List all languages
+	 */
+	List<LanguageResponse> listLanguages();
 
-    /**
-     * Get language by code
-     */
-    LanguageResponse getLanguageByCode(String languageCode);
+	/**
+	 * Get language by code
+	 */
+	LanguageResponse getLanguageByCode(String languageCode);
 
-    /**
-     * Get language translations directly (returns nested Map structure)
-     */
-    Map<String, Object> getLanguageTranslations(String languageCode);
+	/**
+	 * Get language translations directly (returns nested Map structure)
+	 */
+	Map<String, Object> getLanguageTranslations(String languageCode);
 
-    /**
-     * Upload/update language with JSON translations
-     */
-    void uploadLanguage(String languageCode, Map<String, Object> translations, Long createdBy);
+	/**
+	 * Upload/update language with JSON translations
+	 */
+	void uploadLanguage(String languageCode, Map<String, Object> translations, Long createdBy);
 
-    /**
-     * Delete a language
-     */
-    void deleteLanguage(String languageCode);
+	/**
+	 * Delete a language
+	 */
+	void deleteLanguage(String languageCode);
 }
 

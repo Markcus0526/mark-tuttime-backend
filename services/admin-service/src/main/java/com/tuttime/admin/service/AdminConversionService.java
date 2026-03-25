@@ -9,8 +9,10 @@ import org.springframework.data.domain.Page;
  * Admin Conversion Service Interface
  */
 public interface AdminConversionService {
-    Page<ConversionResponse> getUserConversions(Long userId, org.springframework.data.domain.Pageable pageable);
-    ConversionInfoResponse getConversionInfo(Long userId);
-    Page<ConversionLedgerEntry> getMonthlyConversionLedger(int year, int month, org.springframework.data.domain.Pageable pageable);
+	Page<ConversionResponse> getUserConversions(Long userId, org.springframework.data.domain.Pageable pageable);
+
+	ConversionInfoResponse getConversionInfo(Long userId);
+
+	Page<ConversionLedgerEntry> getMonthlyConversionLedger(int year, int month, org.springframework.data.domain.Pageable pageable);
 }
 

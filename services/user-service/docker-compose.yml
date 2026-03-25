@@ -15,7 +15,7 @@ services:
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:r
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init-schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d user_service_db"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d user_service_db" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -64,7 +64,7 @@ services:
     healthcheck:
       # Use liveness endpoint - only checks diskSpace,ping (non-recoverable failures)
       #test: ["CMD-SHELL", "wget --spider --quiet http://localhost:8001/actuator/health/liveness || exit 1"]
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8001' || exit 1"]
+      test: [ "CMD-SHELL", "bash -c '</dev/tcp/localhost/8001' || exit 1" ]
       interval: 20s
       timeout: 5s
       retries: 5

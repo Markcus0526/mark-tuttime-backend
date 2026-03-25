@@ -14,12 +14,12 @@ import java.util.Optional;
 @Repository
 public interface StakingTierRepository extends JpaRepository<StakingTier, Long> {
 
-    List<StakingTier> findByIsActiveTrueOrderByDisplayOrderAsc();
+	List<StakingTier> findByIsActiveTrueOrderByDisplayOrderAsc();
 
-    List<StakingTier> findAllByOrderByDisplayOrderAsc();
+	List<StakingTier> findAllByOrderByDisplayOrderAsc();
 
-    Optional<StakingTier> findByMinStakeAmount(BigDecimal minStakeAmount);
+	Optional<StakingTier> findByMinStakeAmount(BigDecimal minStakeAmount);
 
-    boolean existsByMinStakeAmount(BigDecimal minStakeAmount);
+	boolean existsByMinStakeAmount(BigDecimal minStakeAmount);
 }
 

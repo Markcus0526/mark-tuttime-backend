@@ -10,7 +10,7 @@ option java_outer_classname = "AdminServiceProto";
 service AdminService {
   // Get mining formula configuration
   rpc GetMiningFormulaConfig (GetMiningFormulaConfigRequest) returns (GetMiningFormulaConfigResponse);
-  
+
   // Get app version information
   rpc GetAppVersion (GetAppVersionRequest) returns (GetAppVersionResponse);
 }
@@ -23,29 +23,29 @@ message GetMiningFormulaConfigResponse {
   // Base Speed Parameters
   string base_speed_unverified = 1; // AP/h for unverified users
   string base_speed_verified = 2; // AP/h for KYC verified users
-  
+
   // Friend Bonus Parameters
   string friend_bonus_per_friend = 3; // AP/h per active friend
   int32 max_friends = 4; // Maximum number of friends that count
   string max_friend_bonus = 5; // Maximum friend bonus
-  
+
   // Referral Boost Parameters
   string referral_boost_per_invitation = 13; // AP/h per invited user (for referral info display)
-  
+
   // Booking Bonus Parameters
   string booking_bonus_per_booking = 6; // AP/h per active booking
   int32 booking_boost_duration_days = 7; // Duration of booking boost
-  
+
   // Speed Cap
   string max_mining_speed = 8; // Maximum mining speed cap
-  
+
   // Mining Interval Parameters
   int32 min_mining_interval_minutes = 9; // Minimum mining interval
   int32 max_mining_interval_minutes = 10; // Maximum mining interval
-  
+
   // Monthly Pool
   string monthly_pool_amount = 11; // Monthly pool amount in APART tokens
-  
+
   // Metadata
   bool is_active = 12; // Whether this configuration is active
 }

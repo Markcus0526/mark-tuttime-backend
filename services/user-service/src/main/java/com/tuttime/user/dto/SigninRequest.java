@@ -1,15 +1,15 @@
 package com.tuttime.user.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 
 @Data
 public class SigninRequest {
-    private String phoneNumber;
-    private String smsCode;
+	private String phoneNumber;
+	private String smsCode;
 
-    @Email
-    private String email;
+	@Email
+	private String email;
 
-    private String password;
+	private String password;
 }

@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BlockDeviceRequest {
-    private String reason;
+	private String reason;
 }
 

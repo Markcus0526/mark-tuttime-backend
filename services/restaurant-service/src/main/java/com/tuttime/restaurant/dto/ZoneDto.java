@@ -9,10 +9,10 @@ import lombok.*;
 @Builder
 public class ZoneDto {
 
-    private Long zoneId;
-    private Long branchId;
-    private String name;
-    private String description;
-    private Integer capacity;
+	private Long zoneId;
+	private Long branchId;
+	private String name;
+	private String description;
+	private Integer capacity;
 
 }

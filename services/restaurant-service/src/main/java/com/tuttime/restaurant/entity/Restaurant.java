@@ -23,39 +23,39 @@ import java.time.OffsetDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class Restaurant {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "restaurant_id")
-    private Long restaurantId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "restaurant_id")
+	private Long restaurantId;
 
-    @Column(name = "owner_user_id", nullable = false)
-    private Long ownerUserId;
+	@Column(name = "owner_user_id", nullable = false)
+	private Long ownerUserId;
 
-    @Column(length = 255, nullable = false)
-    private String name;
+	@Column(length = 255, nullable = false)
+	private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+	@Column(columnDefinition = "TEXT")
+	private String description;
 
-    @Column(length = 512, nullable = false)
-    private String address;
+	@Column(length = 512, nullable = false)
+	private String address;
 
-    @Column(columnDefinition = "geography(Point,4326)")
-    @JdbcTypeCode(SqlTypes.GEOMETRY) // Modern alternative to @Type
-    private Point location;
+	@Column(columnDefinition = "geography(Point,4326)")
+	@JdbcTypeCode(SqlTypes.GEOMETRY) // Modern alternative to @Type
+	private Point location;
 
-    @Column(length = 20)
-    private String phone;
+	@Column(length = 20)
+	private String phone;
 
-    @Column(length = 255)
-    private String website;
+	@Column(length = 255)
+	private String website;
 
-    @Column(precision = 2, scale = 1)
-    private BigDecimal rating;
+	@Column(precision = 2, scale = 1)
+	private BigDecimal rating;
 
-    @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime createdAt;
+	@Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime updatedAt;
+	@Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	private OffsetDateTime updatedAt;
 }

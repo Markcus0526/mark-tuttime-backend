@@ -1,11 +1,11 @@
 package com.tuttime.payment.dto;
 
-import java.math.BigDecimal;
-
 import lombok.Data;
+
+import java.math.BigDecimal;
 
 @Data
 public class PaymentMethodRequest {
-  private String method; // "FULL_PREPAY", "DEPOSIT"
-  private BigDecimal depositPercentage;
+	private String method; // "FULL_PREPAY", "DEPOSIT"
+	private BigDecimal depositPercentage;
 }

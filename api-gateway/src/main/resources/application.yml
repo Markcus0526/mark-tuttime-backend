@@ -175,7 +175,7 @@ spring:
             - Path=/api/v1/menu-categories/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-#            - name: JwtAuthentication
+            #            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -249,14 +249,14 @@ spring:
           order: 41
           uri: http://${BOOKING-SERVICE:localhost}:28004
           predicates:
-           - Path=/api/v1/bookings/**
-           - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+            - Path=/api/v1/bookings/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-           #            - name: JwtAuthentication
-           - name: CircuitBreaker
-             args:
-               name: bookingServiceCircuitBreaker
-               fallbackUri: forward:/fallback/booking-service
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: bookingServiceCircuitBreaker
+                fallbackUri: forward:/fallback/booking-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/booking-locks/**

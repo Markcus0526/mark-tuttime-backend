@@ -264,18 +264,18 @@ grpc:
   # Used by GrpcClientDeadlineInterceptor.
   client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS:60}
   client:
-#    rewards-service:
-#      address: static://${REWARDS_SERVICE:rewards-service}:29195
-#      negotiationType: plaintext
-#    token-service:
-#      address: static://${TOKEN_SERVICE:token-service}:29190
-#      negotiationType: plaintext
-#    mining-service:
-#      address: static://${MINING_SERVICE:mining-service}:29193
-#      negotiationType: plaintext
-#    conversion-service:
-#      address: static://${CONVERSION_SERVICE:conversion-service}:29197
-#      negotiationType: plaintext
+    #    rewards-service:
+    #      address: static://${REWARDS_SERVICE:rewards-service}:29195
+    #      negotiationType: plaintext
+    #    token-service:
+    #      address: static://${TOKEN_SERVICE:token-service}:29190
+    #      negotiationType: plaintext
+    #    mining-service:
+    #      address: static://${MINING_SERVICE:mining-service}:29193
+    #      negotiationType: plaintext
+    #    conversion-service:
+    #      address: static://${CONVERSION_SERVICE:conversion-service}:29197
+    #      negotiationType: plaintext
     admin-service:
       address: static://${ADMIN_SERVICE:admin-service}:28010
       negotiationType: plaintext

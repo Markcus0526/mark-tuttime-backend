@@ -48,7 +48,12 @@
     },
     "channel": {
       "type": "string",
-      "enum": ["EMAIL", "SMS", "PUSH", "IN_APP"]
+      "enum": [
+        "EMAIL",
+        "SMS",
+        "PUSH",
+        "IN_APP"
+      ]
     },
     "subject": {
       "type": "string"
@@ -67,7 +72,12 @@
     },
     "priority": {
       "type": "string",
-      "enum": ["LOW", "NORMAL", "HIGH", "URGENT"]
+      "enum": [
+        "LOW",
+        "NORMAL",
+        "HIGH",
+        "URGENT"
+      ]
     },
     "reference_type": {
       "type": "string"
@@ -83,6 +93,10 @@
       "type": "integer"
     }
   },
-  "required": ["user_id", "notification_type", "channel"]
+  "required": [
+    "user_id",
+    "notification_type",
+    "channel"
+  ]
 }
 

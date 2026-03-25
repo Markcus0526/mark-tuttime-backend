@@ -16,29 +16,29 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskCompletionStatsResponse {
-    private List<DailyTaskStat> dailyStats;
-    private List<MonthlyTaskStat> monthlyStats;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class DailyTaskStat {
-        private LocalDate date;
-        private Long taskId;
-        private String taskTitle;
-        private Long completionCount;
-    }
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class MonthlyTaskStat {
-        private String month; // Format: YYYY-MM
-        private Long taskId;
-        private String taskTitle;
-        private Long completionCount;
-    }
+	private List<DailyTaskStat> dailyStats;
+	private List<MonthlyTaskStat> monthlyStats;
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class DailyTaskStat {
+		private LocalDate date;
+		private Long taskId;
+		private String taskTitle;
+		private Long completionCount;
+	}
+
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class MonthlyTaskStat {
+		private String month; // Format: YYYY-MM
+		private Long taskId;
+		private String taskTitle;
+		private Long completionCount;
+	}
 }
 

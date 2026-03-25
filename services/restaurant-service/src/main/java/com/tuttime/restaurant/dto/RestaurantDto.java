@@ -12,14 +12,14 @@ import java.math.BigDecimal;
 @Builder
 public class RestaurantDto {
 
-    private Long restaurantId;
-    private Long ownerUserId;
-    private String name;
-    private String description;
-    private String address;
-    private Point location;
-    private String phone;
-    private String website;
-    private BigDecimal rating;
+	private Long restaurantId;
+	private Long ownerUserId;
+	private String name;
+	private String description;
+	private String address;
+	private Point location;
+	private String phone;
+	private String website;
+	private BigDecimal rating;
 
 }

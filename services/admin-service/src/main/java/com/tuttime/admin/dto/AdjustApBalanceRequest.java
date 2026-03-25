@@ -15,10 +15,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdjustApBalanceRequest {
-    @NotNull(message = "Amount is required")
-    private Long amount; // Positive to add, negative to subtract
-    
-    @NotBlank(message = "Reason is required")
-    private String reason;
+	@NotNull(message = "Amount is required")
+	private Long amount; // Positive to add, negative to subtract
+
+	@NotBlank(message = "Reason is required")
+	private String reason;
 }
 

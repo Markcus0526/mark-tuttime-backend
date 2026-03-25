@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class OrderStatusUpdate {
-  private String status;
-  private String cancelReason;
+	private String status;
+	private String cancelReason;
 }

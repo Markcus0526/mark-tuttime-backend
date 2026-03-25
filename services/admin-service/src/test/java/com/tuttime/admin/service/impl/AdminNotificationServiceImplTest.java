@@ -27,241 +27,241 @@ import static org.mockito.Mockito.*;
 @DisplayName("AdminNotificationServiceImpl Tests")
 class AdminNotificationServiceImplTest {
 
-    @Mock
-    private NotificationServiceRestClient notificationServiceRestClient;
+	@Mock
+	private NotificationServiceRestClient notificationServiceRestClient;
 
-    @InjectMocks
-    private AdminNotificationServiceImpl adminNotificationService;
+	@InjectMocks
+	private AdminNotificationServiceImpl adminNotificationService;
 
-    @Test
-    @DisplayName("Should list notifications successfully")
-    void testListNotifications_Success_ReturnsPage() {
-        // Given
-        PageRequest pageable = PageRequest.of(0, 10);
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", 1L);
-        notificationMap.put("userId", 100L);
-        notificationMap.put("notificationType", "SYSTEM_ALERT");
-        notificationMap.put("channel", "IN_APP");
-        notificationMap.put("message", "Test message");
-        notificationMap.put("status", "PENDING");
-        notificationMap.put("priority", "NORMAL");
-        
-        Map<String, Object> pageData = new HashMap<>();
-        pageData.put("content", Arrays.asList(notificationMap));
-        pageData.put("totalElements", 1L);
-        pageData.put("totalPages", 1);
-        pageData.put("number", 0);
-        pageData.put("size", 10);
-        
-        when(notificationServiceRestClient.listNotifications(pageable, null)).thenReturn(pageData);
+	@Test
+	@DisplayName("Should list notifications successfully")
+	void testListNotifications_Success_ReturnsPage() {
+		// Given
+		PageRequest pageable = PageRequest.of(0, 10);
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", 1L);
+		notificationMap.put("userId", 100L);
+		notificationMap.put("notificationType", "SYSTEM_ALERT");
+		notificationMap.put("channel", "IN_APP");
+		notificationMap.put("message", "Test message");
+		notificationMap.put("status", "PENDING");
+		notificationMap.put("priority", "NORMAL");
 
-        // When
-        Page<NotificationResponse> result = adminNotificationService.listNotifications(pageable, null);
+		Map<String, Object> pageData = new HashMap<>();
+		pageData.put("content", Arrays.asList(notificationMap));
+		pageData.put("totalElements", 1L);
+		pageData.put("totalPages", 1);
+		pageData.put("number", 0);
+		pageData.put("size", 10);
 
-        // Then
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getNotificationId()).isEqualTo(1L);
-    }
+		when(notificationServiceRestClient.listNotifications(pageable, null)).thenReturn(pageData);
 
-    @Test
-    @DisplayName("Should get notification by ID successfully")
-    void testGetNotification_Success_ReturnsNotification() {
-        // Given
-        Long id = 1L;
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", id);
-        notificationMap.put("userId", 100L);
-        notificationMap.put("notificationType", "SYSTEM_ALERT");
-        notificationMap.put("channel", "IN_APP");
-        notificationMap.put("message", "Test message");
-        notificationMap.put("status", "PENDING");
-        notificationMap.put("priority", "NORMAL");
+		// When
+		Page<NotificationResponse> result = adminNotificationService.listNotifications(pageable, null);
 
-        when(notificationServiceRestClient.getNotificationById(id)).thenReturn(notificationMap);
+		// Then
+		assertThat(result.getTotalElements()).isEqualTo(1);
+		assertThat(result.getContent()).hasSize(1);
+		assertThat(result.getContent().get(0).getNotificationId()).isEqualTo(1L);
+	}
 
-        // When
-        NotificationResponse result = adminNotificationService.getNotification(id);
+	@Test
+	@DisplayName("Should get notification by ID successfully")
+	void testGetNotification_Success_ReturnsNotification() {
+		// Given
+		Long id = 1L;
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", id);
+		notificationMap.put("userId", 100L);
+		notificationMap.put("notificationType", "SYSTEM_ALERT");
+		notificationMap.put("channel", "IN_APP");
+		notificationMap.put("message", "Test message");
+		notificationMap.put("status", "PENDING");
+		notificationMap.put("priority", "NORMAL");
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getNotificationId()).isEqualTo(id);
-        assertThat(result.getUserId()).isEqualTo(100L);
-    }
+		when(notificationServiceRestClient.getNotificationById(id)).thenReturn(notificationMap);
 
-    @Test
-    @DisplayName("Should create notification successfully")
-    void testCreateNotification_Success_ReturnsNotification() {
-        // Given
-        NotificationRequest request = NotificationRequest.builder()
-                .notificationType("SYSTEM_ALERT")
-                .channel("IN_APP")
-                .subject("Test Subject")
-                .message("Test message")
-                .priority("NORMAL")
-                .userId(100L)
-                .build();
+		// When
+		NotificationResponse result = adminNotificationService.getNotification(id);
 
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", 1L);
-        notificationMap.put("userId", 100L);
-        notificationMap.put("notificationType", "SYSTEM_ALERT");
-        notificationMap.put("channel", "IN_APP");
-        notificationMap.put("subject", "Test Subject");
-        notificationMap.put("message", "Test message");
-        notificationMap.put("status", "PENDING");
-        notificationMap.put("priority", "NORMAL");
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getNotificationId()).isEqualTo(id);
+		assertThat(result.getUserId()).isEqualTo(100L);
+	}
 
-        when(notificationServiceRestClient.createNotification(any(Map.class))).thenReturn(notificationMap);
+	@Test
+	@DisplayName("Should create notification successfully")
+	void testCreateNotification_Success_ReturnsNotification() {
+		// Given
+		NotificationRequest request = NotificationRequest.builder()
+				.notificationType("SYSTEM_ALERT")
+				.channel("IN_APP")
+				.subject("Test Subject")
+				.message("Test message")
+				.priority("NORMAL")
+				.userId(100L)
+				.build();
 
-        // When
-        NotificationResponse result = adminNotificationService.createNotification(request);
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", 1L);
+		notificationMap.put("userId", 100L);
+		notificationMap.put("notificationType", "SYSTEM_ALERT");
+		notificationMap.put("channel", "IN_APP");
+		notificationMap.put("subject", "Test Subject");
+		notificationMap.put("message", "Test message");
+		notificationMap.put("status", "PENDING");
+		notificationMap.put("priority", "NORMAL");
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getNotificationId()).isEqualTo(1L);
-        assertThat(result.getUserId()).isEqualTo(100L);
-        verify(notificationServiceRestClient).createNotification(any(Map.class));
-    }
+		when(notificationServiceRestClient.createNotification(any(Map.class))).thenReturn(notificationMap);
 
-    @Test
-    @DisplayName("Should create scheduled notification successfully")
-    void testCreateNotification_Scheduled_Success() {
-        // Given
-        OffsetDateTime scheduledAt = OffsetDateTime.now(ZoneOffset.UTC).plusHours(1);
-        NotificationRequest request = NotificationRequest.builder()
-                .notificationType("PROMOTIONAL_OFFER")
-                .channel("EMAIL")
-                .subject("Special Offer")
-                .message("Check out our offer!")
-                .priority("HIGH")
-                .userId(200L)
-                .scheduledAt(scheduledAt)
-                .build();
+		// When
+		NotificationResponse result = adminNotificationService.createNotification(request);
 
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", 2L);
-        notificationMap.put("userId", 200L);
-        notificationMap.put("notificationType", "PROMOTIONAL_OFFER");
-        notificationMap.put("channel", "EMAIL");
-        notificationMap.put("scheduledAt", scheduledAt.toString());
-        notificationMap.put("status", "PENDING");
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getNotificationId()).isEqualTo(1L);
+		assertThat(result.getUserId()).isEqualTo(100L);
+		verify(notificationServiceRestClient).createNotification(any(Map.class));
+	}
 
-        when(notificationServiceRestClient.createNotification(any(Map.class))).thenReturn(notificationMap);
+	@Test
+	@DisplayName("Should create scheduled notification successfully")
+	void testCreateNotification_Scheduled_Success() {
+		// Given
+		OffsetDateTime scheduledAt = OffsetDateTime.now(ZoneOffset.UTC).plusHours(1);
+		NotificationRequest request = NotificationRequest.builder()
+				.notificationType("PROMOTIONAL_OFFER")
+				.channel("EMAIL")
+				.subject("Special Offer")
+				.message("Check out our offer!")
+				.priority("HIGH")
+				.userId(200L)
+				.scheduledAt(scheduledAt)
+				.build();
 
-        // When
-        NotificationResponse result = adminNotificationService.createNotification(request);
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", 2L);
+		notificationMap.put("userId", 200L);
+		notificationMap.put("notificationType", "PROMOTIONAL_OFFER");
+		notificationMap.put("channel", "EMAIL");
+		notificationMap.put("scheduledAt", scheduledAt.toString());
+		notificationMap.put("status", "PENDING");
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getScheduledAt()).isEqualTo(scheduledAt);
-    }
+		when(notificationServiceRestClient.createNotification(any(Map.class))).thenReturn(notificationMap);
 
-    @Test
-    @DisplayName("Should update notification successfully")
-    void testUpdateNotification_Success_ReturnsUpdated() {
-        // Given
-        Long id = 1L;
-        NotificationRequest request = NotificationRequest.builder()
-                .notificationType("UPDATED_TYPE")
-                .channel("EMAIL")
-                .message("Updated message")
-                .priority("HIGH")
-                .build();
+		// When
+		NotificationResponse result = adminNotificationService.createNotification(request);
 
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", id);
-        notificationMap.put("notificationType", "UPDATED_TYPE");
-        notificationMap.put("channel", "EMAIL");
-        notificationMap.put("message", "Updated message");
-        notificationMap.put("priority", "HIGH");
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getScheduledAt()).isEqualTo(scheduledAt);
+	}
 
-        when(notificationServiceRestClient.updateNotification(eq(id), any(Map.class))).thenReturn(notificationMap);
+	@Test
+	@DisplayName("Should update notification successfully")
+	void testUpdateNotification_Success_ReturnsUpdated() {
+		// Given
+		Long id = 1L;
+		NotificationRequest request = NotificationRequest.builder()
+				.notificationType("UPDATED_TYPE")
+				.channel("EMAIL")
+				.message("Updated message")
+				.priority("HIGH")
+				.build();
 
-        // When
-        NotificationResponse result = adminNotificationService.updateNotification(id, request);
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", id);
+		notificationMap.put("notificationType", "UPDATED_TYPE");
+		notificationMap.put("channel", "EMAIL");
+		notificationMap.put("message", "Updated message");
+		notificationMap.put("priority", "HIGH");
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getNotificationType()).isEqualTo("UPDATED_TYPE");
-        verify(notificationServiceRestClient).updateNotification(eq(id), any(Map.class));
-    }
+		when(notificationServiceRestClient.updateNotification(eq(id), any(Map.class))).thenReturn(notificationMap);
 
-    @Test
-    @DisplayName("Should delete notification successfully")
-    void testDeleteNotification_Success() {
-        // Given
-        Long id = 1L;
-        doNothing().when(notificationServiceRestClient).deleteNotification(id);
+		// When
+		NotificationResponse result = adminNotificationService.updateNotification(id, request);
 
-        // When
-        adminNotificationService.deleteNotification(id);
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getNotificationType()).isEqualTo("UPDATED_TYPE");
+		verify(notificationServiceRestClient).updateNotification(eq(id), any(Map.class));
+	}
 
-        // Then
-        verify(notificationServiceRestClient).deleteNotification(id);
-    }
+	@Test
+	@DisplayName("Should delete notification successfully")
+	void testDeleteNotification_Success() {
+		// Given
+		Long id = 1L;
+		doNothing().when(notificationServiceRestClient).deleteNotification(id);
 
-    @Test
-    @DisplayName("Should publish notification successfully")
-    void testPublishNotification_Success() {
-        // Given
-        Long id = 1L;
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", id);
-        notificationMap.put("status", "PENDING");
+		// When
+		adminNotificationService.deleteNotification(id);
 
-        when(notificationServiceRestClient.publishNotification(id)).thenReturn(notificationMap);
+		// Then
+		verify(notificationServiceRestClient).deleteNotification(id);
+	}
 
-        // When
-        NotificationResponse result = adminNotificationService.publishNotification(id);
+	@Test
+	@DisplayName("Should publish notification successfully")
+	void testPublishNotification_Success() {
+		// Given
+		Long id = 1L;
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", id);
+		notificationMap.put("status", "PENDING");
 
-        // Then
-        assertThat(result).isNotNull();
-        verify(notificationServiceRestClient).publishNotification(id);
-    }
+		when(notificationServiceRestClient.publishNotification(id)).thenReturn(notificationMap);
 
-    @Test
-    @DisplayName("Should cancel notification successfully")
-    void testCancelNotification_Success() {
-        // Given
-        Long id = 1L;
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", id);
-        notificationMap.put("status", "CANCELLED");
+		// When
+		NotificationResponse result = adminNotificationService.publishNotification(id);
 
-        when(notificationServiceRestClient.cancelNotification(id)).thenReturn(notificationMap);
+		// Then
+		assertThat(result).isNotNull();
+		verify(notificationServiceRestClient).publishNotification(id);
+	}
 
-        // When
-        NotificationResponse result = adminNotificationService.cancelNotification(id);
+	@Test
+	@DisplayName("Should cancel notification successfully")
+	void testCancelNotification_Success() {
+		// Given
+		Long id = 1L;
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", id);
+		notificationMap.put("status", "CANCELLED");
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getStatus()).isEqualTo("CANCELLED");
-        verify(notificationServiceRestClient).cancelNotification(id);
-    }
+		when(notificationServiceRestClient.cancelNotification(id)).thenReturn(notificationMap);
 
-    @Test
-    @DisplayName("Should schedule notification successfully")
-    void testScheduleNotification_Success() {
-        // Given
-        Long id = 1L;
-        OffsetDateTime scheduledAt = OffsetDateTime.now(ZoneOffset.UTC).plusHours(2);
-        Map<String, Object> notificationMap = new HashMap<>();
-        notificationMap.put("notificationId", id);
-        notificationMap.put("scheduledAt", scheduledAt.toString());
-        notificationMap.put("status", "PENDING");
+		// When
+		NotificationResponse result = adminNotificationService.cancelNotification(id);
 
-        when(notificationServiceRestClient.scheduleNotification(id, scheduledAt))
-                .thenReturn(notificationMap);
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getStatus()).isEqualTo("CANCELLED");
+		verify(notificationServiceRestClient).cancelNotification(id);
+	}
 
-        // When
-        NotificationResponse result = adminNotificationService.scheduleNotification(id, scheduledAt);
+	@Test
+	@DisplayName("Should schedule notification successfully")
+	void testScheduleNotification_Success() {
+		// Given
+		Long id = 1L;
+		OffsetDateTime scheduledAt = OffsetDateTime.now(ZoneOffset.UTC).plusHours(2);
+		Map<String, Object> notificationMap = new HashMap<>();
+		notificationMap.put("notificationId", id);
+		notificationMap.put("scheduledAt", scheduledAt.toString());
+		notificationMap.put("status", "PENDING");
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getScheduledAt()).isEqualTo(scheduledAt);
-        verify(notificationServiceRestClient).scheduleNotification(id, scheduledAt);
-    }
+		when(notificationServiceRestClient.scheduleNotification(id, scheduledAt))
+				.thenReturn(notificationMap);
+
+		// When
+		NotificationResponse result = adminNotificationService.scheduleNotification(id, scheduledAt);
+
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getScheduledAt()).isEqualTo(scheduledAt);
+		verify(notificationServiceRestClient).scheduleNotification(id, scheduledAt);
+	}
 }
 

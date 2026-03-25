@@ -16,30 +16,30 @@ import java.time.OffsetDateTime;
 @Builder
 public class Zone {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "zone_id")
-  private Long zoneId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "zone_id")
+	private Long zoneId;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "branch_id", nullable = false)
-  private Branch branch;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
 
-  @Column(length = 255, nullable = false)
-  private String name;
+	@Column(length = 255, nullable = false)
+	private String name;
 
-  @Column(columnDefinition = "TEXT")
-  private String description;
+	@Column(columnDefinition = "TEXT")
+	private String description;
 
-  @Column(nullable = false)
-  private Integer capacity;
+	@Column(nullable = false)
+	private Integer capacity;
 
-  @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-  private OffsetDateTime createdAt;
+	@Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	private OffsetDateTime createdAt;
 
-  @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-  private OffsetDateTime updatedAt;
+	@Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	private OffsetDateTime updatedAt;
 
-  // Getters and setters omitted for brevity
+	// Getters and setters omitted for brevity
 
 }

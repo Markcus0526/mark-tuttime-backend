@@ -1,6 +1,6 @@
 package com.tuttime.admin.controller;
 
-import com.tuttime.admin.dto.*;
+import com.tuttime.admin.dto.UpdateCampaignRequest;
 import com.tuttime.admin.kafka.CampaignEventProducer;
 import com.tuttime.admin.rest.client.NotificationServiceRestClient;
 import com.tuttime.admin.service.AdminAuditService;
@@ -31,118 +31,118 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdminNotificationCampaignController {
 
-    private final NotificationServiceRestClient notificationServiceRestClient;
-    private final AdminAuditService auditService;
-    private final CampaignEventProducer campaignEventProducer; // Optional - only if Kafka is enabled
+	private final NotificationServiceRestClient notificationServiceRestClient;
+	private final AdminAuditService auditService;
+	private final CampaignEventProducer campaignEventProducer; // Optional - only if Kafka is enabled
 
-    @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'VIEWER')")
-    @Operation(summary = "List Campaigns", description = "Get list of notification campaigns with optional status filter")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> listCampaigns(
-            @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) String status,
-            @AuthenticationPrincipal Long adminId) {
-        
-        log.info("Admin {}: Listing campaigns, status filter: {}", adminId, status);
-        
-        Map<String, Object> pageData = notificationServiceRestClient.listCampaigns(pageable, status);
-        
-        auditService.logAction(adminId, null,
-                com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_VIEWED,
-                "CAMPAIGN", null, "Listed notification campaigns");
-        
-        return ResponseEntity.ok(ApiResponse.success("Campaigns retrieved successfully", pageData));
-    }
+	@GetMapping
+	@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'VIEWER')")
+	@Operation(summary = "List Campaigns", description = "Get list of notification campaigns with optional status filter")
+	public ResponseEntity<ApiResponse<Map<String, Object>>> listCampaigns(
+			@PageableDefault(size = 20) Pageable pageable,
+			@RequestParam(required = false) String status,
+			@AuthenticationPrincipal Long adminId) {
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'VIEWER')")
-    @Operation(summary = "Get Campaign", description = "Get campaign details")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getCampaign(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Long adminId) {
-        
-        log.info("Admin {}: Getting campaign: {}", adminId, id);
-        
-        Map<String, Object> campaign = notificationServiceRestClient.getCampaign(id);
-        
-        return ResponseEntity.ok(ApiResponse.success("Campaign retrieved successfully", campaign));
-    }
+		log.info("Admin {}: Listing campaigns, status filter: {}", adminId, status);
 
-    // Note: POST /api/admin/notifications/campaigns is handled by AdminNotificationController.createCampaign()
-    // to avoid duplicate endpoint mapping conflict
+		Map<String, Object> pageData = notificationServiceRestClient.listCampaigns(pageable, status);
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @Operation(summary = "Update Campaign", description = "Update notification campaign")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> updateCampaign(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateCampaignRequest request,
-            @AuthenticationPrincipal Long adminId) {
-        
-        log.info("Admin {}: Updating campaign: {}", adminId, id);
-        
-        Map<String, Object> campaignRequest = new HashMap<>();
-        if (request.getCampaignName() != null) {
-            campaignRequest.put("campaignName", request.getCampaignName());
-        }
-        if (request.getSourceTitle() != null) {
-            campaignRequest.put("sourceTitle", request.getSourceTitle());
-        }
-        if (request.getSourceMessage() != null) {
-            campaignRequest.put("sourceMessage", request.getSourceMessage());
-        }
-        if (request.getChannels() != null) {
-            campaignRequest.put("channels", request.getChannels());
-        }
-        if (request.getPriority() != null) {
-            campaignRequest.put("priority", request.getPriority());
-        }
-        
-        Map<String, Object> campaign = notificationServiceRestClient.updateCampaign(id, campaignRequest);
-        
-        auditService.logAction(adminId, null,
-                com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_UPDATED,
-                "CAMPAIGN", id,
-                "Updated campaign: " + id);
-        
-        return ResponseEntity.ok(ApiResponse.success("Campaign updated successfully", campaign));
-    }
+		auditService.logAction(adminId, null,
+				com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_VIEWED,
+				"CAMPAIGN", null, "Listed notification campaigns");
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @Operation(summary = "Delete Campaign", description = "Delete notification campaign")
-    public ResponseEntity<ApiResponse<Void>> deleteCampaign(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Long adminId) {
-        
-        log.info("Admin {}: Deleting campaign: {}", adminId, id);
-        
-        notificationServiceRestClient.deleteCampaign(id);
-        
-        auditService.logAction(adminId, null,
-                com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_DELETED,
-                "CAMPAIGN", id,
-                "Deleted campaign: " + id);
-        
-        return ResponseEntity.ok(ApiResponse.success("Campaign deleted successfully", null));
-    }
+		return ResponseEntity.ok(ApiResponse.success("Campaigns retrieved successfully", pageData));
+	}
 
-    @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
-    @Operation(summary = "Cancel Campaign", description = "Cancel a running campaign")
-    public ResponseEntity<ApiResponse<Void>> cancelCampaign(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Long adminId) {
-        
-        log.info("Admin {}: Cancelling campaign: {}", adminId, id);
-        
-        notificationServiceRestClient.cancelCampaign(id);
-        
-        auditService.logAction(adminId, null,
-                com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_UPDATED,
-                "CAMPAIGN", id,
-                "Cancelled campaign: " + id);
-        
-        return ResponseEntity.ok(ApiResponse.success("Campaign cancelled successfully", null));
-    }
+	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'MODERATOR', 'VIEWER')")
+	@Operation(summary = "Get Campaign", description = "Get campaign details")
+	public ResponseEntity<ApiResponse<Map<String, Object>>> getCampaign(
+			@PathVariable Long id,
+			@AuthenticationPrincipal Long adminId) {
+
+		log.info("Admin {}: Getting campaign: {}", adminId, id);
+
+		Map<String, Object> campaign = notificationServiceRestClient.getCampaign(id);
+
+		return ResponseEntity.ok(ApiResponse.success("Campaign retrieved successfully", campaign));
+	}
+
+	// Note: POST /api/admin/notifications/campaigns is handled by AdminNotificationController.createCampaign()
+	// to avoid duplicate endpoint mapping conflict
+
+	@PutMapping("/{id}")
+	@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+	@Operation(summary = "Update Campaign", description = "Update notification campaign")
+	public ResponseEntity<ApiResponse<Map<String, Object>>> updateCampaign(
+			@PathVariable Long id,
+			@Valid @RequestBody UpdateCampaignRequest request,
+			@AuthenticationPrincipal Long adminId) {
+
+		log.info("Admin {}: Updating campaign: {}", adminId, id);
+
+		Map<String, Object> campaignRequest = new HashMap<>();
+		if (request.getCampaignName() != null) {
+			campaignRequest.put("campaignName", request.getCampaignName());
+		}
+		if (request.getSourceTitle() != null) {
+			campaignRequest.put("sourceTitle", request.getSourceTitle());
+		}
+		if (request.getSourceMessage() != null) {
+			campaignRequest.put("sourceMessage", request.getSourceMessage());
+		}
+		if (request.getChannels() != null) {
+			campaignRequest.put("channels", request.getChannels());
+		}
+		if (request.getPriority() != null) {
+			campaignRequest.put("priority", request.getPriority());
+		}
+
+		Map<String, Object> campaign = notificationServiceRestClient.updateCampaign(id, campaignRequest);
+
+		auditService.logAction(adminId, null,
+				com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_UPDATED,
+				"CAMPAIGN", id,
+				"Updated campaign: " + id);
+
+		return ResponseEntity.ok(ApiResponse.success("Campaign updated successfully", campaign));
+	}
+
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+	@Operation(summary = "Delete Campaign", description = "Delete notification campaign")
+	public ResponseEntity<ApiResponse<Void>> deleteCampaign(
+			@PathVariable Long id,
+			@AuthenticationPrincipal Long adminId) {
+
+		log.info("Admin {}: Deleting campaign: {}", adminId, id);
+
+		notificationServiceRestClient.deleteCampaign(id);
+
+		auditService.logAction(adminId, null,
+				com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_DELETED,
+				"CAMPAIGN", id,
+				"Deleted campaign: " + id);
+
+		return ResponseEntity.ok(ApiResponse.success("Campaign deleted successfully", null));
+	}
+
+	@PostMapping("/{id}/cancel")
+	@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+	@Operation(summary = "Cancel Campaign", description = "Cancel a running campaign")
+	public ResponseEntity<ApiResponse<Void>> cancelCampaign(
+			@PathVariable Long id,
+			@AuthenticationPrincipal Long adminId) {
+
+		log.info("Admin {}: Cancelling campaign: {}", adminId, id);
+
+		notificationServiceRestClient.cancelCampaign(id);
+
+		auditService.logAction(adminId, null,
+				com.tuttime.admin.entity.AdminAuditLog.AdminActionType.NOTIFICATION_UPDATED,
+				"CAMPAIGN", id,
+				"Cancelled campaign: " + id);
+
+		return ResponseEntity.ok(ApiResponse.success("Campaign cancelled successfully", null));
+	}
 }

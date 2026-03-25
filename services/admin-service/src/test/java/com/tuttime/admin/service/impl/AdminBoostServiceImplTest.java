@@ -13,124 +13,121 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdminBoostServiceImpl Tests")
 class AdminBoostServiceImplTest {
 
-    @Mock
-    private MiningServiceRestClient miningServiceRestClient;
+	@Mock
+	private MiningServiceRestClient miningServiceRestClient;
 
-    @InjectMocks
-    private AdminBoostServiceImpl adminBoostService;
+	@InjectMocks
+	private AdminBoostServiceImpl adminBoostService;
 
-    @Test
-    @DisplayName("Should list booking boosts successfully")
-    void testListBookingBoosts_Success_ReturnsPage() {
-        // Given
-        PageRequest pageable = PageRequest.of(0, 10);
-        BookingBoostResponse response = BookingBoostResponse.builder()
-                .boostId(1L)
-                .userId(100L)
-                .bookingId(200L)
-                .boostAmount(new BigDecimal("2.0"))
-                .isActive(true)
-                .build();
+	@Test
+	@DisplayName("Should list booking boosts successfully")
+	void testListBookingBoosts_Success_ReturnsPage() {
+		// Given
+		PageRequest pageable = PageRequest.of(0, 10);
+		BookingBoostResponse response = BookingBoostResponse.builder()
+				.boostId(1L)
+				.userId(100L)
+				.bookingId(200L)
+				.boostAmount(new BigDecimal("2.0"))
+				.isActive(true)
+				.build();
 
-        Page<BookingBoostResponse> page = new PageImpl<>(Arrays.asList(response), pageable, 1);
-        when(miningServiceRestClient.listBookingBoosts(pageable, null)).thenReturn(page);
+		Page<BookingBoostResponse> page = new PageImpl<>(Arrays.asList(response), pageable, 1);
+		when(miningServiceRestClient.listBookingBoosts(pageable, null)).thenReturn(page);
 
-        // When
-        Page<BookingBoostResponse> result = adminBoostService.listBookingBoosts(pageable, null);
+		// When
+		Page<BookingBoostResponse> result = adminBoostService.listBookingBoosts(pageable, null);
 
-        // Then
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent()).hasSize(1);
-    }
+		// Then
+		assertThat(result.getTotalElements()).isEqualTo(1);
+		assertThat(result.getContent()).hasSize(1);
+	}
 
-    @Test
-    @DisplayName("Should get booking boost by ID successfully")
-    void testGetBookingBoost_Success_ReturnsBoost() {
-        // Given
-        Long id = 1L;
-        BookingBoostResponse response = BookingBoostResponse.builder()
-                .boostId(id)
-                .userId(100L)
-                .bookingId(200L)
-                .boostAmount(new BigDecimal("2.0"))
-                .build();
+	@Test
+	@DisplayName("Should get booking boost by ID successfully")
+	void testGetBookingBoost_Success_ReturnsBoost() {
+		// Given
+		Long id = 1L;
+		BookingBoostResponse response = BookingBoostResponse.builder()
+				.boostId(id)
+				.userId(100L)
+				.bookingId(200L)
+				.boostAmount(new BigDecimal("2.0"))
+				.build();
 
-        when(miningServiceRestClient.getBookingBoost(id)).thenReturn(response);
+		when(miningServiceRestClient.getBookingBoost(id)).thenReturn(response);
 
-        // When
-        BookingBoostResponse result = adminBoostService.getBookingBoost(id);
+		// When
+		BookingBoostResponse result = adminBoostService.getBookingBoost(id);
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getBoostId()).isEqualTo(id);
-    }
+		// Then
+		assertThat(result).isNotNull();
+		assertThat(result.getBoostId()).isEqualTo(id);
+	}
 
-    @Test
-    @DisplayName("Should list rental boosts successfully")
-    void testListRentalBoosts_Success_ReturnsPage() {
-        // Given
-        PageRequest pageable = PageRequest.of(0, 10);
-        BookingBoostResponse response = BookingBoostResponse.builder()
-                .boostId(1L)
-                .userId(100L)
-                .bookingId(200L)
-                .boostAmount(new BigDecimal("2.0"))
-                .build();
+	@Test
+	@DisplayName("Should list rental boosts successfully")
+	void testListRentalBoosts_Success_ReturnsPage() {
+		// Given
+		PageRequest pageable = PageRequest.of(0, 10);
+		BookingBoostResponse response = BookingBoostResponse.builder()
+				.boostId(1L)
+				.userId(100L)
+				.bookingId(200L)
+				.boostAmount(new BigDecimal("2.0"))
+				.build();
 
-        com.tuttime.admin.dto.RentalBoostResponse rentalResponse = com.tuttime.admin.dto.RentalBoostResponse.builder()
-                .boostId(1L)
-                .userId(100L)
-                .rentalId(200L)
-                .boostAmount(new BigDecimal("2.0"))
-                .isActive(true)
-                .build();
+		com.tuttime.admin.dto.RentalBoostResponse rentalResponse = com.tuttime.admin.dto.RentalBoostResponse.builder()
+				.boostId(1L)
+				.userId(100L)
+				.rentalId(200L)
+				.boostAmount(new BigDecimal("2.0"))
+				.isActive(true)
+				.build();
 
-        Page<com.tuttime.admin.dto.RentalBoostResponse> page = new PageImpl<>(Arrays.asList(rentalResponse), pageable, 1);
-        when(miningServiceRestClient.listRentalBoosts(pageable, null)).thenReturn(page);
+		Page<com.tuttime.admin.dto.RentalBoostResponse> page = new PageImpl<>(Arrays.asList(rentalResponse), pageable, 1);
+		when(miningServiceRestClient.listRentalBoosts(pageable, null)).thenReturn(page);
 
-        // When
-        Page<com.tuttime.admin.dto.RentalBoostResponse> result = adminBoostService.listRentalBoosts(pageable, null);
+		// When
+		Page<com.tuttime.admin.dto.RentalBoostResponse> result = adminBoostService.listRentalBoosts(pageable, null);
 
-        // Then
-        assertThat(result.getTotalElements()).isEqualTo(1);
-    }
+		// Then
+		assertThat(result.getTotalElements()).isEqualTo(1);
+	}
 
-    @Test
-    @DisplayName("Should get boosts by user ID successfully")
-    void testGetBoostsByUserId_Success_ReturnsList() {
-        // Given
-        Long userId = 100L;
-        BookingBoostResponse response = BookingBoostResponse.builder()
-                .boostId(1L)
-                .userId(userId)
-                .bookingId(200L)
-                .boostAmount(new BigDecimal("2.0"))
-                .build();
+	@Test
+	@DisplayName("Should get boosts by user ID successfully")
+	void testGetBoostsByUserId_Success_ReturnsList() {
+		// Given
+		Long userId = 100L;
+		BookingBoostResponse response = BookingBoostResponse.builder()
+				.boostId(1L)
+				.userId(userId)
+				.bookingId(200L)
+				.boostAmount(new BigDecimal("2.0"))
+				.build();
 
-        when(miningServiceRestClient.getBoostsByUserId(userId))
-                .thenReturn(Arrays.asList(response));
+		when(miningServiceRestClient.getBoostsByUserId(userId))
+				.thenReturn(Arrays.asList(response));
 
-        // When
-        List<Object> result = adminBoostService.getBoostsByUserId(userId);
+		// When
+		List<Object> result = adminBoostService.getBoostsByUserId(userId);
 
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0)).isInstanceOf(BookingBoostResponse.class);
-        BookingBoostResponse boostResponse = (BookingBoostResponse) result.get(0);
-        assertThat(boostResponse.getUserId()).isEqualTo(userId);
-    }
+		// Then
+		assertThat(result).hasSize(1);
+		assertThat(result.get(0)).isInstanceOf(BookingBoostResponse.class);
+		BookingBoostResponse boostResponse = (BookingBoostResponse) result.get(0);
+		assertThat(boostResponse.getUserId()).isEqualTo(userId);
+	}
 }
 

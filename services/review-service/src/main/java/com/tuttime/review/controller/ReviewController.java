@@ -14,16 +14,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewController {
 
-  private final ReviewService reviewService;
+	private final ReviewService reviewService;
 
-  @PostMapping
-  public ResponseEntity<ReviewResponse> createReview(@RequestBody ReviewRequest request) {
-    return ResponseEntity.ok(reviewService.createReview(request));
-  }
+	@PostMapping
+	public ResponseEntity<ReviewResponse> createReview(@RequestBody ReviewRequest request) {
+		return ResponseEntity.ok(reviewService.createReview(request));
+	}
 
-  @GetMapping("/restaurants/{restaurantId}")
-  public ResponseEntity<List<ReviewResponse>> getReviewsByRestaurant(@PathVariable Long restaurantId) {
-    return ResponseEntity.ok(reviewService.getReviewsByRestaurant(restaurantId));
-  }
+	@GetMapping("/restaurants/{restaurantId}")
+	public ResponseEntity<List<ReviewResponse>> getReviewsByRestaurant(@PathVariable Long restaurantId) {
+		return ResponseEntity.ok(reviewService.getReviewsByRestaurant(restaurantId));
+	}
 
 }

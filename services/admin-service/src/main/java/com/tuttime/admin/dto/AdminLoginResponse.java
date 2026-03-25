@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminLoginResponse {
-    private String token;
-    private Long adminId;
-    private String username;
-    private String role;
+	private String token;
+	private Long adminId;
+	private String username;
+	private String role;
 }
 

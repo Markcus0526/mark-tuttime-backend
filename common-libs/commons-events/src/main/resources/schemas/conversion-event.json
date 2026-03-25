@@ -32,7 +32,12 @@
     },
     "status": {
       "type": "string",
-      "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
+      "enum": [
+        "PENDING",
+        "PROCESSING",
+        "COMPLETED",
+        "FAILED"
+      ]
     },
     "failure_reason": {
       "type": "string"
@@ -46,6 +51,10 @@
       "format": "date-time"
     }
   },
-  "required": ["event_type", "user_id", "timestamp"]
+  "required": [
+    "event_type",
+    "user_id",
+    "timestamp"
+  ]
 }
 
