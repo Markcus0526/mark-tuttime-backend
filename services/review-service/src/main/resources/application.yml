@@ -8,7 +8,7 @@ spring:
     serialization:
       write-dates-as-timestamps: false
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5407/review_service_db?currentSchema=review_service&stringtype=unspecified&prepareThreshold=0}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5408/review_service_db?currentSchema=review_service&stringtype=unspecified&prepareThreshold=0}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
@@ -126,7 +126,7 @@ bruteforce:
   phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES:60} # Block phone for 1 hour
 
 server:
-  port: 28007
+  port: 28008
   shutdown: graceful
 
 grpc:

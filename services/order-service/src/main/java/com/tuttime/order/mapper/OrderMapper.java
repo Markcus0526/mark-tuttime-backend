@@ -6,7 +6,7 @@ import org.mapstruct.*;
 
 import java.math.BigDecimal;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.WARN, uses = OrderItemMapper.class)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OrderMapper {
 
 	@Mapping(source = "orderItems", target = "orderItems")

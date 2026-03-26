@@ -13,20 +13,19 @@
 
     <modules>
         <module>api-gateway</module>
-        <module>admin-gateway</module>
         <module>common-libs/commons-exception</module>
         <module>common-libs/commons-events</module>
         <module>common-libs/commons-auth</module>
-        <module>services/admin-service</module>
-        <module>services/analytics-service</module>
-        <module>services/booking-service</module>
-        <module>services/integration-service</module>
+        <module>services/user-service</module>
+        <module>services/restaurant-service</module>
         <module>services/menu-service</module>
+        <module>services/booking-service</module>
         <module>services/order-service</module>
         <module>services/payment-service</module>
-        <module>services/restaurant-service</module>
+        <module>services/pos-service</module>
         <module>services/review-service</module>
-        <module>services/user-service</module>
+        <module>services/analytics-service</module>
+
     </modules>
 
     <properties>

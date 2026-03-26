@@ -33,6 +33,7 @@ public class MenuItem {
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal price;
 
+	@Builder.Default
 	@Column(name = "is_available", nullable = false)
 	private Boolean isAvailable = true;
 

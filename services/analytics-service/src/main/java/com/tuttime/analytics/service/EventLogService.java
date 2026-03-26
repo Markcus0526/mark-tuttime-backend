@@ -1,7 +1,6 @@
 package com.tuttime.analytics.service;
 
 import com.tuttime.analytics.dto.EventLogDto;
-import com.tuttime.analytics.entity.Event;
 
 import java.time.OffsetDateTime;
 import java.util.List;

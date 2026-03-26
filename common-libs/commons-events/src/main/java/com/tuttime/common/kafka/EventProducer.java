@@ -33,6 +33,12 @@ public class EventProducer {
 		this.kafkaMetrics = kafkaMetrics; // Can be null if Micrometer not available
 	}
 
+	// Kafka topic names
+	public static final String TOPIC_BOOKING_CONFIRMED = "tuttime.booking-confirmed";
+	public static final String TOPIC_ORDER_CREATED = "tuttime.order-created";
+	public static final String TOPIC_MENU_UPDATED = "tuttime.menu-updated";
+	public static final String TOPIC_POS_SYNC_RESULT = "tuttime.pos-sync-results";
+
 	// Topic names
 	private static final String TOPIC_USERS = "tuttime.users";
 	private static final String TOPIC_RESTAURANTS = "tuttime.restaurants";
@@ -45,6 +51,14 @@ public class EventProducer {
 	private static final String TOPIC_RENTALS = "apart-sharing.rental";
 	private static final String TOPIC_USER_BLOCKS = "tuttime.user-blocks";
 	private static final String TOPIC_REFERRALS = "tuttime.referrals";
+
+	/**
+	 * Publish pos event
+	 */
+	public void publishPosEvent(BookingConfirmedEvent event) {
+		publishEvent(TOPIC_BOOKING_CONFIRMED, event.getBookingId(), event);
+	}
+
 
 	/**
 	 * Publish user event
@@ -155,6 +169,12 @@ public class EventProducer {
 	private void publishEvent(String topic, String key, Object event) {
 		try {
 			// Set timestamp if not set (uses UTC timezone explicitly)
+			if (event instanceof BookingConfirmedEvent bookingConfirmedEvent) {
+				if (bookingConfirmedEvent.getTimestamp() == null) {
+					bookingConfirmedEvent.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC).toInstant());
+				}
+			}
+
 			if (event instanceof UserEvent userEvent) {
 				if (userEvent.getTimestamp() == null) {
 					userEvent.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC));

@@ -2,7 +2,7 @@ services/admin-service/target
 services/analytics-service/target
 services/auth-service/target
 services/booking-service/target
-services/integration-service/target
+services/pos-service/target
 services/menu-service/target
 services/order-service/target
 services/payment-service/target

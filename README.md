@@ -8,7 +8,7 @@ Microservices per requirements:
 - **booking-service** (8083): Reservations, table locks (Redis), slots
 - **order-service** (8084): Pre-orders, statuses, kitchen sync
 - **payment-service** (8085): Payments, refunds, deposits
-- **integration-service** (8086): iiko/R-Keeper connectors
+- **pos-service** (8086): iiko/R-Keeper connectors
 - **review-service** (8087): Reviews, ratings
 - **analytics-service** (8088): Events, metrics, occupancy forecasting
 

@@ -10,6 +10,9 @@ public interface OrderItemModifierMapper {
 	OrderItemModifierDto toDto(OrderItemModifier modifier);
 
 	@Mapping(target = "orderItem", ignore = true)
+	@Mapping(target = "createdBy", ignore = true)
+	@Mapping(target = "updatedBy", ignore = true)
+	@Mapping(target = "deletedAt", ignore = true)
 	OrderItemModifier toEntity(OrderItemModifierDto dto);
 
 	@AfterMapping

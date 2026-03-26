@@ -19,14 +19,14 @@
     <file url="file://$PROJECT_DIR$/services/auth-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/booking-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/booking-service/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/services/integration-service/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/services/integration-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/menu-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/menu-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/order-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/order-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/payment-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/payment-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/pos-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/services/pos-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/restaurant-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/restaurant-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/review-service/src/main/java" charset="UTF-8" />
@@ -35,5 +35,7 @@
     <file url="file://$PROJECT_DIR$/services/user-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$APPLICATION_HOME_DIR$/bin/src/main/java" charset="UTF-8" />
+    <file url="file://$APPLICATION_HOME_DIR$/bin/src/main/resources" charset="UTF-8" />
   </component>
 </project>

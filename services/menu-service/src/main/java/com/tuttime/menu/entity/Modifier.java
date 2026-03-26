@@ -27,6 +27,7 @@ public class Modifier {
 	@Column(columnDefinition = "TEXT")
 	private String description;
 
+	@Builder.Default
 	@Column(name = "price_adjustment", nullable = false, precision = 10, scale = 2)
 	private BigDecimal priceAdjustment = BigDecimal.ZERO;
 
