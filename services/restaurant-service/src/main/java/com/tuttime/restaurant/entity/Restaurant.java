@@ -1,18 +1,23 @@
 package com.tuttime.restaurant.entity;
 
-import jakarta.persistence.*;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "restaurants", schema = "restaurant_service")
@@ -24,12 +29,11 @@ import java.time.OffsetDateTime;
 public class Restaurant {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "restaurant_id")
-	private Long restaurantId;
+	private UUID restaurantId;
 
 	@Column(name = "owner_user_id", nullable = false)
-	private Long ownerUserId;
+	private UUID ownerUserId;
 
 	@Column(length = 255, nullable = false)
 	private String name;

@@ -3,13 +3,15 @@ package com.tuttime.restaurant.mapper;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
+
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring") // This is the magic line
 public class BranchMapper {
 
 	public BranchDto toDto(Branch entity) {
-		if (entity == null) return null;
+		if (entity == null)
+			return null;
 		BranchDto dto = new BranchDto();
 		dto.setBranchId(entity.getBranchId());
 		dto.setRestaurantId(entity.getRestaurant() != null ? entity.getRestaurant().getRestaurantId() : null);
@@ -22,7 +24,8 @@ public class BranchMapper {
 	}
 
 	public Branch toEntity(BranchDto dto, Restaurant restaurant) {
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		Branch entity = new Branch();
 		entity.setBranchId(dto.getBranchId());
 		entity.setRestaurant(restaurant);
@@ -34,4 +37,3 @@ public class BranchMapper {
 		return entity;
 	}
 }
-

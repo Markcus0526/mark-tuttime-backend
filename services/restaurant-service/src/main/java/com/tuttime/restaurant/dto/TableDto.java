@@ -1,6 +1,12 @@
 package com.tuttime.restaurant.dto;
 
-import lombok.*;
+import java.util.UUID;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -9,8 +15,8 @@ import lombok.*;
 @Builder
 public class TableDto {
 
-	private Long tableId;
-	private Long zoneId;
+	private UUID tableId;
+	private UUID zoneId;
 	private String number;
 	private Integer seats;
 	private String status;

@@ -34,8 +34,8 @@ EXTENSION IF NOT EXISTS postgis; -- Required for GEOGRAPHY/GEOMETRY
 -- Restaurant Table
 CREATE TABLE restaurants
 (
-    restaurant_id BIGSERIAL PRIMARY KEY,
-    owner_user_id BIGINT       NOT NULL REFERENCES users (user_id),
+    restaurant_id UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
+    owner_user_id UUID         NOT NULL REFERENCES users (user_id),
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
     address       VARCHAR(512) NOT NULL,
@@ -50,9 +50,7 @@ CREATE TABLE restaurants
 -- Branch Table
 CREATE TABLE branches
 (
-    branch_id     BIGSERIAL PRIMARY KEY,
-    restaurant_id BIGINT       NOT NULL REFERENCES restaurant (restaurant_id) ON DELETE CASCADE,
-    name          VARCHAR(255) NOT NULL,
+    branch_id     UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
     address       VARCHAR(512) NOT NULL,
     phone         VARCHAR(20),
     timezone      VARCHAR(50)  NOT NULL,
@@ -64,8 +62,8 @@ CREATE TABLE branches
 -- Zone Table
 CREATE TABLE zones
 (
-    zone_id     BIGSERIAL PRIMARY KEY,
-    branch_id   BIGINT       NOT NULL REFERENCES branch (branch_id) ON DELETE CASCADE,
+    zone_id     UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
+    branch_id   UUID         NOT NULL REFERENCES branches (branch_id) ON DELETE CASCADE,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     capacity    INT          NOT NULL,
@@ -76,8 +74,8 @@ CREATE TABLE zones
 -- Table Table (named "table" is a reserved keyword, so quoted)
 CREATE TABLE tables
 (
-    table_id   BIGSERIAL PRIMARY KEY,
-    zone_id    BIGINT      NOT NULL REFERENCES zone (zone_id) ON DELETE CASCADE,
+    table_id   UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
+    zone_id    UUID        NOT NULL REFERENCES zones (zone_id) ON DELETE CASCADE,
     number     VARCHAR(50) NOT NULL,
     seats      INT         NOT NULL,
     status     VARCHAR(20) NOT NULL     DEFAULT 'active',
@@ -88,9 +86,9 @@ CREATE TABLE tables
 -- Media Table for Images/Videos linked to Restaurant Structure entities
 CREATE TABLE medias
 (
-    media_id    BIGSERIAL PRIMARY KEY,
+    media_id    UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
     entity_type INTEGER       NOT NULL,             -- 'RESTAURANT', 'BRANCH', 'ZONE', 'TABLE'
-    entity_id   BIGINT        NOT NULL,
+    entity_id   UUID          NOT NULL,
     url         VARCHAR(1024) NOT NULL,
     alt_text    VARCHAR(255),
     is_primary  BOOLEAN                  DEFAULT FALSE,

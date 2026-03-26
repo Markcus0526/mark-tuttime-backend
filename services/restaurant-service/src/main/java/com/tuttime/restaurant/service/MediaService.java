@@ -1,12 +1,14 @@
 package com.tuttime.restaurant.service;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.tuttime.restaurant.entity.EntityType;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.MediaRepository;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class MediaService {
@@ -21,7 +23,7 @@ public class MediaService {
 		return mediaRepository.findAll();
 	}
 
-	public Media getById(Long id) {
+	public Media getById(UUID id) {
 		return mediaRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Media not found with id " + id));
 	}
@@ -33,7 +35,7 @@ public class MediaService {
 		return mediaRepository.save(media);
 	}
 
-	public Media update(Long id, Media updatedMedia) {
+	public Media update(UUID id, Media updatedMedia) {
 		return mediaRepository.findById(id).map(media -> {
 			if (Boolean.TRUE.equals(updatedMedia.getIsPrimary()) && !Boolean.TRUE.equals(media.getIsPrimary())) {
 				clearPrimaryForEntity(updatedMedia.getEntityType(), updatedMedia.getEntityId());
@@ -47,16 +49,16 @@ public class MediaService {
 		}).orElseThrow(() -> new RuntimeException("Media not found"));
 	}
 
-	public void delete(Long id) {
+	public void delete(UUID id) {
 		Media existing = getById(id);
 		mediaRepository.delete(existing);
 	}
 
-	public List<Media> getMediaByEntity(EntityType mediaEntity, Long entityId) {
+	public List<Media> getMediaByEntity(EntityType mediaEntity, UUID entityId) {
 		return mediaRepository.findByEntityTypeAndEntityId(mediaEntity, entityId);
 	}
 
-	private void clearPrimaryForEntity(EntityType entityType, Long entityId) {
+	private void clearPrimaryForEntity(EntityType entityType, UUID entityId) {
 		List<Media> primaryMedias = mediaRepository.findByEntityTypeAndEntityIdAndIsPrimaryTrue(entityType, entityId);
 		for (Media media : primaryMedias) {
 			media.setIsPrimary(false);
@@ -64,4 +66,3 @@ public class MediaService {
 		}
 	}
 }
-

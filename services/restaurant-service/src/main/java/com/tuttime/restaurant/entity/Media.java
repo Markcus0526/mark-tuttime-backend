@@ -1,12 +1,19 @@
 package com.tuttime.restaurant.entity;
 
-import jakarta.persistence.*;
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.OffsetDateTime;
 
 @Entity
 @jakarta.persistence.Table(name = "medias", schema = "restaurant_service")
@@ -19,13 +26,13 @@ public class Media {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "media_id")
-	private Long mediaId;
+	private UUID mediaId;
 
 	@Column(name = "entity_type", length = 50, nullable = false)
 	private EntityType entityType; // 'RESTAURANT', 'BRANCH', 'ZONE', 'TABLE'
 
 	@Column(name = "entity_id", nullable = false)
-	private Long entityId;
+	private UUID entityId;
 
 	@Column(length = 1024, nullable = false)
 	private String url;

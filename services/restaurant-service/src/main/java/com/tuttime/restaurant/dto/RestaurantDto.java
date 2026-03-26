@@ -1,9 +1,15 @@
 package com.tuttime.restaurant.dto;
 
-import lombok.*;
+import java.math.BigDecimal;
+import java.util.UUID;
+
 import org.locationtech.jts.geom.Point;
 
-import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -12,8 +18,8 @@ import java.math.BigDecimal;
 @Builder
 public class RestaurantDto {
 
-	private Long restaurantId;
-	private Long ownerUserId;
+	private UUID restaurantId;
+	private UUID ownerUserId;
 	private String name;
 	private String description;
 	private String address;

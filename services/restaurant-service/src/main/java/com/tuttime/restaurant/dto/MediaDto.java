@@ -1,8 +1,15 @@
 package com.tuttime.restaurant.dto;
 
+import java.util.UUID;
+
 import com.tuttime.restaurant.entity.EntityType;
 import com.tuttime.restaurant.entity.MediaType;
-import lombok.*;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -11,9 +18,9 @@ import lombok.*;
 @Builder
 public class MediaDto {
 
-	private Long mediaId;
+	private UUID mediaId;
 	private EntityType entityType;
-	private Long entityId;
+	private UUID entityId;
 	private String url;
 	private String altText;
 	private Boolean isPrimary;

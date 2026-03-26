@@ -1,13 +1,15 @@
 package com.tuttime.restaurant.service;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class BranchService {
@@ -24,23 +26,23 @@ public class BranchService {
 		return branchRepository.findAll();
 	}
 
-	public Branch getById(Long id) {
+	public Branch getById(UUID id) {
 		return branchRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found with id " + id));
 	}
 
 	public Branch create(Branch branch) {
 		// Validate restaurant exists
-		Long restaurantId = branch.getRestaurant().getRestaurantId();
+		UUID restaurantId = branch.getRestaurant().getRestaurantId();
 		Restaurant restaurant = restaurantRepository.findById(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + restaurantId));
 		branch.setRestaurant(restaurant);
 		return branchRepository.save(branch);
 	}
 
-	public Branch update(Long id, Branch details) {
+	public Branch update(UUID id, Branch details) {
 		Branch existing = getById(id);
-		Long restaurantId = details.getRestaurant().getRestaurantId();
+		UUID restaurantId = details.getRestaurant().getRestaurantId();
 		Restaurant restaurant = restaurantRepository.findById(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + restaurantId));
 
@@ -54,7 +56,7 @@ public class BranchService {
 		return branchRepository.save(existing);
 	}
 
-	public void delete(Long id) {
+	public void delete(UUID id) {
 		Branch existing = getById(id);
 		branchRepository.delete(existing);
 	}

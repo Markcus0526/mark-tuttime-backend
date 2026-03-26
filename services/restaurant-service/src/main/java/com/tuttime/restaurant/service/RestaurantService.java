@@ -1,11 +1,13 @@
 package com.tuttime.restaurant.service;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class RestaurantService {
@@ -20,7 +22,7 @@ public class RestaurantService {
 		return repository.findAll();
 	}
 
-	public Restaurant getRestaurantById(Long id) {
+	public Restaurant getRestaurantById(UUID id) {
 		return repository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + id));
 	}
@@ -29,7 +31,7 @@ public class RestaurantService {
 		return repository.save(restaurant);
 	}
 
-	public Restaurant updateRestaurant(Long id, Restaurant restaurantDetails) {
+	public Restaurant updateRestaurant(UUID id, Restaurant restaurantDetails) {
 		Restaurant restaurant = getRestaurantById(id);
 
 		restaurant.setOwnerUserId(restaurantDetails.getOwnerUserId());
@@ -44,7 +46,7 @@ public class RestaurantService {
 		return repository.save(restaurant);
 	}
 
-	public void deleteRestaurant(Long id) {
+	public void deleteRestaurant(UUID id) {
 		Restaurant restaurant = getRestaurantById(id);
 		repository.delete(restaurant);
 	}
