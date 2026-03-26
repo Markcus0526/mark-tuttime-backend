@@ -1,6 +1,6 @@
 package com.tuttime.review.controller;
 
-import com.tuttime.review.dto.RatingAggregateDTO;
+import com.tuttime.review.dto.RatingAggregateDto;
 import com.tuttime.review.service.RatingAggregateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,19 +28,19 @@ public class RatingAggregateController {
 
 	@Operation(summary = "Get rating aggregate by restaurant ID")
 	@GetMapping("/{restaurantId}")
-	public ResponseEntity<RatingAggregateDTO> getByRestaurantId(
+	public ResponseEntity<RatingAggregateDto> getByRestaurantId(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable @NotNull UUID restaurantId) {
-		RatingAggregateDTO dto = ratingAggregateService.getByRestaurantId(restaurantId);
+		RatingAggregateDto dto = ratingAggregateService.getByRestaurantId(restaurantId);
 		return ResponseEntity.ok(dto);
 	}
 
 	@Operation(summary = "Create or update rating aggregate")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public RatingAggregateDTO createOrUpdate(
+	public RatingAggregateDto createOrUpdate(
 			@Parameter(description = "Rating aggregate data", required = true)
-			@Valid @RequestBody RatingAggregateDTO dto) {
+			@Valid @RequestBody RatingAggregateDto dto) {
 		return ratingAggregateService.createOrUpdate(dto);
 	}
 

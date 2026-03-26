@@ -444,6 +444,38 @@ spring:
                 name: reviewServiceCircuitBreaker
                 fallbackUri: forward:/fallback/review-service
 
+        ################# Analytics Service Routes #######################
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/event-logs/**
+        - id: analytics-service-event-logs
+          order: 81
+          uri: http://${ANALYTICS-SERVICE:localhost}:28008
+          predicates:
+            - Path=/api/v1/event-logs/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: analyticsServiceCircuitBreaker
+                fallbackUri: forward:/fallback/analytics-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/aggregated-metrics/**
+        - id: analytics-service-aggregated-metric
+          order: 82
+          uri: http://${ANALYTICS-SERVICE:localhost}:28008
+          predicates:
+            - Path=/api/v1/aggregated-metrics/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: analyticsServiceCircuitBreaker
+                fallbackUri: forward:/fallback/analytics-service
+
       # CORS is now configured via CorsConfig.java
       # globalcors configuration removed to use programmatic configuration
 

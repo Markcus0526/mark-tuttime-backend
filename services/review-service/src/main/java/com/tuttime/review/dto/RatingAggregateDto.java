@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RatingAggregateDTO {
+public class RatingAggregateDto {
 
 	private UUID restaurantId;
 	private BigDecimal averageRating;

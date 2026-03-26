@@ -1,7 +1,7 @@
 package com.tuttime.payment.controller;
 
-import com.tuttime.payment.dto.PaymentAuditLogRequestDTO;
-import com.tuttime.payment.dto.PaymentAuditLogResponseDTO;
+import com.tuttime.payment.dto.PaymentAuditLogRequestDto;
+import com.tuttime.payment.dto.PaymentAuditLogResponseDto;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.service.PaymentAuditLogService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,11 +31,11 @@ public class PaymentAuditLogController {
 			@ApiResponse(responseCode = "400", description = "Invalid request data")
 	})
 	@PostMapping
-	public ResponseEntity<PaymentAuditLogResponseDTO> addAuditLog(
+	public ResponseEntity<PaymentAuditLogResponseDto> addAuditLog(
 			@Parameter(description = "Audit log request payload", required = true)
-			@Valid @RequestBody PaymentAuditLogRequestDTO dto) {
+			@Valid @RequestBody PaymentAuditLogRequestDto dto) {
 		PaymentAuditLog log = paymentAuditLogService.addAuditLog(dto.getPaymentId(), dto.getEventType(), dto.getEventData());
-		return ResponseEntity.ok(mapToDTO(log));
+		return ResponseEntity.ok(mapToDto(log));
 	}
 
 	@Operation(summary = "Get payment audit logs", description = "Retrieve audit logs filtered by payment ID or event type")
@@ -43,7 +43,7 @@ public class PaymentAuditLogController {
 			@ApiResponse(responseCode = "200", description = "Audit logs retrieved successfully")
 	})
 	@GetMapping
-	public ResponseEntity<List<PaymentAuditLogResponseDTO>> getAuditLogs(
+	public ResponseEntity<List<PaymentAuditLogResponseDto>> getAuditLogs(
 			@Parameter(description = "Filter audit logs by payment ID")
 			@RequestParam(required = false) Long paymentId,
 			@Parameter(description = "Filter audit logs by event type")
@@ -56,14 +56,14 @@ public class PaymentAuditLogController {
 		} else {
 			logs = List.of();
 		}
-		List<PaymentAuditLogResponseDTO> dtos = logs.stream()
-				.map(this::mapToDTO)
+		List<PaymentAuditLogResponseDto> dtos = logs.stream()
+				.map(this::mapToDto)
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(dtos);
 	}
 
-	private PaymentAuditLogResponseDTO mapToDTO(PaymentAuditLog log) {
-		PaymentAuditLogResponseDTO dto = new PaymentAuditLogResponseDTO();
+	private PaymentAuditLogResponseDto mapToDto(PaymentAuditLog log) {
+		PaymentAuditLogResponseDto dto = new PaymentAuditLogResponseDto();
 		dto.setId(log.getId());
 		dto.setPaymentId(log.getPayment().getId());
 		dto.setEventType(log.getEventType());

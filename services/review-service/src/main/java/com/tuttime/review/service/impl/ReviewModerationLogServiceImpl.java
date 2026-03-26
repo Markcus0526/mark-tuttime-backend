@@ -1,6 +1,6 @@
 package com.tuttime.review.service.impl;
 
-import com.tuttime.review.dto.ReviewModerationLogDTO;
+import com.tuttime.review.dto.ReviewModerationLogDto;
 import com.tuttime.review.entity.ReviewModerationLog;
 import com.tuttime.review.mapper.ReviewModerationLogMapper;
 import com.tuttime.review.repository.ReviewModerationLogRepository;
@@ -27,14 +27,14 @@ public class ReviewModerationLogServiceImpl implements ReviewModerationLogServic
 	}
 
 	@Override
-	public ReviewModerationLogDTO getById(UUID id) {
+	public ReviewModerationLogDto getById(UUID id) {
 		ReviewModerationLog entity = moderationLogRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Moderation log not found with id " + id));
 		return moderationLogMapper.toDTO(entity);
 	}
 
 	@Override
-	public List<ReviewModerationLogDTO> getByReviewId(UUID reviewId) {
+	public List<ReviewModerationLogDto> getByReviewId(UUID reviewId) {
 		List<ReviewModerationLog> logs = moderationLogRepository.findByReviewId(reviewId);
 		return logs.stream()
 				.map(moderationLogMapper::toDTO)
@@ -42,7 +42,7 @@ public class ReviewModerationLogServiceImpl implements ReviewModerationLogServic
 	}
 
 	@Override
-	public List<ReviewModerationLogDTO> getByModeratorId(UUID moderatorId) {
+	public List<ReviewModerationLogDto> getByModeratorId(UUID moderatorId) {
 		List<ReviewModerationLog> logs = moderationLogRepository.findByModeratorId(moderatorId);
 		return logs.stream()
 				.map(moderationLogMapper::toDTO)
@@ -50,7 +50,7 @@ public class ReviewModerationLogServiceImpl implements ReviewModerationLogServic
 	}
 
 	@Override
-	public ReviewModerationLogDTO create(ReviewModerationLogDTO dto) {
+	public ReviewModerationLogDto create(ReviewModerationLogDto dto) {
 		ReviewModerationLog entity = moderationLogMapper.toEntity(dto);
 		ReviewModerationLog saved = moderationLogRepository.save(entity);
 		return moderationLogMapper.toDTO(saved);

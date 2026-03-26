@@ -1,33 +1,24 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.ReviewDTO;
-import com.tuttime.review.dto.ReviewRequest;
-import com.tuttime.review.dto.ReviewResponse;
-import com.tuttime.review.entity.Review;
-import com.tuttime.review.repository.ReviewRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.tuttime.review.dto.ReviewDto;
 
 import java.util.List;
+
 import java.util.UUID;
 
 public interface ReviewService {
 
-	ReviewDTO getReviewById(UUID id);
+	ReviewDto getReviewById(UUID id);
 
-	List<ReviewDTO> getReviewsByRestaurant(UUID restaurantId);
+	List<ReviewDto> getReviewsByRestaurant(UUID restaurantId);
 
-	List<ReviewDTO> getReviewsByUser(UUID userId);
+	List<ReviewDto> getReviewsByUser(UUID userId);
 
-	List<ReviewDTO> getReviewsByStatus(String status);
+	List<ReviewDto> getReviewsByStatus(String status);
 
-	ReviewDTO createReview(ReviewDTO reviewDTO);
+	ReviewDto createReview(ReviewDto reviewDto);
 
-	ReviewDTO updateReview(UUID id, ReviewDTO reviewDTO);
+	ReviewDto updateReview(UUID id, ReviewDto reviewDto);
 
 	void deleteReview(UUID id);
 }

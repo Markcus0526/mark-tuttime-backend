@@ -1,8 +1,8 @@
 package com.tuttime.payment.controller;
 
-import com.tuttime.payment.dto.PaymentAuditLogResponseDTO;
-import com.tuttime.payment.dto.PaymentRequestDTO;
-import com.tuttime.payment.dto.PaymentResponseDTO;
+import com.tuttime.payment.dto.PaymentAuditLogResponseDto;
+import com.tuttime.payment.dto.PaymentRequestDto;
+import com.tuttime.payment.dto.PaymentResponseDto;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.enums.PaymentStatus;
@@ -34,12 +34,12 @@ public class PaymentController {
 			@ApiResponse(responseCode = "400", description = "Invalid input data")
 	})
 	@PostMapping
-	public ResponseEntity<PaymentResponseDTO> initiatePayment(
+	public ResponseEntity<PaymentResponseDto> initiatePayment(
 			@Parameter(description = "Payment request payload", required = true)
-			@Valid @RequestBody PaymentRequestDTO dto) {
+			@Valid @RequestBody PaymentRequestDto dto) {
 		Payment payment = mapToEntity(dto);
 		Payment created = paymentService.initiatePayment(payment);
-		return ResponseEntity.ok(mapToDTO(created));
+		return ResponseEntity.ok(mapToDto(created));
 	}
 
 	@Operation(summary = "Get payment by ID", description = "Fetch a payment using its unique ID")
@@ -48,11 +48,11 @@ public class PaymentController {
 			@ApiResponse(responseCode = "404", description = "Payment not found")
 	})
 	@GetMapping("/{id}")
-	public ResponseEntity<PaymentResponseDTO> getPaymentById(
+	public ResponseEntity<PaymentResponseDto> getPaymentById(
 			@Parameter(description = "ID of the payment to retrieve", required = true)
 			@PathVariable Long id) {
 		return paymentService.getPaymentById(id)
-				.map(this::mapToDTO)
+				.map(this::mapToDto)
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());
 	}
@@ -62,7 +62,7 @@ public class PaymentController {
 			@ApiResponse(responseCode = "200", description = "Payments retrieved successfully")
 	})
 	@GetMapping
-	public ResponseEntity<List<PaymentResponseDTO>> getPayments(
+	public ResponseEntity<List<PaymentResponseDto>> getPayments(
 			@Parameter(description = "Filter payments by booking ID")
 			@RequestParam(required = false) Long bookingId,
 			@Parameter(description = "Filter payments by status")
@@ -76,8 +76,8 @@ public class PaymentController {
 			// Optional: Return all payments or empty list if no filters provided
 			payments = List.of();
 		}
-		List<PaymentResponseDTO> dtos = payments.stream()
-				.map(this::mapToDTO)
+		List<PaymentResponseDto> dtos = payments.stream()
+				.map(this::mapToDto)
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(dtos);
 	}
@@ -88,14 +88,14 @@ public class PaymentController {
 			@ApiResponse(responseCode = "404", description = "Payment not found")
 	})
 	@PatchMapping("/{id}/status")
-	public ResponseEntity<PaymentResponseDTO> updatePaymentStatus(
+	public ResponseEntity<PaymentResponseDto> updatePaymentStatus(
 			@Parameter(description = "ID of the payment to update", required = true)
 			@PathVariable Long id,
 			@Parameter(description = "New status for the payment", required = true)
 			@RequestParam PaymentStatus status) {
 		try {
 			Payment updated = paymentService.updatePaymentStatus(id, status);
-			return ResponseEntity.ok(mapToDTO(updated));
+			return ResponseEntity.ok(mapToDto(updated));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.notFound().build();
 		}
@@ -106,14 +106,14 @@ public class PaymentController {
 			@ApiResponse(responseCode = "200", description = "Audit logs retrieved successfully")
 	})
 	@GetMapping("/{id}/audit-logs")
-	public ResponseEntity<List<PaymentAuditLogResponseDTO>> getPaymentAuditLogs(
+	public ResponseEntity<List<PaymentAuditLogResponseDto>> getPaymentAuditLogs(
 			@Parameter(description = "ID of the payment to get audit logs for", required = true)
 			@PathVariable Long id) {
 //		List<PaymentAuditLog> auditLogs = paymentAuditLogService.getLogsByPaymentId(id);
 		List<PaymentAuditLog> auditLogs = paymentService.getAuditLogsForPayment(id);
-		List<PaymentAuditLogResponseDTO> dtoList = auditLogs.stream()
+		List<PaymentAuditLogResponseDto> dtoList = auditLogs.stream()
 				.map(log -> {
-					PaymentAuditLogResponseDTO dto = new PaymentAuditLogResponseDTO();
+					PaymentAuditLogResponseDto dto = new PaymentAuditLogResponseDto();
 					dto.setId(log.getId());
 					dto.setPaymentId(log.getPayment().getId());
 					dto.setEventType(log.getEventType());
@@ -125,7 +125,7 @@ public class PaymentController {
 		return ResponseEntity.ok(dtoList);
 	}
 
-	private Payment mapToEntity(PaymentRequestDTO dto) {
+	private Payment mapToEntity(PaymentRequestDto dto) {
 		return Payment.builder()
 				.bookingId(dto.getBookingId())
 				.amount(dto.getAmount())
@@ -136,8 +136,8 @@ public class PaymentController {
 				.build();
 	}
 
-	private PaymentResponseDTO mapToDTO(Payment payment) {
-		PaymentResponseDTO dto = new PaymentResponseDTO();
+	private PaymentResponseDto mapToDto(Payment payment) {
+		PaymentResponseDto dto = new PaymentResponseDto();
 		dto.setId(payment.getId());
 		dto.setPaymentIntentId(payment.getPaymentIntentId());
 		dto.setBookingId(payment.getBookingId());

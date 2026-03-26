@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class PaymentAuditLogRequestDTO {
+public class PaymentAuditLogRequestDto {
 
 	@NotNull
 	private Long paymentId;

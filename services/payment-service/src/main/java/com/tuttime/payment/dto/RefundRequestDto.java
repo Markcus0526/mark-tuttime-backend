@@ -8,7 +8,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class RefundRequestDTO {
+public class RefundRequestDto {
 
 	@NotNull
 	private Long paymentId;

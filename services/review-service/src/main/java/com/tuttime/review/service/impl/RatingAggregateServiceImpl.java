@@ -1,6 +1,6 @@
 package com.tuttime.review.service.impl;
 
-import com.tuttime.review.dto.RatingAggregateDTO;
+import com.tuttime.review.dto.RatingAggregateDto;
 import com.tuttime.review.entity.RatingAggregate;
 import com.tuttime.review.mapper.RatingAggregateMapper;
 import com.tuttime.review.repository.RatingAggregateRepository;
@@ -25,14 +25,14 @@ public class RatingAggregateServiceImpl implements RatingAggregateService {
 	}
 
 	@Override
-	public RatingAggregateDTO getByRestaurantId(UUID restaurantId) {
+	public RatingAggregateDto getByRestaurantId(UUID restaurantId) {
 		RatingAggregate aggregate = ratingAggregateRepository.findById(restaurantId)
 				.orElseThrow(() -> new EntityNotFoundException("Rating aggregate not found for restaurant " + restaurantId));
 		return ratingAggregateMapper.toDTO(aggregate);
 	}
 
 	@Override
-	public RatingAggregateDTO createOrUpdate(RatingAggregateDTO dto) {
+	public RatingAggregateDto createOrUpdate(RatingAggregateDto dto) {
 		RatingAggregate entity = ratingAggregateMapper.toEntity(dto);
 		RatingAggregate saved = ratingAggregateRepository.save(entity);
 		return ratingAggregateMapper.toDTO(saved);
