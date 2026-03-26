@@ -13,17 +13,7 @@
 #
 # Available services:
 #   - user-service
-#   - token-service
-#   - mining-service
-#   - rewards-service
-#   - staking-service
-#   - content-service
-#   - notification-service
-#   - conversion-service
-#   - booking-integration-service
-#   - admin-service
-#   - api-gateway
-#   - admin-gateway
+
 
 # Don't exit on error during build phase, but exit if JAR execution fails
 set +e

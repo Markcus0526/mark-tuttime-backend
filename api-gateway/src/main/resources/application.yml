@@ -34,7 +34,7 @@ spring:
         locator:
           enabled: false
       routes:
-        ################# Restaurant Service Routes #######################
+        ################# User Service Routes #######################
 
         # Auth Service Routes (consolidated route with filters)
         # Endpoints include: /api/v1/auth/**
@@ -58,7 +58,7 @@ spring:
 
         # User Service Routes (GENERAL - comes after specific routes)
         # Endpoints include: /api/v1/users/**
-        - id: user-service
+        - id: user-service-user
           order: 12
           uri: http://${USER_SERVICE:localhost}:28001
           predicates:
@@ -75,7 +75,7 @@ spring:
         # User Service - App Version Routes
         # Endpoints include: /api/v1/app/**
         - id: user-service-app-version
-          order: 15
+          order: 13
           uri: http://${USER_SERVICE:localhost}:28001
           predicates:
             - Path=/api/v1/app/**
@@ -122,7 +122,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/zones/**
         - id: restaurant-service-zone
-          order: 22
+          order: 23
           uri: http://${RESTAURANT-SERVICE:localhost}:28002
           predicates:
             - Path=/api/v1/zones/**
@@ -137,7 +137,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/tables/**
         - id: restaurant-service-table
-          order: 23
+          order: 24
           uri: http://${RESTAURANT-SERVICE:localhost}:28002
           predicates:
             - Path=/api/v1/tables/**
@@ -152,7 +152,7 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/medias/**
         - id: restaurant-service-media
-          order: 24
+          order: 25
           uri: http://${RESTAURANT-SERVICE:localhost}:28002
           predicates:
             - Path=/api/v1/medias/**
@@ -397,13 +397,16 @@ spring:
                 name: paymentServiceCircuitBreaker
                 fallbackUri: forward:/fallback/payment-service
 
+        ################# Pos Service Routes #######################
+
+
         ################# Review Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/reviews/**
         - id: review-service-review
-          order: 71
-          uri: http://${REVIEW-SERVICE:localhost}:28007
+          order: 81
+          uri: http://${REVIEW-SERVICE:localhost}:28008
           predicates:
             - Path=/api/v1/reviews/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -417,8 +420,8 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/moderation-logs/**
         - id: review-service-moderation-log
-          order: 72
-          uri: http://${REVIEW-SERVICE:localhost}:28007
+          order: 82
+          uri: http://${REVIEW-SERVICE:localhost}:28008
           predicates:
             - Path=/api/v1/moderation-logs/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -432,8 +435,8 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/rating-aggregates/**
         - id: review-service-/api/v1/rating-aggregates
-          order: 73
-          uri: http://${REVIEW-SERVICE:localhost}:28007
+          order: 83
+          uri: http://${REVIEW-SERVICE:localhost}:28008
           predicates:
             - Path=/api/v1/rating-aggregates/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -449,8 +452,8 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/event-logs/**
         - id: analytics-service-event-logs
-          order: 81
-          uri: http://${ANALYTICS-SERVICE:localhost}:28008
+          order: 91
+          uri: http://${ANALYTICS-SERVICE:localhost}:28009
           predicates:
             - Path=/api/v1/event-logs/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -464,8 +467,8 @@ spring:
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/aggregated-metrics/**
         - id: analytics-service-aggregated-metric
-          order: 82
-          uri: http://${ANALYTICS-SERVICE:localhost}:28008
+          order: 92
+          uri: http://${ANALYTICS-SERVICE:localhost}:28009
           predicates:
             - Path=/api/v1/aggregated-metrics/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION

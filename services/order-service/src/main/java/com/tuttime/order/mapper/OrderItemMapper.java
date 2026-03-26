@@ -5,7 +5,7 @@ import com.tuttime.order.entity.Order;
 import com.tuttime.order.entity.OrderItem;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.WARN, uses = OrderItemModifierMapper.class)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OrderItemMapper {
 
 	@Mapping(source = "modifiers", target = "modifiers")

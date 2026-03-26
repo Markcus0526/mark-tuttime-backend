@@ -7,14 +7,14 @@ WORKDIR /app
 COPY pom.xml ./pom.xml
 
 # Placeholder POMs for modules not being built
-RUN mkdir -p services/admin-service services/analytics-service services/booking-service services/integration-service \
+RUN mkdir -p services/admin-service services/analytics-service services/booking-service services/pos-service \
     services/menu-service services/order-service services/payment-service \
     services/restaurant-service services/review-service services/user-service \
     admin-gateway && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>admin-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/admin-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>analytics-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/analytics-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>booking-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/booking-service/pom.xml && \
-    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>integration-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/integration-service/pom.xml && \
+    echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>pos-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/pos-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>menu-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/menu-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>order-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/order-service/pom.xml && \
     echo '<?xml version="1.0"?><project><modelVersion>4.0.0</modelVersion><groupId>com.tuttime</groupId><artifactId>payment-service</artifactId><version>1.0-SNAPSHOT</version><packaging>pom</packaging></project>' > services/payment-service/pom.xml && \
