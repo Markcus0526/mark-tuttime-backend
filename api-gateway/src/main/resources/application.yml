@@ -397,6 +397,53 @@ spring:
                 name: paymentServiceCircuitBreaker
                 fallbackUri: forward:/fallback/payment-service
 
+        ################# Review Service Routes #######################
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/reviews/**
+        - id: review-service-review
+          order: 71
+          uri: http://${REVIEW-SERVICE:localhost}:28007
+          predicates:
+            - Path=/api/v1/reviews/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: reviewServiceCircuitBreaker
+                fallbackUri: forward:/fallback/review-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/moderation-logs/**
+        - id: review-service-moderation-log
+          order: 72
+          uri: http://${REVIEW-SERVICE:localhost}:28007
+          predicates:
+            - Path=/api/v1/moderation-logs/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: reviewServiceCircuitBreaker
+                fallbackUri: forward:/fallback/review-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/rating-aggregates/**
+        - id: review-service-/api/v1/rating-aggregates
+          order: 73
+          uri: http://${REVIEW-SERVICE:localhost}:28007
+          predicates:
+            - Path=/api/v1/rating-aggregates/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: reviewServiceCircuitBreaker
+                fallbackUri: forward:/fallback/review-service
+
       # CORS is now configured via CorsConfig.java
       # globalcors configuration removed to use programmatic configuration
 

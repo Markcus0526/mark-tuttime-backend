@@ -1,0 +1,74 @@
+### ============================================
+### PAYMENT SERVICE ENDPOINTS
+### ============================================
+
+@baseUrl = http://localhost:8080
+@path = /api/v1/payment-audit-logs
+@orderId = 1
+@bookingId = 1
+@userId = 1
+
+
+### Create a new payment based on the request data
+### Request Body: BookingDto
+### Response: Created BookingDto
+POST {{baseUrl}}{{path}}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "bookingId": 0,
+  "amount": 0.01,
+  "currency": "string",
+  "paymentMethod": "string",
+  "paymentIntentId": "string",
+  "description": "string",
+  "status": "PENDING"
+}
+
+### Update order by ID
+### Request Body: BookingDto
+### Response: Updated BookingDto
+PUT {{baseUrl}}{{path}}/{orderId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "CONFIRMED",
+  "totalPrice": 120.00
+}
+
+### Get order by ID
+### Request Body: -
+### Response: BookingDto
+GET {{baseUrl}}{{path}}/{orderId}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Get orders by booking ID
+### Request Body: -
+### Response: List<BookingDto>
+GET {{baseUrl}}{{path}}/booking/{{bookingId}}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Get orders by user ID
+### Request Body: -
+### Response: List<BookingDto>
+GET {{baseUrl}}{{path}}/user/{{userId}}
+#Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Delete order by ID
+### Request Body: -
+### Response: No content (204)
+DELETE {{baseUrl}}{{path}}/{{orderId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### Update order status by ID
+### Request Body: -
+### Response: No content (204)
+PATCH {{baseUrl}}{{path}}/{{orderId}}/status?status=VALUE
+Authorization: Bearer {{token}}
+Content-Type: application/json
