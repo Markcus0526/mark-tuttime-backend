@@ -1,5 +1,6 @@
 package com.tuttime.review.service;
 
+import com.tuttime.review.dto.ReviewDTO;
 import com.tuttime.review.dto.ReviewRequest;
 import com.tuttime.review.dto.ReviewResponse;
 import com.tuttime.review.entity.Review;
@@ -11,37 +12,22 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
-@RequiredArgsConstructor
-public class ReviewService {
+import java.util.List;
+import java.util.UUID;
 
-	private final ReviewRepository reviewRepository;
+public interface ReviewService {
 
-	public ReviewResponse createReview(ReviewRequest request) {
-		Review review = Review.builder()
-				.userId(request.getUserId())
-				.restaurantId(request.getRestaurantId())
-				.rating(request.getRating() != null ? BigDecimal.valueOf(request.getRating()) : null)
-				.comment(request.getComment())
-				.build();
-		review = reviewRepository.save(review);
-		return mapToResponse(review);
-	}
+	ReviewDTO getReviewById(UUID id);
 
-	public List<ReviewResponse> getReviewsByRestaurant(Long restaurantId) {
-		return reviewRepository.findByRestaurantId(restaurantId)
-				.stream()
-				.map(this::mapToResponse)
-				.collect(Collectors.toList());
-	}
+	List<ReviewDTO> getReviewsByRestaurant(UUID restaurantId);
 
-	private ReviewResponse mapToResponse(Review review) {
-		return ReviewResponse.builder()
-				.id(review.getId())
-				.userId(review.getUserId())
-				.restaurantId(review.getRestaurantId())
-				.rating(review.getRating().doubleValue())
-				.comment(review.getComment())
-				.build();
-	}
+	List<ReviewDTO> getReviewsByUser(UUID userId);
+
+	List<ReviewDTO> getReviewsByStatus(String status);
+
+	ReviewDTO createReview(ReviewDTO reviewDTO);
+
+	ReviewDTO updateReview(UUID id, ReviewDTO reviewDTO);
+
+	void deleteReview(UUID id);
 }
