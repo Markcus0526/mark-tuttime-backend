@@ -1,16 +1,26 @@
 package com.tuttime.restaurant.controller;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.mapper.MediaMapper;
 import com.tuttime.restaurant.service.MediaService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/medias")
@@ -35,7 +45,7 @@ public class MediaController {
 
 	@GetMapping("/{id}")
 	@Operation(summary = "Get a media by ID")
-	public ResponseEntity<MediaDto> getById(@PathVariable Long id) {
+	public ResponseEntity<MediaDto> getById(@PathVariable UUID id) {
 		Media media = mediaService.getById(id);
 		return ResponseEntity.ok(mediaMapper.toDto(media));
 	}
@@ -50,7 +60,7 @@ public class MediaController {
 
 	@PutMapping("/{id}")
 	@Operation(summary = "Update an existing media")
-	public ResponseEntity<MediaDto> update(@PathVariable Long id, @RequestBody MediaDto dto) {
+	public ResponseEntity<MediaDto> update(@PathVariable UUID id, @RequestBody MediaDto dto) {
 		Media mediaDetails = mediaMapper.toEntity(dto);
 		Media updated = mediaService.update(id, mediaDetails);
 		return ResponseEntity.ok(mediaMapper.toDto(updated));
@@ -58,7 +68,7 @@ public class MediaController {
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Delete a media by ID")
-	public ResponseEntity<Void> delete(@PathVariable Long id) {
+	public ResponseEntity<Void> delete(@PathVariable UUID id) {
 		mediaService.delete(id);
 		return ResponseEntity.noContent().build();
 	}

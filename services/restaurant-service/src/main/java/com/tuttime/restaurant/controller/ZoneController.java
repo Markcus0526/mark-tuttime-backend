@@ -1,18 +1,28 @@
 package com.tuttime.restaurant.controller;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.mapper.ZoneMapper;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.ZoneService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/zones")
@@ -40,7 +50,7 @@ public class ZoneController {
 
 	@GetMapping("/{id}")
 	@Operation(summary = "Get a zone by ID")
-	public ResponseEntity<ZoneDto> getById(@PathVariable Long id) {
+	public ResponseEntity<ZoneDto> getById(@PathVariable UUID id) {
 		Zone zone = zoneService.getById(id);
 		return ResponseEntity.ok(zoneMapper.toDto(zone));
 	}
@@ -56,7 +66,7 @@ public class ZoneController {
 
 	@PutMapping("/{id}")
 	@Operation(summary = "Update an existing zone")
-	public ResponseEntity<ZoneDto> update(@PathVariable Long id, @RequestBody ZoneDto dto) {
+	public ResponseEntity<ZoneDto> update(@PathVariable UUID id, @RequestBody ZoneDto dto) {
 		Branch branch = branchService.getById(dto.getBranchId());
 		Zone zone = zoneMapper.toEntity(dto, branch);
 		Zone updated = zoneService.update(id, zone);
@@ -65,7 +75,7 @@ public class ZoneController {
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Delete a zone by ID")
-	public ResponseEntity<Void> delete(@PathVariable Long id) {
+	public ResponseEntity<Void> delete(@PathVariable UUID id) {
 		zoneService.delete(id);
 		return ResponseEntity.noContent().build();
 	}

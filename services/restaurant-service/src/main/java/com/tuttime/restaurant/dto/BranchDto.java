@@ -1,7 +1,14 @@
 package com.tuttime.restaurant.dto;
 
-import lombok.*;
+import java.util.UUID;
+
 import org.locationtech.jts.geom.Point;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -10,8 +17,8 @@ import org.locationtech.jts.geom.Point;
 @Builder
 public class BranchDto {
 
-	private Long branchId;
-	private Long restaurantId;
+	private UUID branchId;
+	private UUID restaurantId;
 	private String name;
 	private String address;
 	private String phone;

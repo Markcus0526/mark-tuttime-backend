@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "tables", schema = "restaurant_service")
@@ -19,7 +20,7 @@ public class Table {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "table_id")
-	private Long tableId;
+	private UUID tableId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "zone_id", nullable = false)

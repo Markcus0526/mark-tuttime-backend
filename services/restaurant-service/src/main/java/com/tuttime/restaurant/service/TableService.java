@@ -1,13 +1,15 @@
 package com.tuttime.restaurant.service;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.tuttime.restaurant.entity.Table;
 import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.TableRepository;
 import com.tuttime.restaurant.repository.ZoneRepository;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class TableService {
@@ -24,22 +26,22 @@ public class TableService {
 		return tableRepository.findAll();
 	}
 
-	public Table getById(Long id) {
+	public Table getById(UUID id) {
 		return tableRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Table not found with id " + id));
 	}
 
 	public Table create(Table table) {
-		Long zoneId = table.getZone().getZoneId();
+		UUID zoneId = table.getZone().getZoneId();
 		Zone zone = zoneRepository.findById(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
 		table.setZone(zone);
 		return tableRepository.save(table);
 	}
 
-	public Table update(Long id, Table details) {
+	public Table update(UUID id, Table details) {
 		Table existing = getById(id);
-		Long zoneId = details.getZone().getZoneId();
+		UUID zoneId = details.getZone().getZoneId();
 		Zone zone = zoneRepository.findById(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
 
@@ -51,7 +53,7 @@ public class TableService {
 		return tableRepository.save(existing);
 	}
 
-	public void delete(Long id) {
+	public void delete(UUID id) {
 		Table existing = getById(id);
 		tableRepository.delete(existing);
 	}
