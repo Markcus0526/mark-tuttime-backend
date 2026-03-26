@@ -1,6 +1,6 @@
 package com.tuttime.review.mapper;
 
-import com.tuttime.review.dto.ReviewDTO;
+import com.tuttime.review.dto.ReviewDto;
 import com.tuttime.review.entity.Review;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -10,7 +10,7 @@ public interface ReviewMapper {
 
 	ReviewMapper INSTANCE = Mappers.getMapper(ReviewMapper.class);
 
-	ReviewDTO toDTO(Review review);
+	ReviewDto toDTO(Review review);
 
-	Review toEntity(ReviewDTO dto);
+	Review toEntity(ReviewDto dto);
 }

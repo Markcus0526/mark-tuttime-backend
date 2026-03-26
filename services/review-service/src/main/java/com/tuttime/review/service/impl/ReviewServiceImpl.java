@@ -1,6 +1,6 @@
 package com.tuttime.review.service.impl;
 
-import com.tuttime.review.dto.ReviewDTO;
+import com.tuttime.review.dto.ReviewDto;
 import com.tuttime.review.entity.Review;
 import com.tuttime.review.mapper.ReviewMapper;
 import com.tuttime.review.repository.ReviewRepository;
@@ -26,14 +26,14 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	public ReviewDTO getReviewById(UUID id) {
+	public ReviewDto getReviewById(UUID id) {
 		Review review = reviewRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Review not found with id " + id));
 		return reviewMapper.toDTO(review);
 	}
 
 	@Override
-	public List<ReviewDTO> getReviewsByRestaurant(UUID restaurantId) {
+	public List<ReviewDto> getReviewsByRestaurant(UUID restaurantId) {
 		List<Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
 		return reviews.stream()
 				.map(reviewMapper::toDTO)
@@ -41,7 +41,7 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	public List<ReviewDTO> getReviewsByUser(UUID userId) {
+	public List<ReviewDto> getReviewsByUser(UUID userId) {
 		List<Review> reviews = reviewRepository.findByUserId(userId);
 		return reviews.stream()
 				.map(reviewMapper::toDTO)
@@ -49,7 +49,7 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	public List<ReviewDTO> getReviewsByStatus(String status) {
+	public List<ReviewDto> getReviewsByStatus(String status) {
 		List<Review> reviews = reviewRepository.findByStatus(status);
 		return reviews.stream()
 				.map(reviewMapper::toDTO)
@@ -57,20 +57,20 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	public ReviewDTO createReview(ReviewDTO reviewDTO) {
-		reviewDTO.setStatus("PENDING");
-		Review review = reviewMapper.toEntity(reviewDTO);
+	public ReviewDto createReview(ReviewDto reviewDto) {
+		reviewDto.setStatus("PENDING");
+		Review review = reviewMapper.toEntity(reviewDto);
 		Review saved = reviewRepository.save(review);
 		return reviewMapper.toDTO(saved);
 	}
 
 	@Override
-	public ReviewDTO updateReview(UUID id, ReviewDTO reviewDTO) {
+	public ReviewDto updateReview(UUID id, ReviewDto reviewDto) {
 		Review existing = reviewRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Review not found with id " + id));
-		existing.setRating(reviewDTO.getRating());
-		existing.setComment(reviewDTO.getComment());
-		existing.setStatus(reviewDTO.getStatus());
+		existing.setRating(reviewDto.getRating());
+		existing.setComment(reviewDto.getComment());
+		existing.setStatus(reviewDto.getStatus());
 		Review updated = reviewRepository.save(existing);
 		return reviewMapper.toDTO(updated);
 	}

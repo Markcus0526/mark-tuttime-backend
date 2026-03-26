@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.OffsetDateTime;
 
 @Data
-public class PaymentAuditLogResponseDTO {
+public class PaymentAuditLogResponseDto {
 
 	private Long id;
 	private Long paymentId;

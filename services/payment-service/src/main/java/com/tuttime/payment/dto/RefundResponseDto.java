@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Data
-public class RefundResponseDTO {
+public class RefundResponseDto {
 
 	private Long id;
 	private String refundId;

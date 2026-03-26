@@ -10,15 +10,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReviewDTO {
+public class ReviewModerationLogDto {
 
 	private UUID id;
-	private UUID userId;
-	private UUID restaurantId;
-	private int rating;
-	private String comment;
-	private String status;
+	private UUID reviewId;
+	private UUID moderatorId;
+	private String action;
+	private String reason;
 	private Instant createdAt;
-	private Instant updatedAt;
-
 }

@@ -14,7 +14,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>analytics-service</name>
+    <name>Analytics Service</name>
     <description>TutTime Analytics Service - events, metrics, forecasting</description>
 
     <properties>

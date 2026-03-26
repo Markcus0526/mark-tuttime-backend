@@ -1,14 +1,14 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.RatingAggregateDTO;
+import com.tuttime.review.dto.RatingAggregateDto;
 
 import java.util.UUID;
 
 public interface RatingAggregateService {
 
-	RatingAggregateDTO getByRestaurantId(UUID restaurantId);
+	RatingAggregateDto getByRestaurantId(UUID restaurantId);
 
-	RatingAggregateDTO createOrUpdate(RatingAggregateDTO dto);
+	RatingAggregateDto createOrUpdate(RatingAggregateDto dto);
 
 	void delete(UUID restaurantId);
 }

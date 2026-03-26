@@ -1,6 +1,6 @@
 package com.tuttime.review.controller;
 
-import com.tuttime.review.dto.ReviewModerationLogDTO;
+import com.tuttime.review.dto.ReviewModerationLogDto;
 import com.tuttime.review.service.ReviewModerationLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,7 +29,7 @@ public class ReviewModerationLogController {
 
 	@Operation(summary = "Get moderation log by ID")
 	@GetMapping("/{id}")
-	public ResponseEntity<ReviewModerationLogDTO> getById(
+	public ResponseEntity<ReviewModerationLogDto> getById(
 			@Parameter(description = "UUID of the moderation log", required = true)
 			@PathVariable @NotNull UUID id) {
 		return ResponseEntity.ok(moderationLogService.getById(id));
@@ -37,7 +37,7 @@ public class ReviewModerationLogController {
 
 	@Operation(summary = "Get moderation logs by review ID")
 	@GetMapping("/review/{reviewId}")
-	public ResponseEntity<List<ReviewModerationLogDTO>> getByReviewId(
+	public ResponseEntity<List<ReviewModerationLogDto>> getByReviewId(
 			@Parameter(description = "UUID of the review", required = true)
 			@PathVariable @NotNull UUID reviewId) {
 		return ResponseEntity.ok(moderationLogService.getByReviewId(reviewId));
@@ -45,7 +45,7 @@ public class ReviewModerationLogController {
 
 	@Operation(summary = "Get moderation logs by moderator ID")
 	@GetMapping("/moderator/{moderatorId}")
-	public ResponseEntity<List<ReviewModerationLogDTO>> getByModeratorId(
+	public ResponseEntity<List<ReviewModerationLogDto>> getByModeratorId(
 			@Parameter(description = "UUID of the moderator", required = true)
 			@PathVariable @NotNull UUID moderatorId) {
 		return ResponseEntity.ok(moderationLogService.getByModeratorId(moderatorId));
@@ -54,9 +54,9 @@ public class ReviewModerationLogController {
 	@Operation(summary = "Create a new moderation log")
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public ReviewModerationLogDTO create(
+	public ReviewModerationLogDto create(
 			@Parameter(description = "Moderation log data", required = true)
-			@Valid @RequestBody ReviewModerationLogDTO dto) {
+			@Valid @RequestBody ReviewModerationLogDto dto) {
 		return moderationLogService.create(dto);
 	}
 

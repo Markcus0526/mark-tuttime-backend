@@ -1,7 +1,7 @@
 package com.tuttime.payment.controller;
 
-import com.tuttime.payment.dto.RefundRequestDTO;
-import com.tuttime.payment.dto.RefundResponseDTO;
+import com.tuttime.payment.dto.RefundRequestDto;
+import com.tuttime.payment.dto.RefundResponseDto;
 import com.tuttime.payment.entity.Refund;
 import com.tuttime.payment.enums.RefundStatus;
 import com.tuttime.payment.service.RefundService;
@@ -32,12 +32,12 @@ public class RefundController {
 			@ApiResponse(responseCode = "400", description = "Invalid refund request data")
 	})
 	@PostMapping
-	public ResponseEntity<RefundResponseDTO> initiateRefund(
+	public ResponseEntity<RefundResponseDto> initiateRefund(
 			@Parameter(description = "Refund request payload", required = true)
-			@Valid @RequestBody RefundRequestDTO dto) {
+			@Valid @RequestBody RefundRequestDto dto) {
 		try {
 			Refund refund = refundService.initiateRefund(dto.getPaymentId(), dto.getAmount(), dto.getReason());
-			return ResponseEntity.ok(mapToDTO(refund));
+			return ResponseEntity.ok(mapToDto(refund));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.badRequest().body(null);
 		}
@@ -49,11 +49,11 @@ public class RefundController {
 			@ApiResponse(responseCode = "404", description = "Refund not found")
 	})
 	@GetMapping("/{id}")
-	public ResponseEntity<RefundResponseDTO> getRefundById(
+	public ResponseEntity<RefundResponseDto> getRefundById(
 			@Parameter(description = "ID of the refund to retrieve", required = true)
 			@PathVariable Long id) {
 		return refundService.getRefundById(id)
-				.map(this::mapToDTO)
+				.map(this::mapToDto)
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());
 	}
@@ -63,7 +63,7 @@ public class RefundController {
 			@ApiResponse(responseCode = "200", description = "Refunds retrieved successfully")
 	})
 	@GetMapping
-	public ResponseEntity<List<RefundResponseDTO>> getRefunds(
+	public ResponseEntity<List<RefundResponseDto>> getRefunds(
 			@Parameter(description = "Filter refunds by payment ID")
 			@RequestParam(required = false) Long paymentId,
 			@Parameter(description = "Filter refunds by status")
@@ -76,8 +76,8 @@ public class RefundController {
 		} else {
 			refunds = List.of();
 		}
-		List<RefundResponseDTO> dtos = refunds.stream()
-				.map(this::mapToDTO)
+		List<RefundResponseDto> dtos = refunds.stream()
+				.map(this::mapToDto)
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(dtos);
 	}
@@ -88,21 +88,21 @@ public class RefundController {
 			@ApiResponse(responseCode = "404", description = "Refund not found")
 	})
 	@PatchMapping("/{id}/status")
-	public ResponseEntity<RefundResponseDTO> updateRefundStatus(
+	public ResponseEntity<RefundResponseDto> updateRefundStatus(
 			@Parameter(description = "ID of the refund to update", required = true)
 			@PathVariable Long id,
 			@Parameter(description = "New status for the refund", required = true)
 			@RequestParam RefundStatus status) {
 		try {
 			Refund updated = refundService.updateRefundStatus(id, status);
-			return ResponseEntity.ok(mapToDTO(updated));
+			return ResponseEntity.ok(mapToDto(updated));
 		} catch (IllegalArgumentException e) {
 			return ResponseEntity.notFound().build();
 		}
 	}
 
-	private RefundResponseDTO mapToDTO(Refund refund) {
-		RefundResponseDTO dto = new RefundResponseDTO();
+	private RefundResponseDto mapToDto(Refund refund) {
+		RefundResponseDto dto = new RefundResponseDto();
 		dto.setId(refund.getId());
 		dto.setRefundId(refund.getRefundId());
 		dto.setPaymentId(refund.getPayment().getId());

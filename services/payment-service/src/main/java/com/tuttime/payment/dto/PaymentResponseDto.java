@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Data
-public class PaymentResponseDTO {
+public class PaymentResponseDto {
 
 	private Long id;
 	private String paymentIntentId;

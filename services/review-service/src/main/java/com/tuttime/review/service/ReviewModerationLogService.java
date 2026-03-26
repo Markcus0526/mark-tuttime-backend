@@ -1,19 +1,19 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.ReviewModerationLogDTO;
+import com.tuttime.review.dto.ReviewModerationLogDto;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface ReviewModerationLogService {
 
-	ReviewModerationLogDTO getById(UUID id);
+	ReviewModerationLogDto getById(UUID id);
 
-	List<ReviewModerationLogDTO> getByReviewId(UUID reviewId);
+	List<ReviewModerationLogDto> getByReviewId(UUID reviewId);
 
-	List<ReviewModerationLogDTO> getByModeratorId(UUID moderatorId);
+	List<ReviewModerationLogDto> getByModeratorId(UUID moderatorId);
 
-	ReviewModerationLogDTO create(ReviewModerationLogDTO dto);
+	ReviewModerationLogDto create(ReviewModerationLogDto dto);
 
 	void delete(UUID id);
 }
