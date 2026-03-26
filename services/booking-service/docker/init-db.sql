@@ -1,15 +1,15 @@
 -- ============================================================================
 -- BOOKING SERVICE - Database Schema
--- Database: bookingservice_db
--- Schema: bookingservice
+-- Database: booking_service_db
+-- Schema: booking_service
 -- 
 -- NOTE: This script runs automatically when the database is first initialized.
 -- If the database already exists, you need to drop the volume and recreate it.
 -- ============================================================================
 
-CREATE SCHEMA IF NOT EXISTS bookingservice;
+CREATE SCHEMA IF NOT EXISTS booking_service;
 SET
-search_path TO bookingservice, public;
+search_path TO booking_service, public;
 
 -- Set timezone to UTC for all timestamp operations
 SET
@@ -25,7 +25,7 @@ client_min_messages TO WARNING;
 
 -- Set search_path after schema is created
 SET
-search_path TO bookingservice, public;
+search_path TO booking_service, public;
 
 -- Enable required PostgreSQL extensions
 CREATE

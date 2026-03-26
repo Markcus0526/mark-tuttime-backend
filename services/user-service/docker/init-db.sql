@@ -7,10 +7,6 @@
 -- If the database already exists, you need to drop the volume and recreate it.
 -- ============================================================================
 
--- ============================================================================
--- COMPLETE RESTAURANT SERVICE SCHEMA (Production Ready)
--- ============================================================================
-
 CREATE SCHEMA IF NOT EXISTS user_service;
 SET
 search_path TO user_service, public;

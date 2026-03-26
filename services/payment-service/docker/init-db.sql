@@ -1,15 +1,15 @@
 -- ============================================================================
 -- PAYMENT SERVICE - Database Schema
--- Database: order_service_db
--- Schema: order_service
+-- Database: payment_service_db
+-- Schema: payment_service
 -- 
 -- NOTE: This script runs automatically when the database is first initialized.
 -- If the database already exists, you need to drop the volume and recreate it.
 -- ============================================================================
 
-CREATE SCHEMA IF NOT EXISTS order_service;
+CREATE SCHEMA IF NOT EXISTS payment_service;
 SET
-search_path TO order_service, public;
+search_path TO payment_service, public;
 
 -- Set timezone to UTC for all timestamp operations
 SET
@@ -25,7 +25,7 @@ client_min_messages TO WARNING;
 
 -- Set search_path after schema is created
 SET
-search_path TO order_service, public;
+search_path TO payment_service, public;
 
 -- Enable required PostgreSQL extensions
 CREATE
