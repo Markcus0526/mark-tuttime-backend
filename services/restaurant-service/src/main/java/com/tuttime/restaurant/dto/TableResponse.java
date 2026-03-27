@@ -1,0 +1,24 @@
+package com.tuttime.restaurant.dto;
+
+import lombok.*;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class TableResponse {
+
+	private UUID tableId;
+	private UUID zoneId;
+	private String number;
+	private int seats;
+	private String status;
+	private boolean isClosed;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
+
+}

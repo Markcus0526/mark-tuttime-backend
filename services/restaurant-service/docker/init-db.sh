@@ -11,7 +11,7 @@ until psql -U "$POSTGRES_USER" -c '\q' 2>/dev/null; do
   sleep 1
 done
 
-# Check if database exists, create if it doesn't
+# Check if database exists, createMedia if it doesn't
 DB_EXISTS=$(psql -U "$POSTGRES_USER" -tAc "SELECT 1 FROM pg_database WHERE datname='restaurant_service_db'" 2>/dev/null || echo "")
 
 if [ "$DB_EXISTS" != "1" ]; then

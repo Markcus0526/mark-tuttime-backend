@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.EntityType;
+import com.tuttime.restaurant.enums.EntityType;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.service.BranchService;
@@ -80,20 +80,72 @@ public class BranchController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@GetMapping("/{branchId}/media")
-	public ResponseEntity<List<MediaDto>> getMediaByBranch(@PathVariable UUID branchId) {
-		var medias = mediaService.getMediaByEntity(EntityType.BRANCH, branchId);
-		var dtos = medias.stream().map(media -> {
-			MediaDto dto = new MediaDto();
-			dto.setMediaId(media.getMediaId());
-			dto.setEntityType(media.getEntityType());
-			dto.setEntityId(media.getEntityId());
-			dto.setUrl(media.getUrl());
-			dto.setAltText(media.getAltText());
-			dto.setIsPrimary(media.getIsPrimary());
-			dto.setMediaType(media.getMediaType());
-			return dto;
-		}).toList();
-		return ResponseEntity.ok(dtos);
-	}
+	// --- Branch Schedules ---
+
+//	@Operation(summary = "Get schedules for a branch", description = "Retrieve all schedule entries for a given branch.")
+//	@ApiResponses({
+//			@ApiResponse(responseCode = "200", description = "Schedules retrieved successfully"),
+//			@ApiResponse(responseCode = "404", description = "Branch not found")
+//	})
+//	@GetMapping("/branches/{branchId}/schedules")
+//	public ResponseEntity&lt;List&lt;ScheduleResponse&gt;&gt; getBranchSchedules(@PathVariable UUID branchId) {
+//		List&lt;ScheduleResponse&gt; schedules = scheduleService.getSchedulesByBranchId(branchId);
+//		return ResponseEntity.ok(schedules);
+//	}
+//
+//	@Operation(summary = "Create a schedule for a branch", description = "Add a new schedule entry to a branch.")
+//	@ApiResponses({
+//			@ApiResponse(responseCode = "201", description = "Schedule created successfully"),
+//			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
+//			@ApiResponse(responseCode = "404", description = "Branch not found")
+//	})
+//	@PostMapping("/branches/{branchId}/schedules")
+//	public ResponseEntity&lt;ScheduleResponse&gt; createBranchSchedule(@PathVariable UUID branchId,
+//	                                                                   @Valid @RequestBody ScheduleRequest request) {
+//		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request);
+//		return ResponseEntity.status(HttpStatus.CREATED).body(created);
+//	}
+//
+//	@Operation(summary = "Update a branch schedule", description = "Update a schedule entry of a branch.")
+//	@ApiResponses({
+//			@ApiResponse(responseCode = "200", description = "Schedule updated successfully"),
+//			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
+//			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
+//	})
+//	@PutMapping("/branches/{branchId}/schedules/{scheduleId}")
+//	public ResponseEntity&lt;ScheduleResponse&gt; updateBranchSchedule(@PathVariable UUID branchId,
+//	                                                                   @PathVariable UUID scheduleId,
+//	                                                                   @Valid @RequestBody ScheduleRequest request) {
+//		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, null, branchId, request);
+//		return ResponseEntity.ok(updated);
+//	}
+//
+//	@Operation(summary = "Delete a branch schedule", description = "Delete a schedule entry of a branch.")
+//	@ApiResponses({
+//			@ApiResponse(responseCode = "204", description = "Schedule deleted successfully"),
+//			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
+//	})
+//	@DeleteMapping("/branches/{branchId}/schedules/{scheduleId}")
+//	public ResponseEntity&lt;Void&gt; deleteBranchSchedule(@PathVariable UUID branchId,
+//	                                                       @PathVariable UUID scheduleId) {
+//		scheduleService.deleteSchedule(scheduleId, null, branchId);
+//		return ResponseEntity.noContent().build();
+//	}
+//
+//	@GetMapping("/{branchId}/media")
+//	public ResponseEntity<List<MediaDto>> getMediaByBranch(@PathVariable UUID branchId) {
+//		var medias = mediaService.getMediaByEntity(EntityType.BRANCH, branchId);
+//		var dtos = medias.stream().map(media -> {
+//			MediaDto dto = new MediaDto();
+//			dto.setMediaId(media.getMediaId());
+//			dto.setEntityType(media.getEntityType());
+//			dto.setEntityId(media.getEntityId());
+//			dto.setUrl(media.getUrl());
+//			dto.setAltText(media.getAltText());
+//			dto.setIsPrimary(media.getIsPrimary());
+//			dto.setMediaType(media.getMediaType());
+//			return dto;
+//		}).toList();
+//		return ResponseEntity.ok(dtos);
+//	}
 }
