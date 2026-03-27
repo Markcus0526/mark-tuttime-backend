@@ -3,8 +3,8 @@ package com.tuttime.restaurant.service.impl;
 import java.util.List;
 import java.util.UUID;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 
 import com.tuttime.restaurant.service.RestaurantService;

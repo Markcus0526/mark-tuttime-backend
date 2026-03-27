@@ -323,7 +323,7 @@ ratelimit:
     update:
       # Maximum number of location updates allowed per window
       limit: ${RATELIMIT_LOCATION_UPDATE_LIMIT:10}
-      # Time window in hours for location update rate limiting
+      # Time window in hours for location updateMedia rate limiting
       window-hours: ${RATELIMIT_LOCATION_UPDATE_WINDOW_HOURS:1}
 
 # Connection Pool Monitoring Configuration

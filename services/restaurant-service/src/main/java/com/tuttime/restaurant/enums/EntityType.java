@@ -1,4 +1,4 @@
-package com.tuttime.restaurant.entity;
+package com.tuttime.restaurant.enums;
 
 public enum EntityType {
 	RESTAURANT,
