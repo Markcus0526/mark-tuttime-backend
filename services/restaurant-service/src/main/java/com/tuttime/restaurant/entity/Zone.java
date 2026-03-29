@@ -1,53 +1,64 @@
 package com.tuttime.restaurant.entity;
 
-import java.time.OffsetDateTime;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.Instant;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 @Entity
-@jakarta.persistence.Table(name = "zones", schema = "restaurant_service")
-@Data
+@jakarta.persistence.Table(name = "zones", schema = "restaurant_service", indexes = {
+		@Index(name = "idx_zones_is_deleted", columnList = "is_deleted")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Zone {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "zone_id")
+	@GeneratedValue
+	@Column(name = "zone_id", nullable = false, updatable = false)
 	private UUID zoneId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "branch_id", nullable = false)
-	private Branch branch;
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
 
-	@Column(length = 255, nullable = false)
+	@Column(name = "name", nullable = false, length = 255)
 	private String name;
 
-	@Column(columnDefinition = "TEXT")
+	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
 
-	@Column(nullable = false)
+	@Column(name = "capacity", nullable = false)
 	private Integer capacity;
 
-	@Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-	private OffsetDateTime createdAt;
+	@Builder.Default
+	@Column(name = "is_closed", nullable = false)
+	private boolean isClosed = false;
 
-	@Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-	private OffsetDateTime updatedAt;
+	@Builder.Default
+	@Column(name = "is_deleted", nullable = false)
+	private boolean isDeleted = false;
 
-	// Getters and setters omitted for brevity
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
 
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt;
+
+	@Column(name = "updated_at")
+	private Instant updatedAt;
+
+	@PrePersist
+	public void prePersist() {
+		createdAt = Instant.now();
+		updatedAt = createdAt;
+	}
+
+	@PreUpdate
+	public void preUpdate() {
+		updatedAt = Instant.now();
+	}
 }

@@ -1,5 +1,6 @@
 package com.tuttime.menu.exception;
 
+import com.tuttime.common.dto.ApiRes;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
 		);
 		return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<ApiRes<String>> handleIllegalArgument(IllegalArgumentException ex) {
+		return ResponseEntity.badRequest().body(ApiRes.error(ex.getMessage()));
+	}
+
 
 //    @ExceptionHandler(EntityNotFoundException.class)
 //    public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException ex) {

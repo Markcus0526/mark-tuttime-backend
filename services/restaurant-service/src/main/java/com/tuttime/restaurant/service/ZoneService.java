@@ -1,19 +1,22 @@
 package com.tuttime.restaurant.service;
 
+import com.tuttime.restaurant.dto.ZoneRequest;
+import com.tuttime.restaurant.dto.ZoneResponse;
+
 import java.util.List;
 import java.util.UUID;
 
-import com.tuttime.restaurant.entity.Zone;
-
 public interface ZoneService {
 
-	List<Zone> getAll();
+	List<ZoneResponse> getZonesByBranchId(UUID branchId);
 
-	Zone getById(UUID id);
+	ZoneResponse getZoneById(UUID branchId, UUID zoneId);
 
-	Zone create(Zone zone);
+	ZoneResponse createZone(UUID branchId, ZoneRequest request);
 
-	Zone update(UUID id, Zone details);
+	ZoneResponse updateZone(UUID branchId, UUID zoneId, ZoneRequest request);
 
-	void delete(UUID id);
+	void deleteZone(UUID branchId, UUID zoneId);
+
+	// other zone-related methods if any
 }

@@ -2,65 +2,147 @@ package com.tuttime.restaurant.service.impl;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import com.tuttime.common.exception.ResourceNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.tuttime.restaurant.dto.TableRequest;
+import com.tuttime.restaurant.dto.TableResponse;
+import com.tuttime.restaurant.entity.Branch;
+import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.Table;
 import com.tuttime.restaurant.entity.Zone;
+import com.tuttime.restaurant.exception.ResourceNotFoundException;
+import com.tuttime.restaurant.repository.BranchRepository;
+import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.TableRepository;
 import com.tuttime.restaurant.repository.ZoneRepository;
-
 import com.tuttime.restaurant.service.TableService;
-import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class TableServiceImpl implements TableService {
 
-    private final TableRepository tableRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final BranchRepository branchRepository;
     private final ZoneRepository zoneRepository;
+    private final TableRepository tableRepository;
 
-    public TableServiceImpl(TableRepository tableRepository, ZoneRepository zoneRepository) {
-        this.tableRepository = tableRepository;
-        this.zoneRepository = zoneRepository;
+    // Helper method to validate full hierarchy exists and is not soft-deleted
+    private Zone validateHierarchy(UUID restaurantId, UUID branchId, UUID zoneId) {
+        Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
+
+        Branch branch = branchRepository.findByBranchIdAndRestaurantIdAndIsDeletedFalse(branchId, restaurant.getRestaurantId())
+                .orElseThrow(() -> new ResourceNotFoundException("Branch not found in restaurant"));
+
+        Zone zone = zoneRepository.findByZoneIdAndBranchIdAndIsDeletedFalse(zoneId, branch.getBranchId())
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found in branch"));
+
+        return zone;
     }
 
     @Override
-    public List<Table> getAll() {
-        return tableRepository.findAll();
+    public List<TableResponse> getTablesByZoneId(UUID zoneId) {
+        // Validate zone exists and is active (optional: check hierarchy if needed)
+        Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
+
+        return tableRepository.findAllByZoneIdAndIsDeletedFalse(zoneId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Table getById(UUID id) {
-        return tableRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Table not found with id " + id));
+    public TableResponse getTableById(UUID tableId, UUID zoneId) {
+        Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
+
+        Table table = tableRepository.findByTableIdAndZoneIdAndIsDeletedFalse(tableId, zone.getZoneId())
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found in zone"));
+
+        return mapToResponse(table);
     }
 
     @Override
-    public Table create(Table table) {
-        UUID zoneId = table.getZone().getZoneId();
-        Zone zone = zoneRepository.findById(zoneId)
-                .orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
-        table.setZone(zone);
-        return tableRepository.save(table);
+    @Transactional
+    public TableResponse createTable(UUID zoneId, TableRequest request) {
+        Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
+
+        // Optional: enforce unique table number within zone
+        boolean exists = tableRepository.existsByZoneIdAndNumberAndIsDeletedFalse(zoneId, request.getNumber());
+        if (exists) {
+            throw new IllegalArgumentException("Table number already exists in this zone");
+        }
+
+        Table table = new Table();
+        table.setZoneId(zone.getZoneId());
+        table.setNumber(request.getNumber());
+        table.setSeats(request.getSeats());
+        table.setStatus(request.getStatus());
+        table.setIsClosed(request.getIsClosed() != null ? request.getIsClosed() : false);
+        table.setIsDeleted(false);
+
+        Table saved = tableRepository.save(table);
+        return mapToResponse(saved);
     }
 
     @Override
-    public Table update(UUID id, Table details) {
-        Table existing = getById(id);
-        UUID zoneId = details.getZone().getZoneId();
-        Zone zone = zoneRepository.findById(zoneId)
-                .orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
+    @Transactional
+    public TableResponse updateTable(UUID tableId, UUID zoneId, TableRequest request) {
+        Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
 
-        existing.setZone(zone);
-        existing.setNumber(details.getNumber());
-        existing.setSeats(details.getSeats());
-        existing.setStatus(details.getStatus());
+        Table table = tableRepository.findByTableIdAndZoneIdAndIsDeletedFalse(tableId, zone.getZoneId())
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found in zone"));
 
-        return tableRepository.save(existing);
+        // Optional: if number changes, check uniqueness
+        if (!table.getNumber().equals(request.getNumber())) {
+            boolean exists = tableRepository.existsByZoneIdAndNumberAndIsDeletedFalse(zoneId, request.getNumber());
+            if (exists) {
+                throw new IllegalArgumentException("Table number already exists in this zone");
+            }
+            table.setNumber(request.getNumber());
+        }
+
+        table.setSeats(request.getSeats());
+        table.setStatus(request.getStatus());
+        table.setIsClosed(request.getIsClosed() != null ? request.getIsClosed() : table.getIsClosed());
+
+        Table updated = tableRepository.save(table);
+        return mapToResponse(updated);
     }
 
     @Override
-    public void delete(UUID id) {
-        Table existing = getById(id);
-        tableRepository.delete(existing);
+    @Transactional
+    public void deleteTable(UUID tableId, UUID zoneId) {
+        Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(zoneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
+
+        Table table = tableRepository.findByTableIdAndZoneIdAndIsDeletedFalse(tableId, zone.getZoneId())
+                .orElseThrow(() -> new ResourceNotFoundException("Table not found in zone"));
+
+        // Soft delete
+        table.setIsDeleted(true);
+        table.setDeletedAt(java.time.Instant.now());
+        tableRepository.save(table);
+    }
+
+    private TableResponse mapToResponse(Table table) {
+        return TableResponse.builder()
+                .tableId(table.getTableId())
+                .zoneId(table.getZoneId())
+                .number(table.getNumber())
+                .seats(table.getSeats())
+                .status(table.getStatus())
+                .isClosed(table.getIsClosed())
+                .createdAt(table.getCreatedAt())
+                .updatedAt(table.getUpdatedAt())
+                .build();
     }
 }

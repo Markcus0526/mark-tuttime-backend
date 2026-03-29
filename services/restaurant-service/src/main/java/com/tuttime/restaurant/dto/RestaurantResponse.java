@@ -2,11 +2,10 @@ package com.tuttime.restaurant.dto;
 
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -17,10 +16,9 @@ public class RestaurantResponse {
 	private String name;
 	private String description;
 	private String address;
+	private Double longitude;
+	private Double latitude;
 	private String phone;
 	private String website;
-	private Double rating;
-	private OffsetDateTime createdAt;
-	private OffsetDateTime updatedAt;
-
+	private BigDecimal rating;
 }

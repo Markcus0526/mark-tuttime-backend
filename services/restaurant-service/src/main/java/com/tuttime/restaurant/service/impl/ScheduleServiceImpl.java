@@ -1,14 +1,13 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.dto.ScheduleRequest;
 import com.tuttime.restaurant.dto.ScheduleResponse;
-import com.tuttime.restaurant.entity.BranchSchedule;
 import com.tuttime.restaurant.entity.RestaurantSchedule;
-import com.tuttime.restaurant.repository.BranchScheduleRepository;
+import com.tuttime.restaurant.mapper.ScheduleMapper;
+import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.RestaurantScheduleRepository;
 import com.tuttime.restaurant.service.ScheduleService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,122 +16,64 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
-@AllArgsConstructor
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ScheduleServiceImpl implements ScheduleService {
 
-	private final RestaurantScheduleRepository restaurantScheduleRepository;
-	private final BranchScheduleRepository branchScheduleRepository;
+	private final RestaurantScheduleRepository scheduleRepository;
+	private final RestaurantRepository restaurantRepository;
+	private final ScheduleMapper scheduleMapper;
 
 	@Override
 	public List<ScheduleResponse> getSchedulesByRestaurantId(UUID restaurantId) {
-		List<RestaurantSchedule> schedules = restaurantScheduleRepository.findByRestaurantId(restaurantId);
-		return schedules.stream().map(this::mapToResponse).collect(Collectors.toList());
+		if (!restaurantRepository.existsById(restaurantId)) {
+			throw new IllegalArgumentException("Restaurant not found: " + restaurantId);
+		}
+		List<RestaurantSchedule> schedules = scheduleRepository.findByRestaurantId(restaurantId);
+		return schedules.stream()
+				.map(scheduleMapper::toResponse)
+				.collect(Collectors.toList());
 	}
 
 	@Override
+	@Transactional
 	public ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request) {
-		RestaurantSchedule schedule = new RestaurantSchedule();
-		schedule.setRestaurantId(restaurantId);
-		updateScheduleEntityFromRequest(schedule, request);
-		restaurantScheduleRepository.save(schedule);
-		return mapToResponse(schedule);
+		var restaurant = restaurantRepository.findById(restaurantId)
+				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
+
+		RestaurantSchedule schedule = scheduleMapper.toEntity(request);
+		schedule.setRestaurant(restaurant);
+
+		RestaurantSchedule saved = scheduleRepository.save(schedule);
+		return scheduleMapper.toResponse(saved);
 	}
 
 	@Override
-	public List<ScheduleResponse> getSchedulesByBranchId(UUID branchId) {
-		List<BranchSchedule> schedules = branchScheduleRepository.findByBranchId(branchId);
-		return schedules.stream().map(this::mapToResponse).collect(Collectors.toList());
+	@Transactional
+	public ScheduleResponse updateSchedule(UUID scheduleId, UUID restaurantId, Object unused, ScheduleRequest request) {
+		var schedule = scheduleRepository.findById(scheduleId)
+				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
+
+		if (!schedule.getRestaurant().getRestaurantId().equals(restaurantId)) {
+			throw new IllegalArgumentException("Schedule does not belong to the restaurant");
+		}
+
+		scheduleMapper.updateEntityFromRequest(request, schedule);
+		RestaurantSchedule updated = scheduleRepository.save(schedule);
+		return scheduleMapper.toResponse(updated);
 	}
 
 	@Override
-	public ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request) {
-		BranchSchedule schedule = new BranchSchedule();
-		schedule.setBranchId(branchId);
-		updateScheduleEntityFromRequest(schedule, request);
-		branchScheduleRepository.save(schedule);
-		return mapToResponse(schedule);
-	}
+	@Transactional
+	public void deleteSchedule(UUID scheduleId, UUID restaurantId, Object unused) {
+		var schedule = scheduleRepository.findById(scheduleId)
+				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
 
-	@Override
-	public ScheduleResponse updateSchedule(UUID scheduleId, UUID restaurantId, UUID branchId, ScheduleRequest request) {
-		if (restaurantId != null) {
-			RestaurantSchedule schedule = restaurantScheduleRepository.findById(scheduleId)
-					.filter(s -> s.getRestaurantId().equals(restaurantId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Restaurant schedule not found"));
-			updateScheduleEntityFromRequest(schedule, request);
-			restaurantScheduleRepository.save(schedule);
-			return mapToResponse(schedule);
-		} else if (branchId != null) {
-			BranchSchedule schedule = branchScheduleRepository.findById(scheduleId)
-					.filter(s -> s.getBranchId().equals(branchId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Branch schedule not found"));
-			updateScheduleEntityFromRequest(schedule, request);
-			branchScheduleRepository.save(schedule);
-			return mapToResponse(schedule);
-		} else {
-			throw new IllegalArgumentException("Either restaurantId or branchId must be provided");
+		if (!schedule.getRestaurant().getRestaurantId().equals(restaurantId)) {
+			throw new IllegalArgumentException("Schedule does not belong to the restaurant");
 		}
+
+		scheduleRepository.delete(schedule);
 	}
 
-	@Override
-	public void deleteSchedule(UUID scheduleId, UUID restaurantId, UUID branchId) {
-		if (restaurantId != null) {
-			RestaurantSchedule schedule = restaurantScheduleRepository.findById(scheduleId)
-					.filter(s -> s.getRestaurantId().equals(restaurantId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Restaurant schedule not found"));
-			restaurantScheduleRepository.delete(schedule);
-		} else if (branchId != null) {
-			BranchSchedule schedule = branchScheduleRepository.findById(scheduleId)
-					.filter(s -> s.getBranchId().equals(branchId))
-                    .orElseThrow(() -> new ResourceNotFoundException("Branch schedule not found"));
-			branchScheduleRepository.delete(schedule);
-		} else {
-			throw new IllegalArgumentException("Either restaurantId or branchId must be provided");
-		}
-	}
-
-	// --- Helpers ---
-
-	private void updateScheduleEntityFromRequest(Object scheduleEntity, ScheduleRequest request) {
-		if (scheduleEntity instanceof RestaurantSchedule) {
-			RestaurantSchedule schedule = (RestaurantSchedule) scheduleEntity;
-			schedule.setDayOfWeek(request.getDayOfWeek());
-			schedule.setOpenTime(request.getOpenTime());
-			schedule.setCloseTime(request.getCloseTime());
-			schedule.setClosed(request.getIsClosed());
-		} else if (scheduleEntity instanceof BranchSchedule) {
-			BranchSchedule schedule = (BranchSchedule) scheduleEntity;
-			schedule.setDayOfWeek(request.getDayOfWeek());
-			schedule.setOpenTime(request.getOpenTime());
-			schedule.setCloseTime(request.getCloseTime());
-			schedule.setClosed(request.getIsClosed());
-		}
-	}
-
-	private ScheduleResponse mapToResponse(Object scheduleEntity) {
-		ScheduleResponse response = new ScheduleResponse();
-		if (scheduleEntity instanceof RestaurantSchedule) {
-			RestaurantSchedule schedule = (RestaurantSchedule) scheduleEntity;
-			response.setScheduleId(schedule.getScheduleId());
-			response.setParentId(schedule.getRestaurantId());
-			response.setDayOfWeek(schedule.getDayOfWeek());
-			response.setOpenTime(schedule.getOpenTime());
-			response.setCloseTime(schedule.getCloseTime());
-			response.setClosed(schedule.isClosed());
-			response.setCreatedAt(schedule.getCreatedAt());
-			response.setUpdatedAt(schedule.getUpdatedAt());
-		} else if (scheduleEntity instanceof BranchSchedule) {
-			BranchSchedule schedule = (BranchSchedule) scheduleEntity;
-			response.setScheduleId(schedule.getScheduleId());
-			response.setParentId(schedule.getBranchId());
-			response.setDayOfWeek(schedule.getDayOfWeek());
-			response.setOpenTime(schedule.getOpenTime());
-			response.setCloseTime(schedule.getCloseTime());
-			response.setClosed(schedule.isClosed());
-			response.setCreatedAt(schedule.getCreatedAt());
-			response.setUpdatedAt(schedule.getUpdatedAt());
-		}
-		return response;
-	}
 }

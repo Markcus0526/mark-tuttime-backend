@@ -1,36 +1,39 @@
 package com.tuttime.restaurant.entity;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
 import com.tuttime.restaurant.enums.EntityType;
 import com.tuttime.restaurant.enums.MediaType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "medias", schema = "restaurant_service")
-@Data
+@jakarta.persistence.Table(name = "medias", schema = "restaurant_service", indexes = {
+		@Index(name = "idx_medias_is_deleted", columnList = "is_deleted"),
+		@Index(name = "idx_medias_is_map", columnList = "is_map"),
+		@Index(name = "idx_media_lookup", columnList = "entity_type, entity_id")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Media {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "media_id")
+	@GeneratedValue
+	@Column(name = "media_id", nullable = false, updatable = false)
 	private UUID mediaId;
 
-	@Column(name = "entity_type", length = 50, nullable = false)
-	private EntityType entityType; // 'RESTAURANT', 'BRANCH', 'ZONE', 'TABLE'
+	@Enumerated(EnumType.STRING)
+	@Column(name = "entity_type", nullable = false)
+	private EntityType entityType;
 
 	@Column(name = "entity_id", nullable = false)
 	private UUID entityId;
 
-	@Column(name = "url", length = 1024, nullable = false)
+	@Column(name = "url", length = 1024)
 	private String url;
 
 	@Column(name = "alt_text", length = 255)
@@ -42,24 +45,37 @@ public class Media {
 
 	@Builder.Default
 	@Enumerated(EnumType.STRING)
-	@Column(name = "media_type", length = 50)
+	@Column(name = "media_type")
 	private MediaType mediaType = MediaType.IMAGE;
 
-	@Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-	private OffsetDateTime createdAt;
+	@Column(name = "svg_content", columnDefinition = "TEXT")
+	private String svgContent;
 
-	@Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-	private OffsetDateTime updatedAt;
+	@Builder.Default
+	@Column(name = "is_map")
+	private Boolean isMap = false;
+
+	@Builder.Default
+	@Column(name = "is_deleted", nullable = false)
+	private boolean isDeleted = false;
+
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt;
+
+	@Column(name = "updated_at")
+	private Instant updatedAt;
 
 	@PrePersist
-	protected void onCreate() {
-		createdAt = OffsetDateTime.now();
+	public void prePersist() {
+		createdAt = Instant.now();
 		updatedAt = createdAt;
 	}
 
 	@PreUpdate
-	protected void onUpdate() {
-		updatedAt = OffsetDateTime.now();
+	public void preUpdate() {
+		updatedAt = Instant.now();
 	}
-
 }

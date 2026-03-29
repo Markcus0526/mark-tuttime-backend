@@ -1,28 +1,25 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.MediaDto;
+import com.tuttime.restaurant.dto.MediaRequest;
+import com.tuttime.restaurant.dto.MediaResponse;
 import com.tuttime.restaurant.entity.Media;
-import com.tuttime.restaurant.enums.MediaType;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
+import com.tuttime.restaurant.util.DateMapper;
+import org.mapstruct.*;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-
-@Mapper(componentModel = "spring") // This is the magic line
+@Mapper(componentModel = "spring", uses = DateMapper.class)
 public interface MediaMapper {
 
-	MediaDto mapToDto(Media media);
+	MediaResponse toResponse(Media entity);
 
-	Media mapToEntity(MediaDto dto);
+	@Mapping(target = "mediaId", ignore = true)     // Primary Key (Auto-gen)
+	@Mapping(target = "svgContent", ignore = true)  // Large BLOB or file content
+	@Mapping(target = "isMap", ignore = true)       // Business logic flag
+	@Mapping(target = "isDeleted", ignore = true)   // Soft delete
+	@Mapping(target = "deletedAt", ignore = true)   // Soft delete timestamp
+	@Mapping(target = "createdAt", ignore = true)   // JPA Auditing
+	@Mapping(target = "updatedAt", ignore = true)   // JPA Auditing
+	Media toEntity(MediaRequest request);
 
-	default Instant map(OffsetDateTime value) {
-		return value == null ? null : value.toInstant();
-	}
-
-	default OffsetDateTime map(Instant value) {
-		return value == null ? null : OffsetDateTime.ofInstant(value, ZoneOffset.UTC);
-	}
+	@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+	void updateEntityFromRequest(MediaRequest request, @MappingTarget Media entity);
 }

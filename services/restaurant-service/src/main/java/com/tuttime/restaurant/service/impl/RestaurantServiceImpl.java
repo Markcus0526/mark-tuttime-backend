@@ -1,59 +1,129 @@
 package com.tuttime.restaurant.service.impl;
 
-import java.util.List;
-import java.util.UUID;
-
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.restaurant.dto.RestaurantRequest;
+import com.tuttime.restaurant.dto.RestaurantResponse;
+import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.mapper.BranchMapper;
+import com.tuttime.restaurant.mapper.RestaurantMapper;
+import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-
 import com.tuttime.restaurant.service.RestaurantService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class RestaurantServiceImpl implements RestaurantService {
 
-    private final RestaurantRepository repository;
+    private final RestaurantRepository restaurantRepository;
+    private final BranchRepository branchRepository;
+    private final RestaurantMapper restaurantMapper;
+    private final BranchMapper branchMapper;
 
-    public RestaurantServiceImpl(RestaurantRepository repository) {
-        this.repository = repository;
+
+    @Override
+    public Page<RestaurantResponse> findRestaurantAll(UUID ownerUserId, Double minRating, Double maxRating, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Restaurant> restaurantPage;
+
+        if (ownerUserId != null && minRating != null && maxRating != null) {
+            restaurantPage = restaurantRepository.findByOwnerUserIdAndRatingBetween(ownerUserId, minRating, maxRating, pageable);
+        } else if (ownerUserId != null) {
+            restaurantPage = restaurantRepository.findByOwnerUserId(ownerUserId, pageable);
+        } else if (minRating != null && maxRating != null) {
+            restaurantPage = restaurantRepository.findByRatingBetween(minRating, maxRating, pageable);
+        } else {
+            restaurantPage = restaurantRepository.findAll(pageable);
+        }
+
+        return restaurantPage.map(restaurantMapper::toResponse);
     }
 
     @Override
-    public List<Restaurant> getAllRestaurants() {
-        return repository.findAll();
+    public RestaurantResponse getRestaurantById(UUID restaurantId) {
+        Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
+        return restaurantMapper.toResponse(restaurant);
     }
 
     @Override
-    public Restaurant getRestaurantById(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + id));
+    @Transactional
+    public RestaurantResponse createRestaurant(RestaurantRequest request) {
+        // Map request DTO to entity
+        Restaurant restaurant = restaurantMapper.toEntity(request);
+
+        // Persist restaurant
+        Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+
+        // Create default branch linked to restaurant
+        Branch defaultBranch = new Branch();
+        defaultBranch.setRestaurantId(savedRestaurant.getRestaurantId());
+        defaultBranch.setAddress(savedRestaurant.getAddress());
+        defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
+        defaultBranch.setPhone(null);
+        branchRepository.save(defaultBranch);
+
+        // Return mapped response DTO
+        return restaurantMapper.toResponse(savedRestaurant);
     }
 
     @Override
-    public Restaurant createRestaurant(Restaurant restaurant) {
-        return repository.save(restaurant);
+    @Transactional
+    public RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantRequest request) {
+        Restaurant existing = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
+
+        restaurantMapper.updateEntityFromRequest(request, existing);
+
+        Restaurant updated = restaurantRepository.save(existing);
+        return restaurantMapper.toResponse(updated);
     }
 
     @Override
-    public Restaurant updateRestaurant(UUID id, Restaurant restaurantDetails) {
-        Restaurant restaurant = getRestaurantById(id);
-
-        restaurant.setOwnerUserId(restaurantDetails.getOwnerUserId());
-        restaurant.setName(restaurantDetails.getName());
-        restaurant.setDescription(restaurantDetails.getDescription());
-        restaurant.setAddress(restaurantDetails.getAddress());
-        restaurant.setLocation(restaurantDetails.getLocation());
-        restaurant.setPhone(restaurantDetails.getPhone());
-        restaurant.setWebsite(restaurantDetails.getWebsite());
-        restaurant.setRating(restaurantDetails.getRating());
-
-        return repository.save(restaurant);
+    @Transactional
+    public void deleteRestaurant(UUID restaurantId) {
+        if (!restaurantRepository.existsById(restaurantId)) {
+            throw new IllegalArgumentException("Restaurant not found: " + restaurantId);
+        }
+        restaurantRepository.deleteById(restaurantId);
     }
 
-    @Override
-    public void deleteRestaurant(UUID id) {
-        Restaurant restaurant = getRestaurantById(id);
-        repository.delete(restaurant);
+    public Page<RestaurantResponse> findRestaurantsNearLocation(
+            double latitude,
+            double longitude,
+            double radiusMeters,
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Restaurant> entities = restaurantRepository.findByLocationNear(latitude, longitude, radiusMeters, pageable);
+        return entities.map(this::mapToResponse);
     }
+
+    private RestaurantResponse mapToResponse(Restaurant entity) {
+        // map entity fields to DTO fields
+        RestaurantResponse response = new RestaurantResponse();
+        response.setRestaurantId(entity.getRestaurantId());
+        response.setName(entity.getName());
+        response.setDescription(entity.getDescription());
+        response.setAddress(entity.getAddress());
+        response.setPhone(entity.getPhone());
+        response.setRating(entity.getRating());
+        // etc.
+        return response;
+    }
+
 }

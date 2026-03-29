@@ -2,81 +2,142 @@ package com.tuttime.restaurant.controller;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import com.tuttime.restaurant.dto.TableDto;
-import com.tuttime.restaurant.entity.Table;
-import com.tuttime.restaurant.entity.Zone;
-import com.tuttime.restaurant.mapper.TableMapper;
+import com.tuttime.common.dto.ApiRes;
+import com.tuttime.restaurant.dto.TableRequest;
+import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.service.TableService;
-import com.tuttime.restaurant.service.ZoneService;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.validation.Valid;
+
+import lombok.AllArgsConstructor;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
 @RestController
-@RequestMapping("/api/v1/tables")
-@Tag(name = "Tables", description = "Operations related to menu tables")
+@AllArgsConstructor
+@RequestMapping("/api/v1/restaurants/{restaurantId}/branches/{branchId}/zones/{zoneId}/tables")
+@Tag(name = "Tables", description = "Operations related to tables within zones of branches")
 public class TableController {
 
 	private final TableService tableService;
-	private final ZoneService zoneService;
-	private final TableMapper tableMapper;
 
-	public TableController(TableService tableService, ZoneService zoneService, TableMapper tableMapper) {
-		this.tableService = tableService;
-		this.zoneService = zoneService;
-		this.tableMapper = tableMapper;
-	}
-
+	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Tables retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Zone not found")
+	})
 	@GetMapping
-	@Operation(summary = "Get all tables")
-	public List<TableDto> getAll() {
-		return tableService.getAll()
-				.stream()
-				.map(tableMapper::toDto)
-				.collect(Collectors.toList());
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	public ResponseEntity<ApiRes<List<TableResponse>>> getTablesInZone(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId) {
+		// Service should verify zone belongs to branch and restaurant for data integrity
+		List<TableResponse> tables = tableService.getTablesByZoneId(zoneId);
+		return ResponseEntity.ok(ApiRes.success(tables));
 	}
 
-	@GetMapping("/{id}")
-	@Operation(summary = "Get a table by ID")
-	public ResponseEntity<TableDto> getById(@PathVariable UUID id) {
-		Table table = tableService.getById(id);
-		return ResponseEntity.ok(tableMapper.toDto(table));
+	@Operation(summary = "Get a table by ID", description = "Retrieve details of a specific table")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Table retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Table not found")
+	})
+	@GetMapping("/{tableId}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	public ResponseEntity<ApiRes<TableResponse>> getTableById(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId,
+			@Parameter(description = "UUID of the table", required = true)
+			@PathVariable UUID tableId) {
+		// Service should validate table belongs to zone, branch, and restaurant
+		TableResponse table = tableService.getTableById(tableId, zoneId);
+		return ResponseEntity.ok(ApiRes.success(table));
 	}
 
+	@Operation(summary = "Add a new table to a zone", description = "Create a new table within a specified zone")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Table created successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid table data"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Zone not found")
+	})
 	@PostMapping
-	@Operation(summary = "Create a new table")
-	public ResponseEntity<TableDto> create(@RequestBody TableDto dto) {
-		Zone zone = zoneService.getById(dto.getZoneId());
-		Table table = tableMapper.toEntity(dto, zone);
-		Table saved = tableService.create(table);
-		return ResponseEntity.ok(tableMapper.toDto(saved));
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<ApiRes<TableResponse>> createTable(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId,
+			@Parameter(description = "Table creation payload", required = true)
+			@Valid @RequestBody TableRequest request) {
+		// Service should validate zone -> branch -> restaurant hierarchy
+		TableResponse created = tableService.createTable(zoneId, request);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
-	@PutMapping("/{id}")
-	@Operation(summary = "Update an existing table")
-	public ResponseEntity<TableDto> update(@PathVariable UUID id, @RequestBody TableDto dto) {
-		Zone zone = zoneService.getById(dto.getZoneId());
-		Table table = tableMapper.toEntity(dto, zone);
-		Table updated = tableService.update(id, table);
-		return ResponseEntity.ok(tableMapper.toDto(updated));
+	@Operation(summary = "Update a table", description = "Update details of an existing table")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Table updated successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid table data"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Table not found")
+	})
+	@PutMapping("/{tableId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<ApiRes<TableResponse>> updateTable(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId,
+			@Parameter(description = "UUID of the table", required = true)
+			@PathVariable UUID tableId,
+			@Parameter(description = "Updated table details", required = true)
+			@Valid @RequestBody TableRequest request) {
+		// Service should confirm the table belongs to the zone, branch, restaurant
+		TableResponse updated = tableService.updateTable(tableId, zoneId, request);
+		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
-	@DeleteMapping("/{id}")
-	@Operation(summary = "Delete a table by ID")
-	public ResponseEntity<Void> delete(@PathVariable UUID id) {
-		tableService.delete(id);
+	@Operation(summary = "Delete a table", description = "Remove a table from a zone")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Table deleted successfully"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Table not found")
+	})
+	@DeleteMapping("/{tableId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<Void> deleteTable(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId,
+			@Parameter(description = "UUID of the table", required = true)
+			@PathVariable UUID tableId) {
+		// Service should verify hierarchical ownership before deletion
+		tableService.deleteTable(tableId, zoneId);
 		return ResponseEntity.noContent().build();
 	}
 }

@@ -1,42 +1,23 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.RestaurantDto;
+import com.tuttime.restaurant.dto.RestaurantRequest;
+import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Restaurant;
+import org.mapstruct.*;
 
-import org.mapstruct.Mapper;
+@Mapper(componentModel = "spring")
+public interface RestaurantMapper {
 
-@Mapper(componentModel = "spring") // This is the magic line
-public class RestaurantMapper {
+	RestaurantResponse toResponse(Restaurant entity);
 
-	public RestaurantDto toDto(Restaurant entity) {
-		if (entity == null)
-			return null;
-		return RestaurantDto.builder()
-				.restaurantId(entity.getRestaurantId())
-				.ownerUserId(entity.getOwnerUserId())
-				.name(entity.getName())
-				.description(entity.getDescription())
-				.address(entity.getAddress())
-				.location(entity.getLocation())
-				.phone(entity.getPhone())
-				.website(entity.getWebsite())
-				.rating(entity.getRating())
-				.build();
-	}
+	@Mapping(target = "restaurantId", ignore = true)
+	@Mapping(target = "location", ignore = true)
+	@Mapping(target = "deleted", ignore = true)
+	@Mapping(target = "deletedAt", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	Restaurant toEntity(RestaurantRequest request);
 
-	public Restaurant toEntity(RestaurantDto dto) {
-		if (dto == null)
-			return null;
-		return Restaurant.builder()
-				.restaurantId(dto.getRestaurantId())
-				.ownerUserId(dto.getOwnerUserId())
-				.name(dto.getName())
-				.description(dto.getDescription())
-				.address(dto.getAddress())
-				.location(dto.getLocation())
-				.phone(dto.getPhone())
-				.website(dto.getWebsite())
-				.rating(dto.getRating())
-				.build();
-	}
+	@BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+	void updateEntityFromRequest(RestaurantRequest request, @MappingTarget Restaurant entity);
 }

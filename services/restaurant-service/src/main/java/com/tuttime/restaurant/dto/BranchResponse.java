@@ -2,11 +2,9 @@ package com.tuttime.restaurant.dto;
 
 import lombok.*;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -17,8 +15,6 @@ public class BranchResponse {
 	private String address;
 	private String phone;
 	private String timezone;
-	private Double latitude;
 	private Double longitude;
-	private OffsetDateTime createdAt;
-	private OffsetDateTime updatedAt;
+	private Double latitude;
 }

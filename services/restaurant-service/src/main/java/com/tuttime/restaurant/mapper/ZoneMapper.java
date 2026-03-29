@@ -1,33 +1,40 @@
 package com.tuttime.restaurant.mapper;
 
 import com.tuttime.restaurant.dto.ZoneDto;
+import com.tuttime.restaurant.dto.ZoneRequest;
+import com.tuttime.restaurant.dto.ZoneResponse;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Zone;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Mapper(componentModel = "spring") // This is the magic line
-public class ZoneMapper {
+public interface ZoneMapper {
 
-	public ZoneDto toDto(Zone entity) {
-		if (entity == null) return null;
-		ZoneDto dto = new ZoneDto();
-		dto.setZoneId(entity.getZoneId());
-		dto.setBranchId(entity.getBranch() != null ? entity.getBranch().getBranchId() : null);
-		dto.setName(entity.getName());
-		dto.setDescription(entity.getDescription());
-		dto.setCapacity(entity.getCapacity());
-		return dto;
-	}
+	@Mapping(target = "zoneId", ignore = true)
+	@Mapping(target = "isDeleted", ignore = true)
+	@Mapping(target = "deletedAt", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	@Mapping(target = "isClosed", ignore = true) // From your previous error
+	Zone toEntity(ZoneDto dto);
 
-	public Zone toEntity(ZoneDto dto, Branch branch) {
-		if (dto == null) return null;
-		Zone entity = new Zone();
-		entity.setZoneId(dto.getZoneId());
-		entity.setBranch(branch);
-		entity.setName(dto.getName());
-		entity.setDescription(dto.getDescription());
-		entity.setCapacity(dto.getCapacity());
-		return entity;
+	@Mapping(target = "zoneId", ignore = true)
+	@Mapping(target = "isClosed", ignore = true) // <--- Add this line
+	@Mapping(target = "isDeleted", ignore = true)
+	@Mapping(target = "deletedAt", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	ZoneResponse toResponse(Zone zone);
+
+	Zone fromRequest(ZoneRequest request);
+
+	default OffsetDateTime map(Instant value) {
+		return value == null ? null : value.atOffset(ZoneOffset.UTC);
 	}
 }
 
