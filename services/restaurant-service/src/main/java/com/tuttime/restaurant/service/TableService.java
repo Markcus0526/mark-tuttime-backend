@@ -1,19 +1,22 @@
 package com.tuttime.restaurant.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.tuttime.restaurant.dto.TableRequest;
+import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.entity.Table;
 
 public interface TableService {
 
-	List<Table> getAll();
+	List<TableResponse> getTablesByZoneId(UUID zoneId);
 
-	Table getById(UUID id);
+	TableResponse getTableById(UUID tableId, UUID zoneId);
 
-	Table create(Table table);
+	TableResponse createTable(UUID zoneId, TableRequest request);
 
-	Table update(UUID id, Table details);
+	TableResponse updateTable(UUID tableId, UUID zoneId, TableRequest request);
 
-	void delete(UUID id);
+	void deleteTable(UUID tableId, UUID zoneId);
 }

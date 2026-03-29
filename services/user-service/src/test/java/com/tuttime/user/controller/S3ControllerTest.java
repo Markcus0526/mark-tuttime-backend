@@ -1,6 +1,6 @@
 package com.tuttime.user.controller;
 
-import com.tuttime.common.dto.ApiResponse;
+import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -75,7 +75,7 @@ class S3ControllerTest {
 				.thenReturn(presignedRequest);
 
 		// When
-		ResponseEntity<ApiResponse<PresignedUrlResponse>> response =
+		ResponseEntity<ApiRes<PresignedUrlResponse>> response =
 				s3Controller.generatePresignedUrl(TEST_FILE_KEY);
 
 		// Then
@@ -203,7 +203,7 @@ class S3ControllerTest {
 
 		// When/Then
 		for (String fileKey : testFileKeys) {
-			ResponseEntity<ApiResponse<PresignedUrlResponse>> response =
+			ResponseEntity<ApiRes<PresignedUrlResponse>> response =
 					s3Controller.generatePresignedUrl(fileKey);
 
 			assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

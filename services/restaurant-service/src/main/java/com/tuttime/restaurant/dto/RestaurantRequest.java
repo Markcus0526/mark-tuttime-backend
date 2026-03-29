@@ -6,38 +6,42 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-// --- RestaurantRequest DTO ---
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class RestaurantRequest {
 
-	@NotNull(message = "Owner user ID must not be null")
+	@NotNull(message = "Owner user ID is required")
 	private UUID ownerUserId;
 
-	@NotBlank(message = "Restaurant name must not be blank")
-	@Size(max = 255, message = "Name must be at most 255 characters")
+	@NotBlank(message = "Restaurant name is required")
+	@Size(max = 255, message = "Restaurant name must be at most 255 characters")
 	private String name;
 
-	@Size(max = 1000, message = "Description must be at most 1000 characters")
+	@Size(max = 5000, message = "Description can be up to 5000 characters")
 	private String description;
 
-	@NotBlank(message = "Address must not be blank")
+	@NotBlank(message = "Address is required")
 	@Size(max = 512, message = "Address must be at most 512 characters")
 	private String address;
 
+	@DecimalMin(value = "-180.0", inclusive = true, message = "Longitude must be &gt;= -180")
+	@DecimalMax(value = "180.0", inclusive = true, message = "Longitude must be &lt;= 180")
+	private Double longitude;
+
+	@DecimalMin(value = "-90.0", inclusive = true, message = "Latitude must be &gt;= -90")
+	@DecimalMax(value = "90.0", inclusive = true, message = "Latitude must be &lt;= 90")
+	private Double latitude;
+
+	@Size(max = 20, message = "Phone number must be at most 20 characters")
 	@Pattern(regexp = "^\\+?[0-9\\-\\s]{7,20}$", message = "Phone must be a valid phone number")
 	private String phone;
 
 	@Size(max = 255, message = "Website URL must be at most 255 characters")
-	@Pattern(regexp = "^(https?://)?(www\\.)?([\\w-]+)(\\.[\\w-]+)+(/\\S*)?$", message = "Website must be a valid URL")
+	@Pattern(regexp = "^(https?://).*$", message = "Website must be a valid URL starting with http:// or https://", flags = Pattern.Flag.CASE_INSENSITIVE)
 	private String website;
 
-	@DecimalMin(value = "0.0", inclusive = true, message = "Rating must be between 0 and 5")
-	@DecimalMax(value = "5.0", inclusive = true, message = "Rating must be between 0 and 5")
+	@DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.0")
+	@DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.0")
 	private BigDecimal rating;
-
-	// Getters and setters omitted for brevity
 }

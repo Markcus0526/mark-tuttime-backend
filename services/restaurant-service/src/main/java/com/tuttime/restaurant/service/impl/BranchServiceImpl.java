@@ -1,69 +1,83 @@
 package com.tuttime.restaurant.service.impl;
 
-import java.util.List;
-import java.util.UUID;
-
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.restaurant.dto.BranchRequest;
+import com.tuttime.restaurant.dto.BranchResponse;
 import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.entity.Zone;
+import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
-import com.tuttime.restaurant.repository.RestaurantRepository;
-
 import com.tuttime.restaurant.service.BranchService;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
+@AllArgsConstructor
 public class BranchServiceImpl implements BranchService {
 
     private final BranchRepository branchRepository;
-    private final RestaurantRepository restaurantRepository;
+    private final BranchMapper branchMapper;
 
-    public BranchServiceImpl(BranchRepository branchRepository, RestaurantRepository restaurantRepository) {
-        this.branchRepository = branchRepository;
-        this.restaurantRepository = restaurantRepository;
+    @Override
+    public BranchResponse createBranch(UUID restaurantId, BranchRequest request) {
+        Branch entity = branchMapper.toEntity(request);
+        entity.setBranchId(UUID.randomUUID());
+        entity.setRestaurantId(restaurantId);
+        entity = branchRepository.save(entity);
+        return branchMapper.toResponse(entity);
     }
 
     @Override
-    public List<Branch> getAll() {
-        return branchRepository.findAll();
+    public BranchResponse getBranchById(UUID branchId) {
+        Branch entity = branchRepository.findById(branchId)
+                .orElseThrow(() -> new EntityNotFoundException("Branch not found: " + branchId));
+        return branchMapper.toResponse(entity);
     }
 
     @Override
-    public Branch getById(UUID id) {
-        return branchRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Branch not found with id " + id));
+    public Page<BranchResponse> findAllBranches(UUID restaurantId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Branch> branchPage;
+
+        if (restaurantId != null) {
+            branchPage = branchRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId, pageable);
+        } else {
+            branchPage = branchRepository.findByIsDeletedFalse(pageable);
+        }
+
+        return branchPage.map(branchMapper::toResponse);
     }
 
     @Override
-    public Branch create(Branch branch) {
-        // Validate restaurant exists
-        UUID restaurantId = branch.getRestaurant().getRestaurantId();
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + restaurantId));
-        branch.setRestaurant(restaurant);
-        return branchRepository.save(branch);
+    public BranchResponse updateBranch(UUID branchId, BranchRequest request) {
+        Branch existing = branchRepository.findById(branchId)
+                .orElseThrow(() -> new EntityNotFoundException("Branch not found: " + branchId));
+
+        existing.setAddress(request.getAddress());
+        existing.setPhone(request.getPhone());
+        existing.setTimezone(request.getTimezone());
+        existing.setRestaurantId(request.getRestaurantId());
+
+        if (request.getLongitude() != null && request.getLatitude() != null) {
+            existing.setLocation(branchMapper.toPoint(request.getLongitude(), request.getLatitude()));
+        }
+
+        existing = branchRepository.save(existing);
+        return branchMapper.toResponse(existing);
     }
 
     @Override
-    public Branch update(UUID id, Branch details) {
-        Branch existing = getById(id);
-        UUID restaurantId = details.getRestaurant().getRestaurantId();
-        Restaurant restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + restaurantId));
-
-        existing.setRestaurant(restaurant);
-        existing.setName(details.getName());
-        existing.setAddress(details.getAddress());
-        existing.setPhone(details.getPhone());
-        existing.setTimezone(details.getTimezone());
-        existing.setLocation(details.getLocation());
-
-        return branchRepository.save(existing);
-    }
-
-    @Override
-    public void delete(UUID id) {
-        Branch existing = getById(id);
-        branchRepository.delete(existing);
+    public void deleteBranch(UUID branchId) {
+        if (!branchRepository.existsById(branchId)) {
+            throw new EntityNotFoundException("Branch not found: " + branchId);
+        }
+        branchRepository.deleteById(branchId);
     }
 }

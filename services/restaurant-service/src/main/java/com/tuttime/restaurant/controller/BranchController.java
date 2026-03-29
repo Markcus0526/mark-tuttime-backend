@@ -1,151 +1,360 @@
 package com.tuttime.restaurant.controller;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import com.tuttime.restaurant.dto.BranchDto;
-import com.tuttime.restaurant.dto.MediaDto;
-import com.tuttime.restaurant.entity.Branch;
+import com.tuttime.common.dto.ApiRes;
+import com.tuttime.restaurant.dto.*;
 import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.mapper.BranchMapper;
+import com.tuttime.restaurant.enums.MediaType;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
-import com.tuttime.restaurant.service.RestaurantService;
+import com.tuttime.restaurant.service.ScheduleService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import org.apache.tika.Tika;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AllArgsConstructor;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/branches")
-@Tag(name = "Branches", description = "Operations related to menu branches")
+@RequestMapping("/api/v1/restaurants/{restaurantId}/branches")
+@Tag(name = "Branches", description = "Operations related to branches, schedules &amp; media")
 public class BranchController {
 
 	private final BranchService branchService;
-	private final RestaurantService restaurantService;
-	private final BranchMapper branchMapper;
+	private final ScheduleService scheduleService;
 	private final MediaService mediaService;
 
+	// --- Branch CRUD ---
+
+	@Operation(summary = "Get all branches", description = "Retrieve paginated list of branches with optional filters")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "List of branches retrieved successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
+	})
 	@GetMapping
-	@Operation(summary = "Get all branches")
-	public List<BranchDto> getAll() {
-		return branchService.getAll()
-				.stream()
-				.map(branchMapper::toDto)
-				.collect(Collectors.toList());
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
+	public ResponseEntity<ApiRes<Page<BranchResponse>>> getAllBranches(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		int maxPageSize = 100;
+		if (size > maxPageSize) size = maxPageSize;
+		Page<BranchResponse> branches = branchService.findAllBranches(restaurantId, page, size);
+		return ResponseEntity.ok(ApiRes.success(branches));
 	}
 
-	@GetMapping("/{id}")
-	@Operation(summary = "Get a branch by ID")
-	public ResponseEntity<BranchDto> getById(@PathVariable UUID id) {
-		Branch branch = branchService.getById(id);
-		return ResponseEntity.ok(branchMapper.toDto(branch));
+	@Operation(summary = "Get a branch by ID", description = "Retrieve detailed information about a branch by its ID")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Branch retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@GetMapping("/{branchId}")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
+	public ResponseEntity<ApiRes<BranchResponse>> getBranchById(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch to retrieve", required = true)
+			@PathVariable UUID branchId) {
+		BranchResponse branch = branchService.getBranchById(branchId);
+		return ResponseEntity.ok(ApiRes.success(branch));
 	}
 
+	@Operation(summary = "Create a new branch", description = "Add a new branch to a restaurant")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Branch created successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid input data"),
+			@ApiResponse(responseCode = "403", description = "Access denied")
+	})
 	@PostMapping
-	@Operation(summary = "Create a new branch")
-	public ResponseEntity<BranchDto> create(@RequestBody BranchDto dto) {
-		Restaurant restaurant = restaurantService.getRestaurantById(dto.getRestaurantId());
-		Branch branch = branchMapper.toEntity(dto, restaurant);
-		Branch saved = branchService.create(branch);
-		return ResponseEntity.ok(branchMapper.toDto(saved));
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER')")
+	public ResponseEntity<ApiRes<BranchResponse>> createBranch(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "Branch creation payload", required = true)
+			@Valid @RequestBody BranchRequest request) {
+		BranchResponse created = branchService.createBranch(restaurantId, request);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
-	@PutMapping("/{id}")
-	@Operation(summary = "Update an existing branch")
-	public ResponseEntity<BranchDto> update(@PathVariable UUID id, @RequestBody BranchDto dto) {
-		Restaurant restaurant = restaurantService.getRestaurantById(dto.getRestaurantId());
-		Branch branch = branchMapper.toEntity(dto, restaurant);
-		Branch updated = branchService.update(id, branch);
-		return ResponseEntity.ok(branchMapper.toDto(updated));
+	@Operation(summary = "Update a branch", description = "Update an existing branch's details")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Branch updated successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid update data"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@PutMapping("/{branchId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
+	public ResponseEntity<ApiRes<BranchResponse>> updateBranch(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch to update", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "Updated branch details", required = true)
+			@Valid @RequestBody BranchRequest request) {
+		BranchResponse updated = branchService.updateBranch(branchId, request);
+		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
-	@DeleteMapping("/{id}")
-	@Operation(summary = "Delete a branch by ID")
-	public ResponseEntity<Void> delete(@PathVariable UUID id) {
-		branchService.delete(id);
+	@Operation(summary = "Delete a branch", description = "Remove a branch and all its associated data")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Branch deleted successfully"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@DeleteMapping("/{branchId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
+	public ResponseEntity<Void> deleteBranch(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch to delete", required = true)
+			@PathVariable UUID branchId) {
+		branchService.deleteBranch(branchId);
 		return ResponseEntity.noContent().build();
+	}
+
+	// --- Branch Map (Media SVG) ---
+
+	@Operation(summary = "Get branch map SVG", description = "Retrieve the inline SVG map for a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Branch map SVG retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Branch or map not found")
+	})
+	@GetMapping("/{branchId}/map")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
+	public ResponseEntity<ApiRes<String>> getBranchMapSvg(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId) {
+		String svgContent = mediaService.getPrimarySvgMap(EntityType.BRANCH, branchId);
+		return ResponseEntity.ok(ApiRes.success(svgContent));
+	}
+
+	@Operation(summary = "Set/update branch map SVG", description = "Upload or update the inline SVG map for a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Branch map SVG set/updated successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid SVG content"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@PostMapping("/{branchId}/map")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
+	public ResponseEntity<ApiRes<Void>> setBranchMapSvg(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "SVG XML content", required = true)
+			@RequestBody String svgContent) {
+		mediaService.setOrUpdateSvgMap(EntityType.BRANCH, branchId, svgContent);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
 
 	// --- Branch Schedules ---
 
-//	@Operation(summary = "Get schedules for a branch", description = "Retrieve all schedule entries for a given branch.")
-//	@ApiResponses({
-//			@ApiResponse(responseCode = "200", description = "Schedules retrieved successfully"),
-//			@ApiResponse(responseCode = "404", description = "Branch not found")
-//	})
-//	@GetMapping("/branches/{branchId}/schedules")
-//	public ResponseEntity&lt;List&lt;ScheduleResponse&gt;&gt; getBranchSchedules(@PathVariable UUID branchId) {
-//		List&lt;ScheduleResponse&gt; schedules = scheduleService.getSchedulesByBranchId(branchId);
-//		return ResponseEntity.ok(schedules);
-//	}
-//
-//	@Operation(summary = "Create a schedule for a branch", description = "Add a new schedule entry to a branch.")
-//	@ApiResponses({
-//			@ApiResponse(responseCode = "201", description = "Schedule created successfully"),
-//			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
-//			@ApiResponse(responseCode = "404", description = "Branch not found")
-//	})
-//	@PostMapping("/branches/{branchId}/schedules")
-//	public ResponseEntity&lt;ScheduleResponse&gt; createBranchSchedule(@PathVariable UUID branchId,
-//	                                                                   @Valid @RequestBody ScheduleRequest request) {
-//		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request);
-//		return ResponseEntity.status(HttpStatus.CREATED).body(created);
-//	}
-//
-//	@Operation(summary = "Update a branch schedule", description = "Update a schedule entry of a branch.")
-//	@ApiResponses({
-//			@ApiResponse(responseCode = "200", description = "Schedule updated successfully"),
-//			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
-//			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
-//	})
-//	@PutMapping("/branches/{branchId}/schedules/{scheduleId}")
-//	public ResponseEntity&lt;ScheduleResponse&gt; updateBranchSchedule(@PathVariable UUID branchId,
-//	                                                                   @PathVariable UUID scheduleId,
-//	                                                                   @Valid @RequestBody ScheduleRequest request) {
-//		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, null, branchId, request);
-//		return ResponseEntity.ok(updated);
-//	}
-//
-//	@Operation(summary = "Delete a branch schedule", description = "Delete a schedule entry of a branch.")
-//	@ApiResponses({
-//			@ApiResponse(responseCode = "204", description = "Schedule deleted successfully"),
-//			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
-//	})
-//	@DeleteMapping("/branches/{branchId}/schedules/{scheduleId}")
-//	public ResponseEntity&lt;Void&gt; deleteBranchSchedule(@PathVariable UUID branchId,
-//	                                                       @PathVariable UUID scheduleId) {
-//		scheduleService.deleteSchedule(scheduleId, null, branchId);
-//		return ResponseEntity.noContent().build();
-//	}
-//
-//	@GetMapping("/{branchId}/media")
-//	public ResponseEntity<List<MediaDto>> getMediaByBranch(@PathVariable UUID branchId) {
-//		var medias = mediaService.getMediaByEntity(EntityType.BRANCH, branchId);
-//		var dtos = medias.stream().map(media -> {
-//			MediaDto dto = new MediaDto();
-//			dto.setMediaId(media.getMediaId());
-//			dto.setEntityType(media.getEntityType());
-//			dto.setEntityId(media.getEntityId());
-//			dto.setUrl(media.getUrl());
-//			dto.setAltText(media.getAltText());
-//			dto.setIsPrimary(media.getIsPrimary());
-//			dto.setMediaType(media.getMediaType());
-//			return dto;
-//		}).toList();
-//		return ResponseEntity.ok(dtos);
-//	}
+	@Operation(summary = "Get schedules for a branch", description = "Retrieve all schedule entries for a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Schedules retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@GetMapping("/{branchId}/schedules")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId) {
+		List<ScheduleResponse> schedules = scheduleService.getSchedulesByBranchId(branchId);
+		return ResponseEntity.ok(ApiRes.success(schedules));
+	}
+
+	@Operation(summary = "Add a schedule to a branch", description = "Create a new schedule entry for a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Schedule created successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@PostMapping("/{branchId}/schedules")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<ApiRes<ScheduleResponse>> addSchedule(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "Schedule details to create", required = true)
+			@Valid @RequestBody ScheduleRequest request) {
+		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+	}
+
+	@Operation(summary = "Update a branch schedule", description = "Update a specific schedule entry for a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Schedule updated successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
+	})
+	@PutMapping("/{branchId}/schedules/{scheduleId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<ApiRes<ScheduleResponse>> updateSchedule(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the schedule to update", required = true)
+			@PathVariable UUID scheduleId,
+			@Parameter(description = "Updated schedule details", required = true)
+			@Valid @RequestBody ScheduleRequest request) {
+		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, null, branchId, request);
+		return ResponseEntity.ok(ApiRes.success(updated));
+	}
+
+	@Operation(summary = "Delete a branch schedule", description = "Delete a specific schedule entry from a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Schedule deleted successfully"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
+	})
+	@DeleteMapping("/{branchId}/schedules/{scheduleId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<Void> deleteSchedule(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "UUID of the schedule to delete", required = true)
+			@PathVariable UUID scheduleId) {
+		scheduleService.deleteSchedule(scheduleId, null, branchId);
+		return ResponseEntity.noContent().build();
+	}
+
+	// --- Branch Media (Images, Videos, SVGs) ---
+
+	@Operation(summary = "Get media for a branch", description = "Retrieve all media items associated with a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Media retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@GetMapping("/{branchId}/medias")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
+	public ResponseEntity<ApiRes<List<MediaResponse>>> getMediaForBranch(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId) {
+		List<MediaResponse> medias = mediaService.getMediaByEntity(EntityType.BRANCH, branchId);
+		return ResponseEntity.ok(ApiRes.success(medias));
+	}
+
+	@Operation(summary = "Add media to a branch", description = "Upload a new media item (image/video/svg) for a branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Media added successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid media data"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@PostMapping("/{branchId}/medias")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
+	public ResponseEntity<ApiRes<MediaResponse>> addMediaToBranch(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId,
+			@Parameter(description = "Media file to upload", required = true)
+			@RequestParam("file") MultipartFile file,
+			@Parameter(description = "Alternative text for media", required = false)
+			@RequestParam(value = "altText", required = false) String altText,
+			@Parameter(description = "Flag indicating if this is the primary media", required = false)
+			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
+			@Parameter(description = "Type of media", required = false)
+			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
+
+		// Validate file size (e.g., max 5MB)
+		long maxFileSize = 5 * 1024 * 1024; // 5 MB
+		if (file.getSize() > maxFileSize) {
+			throw new IllegalArgumentException("File size exceeds the maximum allowed limit of 5 MB");
+		}
+
+		// Validate file type using Apache Tika
+		Tika tika = new Tika();
+		String detectedType;
+		try {
+			detectedType = tika.detect(file.getInputStream());
+		} catch (IOException e) {
+			throw new IllegalArgumentException("Could not detect file type");
+		}
+
+		// Allowed MIME types based on mediaType parameter
+		List<String> allowedMimeTypes;
+		switch (mediaType) {
+			case IMAGE:
+				allowedMimeTypes = List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
+				break;
+			case VIDEO:
+				allowedMimeTypes = List.of("video/mp4", "video/webm", "video/ogg");
+				break;
+			case SVG:
+				allowedMimeTypes = List.of("image/svg+xml");
+				break;
+			default:
+				throw new IllegalArgumentException("Unsupported media type");
+		}
+
+		if (!allowedMimeTypes.contains(detectedType)) {
+			throw new IllegalArgumentException("Invalid file type: " + detectedType);
+		}
+
+		// Optional: further validate SVG content if mediaType == SVG
+		if (mediaType == MediaType.SVG) {
+			try {
+				String svgContent = new String(file.getBytes(), StandardCharsets.UTF_8);
+				if (!isValidSvg(svgContent)) {
+					throw new IllegalArgumentException("Invalid or unsafe SVG content");
+				}
+			} catch (IOException e) {
+				throw new IllegalArgumentException("Failed to read SVG content");
+			}
+		}
+
+		MediaRequest request = new MediaRequest();
+		request.setEntityType(EntityType.BRANCH.name());
+		request.setEntityId(branchId);
+		request.setAltText(altText);
+		request.setIsPrimary(isPrimary);
+		request.setMediaType(mediaType);
+
+		MediaResponse created = mediaService.createMedia(request, file);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+	}
+
+	/**
+	 * Simple SVG validation example.
+	 * You should use a library or custom sanitizer to remove scripts and unsafe elements.
+	 */
+	private boolean isValidSvg(String svgContent) {
+		// Basic check: SVG must start with <svg and end with </svg>
+		if (!svgContent.trim().startsWith("<svg") || !svgContent.trim().endsWith("</svg>")) {
+			return false;
+		}
+		// Additional checks can be added here, e.g., disallow <script> tags
+		return !svgContent.toLowerCase().contains("<script");
+	}
 }

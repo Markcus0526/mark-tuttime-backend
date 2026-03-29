@@ -2,6 +2,7 @@ package com.tuttime.restaurant.dto;
 
 import java.util.UUID;
 
+import com.tuttime.restaurant.enums.TableStatus;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -25,7 +26,7 @@ public class TableRequest {
 
 	@NotBlank(message = "Status must not be blank")
 	@Size(max = 20, message = "Status must be at most 20 characters")
-	private String status;
+	private TableStatus status;
 
 	@NotNull(message = "isClosed must not be null")
 	private Boolean isClosed;

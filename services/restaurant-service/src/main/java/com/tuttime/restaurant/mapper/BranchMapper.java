@@ -1,39 +1,37 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.BranchDto;
+import com.tuttime.restaurant.dto.BranchRequest;
+import com.tuttime.restaurant.dto.BranchResponse;
 import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Restaurant;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.mapstruct.*;
 
-import org.mapstruct.Mapper;
+@Mapper(componentModel = "spring")
+public interface BranchMapper {
 
-@Mapper(componentModel = "spring") // This is the magic line
-public class BranchMapper {
+	GeometryFactory geometryFactory = new GeometryFactory();
 
-	public BranchDto toDto(Branch entity) {
-		if (entity == null)
-			return null;
-		BranchDto dto = new BranchDto();
-		dto.setBranchId(entity.getBranchId());
-		dto.setRestaurantId(entity.getRestaurant() != null ? entity.getRestaurant().getRestaurantId() : null);
-		dto.setName(entity.getName());
-		dto.setAddress(entity.getAddress());
-		dto.setPhone(entity.getPhone());
-		dto.setTimezone(entity.getTimezone());
-		dto.setLocation(entity.getLocation());
-		return dto;
+	@Mapping(target = "location", expression = "java(toPoint(request.getLongitude(), request.getLatitude()))")
+	@Mapping(target = "branchId", ignore = true)
+	@Mapping(target = "isDeleted", ignore = true)
+	@Mapping(target = "deletedAt", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "updatedAt", ignore = true)
+	Branch toEntity(BranchRequest request);
+
+	@Mapping(target = "longitude", expression = "java(fromPoint(entity.getLocation()) != null ? fromPoint(entity.getLocation()).x : null)")
+	@Mapping(target = "latitude", expression = "java(fromPoint(entity.getLocation()) != null ? fromPoint(entity.getLocation()).y : null)")
+	BranchResponse toResponse(Branch entity);
+
+	default Point toPoint(Double longitude, Double latitude) {
+		if (longitude == null || latitude == null) return null;
+		return geometryFactory.createPoint(new Coordinate(longitude, latitude));
 	}
 
-	public Branch toEntity(BranchDto dto, Restaurant restaurant) {
-		if (dto == null)
-			return null;
-		Branch entity = new Branch();
-		entity.setBranchId(dto.getBranchId());
-		entity.setRestaurant(restaurant);
-		entity.setName(dto.getName());
-		entity.setAddress(dto.getAddress());
-		entity.setPhone(dto.getPhone());
-		entity.setTimezone(dto.getTimezone());
-		entity.setLocation(dto.getLocation());
-		return entity;
+	default Coordinate fromPoint(Point point) {
+		if (point == null) return null;
+		return point.getCoordinate();
 	}
 }

@@ -1,39 +1,31 @@
 package com.tuttime.restaurant.dto;
 
+import com.tuttime.restaurant.enums.MediaType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.util.UUID;
 
-// --- MediaRequest DTO ---
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class MediaRequest {
 
-	@NotBlank(message = "Entity type must not be blank")
-	@Pattern(regexp = "RESTAURANT|BRANCH|ZONE|TABLE", message = "Entity type must be one of RESTAURANT, BRANCH, ZONE, TABLE")
-	private String entityType;
+	@NotNull(message = "Entity type is required")
+	private String entityType; // Could be validated against Enum in service layer
 
-	@NotNull(message = "Entity ID must not be null")
+	@NotNull(message = "Entity ID is required")
 	private UUID entityId;
 
-	@NotBlank(message = "URL must not be blank")
-	@Size(max = 1024, message = "URL must be at most 1024 characters")
-	@Pattern(regexp = "^(https?://).+", message = "URL must be a valid HTTP/HTTPS URL")
+	@NotBlank(message = "Media URL is required")
+	@Size(max = 1024, message = "Media URL must be at most 1024 characters")
 	private String url;
 
 	@Size(max = 255, message = "Alt text must be at most 255 characters")
 	private String altText;
 
-	@Builder.Default
-	private Boolean isPrimary = false;
+	private Boolean isPrimary;
 
-	@Builder.Default
-	@Pattern(regexp = "IMAGE|VIDEO", message = "Media type must be IMAGE or VIDEO")
-	private String mediaType = "IMAGE";
-
-	// Getters and setters omitted for brevity
+	@NotNull(message = "Media type is required")
+	private MediaType mediaType; // Could be validated against Enum in service layer
 }

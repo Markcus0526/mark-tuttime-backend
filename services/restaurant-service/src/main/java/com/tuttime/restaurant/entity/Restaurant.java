@@ -1,65 +1,76 @@
 package com.tuttime.restaurant.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.locationtech.jts.geom.Point;
+
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.locationtech.jts.geom.Point;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 @Entity
-@Table(name = "restaurants", schema = "restaurant_service")
-@Data
-@Builder
+@jakarta.persistence.Table(name = "restaurants", schema = "restaurant_service")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
+@Builder
 public class Restaurant {
 
 	@Id
-	@Column(name = "restaurant_id")
+	@GeneratedValue
+	@Column(name = "restaurant_id", nullable = false, updatable = false)
 	private UUID restaurantId;
 
 	@Column(name = "owner_user_id", nullable = false)
 	private UUID ownerUserId;
 
-	@Column(length = 255, nullable = false)
+	@Column(name = "name", nullable = false, length = 255)
 	private String name;
 
-	@Column(columnDefinition = "TEXT")
+	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
 
-	@Column(length = 512, nullable = false)
+	@Column(name = "address", nullable = false, length = 512)
 	private String address;
 
-	@Column(columnDefinition = "geography(Point,4326)")
-	@JdbcTypeCode(SqlTypes.GEOMETRY) // Modern alternative to @Type
+	@Column(name = "location", columnDefinition = "geography(Point,4326)")
 	private Point location;
 
-	@Column(length = 20)
+	@Column(name = "phone", length = 20)
 	private String phone;
 
-	@Column(length = 255)
+	@Column(name = "website", length = 255)
 	private String website;
 
-	@Column(precision = 2, scale = 1)
+	@Column(name = "rating", precision = 2, scale = 1)
 	private BigDecimal rating;
 
-	@Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-	private OffsetDateTime createdAt;
+	@Builder.Default
+	@Column(name = "is_deleted", nullable = false)
+	private boolean isDeleted = false;
 
-	@Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-	private OffsetDateTime updatedAt;
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt;
+
+	@Column(name = "updated_at")
+	private Instant updatedAt;
+
+	@PrePersist
+	public void prePersist() {
+		createdAt = Instant.now();
+		updatedAt = createdAt;
+		if (rating == null) {
+			rating = BigDecimal.ZERO;
+		}
+	}
+
+	@PreUpdate
+	public void preUpdate() {
+		updatedAt = Instant.now();
+	}
+
 }

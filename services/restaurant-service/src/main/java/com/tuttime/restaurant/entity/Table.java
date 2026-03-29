@@ -1,47 +1,86 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.restaurant.enums.TableStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "tables", schema = "restaurant_service")
-@Data
+@jakarta.persistence.Table(name = "tables", schema = "restaurant_service", indexes = {
+		@Index(name = "idx_tables_is_deleted", columnList = "is_deleted")
+}, uniqueConstraints = {
+		@UniqueConstraint(name = "unique_zone_table_number", columnNames = {"zone_id", "number"})
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Table {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "table_id")
+	@GeneratedValue
+	@Column(name = "table_id", nullable = false, updatable = false)
 	private UUID tableId;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "zone_id", nullable = false)
-	private Zone zone;
+	@Column(name = "zone_id", nullable = false)
+	private UUID zoneId;
 
-	@Column(length = 50, nullable = false)
+	@Column(name = "number", nullable = false, length = 50)
 	private String number;
 
-	@Column(nullable = false)
+	@Column(name = "seats", nullable = false)
 	private Integer seats;
 
 	@Builder.Default
-	@Column(length = 20, nullable = false)
-	private String status = "active";
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
+	private TableStatus status = TableStatus.ACTIVE;
 
-	@Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	@Builder.Default
+	@Column(name = "is_closed", nullable = false)
+	private boolean isClosed = false;
+
+	@Builder.Default
+	@Column(name = "is_deleted", nullable = false)
+	private boolean isDeleted = false;
+
+	@Column(name = "deleted_at")
+	private OffsetDateTime deletedAt;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
 	private OffsetDateTime createdAt;
 
-	@Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+	@Column(name = "updated_at")
 	private OffsetDateTime updatedAt;
 
-	// Getters and setters omitted for brevity
+	@PrePersist
+	public void prePersist() {
+//		createdAt = Instant.now();
+		updatedAt = createdAt;
+	}
 
+	@PreUpdate
+	public void preUpdate() {
+		updatedAt = Instant.now();
+	}
+
+	public void setIsClosed(boolean isClosed) {
+		this.isClosed = isClosed;
+	}
+
+	public boolean getIsClosed() {
+		return this.isClosed;
+	}
+
+	public void setIsDeleted(boolean isDeleted) {
+		this.isClosed = isDeleted;
+	}
+
+	public boolean getIsDeleted() {
+		return this.isDeleted;
+	}
 }

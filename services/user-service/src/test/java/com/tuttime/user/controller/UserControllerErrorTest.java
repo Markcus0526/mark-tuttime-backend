@@ -1,6 +1,6 @@
 package com.tuttime.user.controller;
 
-import com.tuttime.common.dto.ApiResponse;
+import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ErrorCodes;
 import com.tuttime.common.exception.ErrorResponse;
@@ -118,7 +118,7 @@ class UserControllerErrorTest {
 		when(userQueryService.getUserById(userId)).thenReturn(userResponse);
 
 		// When
-		ResponseEntity<ApiResponse<UserResponse>> response = userController.getUserById(1L, userId);
+		ResponseEntity<ApiRes<UserResponse>> response = userController.getUserById(1L, userId);
 
 		// Then
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

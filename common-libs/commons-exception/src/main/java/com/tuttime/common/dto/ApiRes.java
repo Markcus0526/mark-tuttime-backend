@@ -21,7 +21,7 @@ import java.time.ZoneOffset;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiResponse<T> {
+public class ApiRes<T> {
 	private Boolean success;
 	private String status;
 	private String message;
@@ -33,16 +33,16 @@ public class ApiResponse<T> {
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
 	private OffsetDateTime timestamp;
 
-	public static <T> ApiResponse<T> success(T data) {
-		return ApiResponse.<T>builder()
+	public static <T> ApiRes<T> success(T data) {
+		return ApiRes.<T>builder()
 				.success(true)
 				.data(data)
 				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
 				.build();
 	}
 
-	public static <T> ApiResponse<T> success(String message, T data) {
-		return ApiResponse.<T>builder()
+	public static <T> ApiRes<T> success(String message, T data) {
+		return ApiRes.<T>builder()
 				.success(true)
 				.message(message)
 				.data(data)
@@ -50,16 +50,16 @@ public class ApiResponse<T> {
 				.build();
 	}
 
-	public static <T> ApiResponse<T> error(String message) {
-		return ApiResponse.<T>builder()
+	public static <T> ApiRes<T> error(String message) {
+		return ApiRes.<T>builder()
 				.success(false)
 				.message(message)
 				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
 				.build();
 	}
 
-	public static <T> ApiResponse<T> error(String message, String errorCode) {
-		return ApiResponse.<T>builder()
+	public static <T> ApiRes<T> error(String message, String errorCode) {
+		return ApiRes.<T>builder()
 				.success(false)
 				.message(message)
 				.status(errorCode)

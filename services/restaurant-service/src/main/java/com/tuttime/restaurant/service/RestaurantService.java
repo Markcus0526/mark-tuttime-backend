@@ -6,16 +6,20 @@ import java.util.UUID;
 import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Restaurant;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.RequestParam;
 
 public interface RestaurantService {
 
-	List<RestaurantResponse> getAllRestaurants();
+	Page<RestaurantResponse> findRestaurantAll(UUID ownerUserId, Double minRating, Double maxRating, int page, int size);
 
-	RestaurantResponse getRestaurantById(UUID id);
+	RestaurantResponse getRestaurantById(UUID restaurantId);
 
-	RestaurantResponse createRestaurant(RestaurantRequest restaurant);
+	RestaurantResponse createRestaurant(RestaurantRequest request);
 
-	RestaurantResponse updateRestaurant(UUID id, RestaurantRequest restaurantDetails);
+	RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantRequest request);
 
-	void deleteRestaurant(UUID id);
+	void deleteRestaurant(UUID restaurantId);
+
+	Page<RestaurantResponse> findRestaurantsNearLocation(double latitude, double longitude, double radiusMeters, int page, int size);
 }

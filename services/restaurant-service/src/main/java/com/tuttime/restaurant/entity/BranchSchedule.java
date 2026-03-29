@@ -1,39 +1,35 @@
 package com.tuttime.restaurant.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Type;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "branch_schedules", schema = "restaurant_service")
-@Data
-@Builder
+@jakarta.persistence.Table(name = "branch_schedules", schema = "restaurant_service", indexes = {
+		@Index(name = "idx_branch_schedule_branch_id", columnList = "branch_id"),
+		@Index(name = "idx_branch_schedule_day_of_week", columnList = "day_of_week"),
+		@Index(name = "idx_branch_schedule_is_deleted", columnList = "is_deleted")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
+@Builder
 public class BranchSchedule {
 
 	@Id
-	@GeneratedValue(generator = "UUID")
-	@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-//	@Type(type = "pg-uuid")
-	@Column(name = "schedule_id", updatable = false, nullable = false)
+	@GeneratedValue
+	@Column(name = "schedule_id", nullable = false, updatable = false)
 	private UUID scheduleId;
 
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
 	@Column(name = "day_of_week", nullable = false)
-	private int dayOfWeek; // 0=Sunday ... 6=Saturday
+	private Short dayOfWeek;
 
 	@Column(name = "open_time", nullable = false)
 	private LocalTime openTime;
@@ -41,24 +37,31 @@ public class BranchSchedule {
 	@Column(name = "close_time", nullable = false)
 	private LocalTime closeTime;
 
+	@Builder.Default
 	@Column(name = "is_closed", nullable = false)
-	private boolean isClosed;
+	private boolean isClosed = false;
+
+	@Builder.Default
+	@Column(name = "is_deleted", nullable = false)
+	private boolean isDeleted = false;
+
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt;
+	private Instant createdAt;
 
 	@Column(name = "updated_at")
-	private OffsetDateTime updatedAt;
+	private Instant updatedAt;
 
 	@PrePersist
 	public void prePersist() {
-		createdAt = OffsetDateTime.now();
+		createdAt = Instant.now();
 		updatedAt = createdAt;
 	}
 
 	@PreUpdate
 	public void preUpdate() {
-		updatedAt = OffsetDateTime.now();
+		updatedAt = Instant.now();
 	}
-
 }
