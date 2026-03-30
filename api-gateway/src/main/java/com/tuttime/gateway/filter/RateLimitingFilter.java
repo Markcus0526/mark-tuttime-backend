@@ -22,10 +22,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
@@ -211,7 +208,7 @@ public class RateLimitingFilter extends AbstractGatewayFilterFactory<RateLimitin
 			if (authHeader != null && authHeader.startsWith("Bearer ")) {
 				try {
 					String token = authHeader.substring(7);
-					Long userId = jwtTokenUtil.getUserIdFromToken(token);
+					UUID userId = jwtTokenUtil.getUserIdFromToken(token);
 					if (userId != null) {
 						return "user:" + userId;
 					}

@@ -14,3 +14,4 @@ admin-gateway/target
 common-libs/commons-auth/target
 common-libs/commons-events/target
 common-libs/commons-exception/target
+/media-uploads

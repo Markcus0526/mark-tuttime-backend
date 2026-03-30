@@ -30,7 +30,7 @@ import java.util.UUID;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/restaurants/{restaurantId}/branches")
-@Tag(name = "Branches", description = "Operations related to branches, schedules &amp; media")
+@Tag(name = "Branches", description = "Operations related to branches, schedules & media")
 public class BranchController {
 
 	private final BranchService branchService;

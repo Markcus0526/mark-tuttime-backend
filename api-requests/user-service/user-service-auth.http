@@ -10,7 +10,7 @@
 ### User signup with phone/email and password
 ### Request Body: SignupRequest
 ### Response: No content (201)
-POST {{baseUrl}}{{path}}/signup
+POST {{baseUrl}}{{path}}/register
 Content-Type: application/json
 
 {
@@ -23,7 +23,7 @@ Content-Type: application/json
 ### User signin with phone + SMS code or email + password
 ### Request Body: SigninRequest
 ### Response: "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-POST {{baseUrl}}{{path}}/signin
+POST {{baseUrl}}{{path}}/login
 Content-Type: application/json
 
 {

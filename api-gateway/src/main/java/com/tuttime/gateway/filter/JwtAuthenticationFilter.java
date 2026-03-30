@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * JWT Authentication Filter: validates JWT tokens, checks whitelist/blacklist, validates ISS/AUD, adds user info to headers.
@@ -101,8 +102,9 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 						}
 
 						try {
-							Long userId = jwtTokenUtil.getUserIdFromToken(token);
+							UUID userId = jwtTokenUtil.getUserIdFromToken(token);
 							String email = jwtTokenUtil.getEmailFromToken(token);
+							String roles = jwtTokenUtil.getRolesFromToken(token);
 
 							if (userId == null || email == null) {
 								log.warn("JWT Filter: Failed to extract user information from token");

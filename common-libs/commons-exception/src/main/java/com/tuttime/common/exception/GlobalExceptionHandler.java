@@ -1,6 +1,7 @@
 package com.tuttime.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
@@ -9,9 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.nio.file.AccessDeniedException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
@@ -476,6 +479,48 @@ public class GlobalExceptionHandler {
 				.body(error);
 	}
 
+	/// new added
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
+		return errorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+	}
+
+	@ExceptionHandler(SecurityException.class)
+	public ResponseEntity<Map<String, String>> handleSecurityException(SecurityException ex) {
+		return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
+		return errorResponse(HttpStatus.FORBIDDEN, "Access denied");
+	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
+		Map<String, String> errors = new HashMap<>();
+		ex.getConstraintViolations().forEach(violation -> {
+			String path = violation.getPropertyPath().toString();
+			errors.put(path.substring(path.lastIndexOf('.') + 1), violation.getMessage());
+		});
+		return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+	}
+
+	@ExceptionHandler(ConflictException.class)
+	public ResponseEntity<?> handleConflict(ConflictException ex) {
+		return errorResponse(HttpStatus.CONFLICT, ex.getMessage());
+	}
+
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
+		return errorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+	}
+
+	private ResponseEntity<Map<String, String>> errorResponse(HttpStatus status, String message) {
+		Map<String, String> error = new HashMap<>();
+		error.put("error", message);
+		return new ResponseEntity<>(error, new HttpHeaders(), status);
+	}
+	
 	/**
 	 * Extracts correlation ID from request header or MDC context.
 	 */
