@@ -3,6 +3,8 @@ package com.tuttime.user.service;
 import com.tuttime.user.dto.SignupRequest;
 import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
+import com.tuttime.user.enums.AuthProvider;
+import com.tuttime.user.enums.UserStatus;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.repository.RoleRepository;
 import com.tuttime.user.repository.UserAuthMethodRepository;

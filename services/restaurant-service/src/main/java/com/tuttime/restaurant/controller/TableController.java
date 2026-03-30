@@ -1,27 +1,25 @@
 package com.tuttime.restaurant.controller;
 
-import java.util.List;
-import java.util.UUID;
-
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.TableRequest;
 import com.tuttime.restaurant.dto.TableResponse;
+import com.tuttime.restaurant.enums.TableStatus;
 import com.tuttime.restaurant.service.TableService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.validation.Valid;
-
 import lombok.AllArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -37,7 +35,7 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@GetMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<TableResponse>>> getTablesInZone(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -56,7 +54,7 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@GetMapping("/{tableId}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<TableResponse>> getTableById(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -139,5 +137,50 @@ public class TableController {
 		// Service should verify hierarchical ownership before deletion
 		tableService.deleteTable(tableId, zoneId);
 		return ResponseEntity.noContent().build();
+	}
+	
+	// Reservation
+	
+	@Operation(summary = "Get available tables in a zone for a time range")
+	@GetMapping("/available")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER')")
+	public ResponseEntity<ApiRes<List<TableResponse>>> getAvailableTables(
+			@PathVariable UUID restaurantId,
+			@PathVariable UUID branchId,
+			@PathVariable UUID zoneId,
+			@RequestParam @Parameter(description = "Reservation start time in ISO 8601 format", required = true)
+			Instant from,
+			@RequestParam @Parameter(description = "Reservation end time in ISO 8601 format", required = true)
+			Instant to) {
+
+		List<TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
+		return ResponseEntity.ok(ApiRes.success(availableTables));
+	}
+
+	@Operation(summary = "Get reservation status of a table")
+	@GetMapping("/{tableId}/status")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER')")
+	public ResponseEntity<ApiRes<TableStatus>> getTableStatus(
+			@PathVariable UUID restaurantId,
+			@PathVariable UUID branchId,
+			@PathVariable UUID zoneId,
+			@PathVariable UUID tableId) {
+
+		TableStatus status = tableService.getTableCurrentStatus(tableId);
+		return ResponseEntity.ok(ApiRes.success(status));
+	}
+
+	@Operation(summary = "Confirm or link a reservation to a table")
+	@PostMapping("/{tableId}/reservations/{reservationId}/confirm")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
+	public ResponseEntity<ApiRes<Void>> confirmReservation(
+			@PathVariable UUID restaurantId,
+			@PathVariable UUID branchId,
+			@PathVariable UUID zoneId,
+			@PathVariable UUID tableId,
+			@PathVariable UUID reservationId) {
+
+		tableService.confirmReservation(tableId, reservationId);
+		return ResponseEntity.ok(ApiRes.success(null));
 	}
 }

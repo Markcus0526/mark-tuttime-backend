@@ -6,10 +6,12 @@ import org.locationtech.jts.geom.Point;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "restaurants", schema = "restaurant_service")
+@jakarta.persistence.Table(name = "restaurants")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -51,17 +53,16 @@ public class Restaurant {
 	private boolean isDeleted = false;
 
 	@Column(name = "deleted_at")
-	private Instant deletedAt;
+	private OffsetDateTime deletedAt;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt;
+	private OffsetDateTime createdAt;
 
 	@Column(name = "updated_at")
-	private Instant updatedAt;
+	private OffsetDateTime updatedAt;
 
 	@PrePersist
 	public void prePersist() {
-		createdAt = Instant.now();
 		updatedAt = createdAt;
 		if (rating == null) {
 			rating = BigDecimal.ZERO;
@@ -70,7 +71,7 @@ public class Restaurant {
 
 	@PreUpdate
 	public void preUpdate() {
-		updatedAt = Instant.now();
+		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
 	}
 
 }

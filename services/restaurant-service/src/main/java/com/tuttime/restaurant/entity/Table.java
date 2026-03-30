@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Entity
@@ -59,13 +60,12 @@ public class Table {
 
 	@PrePersist
 	public void prePersist() {
-//		createdAt = Instant.now();
 		updatedAt = createdAt;
 	}
 
 	@PreUpdate
 	public void preUpdate() {
-		updatedAt = Instant.now();
+		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
 	}
 
 	public void setIsClosed(boolean isClosed) {
@@ -77,7 +77,7 @@ public class Table {
 	}
 
 	public void setIsDeleted(boolean isDeleted) {
-		this.isClosed = isDeleted;
+		this.isDeleted = isDeleted;
 	}
 
 	public boolean getIsDeleted() {

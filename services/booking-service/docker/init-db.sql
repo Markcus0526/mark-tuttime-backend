@@ -83,8 +83,8 @@ CREATE TABLE booking_status_histories
     CONSTRAINT fk_booking_status_histories_booking FOREIGN KEY (booking_id) REFERENCES bookings (booking_id)
 );
 
--- Table: booking_notifications_s
-CREATE TABLE booking_notifications_s
+-- Table: booking_notifications
+CREATE TABLE booking_notifications
 (
     notification_id   UUID PRIMARY KEY,
     booking_id        UUID         NOT NULL,
@@ -92,5 +92,5 @@ CREATE TABLE booking_notifications_s
     sent_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status            VARCHAR(20)  NOT NULL,
     recipient_contact VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_booking_notifications_s_booking FOREIGN KEY (booking_id) REFERENCES bookings (booking_id)
+    CONSTRAINT fk_booking_notifications_booking FOREIGN KEY (booking_id) REFERENCES bookings (booking_id)
 );

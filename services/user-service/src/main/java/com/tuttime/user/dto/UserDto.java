@@ -1,6 +1,6 @@
 package com.tuttime.user.dto;
 
-import com.tuttime.user.entity.UserStatus;
+import com.tuttime.user.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

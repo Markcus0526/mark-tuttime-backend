@@ -1,10 +1,5 @@
 package com.tuttime.restaurant.controller;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
-
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.*;
 import com.tuttime.restaurant.enums.EntityType;
@@ -12,10 +7,11 @@ import com.tuttime.restaurant.enums.MediaType;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.ScheduleService;
-
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.apache.tika.Tika;
@@ -26,8 +22,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -82,7 +80,7 @@ public class BranchController {
 			@ApiResponse(responseCode = "403", description = "Access denied")
 	})
 	@PostMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER')")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<BranchResponse>> createBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -175,7 +173,7 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}/schedules")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -303,20 +301,12 @@ public class BranchController {
 		}
 
 		// Allowed MIME types based on mediaType parameter
-		List<String> allowedMimeTypes;
-		switch (mediaType) {
-			case IMAGE:
-				allowedMimeTypes = List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
-				break;
-			case VIDEO:
-				allowedMimeTypes = List.of("video/mp4", "video/webm", "video/ogg");
-				break;
-			case SVG:
-				allowedMimeTypes = List.of("image/svg+xml");
-				break;
-			default:
-				throw new IllegalArgumentException("Unsupported media type");
-		}
+		List<String> allowedMimeTypes = switch (mediaType) {
+			case IMAGE -> List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
+			case VIDEO -> List.of("video/mp4", "video/webm", "video/ogg");
+			case SVG -> List.of("image/svg+xml");
+			default -> throw new IllegalArgumentException("Unsupported media type");
+		};
 
 		if (!allowedMimeTypes.contains(detectedType)) {
 			throw new IllegalArgumentException("Invalid file type: " + detectedType);
@@ -335,7 +325,7 @@ public class BranchController {
 		}
 
 		MediaRequest request = new MediaRequest();
-		request.setEntityType(EntityType.BRANCH.name());
+		request.setEntityType(EntityType.BRANCH);
 		request.setEntityId(branchId);
 		request.setAltText(altText);
 		request.setIsPrimary(isPrimary);

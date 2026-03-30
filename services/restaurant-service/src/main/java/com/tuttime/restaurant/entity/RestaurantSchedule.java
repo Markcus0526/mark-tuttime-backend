@@ -1,10 +1,13 @@
 package com.tuttime.restaurant.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Entity
@@ -32,9 +35,11 @@ public class RestaurantSchedule {
 	private Short dayOfWeek;
 
 	@Column(name = "open_time", nullable = false)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
 	private LocalTime openTime;
 
 	@Column(name = "close_time", nullable = false)
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
 	private LocalTime closeTime;
 
 	@Builder.Default
@@ -46,22 +51,21 @@ public class RestaurantSchedule {
 	private boolean isDeleted = false;
 
 	@Column(name = "deleted_at")
-	private Instant deletedAt;
+	private OffsetDateTime deletedAt;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt;
+	private OffsetDateTime createdAt;
 
 	@Column(name = "updated_at")
-	private Instant updatedAt;
+	private OffsetDateTime updatedAt;
 
 	@PrePersist
 	public void prePersist() {
-		createdAt = Instant.now();
 		updatedAt = createdAt;
 	}
 
 	@PreUpdate
 	public void preUpdate() {
-		updatedAt = Instant.now();
+		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
 	}
 }

@@ -1,14 +1,12 @@
 package com.tuttime.restaurant.service;
 
-import java.util.List;
-import java.util.UUID;
-
-import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.dto.MediaRequest;
 import com.tuttime.restaurant.dto.MediaResponse;
 import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.entity.Media;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.UUID;
 
 public interface MediaService {
 
@@ -22,8 +20,9 @@ public interface MediaService {
 
 	/**
 	 * Retrieves the primary SVG map content for the given entity type and entity ID.
+	 *
 	 * @param entityType the type of entity (e.g., BRANCH)
-	 * @param entityId the UUID of the entity
+	 * @param entityId   the UUID of the entity
 	 * @return SVG content as a String
 	 */
 	String getPrimarySvgMap(EntityType entityType, UUID entityId);

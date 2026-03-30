@@ -2,6 +2,8 @@ package com.tuttime.user.service;
 
 import com.tuttime.user.dto.SigninRequest;
 import com.tuttime.user.entity.*;
+import com.tuttime.user.enums.AuthProvider;
+import com.tuttime.user.enums.UserStatus;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.util.JwtUtil;
 import jakarta.persistence.EntityNotFoundException;

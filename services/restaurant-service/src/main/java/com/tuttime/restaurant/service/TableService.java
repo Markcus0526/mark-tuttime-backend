@@ -1,12 +1,12 @@
 package com.tuttime.restaurant.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
 import com.tuttime.restaurant.dto.TableRequest;
 import com.tuttime.restaurant.dto.TableResponse;
-import com.tuttime.restaurant.entity.Table;
+import com.tuttime.restaurant.enums.TableStatus;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 public interface TableService {
 
@@ -19,4 +19,10 @@ public interface TableService {
 	TableResponse updateTable(UUID tableId, UUID zoneId, TableRequest request);
 
 	void deleteTable(UUID tableId, UUID zoneId);
+
+	List<TableResponse> findAvailableTables(UUID zoneId, Instant from, Instant to);
+
+	TableStatus getTableCurrentStatus(UUID tableId);
+
+	void confirmReservation(UUID tableId, UUID reservationId);
 }

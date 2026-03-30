@@ -1,10 +1,15 @@
 package com.tuttime.restaurant.dto;
 
-import java.util.UUID;
-
 import com.tuttime.restaurant.enums.TableStatus;
-import jakarta.validation.constraints.*;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -24,8 +29,8 @@ public class TableRequest {
 	@Min(value = 1, message = "Seats must be at least 1")
 	private Integer seats;
 
-	@NotBlank(message = "Status must not be blank")
-	@Size(max = 20, message = "Status must be at most 20 characters")
+	@Enumerated(EnumType.STRING)
+	@NotNull(message = "Table status is required")
 	private TableStatus status;
 
 	@NotNull(message = "isClosed must not be null")

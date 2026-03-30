@@ -1,24 +1,17 @@
 package com.tuttime.restaurant.controller;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.UUID;
-
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.*;
 import com.tuttime.restaurant.enums.EntityType;
 import com.tuttime.restaurant.enums.MediaType;
-import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.RestaurantService;
 import com.tuttime.restaurant.service.ScheduleService;
-import com.tuttime.restaurant.service.TableService;
-import com.tuttime.restaurant.service.ZoneService;
-
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.apache.tika.Tika;
@@ -29,8 +22,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -144,44 +139,6 @@ public class RestaurantController {
 		return ResponseEntity.ok(ApiRes.success(restaurants));
 	}
 
-	// --- Branch Map (Media SVG) ---
-
-	@Operation(summary = "Get branch map SVG", description = "Retrieve the inline SVG map for a branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Branch map SVG retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Branch or map not found")
-	})
-	@GetMapping("/{restaurantId}/branches/{branchId}/map")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
-	public ResponseEntity<ApiRes<String>> getBranchMapSvg(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId) {
-		String svgContent = mediaService.getPrimarySvgMap(EntityType.BRANCH, branchId);
-		return ResponseEntity.ok(ApiRes.success(svgContent));
-	}
-
-	@Operation(summary = "Set/update branch map SVG", description = "Upload or update the inline SVG map for a branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Branch map SVG set/updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid SVG content"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	@PostMapping("/{restaurantId}/branches/{branchId}/map")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
-	public ResponseEntity<ApiRes<Void>> setBranchMapSvg(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
-			@Parameter(description = "SVG XML content", required = true)
-			@RequestBody String svgContent) {
-		mediaService.setOrUpdateSvgMap(EntityType.BRANCH, branchId, svgContent);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
-	}
-
 	// --- Restaurant Schedules ---
 
 	@Operation(summary = "Get schedules for a restaurant", description = "Retrieve all schedule entries for a restaurant")
@@ -190,7 +147,7 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{restaurantId}/schedules")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId) {
@@ -276,13 +233,13 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "403", description = "Access denied"),
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
-	@PostMapping("/{restaurantId}/medias")
+//	@PostMapping("/{restaurantId}/medias")
+	@PostMapping(value = "/{restaurantId}/medias", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
 	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<MediaResponse>> addMediaToRestaurant(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
-			@Parameter(description = "Media file to upload", required = true)
-			@RequestParam("file") MultipartFile file,
+			@RequestPart("file") MultipartFile file,
 			@Parameter(description = "Alternative text for media", required = false)
 			@RequestParam(value = "altText", required = false) String altText,
 			@Parameter(description = "Flag indicating if this is the primary media", required = false)
@@ -306,20 +263,12 @@ public class RestaurantController {
 		}
 
 		// Allowed MIME types based on mediaType parameter
-		List<String> allowedMimeTypes;
-		switch (mediaType) {
-			case IMAGE:
-				allowedMimeTypes = List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
-				break;
-			case VIDEO:
-				allowedMimeTypes = List.of("video/mp4", "video/webm", "video/ogg");
-				break;
-			case SVG:
-				allowedMimeTypes = List.of("image/svg+xml");
-				break;
-			default:
-				throw new IllegalArgumentException("Unsupported media type");
-		}
+		List<String> allowedMimeTypes = switch (mediaType) {
+			case IMAGE -> List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
+			case VIDEO -> List.of("video/mp4", "video/webm", "video/ogg");
+			case SVG -> List.of("image/svg+xml");
+			default -> throw new IllegalArgumentException("Unsupported media type");
+		};
 
 		if (!allowedMimeTypes.contains(detectedType)) {
 			throw new IllegalArgumentException("Invalid file type: " + detectedType);
@@ -338,7 +287,7 @@ public class RestaurantController {
 		}
 
 		MediaRequest request = new MediaRequest();
-		request.setEntityType(EntityType.RESTAURANT.name());
+		request.setEntityType(EntityType.RESTAURANT);
 		request.setEntityId(restaurantId);
 		request.setAltText(altText);
 		request.setIsPrimary(isPrimary);
@@ -355,9 +304,11 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "403", description = "Access denied"),
 			@ApiResponse(responseCode = "404", description = "Media not found")
 	})
-	@PutMapping("/medias/{mediaId}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PutMapping("/{restaurantId}/medias/{mediaId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<MediaResponse>> updateMedia(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the media to update", required = true)
 			@PathVariable UUID mediaId,
 			@Parameter(description = "Updated media details", required = true)
@@ -372,9 +323,11 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "403", description = "Access denied"),
 			@ApiResponse(responseCode = "404", description = "Media not found")
 	})
-	@DeleteMapping("/medias/{mediaId}")
-	@PreAuthorize("hasRole('ADMIN')")
+	@DeleteMapping("/{restaurantId}/medias/{mediaId}")
+	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<Void> deleteMedia(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId) {
 		mediaService.deleteMedia(mediaId);
@@ -386,11 +339,11 @@ public class RestaurantController {
 	 * You should use a library or custom sanitizer to remove scripts and unsafe elements.
 	 */
 	private boolean isValidSvg(String svgContent) {
-		// Basic check: SVG must start with &lt;svg and end with &lt;/svg&gt;
+		// Basic check: SVG must start with <svg and end with </svg>
 		if (!svgContent.trim().startsWith("<svg") || !svgContent.trim().endsWith("</svg>")) {
 			return false;
 		}
-		// Additional checks can be added here, e.g., disallow &lt;script&gt; tags
+		// Additional checks can be added here, e.g., disallow <script> tags
 		return !svgContent.toLowerCase().contains("<script");
 	}
 }

@@ -3,7 +3,7 @@ package com.tuttime.restaurant.service.impl;
 import com.tuttime.restaurant.dto.ScheduleRequest;
 import com.tuttime.restaurant.dto.ScheduleResponse;
 import com.tuttime.restaurant.entity.RestaurantSchedule;
-import com.tuttime.restaurant.mapper.ScheduleMapper;
+import com.tuttime.restaurant.mapper.RestaurantScheduleMapper;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.RestaurantScheduleRepository;
 import com.tuttime.restaurant.service.ScheduleService;
@@ -22,7 +22,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	private final RestaurantScheduleRepository scheduleRepository;
 	private final RestaurantRepository restaurantRepository;
-	private final ScheduleMapper scheduleMapper;
+	private final RestaurantScheduleMapper scheduleMapper;
 
 	@Override
 	public List<ScheduleResponse> getSchedulesByRestaurantId(UUID restaurantId) {
@@ -42,7 +42,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
 
 		RestaurantSchedule schedule = scheduleMapper.toEntity(request);
-		schedule.setRestaurant(restaurant);
+		schedule.setRestaurantId(restaurant.getRestaurantId());
 
 		RestaurantSchedule saved = scheduleRepository.save(schedule);
 		return scheduleMapper.toResponse(saved);
@@ -54,7 +54,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 		var schedule = scheduleRepository.findById(scheduleId)
 				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
 
-		if (!schedule.getRestaurant().getRestaurantId().equals(restaurantId)) {
+		if (!schedule.getRestaurantId().equals(restaurantId)) {
 			throw new IllegalArgumentException("Schedule does not belong to the restaurant");
 		}
 
@@ -69,11 +69,31 @@ public class ScheduleServiceImpl implements ScheduleService {
 		var schedule = scheduleRepository.findById(scheduleId)
 				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
 
-		if (!schedule.getRestaurant().getRestaurantId().equals(restaurantId)) {
+		if (!schedule.getRestaurantId().equals(restaurantId)) {
 			throw new IllegalArgumentException("Schedule does not belong to the restaurant");
 		}
 
 		scheduleRepository.delete(schedule);
+	}
+
+	@Override
+	public List<ScheduleResponse> getSchedulesByBranchId(UUID branchId) {
+		return List.of();
+	}
+
+	@Override
+	public ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request) {
+		return null;
+	}
+
+	@Override
+	public ScheduleResponse updateSchedule(UUID scheduleId, UUID restaurantId, String userId, ScheduleRequest request) {
+		return null;
+	}
+
+	@Override
+	public void deleteSchedule(UUID scheduleId, UUID restaurantId, String userId) {
+
 	}
 
 }
