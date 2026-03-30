@@ -12,8 +12,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-user_service_db}
     volumes:
       - user_service_db_data:/var/lib/postgresql/data
-      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:r
-      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init-schema.sql:ro
+      - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/02-init-schema.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres} -d user_service_db" ]
       interval: 10s
@@ -34,10 +34,10 @@ services:
       user-service-db:
         condition: service_healthy
     env_file:
-      - .env.local
+      - .env
     environment:
       # Explicitly set profile to ensure docker profile is active
-      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env.local
+      # To enable Graylog logging, set SPRING_PROFILES_ACTIVE=docker,graylog-enabled in .env
       # Example: SPRING_PROFILES_ACTIVE=docker,graylog-enabled
       SPRING_PROFILES_ACTIVE: docker
       # Graylog Configuration (optional - only used if graylog-enabled profile is active)
@@ -46,18 +46,18 @@ services:
       # Database configuration
       DATABASE_URL: jdbc:postgresql://tuttime-user-service-db:5432/user_service_db?currentSchema=user_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC
       DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
-      # DATABASE_PASSWORD will be loaded from .env.local via env_file
+      # DATABASE_PASSWORD will be loaded from .env via env_file
       # Redis configuration - explicitly set to ensure they're passed to container
       REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
-      # REDIS_PASSWORD will be loaded from .env.local via env_file
+      # REDIS_PASSWORD will be loaded from .env via env_file
       # Don't set it here to avoid overriding the value from env_file
       KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
       ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
       GRPC_PORT: 29191
       JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
     ports:
-      - "8001:8001"
+      - "28001:28001"
       - "29191:29191"
     networks:
       - tuttime-network

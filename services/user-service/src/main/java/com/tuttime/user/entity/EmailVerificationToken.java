@@ -20,9 +20,8 @@ public class EmailVerificationToken {
 	@GeneratedValue(generator = "gen_random_uuid")
 	private UUID id;
 
-	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+	private UUID userId;
 
 	@Column(nullable = false, unique = true)
 	private String token;

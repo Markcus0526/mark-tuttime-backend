@@ -1,37 +1,36 @@
 package com.tuttime.user.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "password_reset_tokens", schema = "user_service",
-		uniqueConstraints = @UniqueConstraint(columnNames = {"token"}))
+@Table(name = "password_reset_tokens",
+		indexes = {
+				@Index(name = "idx_password_reset_tokens_user_id", columnList = "user_id")
+		})
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class PasswordResetToken {
 	@Id
-	@GeneratedValue(generator = "gen_random_uuid")
+	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+	private UUID userId;
 
-	@Column(nullable = false, unique = true)
+	@Column(length = 255, unique = true, nullable = false)
 	private String token;
 
-	@Column(name = "expires_at", nullable = false)
-	private Instant expiresAt;
+	@Column(nullable = false)
+	private OffsetDateTime expiresAt;
 
-	@Builder.Default
 	@Column(nullable = false)
 	private boolean used = false;
+
+	@Column(nullable = false, updatable = false)
+	@CreationTimestamp
+	private OffsetDateTime createdAt;
 }

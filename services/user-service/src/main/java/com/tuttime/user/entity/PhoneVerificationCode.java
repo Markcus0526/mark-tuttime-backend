@@ -1,40 +1,35 @@
 package com.tuttime.user.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "phone_verification_codes", schema = "user_service",
-		indexes = @Index(name = "idx_active_phone_codes", columnList = "phone_number", unique = false))
+@Table(name = "phone_verification_codes",
+		indexes = {
+				@Index(name = "idx_phone_codes_phone_number", columnList = "phone_number")
+		})
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class PhoneVerificationCode {
 	@Id
-	@GeneratedValue(generator = "gen_random_uuid")
+	@GeneratedValue(generator = "UUID")
+	@Column(name = "id", nullable = false, length = 36)
 	private UUID id;
 
-	@Column(name = "phone_number", nullable = false)
+	@Column(name = "phone_number", length = 20, nullable = false)
 	private String phoneNumber;
 
-	@Column(name = "code", nullable = false)
+	@Column(name = "code", length = 10, nullable = false)
 	private String code;
 
 	@Column(name = "expires_at", nullable = false)
-	private Instant expiresAt;
+	private OffsetDateTime expiresAt;
 
-	@Builder.Default
-	@Column(nullable = false)
+	@Column(name = "used", nullable = false)
 	private boolean used = false;
 
-	@Builder.Default
 	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt = Instant.now();
+	private OffsetDateTime createdAt = OffsetDateTime.now();
 }

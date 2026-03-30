@@ -1,38 +1,33 @@
 package com.tuttime.user.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 import org.locationtech.jts.geom.Point;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_locations", schema = "user_service",
-		indexes = @Index(name = "idx_user_locations_gist", columnList = "location"))
+@Table(name = "user_locations",
+		indexes = {
+				@Index(name = "idx_user_locations_gist", columnList = "location")
+		})
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class UserLocation {
 	@Id
-	@GeneratedValue(generator = "gen_random_uuid")
+	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
 	private UUID id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+	private UUID userId;
 
-	@Column(nullable = false, columnDefinition = "geography(Point,4326)")
+	@Column(columnDefinition = "geography(Point,4326)", nullable = false)
 	private Point location;
 
-	@Column(name = "accuracy_meters")
 	private Float accuracyMeters;
 
-	@Builder.Default
-	@Column(name = "recorded_at", nullable = false)
-	private Instant recordedAt = Instant.now();
+	@Column(nullable = false)
+	@CreationTimestamp
+	private OffsetDateTime recordedAt;
 }
