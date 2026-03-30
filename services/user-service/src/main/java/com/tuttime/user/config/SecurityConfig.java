@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	@Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080,https://tuttime-admin.frontare.ink}")
+	@Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
 	private String allowedOrigins;
 
 	@Bean

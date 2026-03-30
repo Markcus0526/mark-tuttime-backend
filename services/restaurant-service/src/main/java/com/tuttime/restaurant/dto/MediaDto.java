@@ -1,16 +1,11 @@
 package com.tuttime.restaurant.dto;
 
-import java.time.Instant;
-import java.util.UUID;
-
 import com.tuttime.restaurant.enums.EntityType;
 import com.tuttime.restaurant.enums.MediaType;
+import lombok.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter

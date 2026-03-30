@@ -1,6 +1,6 @@
 package com.tuttime.user.repository;
 
-import com.tuttime.user.entity.AuthProvider;
+import com.tuttime.user.enums.AuthProvider;
 import com.tuttime.user.entity.UserAuthMethod;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

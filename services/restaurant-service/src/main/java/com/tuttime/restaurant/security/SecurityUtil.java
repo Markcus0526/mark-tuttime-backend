@@ -10,8 +10,7 @@ public class SecurityUtil {
 
 	public String getCurrentUserId() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication instanceof JwtAuthenticationToken) {
-			JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+		if (authentication instanceof JwtAuthenticationToken jwtAuth) {
 			// Adjust "userId" to the actual claim name in your JWT
 			return jwtAuth.getToken().getClaimAsString("userId");
 		}

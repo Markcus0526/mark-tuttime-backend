@@ -2,7 +2,6 @@ package com.tuttime.restaurant.service;
 
 import com.tuttime.restaurant.dto.ScheduleRequest;
 import com.tuttime.restaurant.dto.ScheduleResponse;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.UUID;

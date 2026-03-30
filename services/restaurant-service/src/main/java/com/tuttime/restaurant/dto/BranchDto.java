@@ -1,14 +1,9 @@
 package com.tuttime.restaurant.dto;
 
-import java.util.UUID;
-
+import lombok.*;
 import org.locationtech.jts.geom.Point;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.UUID;
 
 @Getter
 @Setter

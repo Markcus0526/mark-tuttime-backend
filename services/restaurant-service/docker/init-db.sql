@@ -8,9 +8,10 @@ CREATE SCHEMA IF NOT EXISTS restaurant_service;
 SET search_path TO restaurant_service, public;
 
 -- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS postgis_topology;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- Set timezone to UTC for all timestamp operations
 SET timezone = 'UTC';
@@ -59,14 +60,14 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE restaurants
 (
     restaurant_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    owner_user_id UUID NOT NULL REFERENCES users (user_id),
+    owner_user_id UUID NOT NULL,
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
     address       VARCHAR(512) NOT NULL,
     location      GEOGRAPHY(POINT, 4326),
     phone         VARCHAR(20),
     website       VARCHAR(255),
-    rating        NUMERIC(2, 1) DEFAULT 0 CHECK (rating &gt;= 0 AND rating &lt;= 5),
+    rating        NUMERIC(2, 1) DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
     is_deleted    BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at    TIMESTAMPTZ,
     created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -132,10 +133,6 @@ CREATE TRIGGER trg_zones_updated_at
     BEFORE UPDATE ON zones
     FOR EACH ROW EXECUTE PROCEDURE restaurant_service.update_modified_column();
 
-CREATE TRIGGER trg_zones_updated_at_is_closed
-    BEFORE UPDATE ON zones
-    FOR EACH ROW EXECUTE PROCEDURE restaurant_service.update_modified_column();
-
 COMMENT ON TABLE zones IS 'Zones inside a branch, e.g., dining area sections';
 COMMENT ON COLUMN zones.is_closed IS 'Indicates if the zone is manually closed';
 COMMENT ON COLUMN zones.is_deleted IS 'Soft-delete flag';
@@ -159,11 +156,8 @@ CREATE TABLE tables
 
 CREATE INDEX idx_tables_is_deleted ON tables(is_deleted);
 
+-- Create a single trigger on tables for BEFORE UPDATE
 CREATE TRIGGER trg_tables_updated_at
-    BEFORE UPDATE ON tables
-    FOR EACH ROW EXECUTE PROCEDURE restaurant_service.update_modified_column();
-
-CREATE TRIGGER trg_tables_updated_at_is_closed
     BEFORE UPDATE ON tables
     FOR EACH ROW EXECUTE PROCEDURE restaurant_service.update_modified_column();
 

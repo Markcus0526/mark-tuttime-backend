@@ -1,7 +1,13 @@
 package com.tuttime.restaurant.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
 
@@ -15,9 +21,13 @@ public class ScheduleRequest {
 	private short dayOfWeek;
 
 	@NotNull(message = "Open time is required")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
+	@Schema(type = "string", example = "00:00:00", description = "Time in HH:mm:ss format")
 	private LocalTime openTime;
 
 	@NotNull(message = "Close time is required")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
+	@Schema(type = "string", example = "00:00:00", description = "Time in HH:mm:ss format")
 	private LocalTime closeTime;
 
 	private boolean isClosed;
