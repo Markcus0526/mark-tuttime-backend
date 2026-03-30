@@ -57,7 +57,7 @@ services:
       GRPC_PORT: 29191
       JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
     ports:
-      - "8001:8001"
+      - "28007:28007"
       - "29191:29191"
     networks:
       - tuttime-network

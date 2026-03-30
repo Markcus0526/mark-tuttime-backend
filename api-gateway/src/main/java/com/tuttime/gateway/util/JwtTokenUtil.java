@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -67,7 +68,7 @@ public class JwtTokenUtil {
 	/**
 	 * Extract user ID from token
 	 */
-	public Long getUserIdFromToken(String token) {
+	public UUID getUserIdFromToken(String token) {
 		try {
 			String userIdStr = getClaimFromToken(token, Claims::getSubject);
 			return userIdStr != null ? Long.parseLong(userIdStr) : null;
@@ -82,6 +83,13 @@ public class JwtTokenUtil {
 	 */
 	public String getEmailFromToken(String token) {
 		return getClaimFromToken(token, claims -> claims.get("email", String.class));
+	}
+
+	/**
+	 * Extract email from token
+	 */
+	public String getRoleFromToken(String token) {
+		return getClaimFromToken(token, claims -> claims.get("role", String.class));
 	}
 
 	/**

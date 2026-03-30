@@ -60,7 +60,7 @@ WORKDIR /app
 
 COPY --from=builder /app/services/menu-service/target/menu-service-*.jar app.jar
 
-EXPOSE 8001 29191
+EXPOSE 28003 29191
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
