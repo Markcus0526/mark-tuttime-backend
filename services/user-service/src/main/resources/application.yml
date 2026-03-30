@@ -108,8 +108,12 @@ spring:
 
   security:
     jwt:
-      secret: ${JWT_SECRET:}
-      expiration: ${JWT_EXPIRATION:86400000} # 24 hours
+      access-token:
+        secret: ${JWT_SECRET:}
+        expiration: ${JWT_EXPIRATION:86400000} # 24 hours
+      refresh-token:
+        secret: ${JWT_SECRET:}
+        expiration: ${JWT_EXPIRATION:86400000} # 24 hours
       issuer: ${JWT_ISSUER:tuttime-backend} # Token issuer identifier
       audience: ${JWT_AUDIENCE:tuttime-mobile-app} # Token audience identifier
 

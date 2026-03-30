@@ -1,5 +1,8 @@
 package com.tuttime.user.enums;
 
 public enum UserStatus {
-	ACTIVE, SUSPENDED, DELETED, PENDING_VERIFICATION
+	ACTIVE,
+	SUSPENDED,
+	DELETED,
+	PENDING_VERIFICATION
 }

@@ -1,11 +1,13 @@
 package com.tuttime.user;
 
+import com.tuttime.user.config.EmailProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
@@ -32,6 +34,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EntityScan("com.tuttime.user.entity")
 @EnableJpaRepositories("com.tuttime.user.repository")
+@EnableConfigurationProperties(EmailProperties.class)
 @Slf4j
 public class UserServiceApplication {
 

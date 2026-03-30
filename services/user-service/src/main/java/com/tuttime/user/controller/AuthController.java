@@ -1,78 +1,205 @@
 package com.tuttime.user.controller;
 
+import com.tuttime.common.dto.ApiRes;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.service.AuthService;
-import com.tuttime.user.service.UserService;
+import com.tuttime.user.service.UserRoleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Validated
+@Tag(name = "User Authorization", description = "Operations for registering, sms, email, Oauth, login, logout, and verification")
 public class AuthController {
 
-	private final UserService userService;
-	private final AuthService authService;  // Handles auth logic, tokens, SMS, emails
+	private final AuthService authService;
+	private final UserRoleService userRoleService;
 
-	// Signup with phone or email + password
-	@PostMapping("/signup")
-	public ResponseEntity<?> signup(@RequestBody @Valid SignupRequest request) {
-		// Delegate to service for signup logic (validation, save, send verification)
-		userService.signup(request);
-		return ResponseEntity.status(HttpStatus.CREATED).build();
+	@Operation(summary = "Register a new user (email or phone). Sends verification accordingly.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "User registered successfully, verification sent"),
+			@ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content)
+	})
+	@PostMapping("/register")
+	public ResponseEntity<ApiRes<Void>> register(
+			@Parameter(description = "Registration request with email or phone", required = true)
+			@Valid @RequestBody RegisterRequest request) {
+		authService.registerUser(request);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
 
-	// Signin with phone + SMS code or email + password
-	@PostMapping("/signin")
-	public ResponseEntity<?> signin(@RequestBody @Valid SigninRequest request) {
-		String token = authService.authenticate(request);
-		return ResponseEntity.ok(Map.of("token", token));
+	@Operation(summary = "Login user with email or phone and password.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Login successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Invalid credentials or account not verified", content = @Content)
+	})
+	@PostMapping("/login")
+	public ResponseEntity<ApiRes<AuthResponse>> login(
+			@Parameter(description = "Login request containing email or phone and password", required = true)
+			@Valid @RequestBody LoginRequest request) {
+		AuthResponse response = authService.loginUser(request);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Request SMS verification code (for signup/login)
-	@PostMapping("/sms/send-code")
-	public ResponseEntity<?> sendSmsCode(@RequestBody @Valid SmsVerificationRequest request) {
-		authService.sendSmsVerificationCode(request.getPhoneNumber());
-		return ResponseEntity.ok().build();
+	@Operation(summary = "Login user via OAuth providers (Google, Apple, etc.)")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "OAuth login successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Invalid OAuth token", content = @Content)
+	})
+	@PostMapping("/oauth-login")
+	public ResponseEntity<ApiRes<AuthResponse>> oauthLogin(
+			@Parameter(description = "OAuth login request with provider and token", required = true)
+			@Valid @RequestBody OAuthLoginRequest request) {
+		AuthResponse response = authService.authenticateOAuthUser(request);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Verify SMS code (login/signup confirmation)
-	@PostMapping("/sms/verify-code")
-	public ResponseEntity<?> verifySmsCode(@RequestBody @Valid SmsCodeVerificationRequest request) {
-		authService.verifySmsCode(request.getPhoneNumber(), request.getCode());
-		return ResponseEntity.ok().build();
+	@Operation(summary = "Refresh JWT access token using refresh token.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Token refreshed successfully", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content)
+	})
+	@PostMapping("/refresh-token")
+	public ResponseEntity<ApiRes<AuthResponse>> refreshToken(
+			@Parameter(description = "Token refresh request with refresh token", required = true)
+			@Valid @RequestBody TokenRefreshRequest request) {
+		AuthResponse response = authService.refreshJwtToken(request.getRefreshToken());
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Request password reset email
-	@PostMapping("/password/reset-request")
-	public ResponseEntity<?> requestPasswordReset(@RequestBody @Valid PasswordResetRequest request) {
-		authService.sendPasswordResetEmail(request.getEmail());
-		return ResponseEntity.ok().build();
+	@Operation(summary = "Logout user by invalidating refresh token.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Logout successful"),
+			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content)
+	})
+	@PostMapping("/logout")
+	public ResponseEntity<ApiRes<Void>> logout(
+			@Parameter(description = "Logout request with refresh token", required = true)
+			@Valid @RequestBody LogoutRequest request) {
+		authService.logoutUser(request.getRefreshToken());
+		return ResponseEntity.noContent().build();
 	}
 
-	// Confirm password reset with token
-	@PostMapping("/password/reset-confirm")
-	public ResponseEntity<?> confirmPasswordReset(@RequestBody @Valid PasswordResetConfirmRequest request) {
-		authService.resetPassword(request.getToken(), request.getNewPassword());
-		return ResponseEntity.ok().build();
-	}
-
-	// Send email verification link
+	@Operation(summary = "Send email verification link to user email.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Verification email sent"),
+			@ApiResponse(responseCode = "400", description = "Invalid email address", content = @Content)
+	})
 	@PostMapping("/email/send-verification")
-	public ResponseEntity<?> sendEmailVerification(@RequestParam String email) {
-		authService.sendEmailVerificationLink(email);
+	public ResponseEntity<ApiRes<Void>> sendEmailVerificationLink(
+			@Parameter(description = "Request containing email address to send verification", required = true)
+			@Valid @RequestBody EmailRequest request) {
+		authService.sendEmailVerificationLink(request.getEmail());
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Verify email using token from verification link.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Email verified successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
+	})
+	@GetMapping("/email/verify")
+	public ResponseEntity<ApiRes<Void>> verifyEmail(
+			@Parameter(description = "Verification token", required = true)
+			@RequestParam("token") String token) {
+		authService.verifyEmailToken(token);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Send phone verification code via SMS.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Verification code sent"),
+			@ApiResponse(responseCode = "400", description = "Invalid phone number", content = @Content)
+	})
+	@PostMapping("/phone/send-code")
+	public ResponseEntity<ApiRes<Void>> sendPhoneVerificationCode(
+			@Parameter(description = "Request containing phone number to send code", required = true)
+			@Valid @RequestBody PhoneVerificationRequest request) {
+		authService.sendPhoneVerificationCode(request.getPhoneNumber());
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Verify phone with received SMS code.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Phone verified successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid phone number or code", content = @Content)
+	})
+	@PostMapping("/phone/verify")
+	public ResponseEntity<ApiRes<Void>> verifyPhoneCode(
+			@Parameter(description = "Request containing phone number and code", required = true)
+			@Valid @RequestBody PhoneVerificationConfirmRequest request) {
+		authService.verifyPhoneCode(request.getPhoneNumber(), request.getCode());
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Request password reset. Sends email or phone reset depending on contact.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Password reset initiated"),
+			@ApiResponse(responseCode = "400", description = "Invalid request or contact not found", content = @Content)
+	})
+	@PostMapping("/password-reset/request")
+	public ResponseEntity<ApiRes<Void>> requestPasswordReset(
+			@Parameter(description = "Request with email or phone to initiate password reset", required = true)
+			@Valid @RequestBody PasswordResetRequest request) {
+		authService.initiatePasswordReset(request.getEmailOrPhone());
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Confirm password reset using token (email) or code (phone).")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Password reset successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid or expired token/code", content = @Content)
+	})
+	@PostMapping("/password-reset/confirm")
+	public ResponseEntity<ApiRes<Void>> confirmPasswordReset(
+			@Parameter(description = "Password reset confirmation request", required = true)
+			@Valid @RequestBody PasswordResetConfirmRequest request) {
+		authService.resetPassword(request);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Assign a role to a user (Admin only).",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Role assigned successfully"),
+			@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions", content = @Content)
+	})
+	@PreAuthorize("hasRole('ADMIN')")
+	@PostMapping("/roles/assign")
+	public ResponseEntity<ApiRes<Void>> assignRoleToUser(
+			@Parameter(description = "Role assignment request", required = true)
+			@Valid @RequestBody RoleAssignRequest request) {
+		userRoleService.assignRole(request.getUserId(), request.getRoleName());
 		return ResponseEntity.ok().build();
 	}
 
-	// Verify email link with token
-	@GetMapping("/email/verify")
-	public ResponseEntity<?> verifyEmail(@RequestParam String token) {
-		authService.verifyEmailToken(token);
+	@Operation(summary = "Remove a role from a user (Admin only).",
+			security = @SecurityRequirement(name = "bearerAuth"))
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Role removed successfully"),
+			@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions", content = @Content)
+	})
+	@PreAuthorize("hasRole('ADMIN')")
+	@PostMapping("/roles/remove")
+	public ResponseEntity<ApiRes<Void>> removeRoleFromUser(
+			@Parameter(description = "Role removal request", required = true)
+			@Valid @RequestBody RoleAssignRequest request) {
+		userRoleService.removeRole(request.getUserId(), request.getRoleName());
 		return ResponseEntity.ok().build();
 	}
 }

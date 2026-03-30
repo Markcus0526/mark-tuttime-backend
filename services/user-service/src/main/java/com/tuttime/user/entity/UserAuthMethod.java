@@ -2,41 +2,38 @@ package com.tuttime.user.entity;
 
 import com.tuttime.user.enums.AuthProvider;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "user_auth_methods", schema = "user_service",
-		uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "auth_type"}))
+@Table(name = "user_auth_methods",
+		indexes = {
+				@Index(name = "idx_auth_methods_user_id", columnList = "user_id")
+		},
+		uniqueConstraints = {
+				@UniqueConstraint(columnNames = {"user_id", "auth_type"})
+		})
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class UserAuthMethod {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+	@Column(name = "user_id", nullable = false, length = 36)
+	private UUID userId;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "auth_type", nullable = false)
 	private AuthProvider authType;
 
-	@Column(columnDefinition = "TEXT")
-	private String credential; // hashed password or OAuth ID
+	@Column(name = "credential", columnDefinition = "TEXT")
+	private String credential;
 
-	@Builder.Default
-	@Column(nullable = false)
+	@Column(name = "verified", nullable = false)
 	private boolean verified = false;
 
-	@Builder.Default
 	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt = Instant.now();
+	private OffsetDateTime createdAt = OffsetDateTime.now();
 }
