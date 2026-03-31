@@ -15,8 +15,7 @@ import java.util.UUID;
 @Table(name = "order_item_modifiers")
 @SQLDelete(sql = "UPDATE order_item_modifiers SET deleted_at = now() WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
