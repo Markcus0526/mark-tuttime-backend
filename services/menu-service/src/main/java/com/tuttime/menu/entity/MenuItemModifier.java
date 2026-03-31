@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "menu_item_modifiers", uniqueConstraints = @UniqueConstraint(columnNames = {"menu_item_id", "modifier_id"}))
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

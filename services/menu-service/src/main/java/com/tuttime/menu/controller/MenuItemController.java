@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/menu-items")
+@RequestMapping("/api/v1/menus/{menuId}/menu-items")
 @RequiredArgsConstructor
 @Tag(name = "Menu Items", description = "Operations related to menu items")
 public class MenuItemController {
@@ -30,7 +30,7 @@ public class MenuItemController {
 		return ResponseEntity.ok(service.getById(id));
 	}
 
-	@GetMapping("/category/{categoryId}")
+	@GetMapping()
 	@Operation(summary = "Get all menu items in a category")
 	public ResponseEntity<List<MenuItemDto>> getByCategory(@PathVariable Long categoryId) {
 		return ResponseEntity.ok(service.getByCategoryId(categoryId));

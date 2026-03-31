@@ -10,8 +10,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table(name = "modifiers")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

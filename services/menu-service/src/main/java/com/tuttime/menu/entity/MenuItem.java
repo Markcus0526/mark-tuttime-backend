@@ -10,8 +10,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table(name = "menu_items")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

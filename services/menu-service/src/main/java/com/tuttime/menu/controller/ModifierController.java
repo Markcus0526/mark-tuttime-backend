@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/modifiers")
+@RequestMapping("/api/v1/menus/modifiers")
 @RequiredArgsConstructor
 @Tag(name = "Modifiers", description = "Operations related to modifiers")
 public class ModifierController {

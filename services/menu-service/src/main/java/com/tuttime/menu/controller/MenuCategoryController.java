@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/menu-categories")
+@RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
 @Tag(name = "Menu Categories", description = "Operations related to menu categories")
 public class MenuCategoryController {
