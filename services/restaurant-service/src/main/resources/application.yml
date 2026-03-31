@@ -103,6 +103,10 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -198,9 +202,6 @@ management:
         liveness:
           include: diskSpace,ping
   metrics:
-    export:
-      prometheus:
-        enabled: true
     # Enable HikariCP metrics
     tags:
       application: ${spring.application.name}
@@ -223,6 +224,10 @@ management:
   zipkin:
     tracing:
       endpoint: ${ZIPKIN_URL:http://tuttime-zipkin:9411/api/v2/spans}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 # Resilience4j Circuit Breaker Configuration
 resilience4j:

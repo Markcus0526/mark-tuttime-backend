@@ -167,6 +167,40 @@ COMMENT ON TABLE password_reset_tokens IS 'Tokens for password reset functionali
 
 COMMENT ON TABLE user_locations IS 'Stores user geolocation data with accuracy and timestamp';
 
+-- Insert default admin user
+INSERT INTO users (id, email, full_name, status, created_at, updated_at)
+VALUES (
+           gen_random_uuid(),
+           'admin@tuttime.com',
+           'Administrator',
+           'ACTIVE',
+           CURRENT_TIMESTAMP,
+           CURRENT_TIMESTAMP
+       );
+
+-- Ensure the pgcrypto extension is available for the crypt() function
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Get the ID of the newly created admin user and assign the ADMIN role
+WITH admin_user AS (
+    SELECT id FROM users WHERE email = 'admin@tuttime.com'
+),
+     admin_role AS (
+         SELECT id AS role_id FROM roles WHERE name = 'ADMIN'
+     )
+INSERT INTO user_roles (user_id, role_id, assigned_at)
+SELECT admin_user.id, admin_role.role_id, CURRENT_TIMESTAMP
+FROM admin_user
+         CROSS JOIN admin_role; -- Explicitly states your intent to combine the single rows
+
+-- Insert authentication method for admin user (tuttime with email/password)
+WITH admin_user AS (
+    SELECT id FROM users WHERE email = 'admin@tuttime.com'
+)
+INSERT INTO user_auth_methods (user_id, auth_type, credential, verified, created_at)
+SELECT id, 'EMAIL_PASS', crypt('password', gen_salt('bf')), TRUE, CURRENT_TIMESTAMP
+FROM admin_user;
+
 -- ============================================================================
 -- END OF USER SERVICE SCHEMA (no schema prefix)
 -- ============================================================================

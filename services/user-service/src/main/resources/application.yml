@@ -442,3 +442,9 @@ connection:
     monitoring:
       enabled: ${CONNECTION_POOL_MONITORING_ENABLED:false}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  model-and-parameter-ignores: X-User-Id,X-User-Roles

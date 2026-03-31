@@ -20,7 +20,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 
 @Configuration
 @EnableWebFluxSecurity // 1. Notice this is for WebFlux (Reactive)
-public class SecurityConfig {
+public class GatewaySecurityConfig {
 
 	// 1. Inject the exact same secret used by your user-service
 	@Value("${spring.security.jwt.secret}")
@@ -35,6 +35,9 @@ public class SecurityConfig {
 				.authorizeExchange(exchanges -> exchanges
 						// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
 						.pathMatchers(
+								"/api/v1/auth/**",
+								"/api/v1/restaurants/**",
+
 								"/swagger-ui.html",
 								"/swagger-ui/**",
 								"/v3/api-docs/**",
@@ -46,11 +49,12 @@ public class SecurityConfig {
 						).permitAll()
 
 						// 4. Role-based matching (optional, coarse-grained gating)
-//						.pathMatchers("/api/v1/auth/roles/**").hasRole("ADMIN")
+//						.pathMatchers("/api/v1/users/**").hasRole("ADMIN")
 
 						// 5. All other gateway traffic requires a valid login token
 						.anyExchange().authenticated()
 				)
+
 				// 6. Tell the Gateway to act as an OAuth2 Resource Server
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
 				.build();

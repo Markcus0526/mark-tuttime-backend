@@ -1,9 +1,9 @@
 package com.tuttime.user.security;
 
+import com.tuttime.user.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,10 +13,12 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
-public class JwtTokenUtil {
+public class JwtTokenProvider {
 
 	private final SecretKey accessTokenKey;
 	private final SecretKey refreshTokenKey;
@@ -24,7 +26,7 @@ public class JwtTokenUtil {
 	private final long accessTokenValiditySeconds;
 	private final long refreshTokenValiditySeconds;
 
-	public JwtTokenUtil(
+	public JwtTokenProvider(
 			@Value("${spring.security.jwt.access-token.secret}") String accessSecret,
 			@Value("${spring.security.jwt.refresh-token.secret}") String refreshSecret,
 			@Value("${spring.security.jwt.access-token.expiration}") long accessExpiration,
@@ -36,24 +38,39 @@ public class JwtTokenUtil {
 		this.refreshTokenValiditySeconds = refreshExpiration;
 	}
 
-	public String generateAccessToken(UUID userId, String fullName) {
+	public String generateAccessToken(User user) {
 		Instant now = Instant.now();
+		String id = generateJti();
+
+		String[] rolesArray = user.getRoles().stream()
+				.map(role -> role.getRole().getName())
+				.toArray(String[]::new);
+		Map<String, Object> claims = generateTokenClaims(user.getId(), user.getFullName(), rolesArray, id);
+
 		return Jwts.builder()
-				.subject(userId.toString())
-				.claim("name", fullName)
+				.id(id)
+				.claims(claims)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(now.plusSeconds(accessTokenValiditySeconds)))
 				.signWith(accessTokenKey)
 				.compact();
 	}
 
-	public String generateRefreshToken(UUID userId) {
+	public String generateRefreshToken(User user) {
 		Instant now = Instant.now();
+		String id = generateJti();
+
+		String[] rolesArray = user.getRoles().stream()
+				.map(role -> role.getRole().getName())
+				.toArray(String[]::new);
+		Map<String, Object> claims = generateTokenClaims(user.getId(), user.getFullName(), rolesArray, id);
+
 		return Jwts.builder()
-				.subject(userId.toString())
+				.id(id)
+				.claims(claims)
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(now.plusSeconds(refreshTokenValiditySeconds)))
-				.signWith(accessTokenKey)
+				.signWith(refreshTokenKey)
 				.compact();
 	}
 
@@ -82,6 +99,26 @@ public class JwtTokenUtil {
 	public UUID getUserIdFromRefreshToken(String token) {
 		Claims claims = parseClaims(token, refreshTokenKey);
 		return UUID.fromString(claims.getSubject());
+	}
+
+	/**
+	 * Generates unique JWT ID (JTI).
+	 */
+	public String generateJti() {
+		return UUID.randomUUID().toString();
+	}
+
+	/**
+	 * Generates JWT token with pre-generated JTI.
+	 */
+	public Map<String, Object> generateTokenClaims(UUID userId, String username, String[] roles, String jti) {
+		Map<String, Object> claims = new HashMap<>();
+		claims.put("userId", userId);
+		claims.put("username", username);
+		claims.put("roles", roles);
+		claims.put("jti", jti);
+
+		return claims;
 	}
 
 	private Claims parseClaims(String token, SecretKey key) {

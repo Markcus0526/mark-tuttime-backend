@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.PasswordResetToken;
 import com.tuttime.user.entity.PhoneVerificationCode;
@@ -11,7 +12,7 @@ import com.tuttime.user.repository.PasswordResetTokenRepository;
 import com.tuttime.user.repository.PhoneVerificationCodeRepository;
 import com.tuttime.user.repository.UserAuthMethodRepository;
 import com.tuttime.user.repository.UserRepository;
-import com.tuttime.user.security.JwtTokenUtil;
+import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.AuthService;
 import com.tuttime.user.service.EmailService;
 import com.tuttime.user.service.SmsService;
@@ -35,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
 	private final PhoneVerificationCodeRepository phoneVerificationCodeRepository;
 	private final PasswordResetTokenRepository passwordResetTokenRepository;
 	private final PasswordEncoder passwordEncoder;
-	private final JwtTokenUtil jwtTokenUtil;
+	private final JwtTokenProvider jwtTokenProvider;
 	private final EmailService emailService;
 	private final SmsService smsService;
 
@@ -90,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
 		User user = userOpt.get();
 
 		// Check user status
-		if (user.isDeleted() || user.getStatus() != UserStatus.ACTIVE) {
+		if (user.isDeleted() || !user.getStatus().equals(UserStatus.ACTIVE)) {
 			throw new SecurityException("User account is not active");
 		}
 
@@ -109,14 +110,14 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		// Generate JWT tokens
-		String accessToken = jwtTokenUtil.generateAccessToken(user.getId(), user.getFullName());
-		String refreshToken = jwtTokenUtil.generateRefreshToken(user.getId());
+		String accessToken = jwtTokenProvider.generateAccessToken(user);
+		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
 		AuthResponse auth = new AuthResponse();
 		auth.setAccessToken(accessToken);
 		auth.setRefreshToken(refreshToken);
 		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenUtil.getAccessTokenExpirySeconds());
+		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
 		auth.setUserId(user.getId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
@@ -137,14 +138,14 @@ public class AuthServiceImpl implements AuthService {
 		User user = findOrCreateUserByOAuth(request);
 
 		// Generate tokens
-		String accessToken = jwtTokenUtil.generateAccessToken(user.getId(), user.getFullName());
-		String refreshToken = jwtTokenUtil.generateRefreshToken(user.getId());
+		String accessToken = jwtTokenProvider.generateAccessToken(user);
+		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
 		AuthResponse auth = new AuthResponse();
 		auth.setAccessToken(accessToken);
 		auth.setRefreshToken(refreshToken);
 		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenUtil.getAccessTokenExpirySeconds());
+		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
 		auth.setUserId(user.getId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
@@ -155,21 +156,21 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	public AuthResponse refreshJwtToken(String refreshToken) {
-		if (!jwtTokenUtil.validateRefreshToken(refreshToken)) {
+		if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
 			throw new SecurityException("Invalid refresh token");
 		}
-		UUID userId = jwtTokenUtil.getUserIdFromRefreshToken(refreshToken);
+		UUID userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken);
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new SecurityException("User not found"));
 
-		String newAccessToken = jwtTokenUtil.generateAccessToken(user.getId(), user.getFullName());
-		String newRefreshToken = jwtTokenUtil.generateRefreshToken(user.getId());
+		String newAccessToken = jwtTokenProvider.generateAccessToken(user);
+		String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
 
 		AuthResponse auth = new AuthResponse();
 		auth.setAccessToken(newAccessToken);
-		auth.setRefreshToken(newAccessToken);
+		auth.setRefreshToken(newRefreshToken);
 		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenUtil.getAccessTokenExpirySeconds());
+		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
 		auth.setUserId(user.getId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
@@ -182,7 +183,7 @@ public class AuthServiceImpl implements AuthService {
 	public void logoutUser(String refreshToken) {
 		// Implementation depends on token invalidation strategy
 		// e.g., store refresh token blacklist or remove from persistent store
-		jwtTokenUtil.invalidateRefreshToken(refreshToken);
+		jwtTokenProvider.invalidateRefreshToken(refreshToken);
 	}
 
 	@Override
@@ -343,8 +344,18 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	private User validateVerificationToken(String token) {
-		// Validate token and return user
-		return new User(); // stub
+		// 1. Find the token in the database
+		PasswordResetToken verificationToken = passwordResetTokenRepository.findByToken(token)
+				.orElseThrow(() -> new ResourceNotFoundException("Invalid verification token"));
+
+		// 2. Check if the token has expired
+		if (verificationToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+			throw new IllegalArgumentException("Verification code expired");
+		}
+
+		// 3. Return the fully loaded user entity from the database
+		return userRepository.findById(verificationToken.getUserId())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 	}
 
 	private String generateRandomCode() {
