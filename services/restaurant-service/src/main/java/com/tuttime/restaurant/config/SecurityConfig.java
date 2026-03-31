@@ -8,11 +8,16 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,64 +31,50 @@ import java.util.stream.Collectors;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-	@Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
-	private String allowedOrigins;
-
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.csrf(csrf -> csrf.disable())
-				// CORS handled manually via CorsHeaderFilter to avoid conflicts with reverse proxies
-				.cors(cors -> cors.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.sessionManagement(session -> session
+						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				)
 				.authorizeHttpRequests(auth -> auth
-						.anyRequest().permitAll()
+						.anyRequest().authenticated()
+				)
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
 				);
 
 		return http.build();
 	}
 
 	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
+	public JwtAuthenticationConverter jwtAuthenticationConverter() {
+		JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
-		List<String> origins = Arrays.stream(allowedOrigins.split(","))
-				.map(String::trim)
-				.filter(s -> !s.isEmpty() && !"*".equals(s))
-				.distinct()
-				.collect(Collectors.toList());
+		// 1. Tell Spring to read the roles from your array claim
+		grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
 
-		if (origins.isEmpty()) {
-			log.warn("No valid CORS origins configured, using defaults");
-			origins = Arrays.asList("http://localhost:3000", "http://localhost:8080", "https://tuttime-admin.frontare.ink");
-		}
+		// 2. Map 'ADMIN' to 'ROLE_ADMIN' so hasAnyRole('ADMIN') works!
+		grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
-		log.info("CORS allowed origins (deduplicated): {}", origins);
+		JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+		jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+		return jwtAuthenticationConverter;
+	}
 
-		if (origins.size() != origins.stream().distinct().count()) {
-			log.error("CORS configuration error: Duplicate origins detected after processing! Original: {}, Processed: {}",
-					allowedOrigins, origins);
-			origins = origins.stream().distinct().collect(Collectors.toList());
-		}
+	@Value("${spring.security.jwt.secret}")
+	private String jwtSecret;
 
-		configuration.setAllowedOrigins(origins);
+	@Bean
+	public JwtDecoder jwtDecoder() {
+		// Converts your raw secret string into a SecretKeySpec
+		SecretKeySpec secretKey = new SecretKeySpec(
+				jwtSecret.getBytes(),
+				"HmacSHA256"
+		);
 
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
-		configuration.setAllowedHeaders(Arrays.asList("*"));
-		configuration.setAllowCredentials(true);
-		configuration.setMaxAge(3600L);
-
-		// Exposed headers for frontend
-		configuration.setExposedHeaders(Arrays.asList(
-				"Authorization",
-				"Content-Type",
-				"X-Total-Count",
-				"X-Correlation-Id"
-		));
-
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
-		return source;
+		return NimbusJwtDecoder.withSecretKey(secretKey).build();
 	}
 }
 

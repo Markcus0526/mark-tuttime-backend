@@ -18,7 +18,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-	private final JwtTokenUtil jwtTokenUtil;
+	private final JwtTokenProvider jwtTokenProvider;
 	private final CustomUserDetailsService userDetailsService;
 
 	@Override
@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		if (authHeader != null && authHeader.startsWith("Bearer ")) {
 			token = authHeader.substring(7);
 			try {
-				userId = jwtTokenUtil.getUserIdFromAccessToken(token).toString();
+				userId = jwtTokenProvider.getUserIdFromAccessToken(token).toString();
 			} catch (Exception e) {
 				// Invalid token
 			}
@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 			var userDetails = userDetailsService.loadUserById(userId);
 
-			if (jwtTokenUtil.validateAccessToken(token, userDetails)) {
+			if (jwtTokenProvider.validateAccessToken(token, userDetails)) {
 				var authToken = new UsernamePasswordAuthenticationToken(
 						userDetails, null, userDetails.getAuthorities());
 				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
