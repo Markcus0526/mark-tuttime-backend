@@ -58,6 +58,7 @@ spring:
   cache:
     type: ${CACHE_TYPE:redis}
   # Spring Data Configuration (Pagination + Redis)
+
   data:
     web:
       pageable:
@@ -149,6 +150,10 @@ spring:
           connectiontimeout: ${EMAIL_SMTP_CONNECTION_TIMEOUT:5000} # Connection timeout in ms
           timeout: ${EMAIL_SMTP_TIMEOUT:5000} # Read timeout in ms
           writetimeout: ${EMAIL_SMTP_WRITE_TIMEOUT:5000} # Write timeout in ms
+
+  threads:
+    virtual:
+      enabled: true
 
 # Brute-Force Protection Configuration
 bruteforce:
