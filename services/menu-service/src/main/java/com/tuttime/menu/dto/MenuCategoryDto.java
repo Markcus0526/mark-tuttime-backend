@@ -2,8 +2,7 @@ package com.tuttime.menu.dto;
 
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

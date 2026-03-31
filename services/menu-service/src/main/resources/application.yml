@@ -115,6 +115,9 @@ spring:
       max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:10MB}
       file-size-threshold: ${SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD:2KB}
 
+  threads:
+    virtual:
+      enabled: true
 
 # Brute-Force Protection Configuration
 bruteforce:

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/stoplists")
+@RequestMapping("/api/v1/menus/stoplists")
 @RequiredArgsConstructor
 @Tag(name = "Stop Lists", description = "Operations related to stop lists")
 public class StopListController {

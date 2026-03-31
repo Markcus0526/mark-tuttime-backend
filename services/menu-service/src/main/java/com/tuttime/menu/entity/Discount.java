@@ -9,8 +9,7 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "discounts")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

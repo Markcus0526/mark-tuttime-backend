@@ -9,8 +9,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table(name = "menu_categories", schema = "menu_service")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
