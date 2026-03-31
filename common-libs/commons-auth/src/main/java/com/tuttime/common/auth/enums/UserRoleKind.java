@@ -1,4 +1,4 @@
-package com.tuttime.user.enums;
+package com.tuttime.common.auth.enums;
 
 public enum UserRoleKind {
 	ADMIN, // -- for Admin panel
