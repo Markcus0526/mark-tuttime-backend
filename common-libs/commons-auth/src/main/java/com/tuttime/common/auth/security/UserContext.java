@@ -1,6 +1,7 @@
-package com.tuttime.user.security;
+package com.tuttime.common.auth.security;
 
-import com.tuttime.user.enums.UserRoleKind;
+import com.tuttime.common.auth.enums.UserRoleKind;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;

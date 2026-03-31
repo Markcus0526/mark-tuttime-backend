@@ -1,4 +1,4 @@
-package com.tuttime.user.security;
+package com.tuttime.common.auth.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
