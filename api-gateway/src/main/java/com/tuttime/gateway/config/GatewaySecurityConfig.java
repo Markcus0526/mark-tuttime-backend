@@ -36,7 +36,7 @@ public class GatewaySecurityConfig {
 						// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
 						.pathMatchers(
 								"/api/v1/auth/**",
-								"/api/v1/restaurants/**",
+//								"/api/v1/restaurants/**",
 
 								"/swagger-ui.html",
 								"/swagger-ui/**",
@@ -45,7 +45,21 @@ public class GatewaySecurityConfig {
 								"/user-docs",
 								"/user-docs/**",
 								"/restaurant-docs",
-								"/restaurant-docs/**"
+								"/restaurant-docs/**",
+								"/menu-docs",
+								"/menu-docs/**",
+								"/booking-docs",
+								"/booking-docs/**",
+								"/order-docs",
+								"/order-docs/**",
+								"/payment-docs",
+								"/payment-docs/**",
+								"/pos-docs",
+								"/pos-docs/**",
+								"/review-docs",
+								"/review-docs/**",
+								"/analytics-docs",
+								"/analytics-docs/**"
 						).permitAll()
 
 						// 4. Role-based matching (optional, coarse-grained gating)
