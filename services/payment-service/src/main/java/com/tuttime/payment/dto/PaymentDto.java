@@ -7,8 +7,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
