@@ -48,9 +48,9 @@ spring:
             # Temporarily comment out custom filters to debug routing issue
             # - name: RateLimiting
             # - name: BruteForceProtection
-#            - name: JwtAuthentication
-#              args:
-#                skipPaths: /api/v1/auth/register,/api/v1/auth/register/refresh-token,/api/v1/auth/register/phone/verify,/api/v1/auth/register/send-code,/api/v1/auth/register/password-reset/request,/api/v1/auth/register/password-reset/confirm,/api/v1/auth/register/oauth-login,/api/v1/auth/register/email/send-verification,/api/v1/auth/register/email/verify
+            # - name: JwtAuthentication
+            #   args:
+            #     skipPaths: /api/v1/auth/register,/api/v1/auth/register/refresh-token,/api/v1/auth/register/phone/verify,/api/v1/auth/register/send-code,/api/v1/auth/register/password-reset/request,/api/v1/auth/register/password-reset/confirm,/api/v1/auth/register/oauth-login,/api/v1/auth/register/email/send-verification,/api/v1/auth/register/email/verify
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
@@ -65,7 +65,6 @@ spring:
             - Path=/api/v1/users/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            # - name: RateLimiting
             - name: JwtAuthentication
             - name: CircuitBreaker
               args:
@@ -81,7 +80,6 @@ spring:
             - Path=/api/v1/app/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
@@ -98,67 +96,6 @@ spring:
             - Path=/api/v1/restaurants/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/branches/**
-        - id: restaurant-service-branch
-          order: 22
-          uri: http://${RESTAURANT-SERVICE:localhost}:28002
-          predicates:
-            - Path=/api/v1/branches/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/zones/**
-        - id: restaurant-service-zone
-          order: 23
-          uri: http://${RESTAURANT-SERVICE:localhost}:28002
-          predicates:
-            - Path=/api/v1/zones/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/tables/**
-        - id: restaurant-service-table
-          order: 24
-          uri: http://${RESTAURANT-SERVICE:localhost}:28002
-          predicates:
-            - Path=/api/v1/tables/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/medias/**
-        - id: restaurant-service-media
-          order: 25
-          uri: http://${RESTAURANT-SERVICE:localhost}:28002
-          predicates:
-            - Path=/api/v1/medias/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -167,75 +104,56 @@ spring:
         ################# Menu Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-categories/**
-        - id: menu-service-menu-category
+        # Endpoints include: /api/v1/menus/**
+        - id: menu-service-menu
           order: 31
           uri: http://${MENU-SERVICE:localhost}:28003
           predicates:
-            - Path=/api/v1/menu-categories/**
+            - Path=/api/v1/menus/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            #            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-items/**
-        - id: menu-service-menu-item
+        # Endpoints include: /api/v1/menus/modifiers/**
+        - id: menu-service-modifier
           order: 32
           uri: http://${MENU-SERVICE:localhost}:28003
           predicates:
-            - Path=/api/v1/menu-items/**
+            - Path=/api/v1/menus/modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/modifiers/**
-        - id: menu-service-modifier
+        # Endpoints include: /api/v1/menus/discounts/**
+        - id: menu-service-discount
           order: 33
           uri: http://${MENU-SERVICE:localhost}:28003
           predicates:
-            - Path=/api/v1/modifiers/**
+            - Path=/api/v1/menus/discounts/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/discounts/**
-        - id: menu-service-discount
+        # Endpoints include: /api/v1/menus/stoplists/**
+        - id: menu-service-stoplist
           order: 34
           uri: http://${MENU-SERVICE:localhost}:28003
           predicates:
-            - Path=/api/v1/discounts/**
+            - Path=/api/v1/menus/stoplists/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/stoplists/**
-        - id: menu-service-stoplist
-          order: 35
-          uri: http://${MENU-SERVICE:localhost}:28003
-          predicates:
-            - Path=/api/v1/stoplists/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -494,6 +412,55 @@ spring:
           filters:
             - RewritePath=/restaurant-docs/(?<segment>.*), /$\{segment}
 
+        - id: menu-openapi
+          uri: http://${MENU-SERVICE:localhost}:28003
+          predicates:
+            - Path=/menu-docs/**
+          filters:
+            - RewritePath=/menu-docs/(?<segment>.*), /$\{segment}
+
+        - id: booking-openapi
+          uri: http://${BOOKING-SERVICE:localhost}:28004
+          predicates:
+            - Path=/booking-docs/**
+          filters:
+            - RewritePath=/booking-docs/(?<segment>.*), /$\{segment}
+
+        - id: order-openapi
+          uri: http://${ORDER-SERVICE:localhost}:28005
+          predicates:
+            - Path=/order-docs/**
+          filters:
+            - RewritePath=/order-docs/(?<segment>.*), /$\{segment}
+
+        - id: payment-openapi
+          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          predicates:
+            - Path=/payment-docs/**
+          filters:
+            - RewritePath=/payment-docs/(?<segment>.*), /$\{segment}
+
+        - id: pos-openapi
+          uri: http://${POS-SERVICE:localhost}:28007
+          predicates:
+            - Path=/pos-docs/**
+          filters:
+            - RewritePath=/pos-docs/(?<segment>.*), /$\{segment}
+
+        - id: review-openapi
+          uri: http://${REVIEW-SERVICE:localhost}:28008
+          predicates:
+            - Path=/review-docs/**
+          filters:
+            - RewritePath=/review-docs/(?<segment>.*), /$\{segment}
+
+        - id: analytics-openapi
+          uri: http://${ANALYTICS-SERVICE:localhost}:28009
+          predicates:
+            - Path=/analytics-docs/**
+          filters:
+            - RewritePath=/analytics-docs/(?<segment>.*), /$\{segment}
+
 
   # Redis Configuration for token blacklist
   data:
@@ -521,6 +488,10 @@ spring:
       secret: ${JWT_SECRET:}
       issuer: ${JWT_ISSUER:tuttime-backend} # Token issuer identifier
       audience: ${JWT_AUDIENCE:tuttime-mobile-app} # Token audience identifier
+
+  threads:
+    virtual:
+      enabled: true
 
 server:
   port: 8080
@@ -697,4 +668,18 @@ springdoc:
         url: /user-docs/v3/api-docs
       - name: Restaurant Service
         url: /restaurant-docs/v3/api-docs
+      - name: Menu Service
+        url: /menu-docs/v3/api-docs
+      - name: Booking Service
+        url: /booking-docs/v3/api-docs
+      - name: Order Service
+        url: /order-docs/v3/api-docs
+      - name: Payment Service
+        url: /payment-docs/v3/api-docs
+      - name: Pos Service
+        url: /pos-docs/v3/api-docs
+      - name: Review Service
+        url: /review-docs/v3/api-docs
+      - name: Analytics Service
+        url: /analytics-docs/v3/api-docs
 
