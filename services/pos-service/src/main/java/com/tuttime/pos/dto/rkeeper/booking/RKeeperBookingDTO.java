@@ -2,8 +2,7 @@ package com.tuttime.pos.dto.rkeeper.booking;
 
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -7,8 +7,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "pos_logs")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

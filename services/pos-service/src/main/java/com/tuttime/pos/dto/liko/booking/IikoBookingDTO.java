@@ -2,8 +2,7 @@ package com.tuttime.pos.dto.liko.booking;
 
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

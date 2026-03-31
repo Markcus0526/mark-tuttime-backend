@@ -7,8 +7,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "pos_sync_queues")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
