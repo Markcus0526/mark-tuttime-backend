@@ -69,13 +69,7 @@ public class JwtTokenUtil {
 	 * Extract user ID from token
 	 */
 	public UUID getUserIdFromToken(String token) {
-		try {
-			String userIdStr = getClaimFromToken(token, Claims::getSubject);
-			return userIdStr != null ? Long.parseLong(userIdStr) : null;
-		} catch (Exception e) {
-			log.warn("Error extracting user ID from token: {}", e.getMessage());
-			return null;
-		}
+		return getClaimFromToken(token, claims -> claims.get("userId", UUID.class));
 	}
 
 	/**
@@ -89,7 +83,7 @@ public class JwtTokenUtil {
 	 * Extract email from token
 	 */
 	public String getRoleFromToken(String token) {
-		return getClaimFromToken(token, claims -> claims.get("role", String.class));
+		return getClaimFromToken(token, claims -> claims.get("roles", String.class));
 	}
 
 	/**

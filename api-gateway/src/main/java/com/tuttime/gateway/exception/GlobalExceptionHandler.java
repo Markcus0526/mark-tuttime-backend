@@ -40,6 +40,20 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 
 	@Override
 	public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+		String path = exchange.getRequest().getURI().getPath();
+
+		// 1. Intercept the blank 404 path and force it to open the real index.html
+		if (path.equals("/swagger-ui.html") || path.equals("/swagger-ui")) {
+			exchange.getResponse().setStatusCode(HttpStatus.FOUND); // 302 Redirect
+			exchange.getResponse().getHeaders().setLocation(java.net.URI.create("/swagger-ui/index.html"));
+			return exchange.getResponse().setComplete();
+		}
+
+		// 2. Let the background resource handler stream actual assets (js, css, json) undisturbed
+		if (path.contains("swagger-ui") || path.contains("v3/api-docs") || path.contains("webjars")) {
+			return Mono.error(ex);
+		}
+
 		HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 		String errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
 		String message = "An unexpected error occurred";
@@ -69,7 +83,6 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 
 		errorCode = mapStatusToErrorCode(status);
 		String correlationId = getCorrelationId(exchange);
-		String path = exchange.getRequest().getURI().getPath();
 
 		// Log error with shortened stack trace (first 5 lines for unexpected errors)
 		String stackTraceSummary = com.tuttime.common.exception.StackTraceUtil.getStackTraceSummary(ex, 5);
