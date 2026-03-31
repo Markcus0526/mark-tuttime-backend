@@ -7,8 +7,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "pos_error_details")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
