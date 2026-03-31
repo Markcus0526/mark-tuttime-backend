@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.TableRequest;
 import com.tuttime.restaurant.dto.TableResponse;
@@ -14,7 +15,6 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -35,7 +35,6 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@GetMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<TableResponse>>> getTablesInZone(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -54,7 +53,6 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@GetMapping("/{tableId}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<TableResponse>> getTableById(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -77,7 +75,6 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@PostMapping
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<TableResponse>> createTable(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -87,6 +84,9 @@ public class TableController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "Table creation payload", required = true)
 			@Valid @RequestBody TableRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		// Service should validate zone -> branch -> restaurant hierarchy
 		TableResponse created = tableService.createTable(zoneId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
@@ -100,7 +100,6 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@PutMapping("/{tableId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<TableResponse>> updateTable(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -112,6 +111,9 @@ public class TableController {
 			@PathVariable UUID tableId,
 			@Parameter(description = "Updated table details", required = true)
 			@Valid @RequestBody TableRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		// Service should confirm the table belongs to the zone, branch, restaurant
 		TableResponse updated = tableService.updateTable(tableId, zoneId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
@@ -124,8 +126,7 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@DeleteMapping("/{tableId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
-	public ResponseEntity<Void> deleteTable(
+	public ResponseEntity<ApiRes<Void>> deleteTable(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
@@ -134,16 +135,18 @@ public class TableController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		// Service should verify hierarchical ownership before deletion
 		tableService.deleteTable(tableId, zoneId);
 		return ResponseEntity.noContent().build();
 	}
-	
+
 	// Reservation
-	
+
 	@Operation(summary = "Get available tables in a zone for a time range")
 	@GetMapping("/available")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER')")
 	public ResponseEntity<ApiRes<List<TableResponse>>> getAvailableTables(
 			@PathVariable UUID restaurantId,
 			@PathVariable UUID branchId,
@@ -159,7 +162,6 @@ public class TableController {
 
 	@Operation(summary = "Get reservation status of a table")
 	@GetMapping("/{tableId}/status")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER')")
 	public ResponseEntity<ApiRes<TableStatus>> getTableStatus(
 			@PathVariable UUID restaurantId,
 			@PathVariable UUID branchId,
@@ -172,14 +174,15 @@ public class TableController {
 
 	@Operation(summary = "Confirm or link a reservation to a table")
 	@PostMapping("/{tableId}/reservations/{reservationId}/confirm")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<Void>> confirmReservation(
 			@PathVariable UUID restaurantId,
 			@PathVariable UUID branchId,
 			@PathVariable UUID zoneId,
 			@PathVariable UUID tableId,
 			@PathVariable UUID reservationId) {
-
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		tableService.confirmReservation(tableId, reservationId);
 		return ResponseEntity.ok(ApiRes.success(null));
 	}

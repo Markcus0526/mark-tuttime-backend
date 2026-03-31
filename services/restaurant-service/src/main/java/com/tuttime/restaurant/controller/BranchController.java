@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.*;
 import com.tuttime.restaurant.enums.EntityType;
@@ -18,7 +19,6 @@ import org.apache.tika.Tika;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,7 +45,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
 	})
 	@GetMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<Page<BranchResponse>>> getAllBranches(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -63,7 +62,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<BranchResponse>> getBranchById(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -80,12 +78,14 @@ public class BranchController {
 			@ApiResponse(responseCode = "403", description = "Access denied")
 	})
 	@PostMapping
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<BranchResponse>> createBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Branch creation payload", required = true)
 			@Valid @RequestBody BranchRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		BranchResponse created = branchService.createBranch(restaurantId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -98,7 +98,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PutMapping("/{branchId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<BranchResponse>> updateBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -106,6 +105,9 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "Updated branch details", required = true)
 			@Valid @RequestBody BranchRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		BranchResponse updated = branchService.updateBranch(branchId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -117,12 +119,14 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@DeleteMapping("/{branchId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
-	public ResponseEntity<Void> deleteBranch(
+	public ResponseEntity<ApiRes<Void>> deleteBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch to delete", required = true)
 			@PathVariable UUID branchId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		branchService.deleteBranch(branchId);
 		return ResponseEntity.noContent().build();
 	}
@@ -135,7 +139,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch or map not found")
 	})
 	@GetMapping("/{branchId}/map")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<String>> getBranchMapSvg(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -153,7 +156,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PostMapping("/{branchId}/map")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<Void>> setBranchMapSvg(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -161,6 +163,9 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "SVG XML content", required = true)
 			@RequestBody String svgContent) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		mediaService.setOrUpdateSvgMap(EntityType.BRANCH, branchId, svgContent);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
@@ -173,7 +178,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}/schedules")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -191,7 +195,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PostMapping("/{branchId}/schedules")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<ScheduleResponse>> addSchedule(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -199,6 +202,9 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "Schedule details to create", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -211,7 +217,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
 	})
 	@PutMapping("/{branchId}/schedules/{scheduleId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<ScheduleResponse>> updateSchedule(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -221,6 +226,9 @@ public class BranchController {
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, null, branchId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -232,14 +240,16 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Schedule or branch not found")
 	})
 	@DeleteMapping("/{branchId}/schedules/{scheduleId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
-	public ResponseEntity<Void> deleteSchedule(
+	public ResponseEntity<ApiRes<Void>> deleteSchedule(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the schedule to delete", required = true)
 			@PathVariable UUID scheduleId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		scheduleService.deleteSchedule(scheduleId, null, branchId);
 		return ResponseEntity.noContent().build();
 	}
@@ -252,7 +262,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}/medias")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<MediaResponse>>> getMediaForBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -270,7 +279,6 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PostMapping("/{branchId}/medias")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<MediaResponse>> addMediaToBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -284,7 +292,9 @@ public class BranchController {
 			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
-
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
 		if (file.getSize() > maxFileSize) {

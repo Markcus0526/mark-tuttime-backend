@@ -12,8 +12,7 @@ import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "restaurants")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -16,8 +16,7 @@ import java.util.UUID;
 		@Index(name = "idx_medias_is_map", columnList = "is_map"),
 		@Index(name = "idx_media_lookup", columnList = "entity_type, entity_id")
 })
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

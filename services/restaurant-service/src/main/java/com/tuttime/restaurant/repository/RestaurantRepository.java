@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,9 +17,9 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
 
 	Page<Restaurant> findByOwnerUserId(UUID ownerUserId, Pageable pageable);
 
-	Page<Restaurant> findByRatingBetween(Double minRating, Double maxRating, Pageable pageable);
+	Page<Restaurant> findByRatingBetween(BigDecimal minRating, BigDecimal maxRating, Pageable pageable);
 
-	Page<Restaurant> findByOwnerUserIdAndRatingBetween(UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable);
+	Page<Restaurant> findByOwnerUserIdAndRatingBetween(UUID ownerUserId, BigDecimal minRating, BigDecimal maxRating, Pageable pageable);
 
 	Optional<Restaurant> findByRestaurantIdAndIsDeletedFalse(UUID restaurantId);
 

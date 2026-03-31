@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.*;
 import com.tuttime.restaurant.enums.EntityType;
@@ -18,7 +19,6 @@ import org.apache.tika.Tika;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,7 +45,6 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
 	})
 	@GetMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<Page<RestaurantResponse>>> getAllRestaurants(
 			@RequestParam(required = false) UUID ownerUserId,
 			@RequestParam(required = false) Double minRating,
@@ -64,7 +63,6 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{restaurantId}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<RestaurantResponse>> getRestaurantById(
 			@Parameter(description = "UUID of the restaurant to retrieve", required = true)
 			@PathVariable UUID restaurantId) {
@@ -79,10 +77,13 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "403", description = "Access denied")
 	})
 	@PostMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER')")
 	public ResponseEntity<ApiRes<RestaurantResponse>> createRestaurant(
 			@Parameter(description = "Restaurant creation payload", required = true)
 			@Valid @RequestBody RestaurantRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		RestaurantResponse created = restaurantService.createRestaurant(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -95,12 +96,15 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@PutMapping("/{restaurantId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<RestaurantResponse>> updateRestaurant(
 			@Parameter(description = "UUID of the restaurant to update", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Updated restaurant details", required = true)
 			@Valid @RequestBody RestaurantRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		RestaurantResponse updated = restaurantService.updateRestaurant(restaurantId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -112,10 +116,13 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@DeleteMapping("/{restaurantId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
-	public ResponseEntity<Void> deleteRestaurant(
+	public ResponseEntity<ApiRes<Void>> deleteRestaurant(
 			@Parameter(description = "UUID of the restaurant to delete", required = true)
 			@PathVariable UUID restaurantId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		restaurantService.deleteRestaurant(restaurantId);
 		return ResponseEntity.noContent().build();
 	}
@@ -124,14 +131,12 @@ public class RestaurantController {
 
 	@Operation(summary = "Find restaurants near a location", description = "Retrieve restaurants within a radius (in meters) of given latitude and longitude")
 	@GetMapping("/near")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<Page<RestaurantResponse>>> findRestaurantsNear(
 			@RequestParam double latitude,
 			@RequestParam double longitude,
 			@RequestParam(defaultValue = "1000") double radiusMeters,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-
 		int maxPageSize = 100;
 		if (size > maxPageSize) size = maxPageSize;
 
@@ -147,7 +152,6 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{restaurantId}/schedules")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId) {
@@ -163,12 +167,15 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@PostMapping("/{restaurantId}/schedules")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<ScheduleResponse>> addSchedule(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Schedule details to create", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		ScheduleResponse created = scheduleService.createScheduleForRestaurant(restaurantId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -181,7 +188,6 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
 	})
 	@PutMapping("/{restaurantId}/schedules/{scheduleId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<ScheduleResponse>> updateSchedule(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -189,6 +195,10 @@ public class RestaurantController {
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, restaurantId, null, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -200,12 +210,15 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
 	})
 	@DeleteMapping("/{restaurantId}/schedules/{scheduleId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
-	public ResponseEntity<Void> deleteSchedule(
+	public ResponseEntity<ApiRes<Void>> deleteSchedule(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the schedule to delete", required = true)
 			@PathVariable UUID scheduleId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		scheduleService.deleteSchedule(scheduleId, restaurantId, null);
 		return ResponseEntity.noContent().build();
 	}
@@ -218,7 +231,6 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{restaurantId}/medias")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<MediaResponse>>> getMediaForRestaurant(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId) {
@@ -233,9 +245,7 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "403", description = "Access denied"),
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
-//	@PostMapping("/{restaurantId}/medias")
 	@PostMapping(value = "/{restaurantId}/medias", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<MediaResponse>> addMediaToRestaurant(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -246,6 +256,9 @@ public class RestaurantController {
 			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
@@ -305,7 +318,6 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Media not found")
 	})
 	@PutMapping("/{restaurantId}/medias/{mediaId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
 	public ResponseEntity<ApiRes<MediaResponse>> updateMedia(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -313,6 +325,10 @@ public class RestaurantController {
 			@PathVariable UUID mediaId,
 			@Parameter(description = "Updated media details", required = true)
 			@Valid @RequestBody MediaRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		MediaResponse updated = mediaService.updateMedia(mediaId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -324,12 +340,15 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Media not found")
 	})
 	@DeleteMapping("/{restaurantId}/medias/{mediaId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId())")
-	public ResponseEntity<Void> deleteMedia(
+	public ResponseEntity<ApiRes<Void>> deleteMedia(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+
 		mediaService.deleteMedia(mediaId);
 		return ResponseEntity.noContent().build();
 	}
