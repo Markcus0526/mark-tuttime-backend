@@ -15,8 +15,7 @@ import java.util.UUID;
 }, uniqueConstraints = {
 		@UniqueConstraint(name = "unique_zone_table_number", columnNames = {"zone_id", "number"})
 })
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

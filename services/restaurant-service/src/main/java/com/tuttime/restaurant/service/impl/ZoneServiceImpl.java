@@ -38,7 +38,7 @@ public class ZoneServiceImpl implements ZoneService {
 
 	@Override
 	public ZoneResponse createZone(UUID branchId, ZoneRequest request) {
-		Zone zone = zoneMapper.fromRequest(request);
+		Zone zone = zoneMapper.toEntity(request);
 		zone.setBranchId(branchId);
 		zone.setDeleted(false);
 		Zone savedZone = zoneRepository.save(zone);

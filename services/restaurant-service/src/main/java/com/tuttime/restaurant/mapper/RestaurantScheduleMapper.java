@@ -4,7 +4,9 @@ import com.tuttime.restaurant.dto.ScheduleRequest;
 import com.tuttime.restaurant.dto.ScheduleResponse;
 import com.tuttime.restaurant.entity.RestaurantSchedule;
 import com.tuttime.restaurant.util.DateMapper;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring",
 		uses = DateMapper.class,

@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -36,11 +37,11 @@ public class RestaurantServiceImpl implements RestaurantService {
 		Page<Restaurant> restaurantPage;
 
 		if (ownerUserId != null && minRating != null && maxRating != null) {
-			restaurantPage = restaurantRepository.findByOwnerUserIdAndRatingBetween(ownerUserId, minRating, maxRating, pageable);
+			restaurantPage = restaurantRepository.findByOwnerUserIdAndRatingBetween(ownerUserId, BigDecimal.valueOf(minRating), BigDecimal.valueOf(maxRating), pageable);
 		} else if (ownerUserId != null) {
 			restaurantPage = restaurantRepository.findByOwnerUserId(ownerUserId, pageable);
 		} else if (minRating != null && maxRating != null) {
-			restaurantPage = restaurantRepository.findByRatingBetween(minRating, maxRating, pageable);
+			restaurantPage = restaurantRepository.findByRatingBetween(BigDecimal.valueOf(minRating), BigDecimal.valueOf(maxRating), pageable);
 		} else {
 			restaurantPage = restaurantRepository.findAll(pageable);
 		}

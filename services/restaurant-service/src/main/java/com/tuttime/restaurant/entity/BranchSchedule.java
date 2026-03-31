@@ -15,8 +15,7 @@ import java.util.UUID;
 		@Index(name = "idx_branch_schedule_day_of_week", columnList = "day_of_week"),
 		@Index(name = "idx_branch_schedule_is_deleted", columnList = "is_deleted")
 })
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

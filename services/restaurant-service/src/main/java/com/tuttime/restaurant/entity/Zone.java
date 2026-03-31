@@ -12,8 +12,7 @@ import java.util.UUID;
 @jakarta.persistence.Table(name = "zones", schema = "restaurant_service", indexes = {
 		@Index(name = "idx_zones_is_deleted", columnList = "is_deleted")
 })
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

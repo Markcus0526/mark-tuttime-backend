@@ -140,6 +140,10 @@ spring:
           timeout: ${EMAIL_SMTP_TIMEOUT:5000} # Read timeout in ms
           writetimeout: ${EMAIL_SMTP_WRITE_TIMEOUT:5000} # Write timeout in ms
 
+  threads:
+    virtual:
+      enabled: true
+
 # Brute-Force Protection Configuration
 bruteforce:
   warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD:4} # Log warning after 4 failed attempts (increased from 3 for better UX)
@@ -339,3 +343,9 @@ connection:
     monitoring:
       enabled: ${CONNECTION_POOL_MONITORING_ENABLED:false}
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  model-and-parameter-ignores: X-User-Id,X-User-Roles

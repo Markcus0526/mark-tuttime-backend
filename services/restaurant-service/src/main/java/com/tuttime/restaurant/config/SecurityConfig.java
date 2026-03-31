@@ -1,35 +1,26 @@
 package com.tuttime.restaurant.config;
 
+import com.tuttime.common.auth.security.GatewayHeaderSecurityFilter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Security Configuration: minimal stateless configuration - gateway proxies requests, admin-service handles authentication.
  */
 @Slf4j
 @Configuration
-@EnableWebSecurity
-@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+	private final GatewayHeaderSecurityFilter gatewayHeaderSecurityFilter;
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,42 +30,17 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.authorizeHttpRequests(auth -> auth
-						.anyRequest().authenticated()
+						.requestMatchers("/api/v1/restaurants/**").permitAll() // Add /v1
+						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 				)
-				.oauth2ResourceServer(oauth2 -> oauth2
-						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-				);
+				.addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
 
 	@Bean
-	public JwtAuthenticationConverter jwtAuthenticationConverter() {
-		JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-
-		// 1. Tell Spring to read the roles from your array claim
-		grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
-
-		// 2. Map 'ADMIN' to 'ROLE_ADMIN' so hasAnyRole('ADMIN') works!
-		grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-
-		JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-		jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-		return jwtAuthenticationConverter;
-	}
-
-	@Value("${spring.security.jwt.secret}")
-	private String jwtSecret;
-
-	@Bean
-	public JwtDecoder jwtDecoder() {
-		// Converts your raw secret string into a SecretKeySpec
-		SecretKeySpec secretKey = new SecretKeySpec(
-				jwtSecret.getBytes(),
-				"HmacSHA256"
-		);
-
-		return NimbusJwtDecoder.withSecretKey(secretKey).build();
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+		return config.getAuthenticationManager();
 	}
 }
 

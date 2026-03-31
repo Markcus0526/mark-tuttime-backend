@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.ZoneRequest;
 import com.tuttime.restaurant.dto.ZoneResponse;
@@ -15,7 +16,6 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,7 +38,6 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<List<ZoneResponse>>> getZonesByBranch(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -54,7 +53,6 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@GetMapping("/{zoneId}")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<ZoneResponse>> getZoneById(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -74,7 +72,6 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PostMapping
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<ZoneResponse>> createZone(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -82,6 +79,9 @@ public class ZoneController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "Zone creation payload", required = true)
 			@Valid @RequestBody ZoneRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		ZoneResponse created = zoneService.createZone(branchId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -94,7 +94,6 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@PutMapping("/{zoneId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<ZoneResponse>> updateZone(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -104,6 +103,9 @@ public class ZoneController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "Updated zone details", required = true)
 			@Valid @RequestBody ZoneRequest request) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		ZoneResponse updated = zoneService.updateZone(branchId, zoneId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -115,14 +117,16 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@DeleteMapping("/{zoneId}")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
-	public ResponseEntity<Void> deleteZone(
+	public ResponseEntity<ApiRes<Void>> deleteZone(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		zoneService.deleteZone(branchId, zoneId);
 		return ResponseEntity.noContent().build();
 	}
@@ -135,7 +139,6 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone or map not found")
 	})
 	@GetMapping("/{zoneId}/map")
-	@PreAuthorize("hasAnyRole('ADMIN', 'OWNER', 'MANAGER', 'HOSTESS', 'USER', 'GUEST')")
 	public ResponseEntity<ApiRes<String>> getZoneMapSvg(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -153,7 +156,6 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@PostMapping("/{zoneId}/map")
-	@PreAuthorize("hasRole('ADMIN') or @restaurantSecurity.isOwner(#restaurantId, @securityUtil.getCurrentUserId()) or hasRole('MANAGER')")
 	public ResponseEntity<ApiRes<Void>> setZoneMapSvg(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
@@ -163,6 +165,9 @@ public class ZoneController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "SVG XML content", required = true)
 			@RequestBody String svgContent) {
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
 		mediaService.setOrUpdateSvgMap(EntityType.ZONE, zoneId, svgContent);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
