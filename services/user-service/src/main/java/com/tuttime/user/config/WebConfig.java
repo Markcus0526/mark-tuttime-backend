@@ -1,6 +1,6 @@
 package com.tuttime.user.config;
 
-import com.tuttime.user.security.UserHeaderInterceptor;
+import com.tuttime.common.auth.security.UserHeaderInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

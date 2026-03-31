@@ -1,9 +1,8 @@
 package com.tuttime.user.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.user.dto.*;
-import com.tuttime.user.enums.UserRoleKind;
-import com.tuttime.user.security.UserContext;
 import com.tuttime.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,7 +42,7 @@ public class UserController {
 	public ResponseEntity<ApiRes<UserResponse>> createUser(
 			@Parameter(description = "User details to create", required = true)
 			@Valid @RequestBody UserCreateRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -80,7 +79,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Fields to update", required = true)
 			@Valid @RequestBody UserUpdateRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -98,7 +97,7 @@ public class UserController {
 			@Parameter(description = "UUID of the user to soft delete", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID id) {
 		String roles = UserContext.getRoles();
-		if (!roles.contains(UserRoleKind.ADMIN.name())) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -143,7 +142,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Role to assign", required = true)
 			@RequestBody RoleAssignRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -162,7 +161,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Role name to remove", required = true, in = ParameterIn.PATH)
 			@PathVariable String roleName) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -182,7 +181,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Authentication method details", required = true)
 			@Valid @RequestBody AuthMethodCreateRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -199,7 +198,7 @@ public class UserController {
 	public ResponseEntity<ApiRes<Void>> verifyPhoneCode(
 			@Parameter(description = "Phone verification details", required = true)
 			@Valid @RequestBody PhoneVerificationConfirmRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -216,7 +215,7 @@ public class UserController {
 	public ResponseEntity<ApiRes<Void>> requestPasswordReset(
 			@Parameter(description = "Email or phone to send password reset token", required = true)
 			@RequestBody PasswordResetRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -234,7 +233,7 @@ public class UserController {
 	public ResponseEntity<ApiRes<Void>> confirmPasswordReset(
 			@Parameter(description = "Password reset confirmation data", required = true)
 			@Valid @RequestBody PasswordResetConfirmRequest request) {
-		if (UserContext.isRoleAdmin()) {
+		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
