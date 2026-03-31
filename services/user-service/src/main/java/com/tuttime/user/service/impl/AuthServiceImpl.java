@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.PasswordResetToken;
 import com.tuttime.user.entity.PhoneVerificationCode;
@@ -90,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
 		User user = userOpt.get();
 
 		// Check user status
-		if (user.isDeleted() || user.getStatus() != UserStatus.ACTIVE) {
+		if (user.isDeleted() || !user.getStatus().equals(UserStatus.ACTIVE)) {
 			throw new SecurityException("User account is not active");
 		}
 
@@ -343,8 +344,18 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	private User validateVerificationToken(String token) {
-		// Validate token and return user
-		return new User(); // stub
+		// 1. Find the token in the database
+		PasswordResetToken verificationToken = passwordResetTokenRepository.findByToken(token)
+				.orElseThrow(() -> new ResourceNotFoundException("Invalid verification token"));
+
+		// 2. Check if the token has expired
+		if (verificationToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+			throw new IllegalArgumentException("Verification code expired");
+		}
+
+		// 3. Return the fully loaded user entity from the database
+		return userRepository.findById(verificationToken.getUserId())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 	}
 
 	private String generateRandomCode() {

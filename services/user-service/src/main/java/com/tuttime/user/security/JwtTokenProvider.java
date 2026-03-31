@@ -1,7 +1,6 @@
 package com.tuttime.user.security;
 
 import com.tuttime.user.entity.User;
-import com.tuttime.user.entity.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -102,12 +101,16 @@ public class JwtTokenProvider {
 		return UUID.fromString(claims.getSubject());
 	}
 
-	/** Generates unique JWT ID (JTI). */
+	/**
+	 * Generates unique JWT ID (JTI).
+	 */
 	public String generateJti() {
 		return UUID.randomUUID().toString();
 	}
 
-	/** Generates JWT token with pre-generated JTI. */
+	/**
+	 * Generates JWT token with pre-generated JTI.
+	 */
 	public Map<String, Object> generateTokenClaims(UUID userId, String username, String[] roles, String jti) {
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("userId", userId);

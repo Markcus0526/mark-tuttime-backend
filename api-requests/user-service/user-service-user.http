@@ -4,6 +4,7 @@
 
 @baseUrl = http://localhost:8080
 @path = /api/v1/users
+@token = eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJiZWU3OGQyNC0xMWNlLTRkMTYtYjEzZS1kOWY0YzAxNjFlNzEiLCJyb2xlcyI6WyJBRE1JTiJdLCJ1c2VySWQiOiI5MzE3NTA1NC02OTM0LTQ5ZGUtYjJhOC03YTk3Y2I1NDkwYzYiLCJ1c2VybmFtZSI6IkFkbWluaXN0cmF0b3IiLCJpYXQiOjE3NzQ5NDA2MDAsImV4cCI6MTg2MTM0MDYwMH0.D86L03UJEMFhEoAq5OYwyAoOcP68XyIdBSbN3xyfvDs
 @id = 1
 @referenceId = 1
 
@@ -35,8 +36,8 @@ Content-Type: application/json
 ### Get all useres
 ### Request Body: -
 ### Response: List<UserDto>
-GET {{baseUrl}}{{path}}/reference/{referenceId}
-#Authorization: Bearer {{token}}
+GET {{baseUrl}}{{path}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 ### Update an existing user

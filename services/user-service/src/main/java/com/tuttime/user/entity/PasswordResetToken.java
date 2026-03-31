@@ -16,6 +16,7 @@ import java.util.UUID;
 public class PasswordResetToken {
 	@Id
 	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
+	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
 
 	@JoinColumn(name = "user_id", nullable = false)

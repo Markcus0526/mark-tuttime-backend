@@ -3,20 +3,17 @@ package com.tuttime.user.controller;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.service.AuthService;
-import com.tuttime.user.service.UserRoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
 	private final AuthService authService;
-	private final UserRoleService userRoleService;
 
 	@Operation(summary = "Register a new user (email or phone). Sends verification accordingly.")
 	@ApiResponses(value = {
@@ -171,35 +167,5 @@ public class AuthController {
 			@Valid @RequestBody PasswordResetConfirmRequest request) {
 		authService.resetPassword(request);
 		return ResponseEntity.noContent().build();
-	}
-
-	@Operation(summary = "Assign a role to a user (Admin only).",
-			security = @SecurityRequirement(name = "bearerAuth"))
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Role assigned successfully"),
-			@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions", content = @Content)
-	})
-	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("/roles/assign")
-	public ResponseEntity<ApiRes<Void>> assignRoleToUser(
-			@Parameter(description = "Role assignment request", required = true)
-			@Valid @RequestBody RoleAssignRequest request) {
-		userRoleService.assignRole(request.getUserId(), request.getRoleName());
-		return ResponseEntity.ok().build();
-	}
-
-	@Operation(summary = "Remove a role from a user (Admin only).",
-			security = @SecurityRequirement(name = "bearerAuth"))
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Role removed successfully"),
-			@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions", content = @Content)
-	})
-	@PreAuthorize("hasRole('ADMIN')")
-	@PostMapping("/roles/remove")
-	public ResponseEntity<ApiRes<Void>> removeRoleFromUser(
-			@Parameter(description = "Role removal request", required = true)
-			@Valid @RequestBody RoleAssignRequest request) {
-		userRoleService.removeRole(request.getUserId(), request.getRoleName());
-		return ResponseEntity.ok().build();
 	}
 }
