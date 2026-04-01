@@ -40,7 +40,7 @@ spring:
         # Endpoints include: /api/v1/auth/**
         - id: user-service-auth
           order: 11
-          uri: http://${USER_SERVICE:localhost}:28001
+          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
           predicates:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTION
@@ -60,7 +60,7 @@ spring:
         # Endpoints include: /api/v1/users/**
         - id: user-service-user
           order: 12
-          uri: http://${USER_SERVICE:localhost}:28001
+          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
           predicates:
             - Path=/api/v1/users/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -75,7 +75,7 @@ spring:
         # Endpoints include: /api/v1/app/**
         - id: user-service-app-version
           order: 13
-          uri: http://${USER_SERVICE:localhost}:28001
+          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
           predicates:
             - Path=/api/v1/app/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -91,7 +91,7 @@ spring:
         # Endpoints include: /api/v1/restaurants/**
         - id: restaurant-service-restaurant
           order: 21
-          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
           predicates:
             - Path=/api/v1/restaurants/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -107,7 +107,7 @@ spring:
         # Endpoints include: /api/v1/menus/**
         - id: menu-service-menu
           order: 31
-          uri: http://${MENU-SERVICE:localhost}:28003
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
             - Path=/api/v1/menus/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -121,7 +121,7 @@ spring:
         # Endpoints include: /api/v1/menus/modifiers/**
         - id: menu-service-modifier
           order: 32
-          uri: http://${MENU-SERVICE:localhost}:28003
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
             - Path=/api/v1/menus/modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -135,7 +135,7 @@ spring:
         # Endpoints include: /api/v1/menus/discounts/**
         - id: menu-service-discount
           order: 33
-          uri: http://${MENU-SERVICE:localhost}:28003
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
             - Path=/api/v1/menus/discounts/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -149,7 +149,7 @@ spring:
         # Endpoints include: /api/v1/menus/stoplists/**
         - id: menu-service-stoplist
           order: 34
-          uri: http://${MENU-SERVICE:localhost}:28003
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
             - Path=/api/v1/menus/stoplists/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -165,7 +165,7 @@ spring:
         # Endpoints include: /api/v1/bookings/**
         - id: booking-service-booking
           order: 41
-          uri: http://${BOOKING-SERVICE:localhost}:28004
+          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
           predicates:
             - Path=/api/v1/bookings/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -180,7 +180,7 @@ spring:
         # Endpoints include: /api/v1/booking-locks/**
         - id: booking-service-booking-lock
           order: 42
-          uri: http://${BOOKING-SERVICE:localhost}:28004
+          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
           predicates:
             - Path=/api/v1/booking-locks/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -195,7 +195,7 @@ spring:
         # Endpoints include: /api/v1/booking-status-histories/**
         - id: booking-service-booking-status-history
           order: 43
-          uri: http://${BOOKING-SERVICE:localhost}:28004
+          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
           predicates:
             - Path=/api/v1/booking-status-histories/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -210,7 +210,7 @@ spring:
         # Endpoints include: /api/v1/booking-notifications/**
         - id: booking-service-booking-notification
           order: 44
-          uri: http://${BOOKING-SERVICE:localhost}:28004
+          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
           predicates:
             - Path=/api/v1/booking-notifications/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -227,7 +227,7 @@ spring:
         # Endpoints include: /api/v1/orders/**
         - id: booking-service-order
           order: 51
-          uri: http://${ORDER-SERVICE:localhost}:28005
+          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
           predicates:
             - Path=/api/v1/orders/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -242,7 +242,7 @@ spring:
         # Endpoints include: /api/v1/order-items/**
         - id: booking-service-order-item
           order: 52
-          uri: http://${ORDER-SERVICE:localhost}:28005
+          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
           predicates:
             - Path=/api/v1/order-items/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -257,7 +257,7 @@ spring:
         # Endpoints include: /api/v1/order-item-modifiers/**
         - id: booking-service-order-item-modifier
           order: 53
-          uri: http://${ORDER-SERVICE:localhost}:28005
+          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
           predicates:
             - Path=/api/v1/order-item-modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -274,7 +274,7 @@ spring:
         # Endpoints include: /api/v1/payments/**
         - id: payment-service-payment
           order: 61
-          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
           predicates:
             - Path=/api/v1/payments/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -289,7 +289,7 @@ spring:
         # Endpoints include: /api/v1/refunds/**
         - id: payment-service-refunds
           order: 62
-          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
           predicates:
             - Path=/api/v1/refunds/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -304,7 +304,7 @@ spring:
         # Endpoints include: /api/v1/payment-audit-logs/**
         - id: payment-service-payment-audit-log
           order: 63
-          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
           predicates:
             - Path=/api/v1/payment-audit-logs/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -324,7 +324,7 @@ spring:
         # Endpoints include: /api/v1/reviews/**
         - id: review-service-review
           order: 81
-          uri: http://${REVIEW-SERVICE:localhost}:28008
+          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
           predicates:
             - Path=/api/v1/reviews/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -339,7 +339,7 @@ spring:
         # Endpoints include: /api/v1/moderation-logs/**
         - id: review-service-moderation-log
           order: 82
-          uri: http://${REVIEW-SERVICE:localhost}:28008
+          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
           predicates:
             - Path=/api/v1/moderation-logs/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -354,7 +354,7 @@ spring:
         # Endpoints include: /api/v1/rating-aggregates/**
         - id: review-service-/api/v1/rating-aggregates
           order: 83
-          uri: http://${REVIEW-SERVICE:localhost}:28008
+          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
           predicates:
             - Path=/api/v1/rating-aggregates/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -371,7 +371,7 @@ spring:
         # Endpoints include: /api/v1/event-logs/**
         - id: analytics-service-event-logs
           order: 91
-          uri: http://${ANALYTICS-SERVICE:localhost}:28009
+          uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
           predicates:
             - Path=/api/v1/event-logs/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -386,7 +386,7 @@ spring:
         # Endpoints include: /api/v1/aggregated-metrics/**
         - id: analytics-service-aggregated-metric
           order: 92
-          uri: http://${ANALYTICS-SERVICE:localhost}:28009
+          uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
           predicates:
             - Path=/api/v1/aggregated-metrics/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -399,63 +399,63 @@ spring:
 
         ################# OpenAPI(Swagger UI) Routes #######################
         - id: user-openapi
-          uri: http://${USER-SERVICE:localhost}:28001
+          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
           predicates:
             - Path=/user-docs/**
           filters:
             - RewritePath=/user-docs/(?<segment>.*), /$\{segment}
 
         - id: restaurant-openapi
-          uri: http://${RESTAURANT-SERVICE:localhost}:28002
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
           predicates:
             - Path=/restaurant-docs/**
           filters:
             - RewritePath=/restaurant-docs/(?<segment>.*), /$\{segment}
 
         - id: menu-openapi
-          uri: http://${MENU-SERVICE:localhost}:28003
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
             - Path=/menu-docs/**
           filters:
             - RewritePath=/menu-docs/(?<segment>.*), /$\{segment}
 
         - id: booking-openapi
-          uri: http://${BOOKING-SERVICE:localhost}:28004
+          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
           predicates:
             - Path=/booking-docs/**
           filters:
             - RewritePath=/booking-docs/(?<segment>.*), /$\{segment}
 
         - id: order-openapi
-          uri: http://${ORDER-SERVICE:localhost}:28005
+          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
           predicates:
             - Path=/order-docs/**
           filters:
             - RewritePath=/order-docs/(?<segment>.*), /$\{segment}
 
         - id: payment-openapi
-          uri: http://${PAYMENT-SERVICE:localhost}:28006
+          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
           predicates:
             - Path=/payment-docs/**
           filters:
             - RewritePath=/payment-docs/(?<segment>.*), /$\{segment}
 
         - id: pos-openapi
-          uri: http://${POS-SERVICE:localhost}:28007
+          uri: http://${POS_SERVICE:localhost}:${POS_SERVICE_PORT:28007}
           predicates:
             - Path=/pos-docs/**
           filters:
             - RewritePath=/pos-docs/(?<segment>.*), /$\{segment}
 
         - id: review-openapi
-          uri: http://${REVIEW-SERVICE:localhost}:28008
+          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
           predicates:
             - Path=/review-docs/**
           filters:
             - RewritePath=/review-docs/(?<segment>.*), /$\{segment}
 
         - id: analytics-openapi
-          uri: http://${ANALYTICS-SERVICE:localhost}:28009
+          uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
           predicates:
             - Path=/analytics-docs/**
           filters:

@@ -8,16 +8,16 @@ option java_outer_classname = "UserServiceProto";
 
 // User Service gRPC
 service UserService {
-  rpc GetUserById (GetUserRequest) returns (UserResponse);
-  rpc ValidateUser (ValidateUserRequest) returns (ValidateUserResponse);
+  rpc GetUserById (UserByIdRequest) returns (UserResponse);
+  rpc ValidateUser (UserByIdRequest) returns (ValidateUserResponse);
   rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
   rpc GetUserByPhone (GetUserByPhoneRequest) returns (UserResponse);
   rpc SearchUsers (SearchUsersRequest) returns (SearchUsersResponse);
 
   // Status and verification queries
-  rpc GetUserStatus (GetUserRequest) returns (UserStatusResponse);
-  rpc IsKycVerified (GetUserRequest) returns (KycStatusResponse);
-  rpc GetUserEmail (GetUserRequest) returns (UserEmailResponse);
+  rpc GetUserStatus (UserByIdRequest) returns (UserStatusResponse);
+  rpc IsKycVerified (UserByIdRequest) returns (KycStatusResponse);
+  rpc GetUserEmail (UserByIdRequest) returns (UserEmailResponse);
 
   // Admin analytics endpoints
   rpc GetUserStatistics (GetUserStatisticsRequest) returns (GetUserStatisticsResponse);
@@ -41,19 +41,19 @@ service UserService {
   rpc CheckUserBlocks (CheckUserBlocksRequest) returns (CheckUserBlocksResponse);
 
   // Apart-sharing integration endpoints
-  rpc GetApartSharingStatus (GetUserRequest) returns (ApartSharingStatusResponse);
-  rpc RefreshApartSharingStatus (GetUserRequest) returns (ApartSharingStatusResponse);
+  rpc GetApartSharingStatus (UserByIdRequest) returns (ApartSharingStatusResponse);
+  rpc RefreshApartSharingStatus (UserByIdRequest) returns (ApartSharingStatusResponse);
 
   // FCM token management endpoints
-  rpc GetUserFcmTokens (GetUserRequest) returns (GetUserFcmTokensResponse);
+  rpc GetUserFcmTokens (UserByIdRequest) returns (GetUserFcmTokensResponse);
   rpc RemoveInvalidFcmTokens (RemoveInvalidFcmTokensRequest) returns (RemoveInvalidFcmTokensResponse);
 
   // Username lookup for mentions
   rpc GetUserIdsByUsernames (GetUserIdsByUsernamesRequest) returns (GetUserIdsByUsernamesResponse);
 }
 
-message GetUserRequest {
-  int64 user_id = 1;
+message UserByIdRequest {
+  string user_id = 1;
 }
 
 message GetUserByEmailRequest {
@@ -78,10 +78,6 @@ message SearchUsersResponse {
   int32 page_size = 5;
 }
 
-message ValidateUserRequest {
-  int64 user_id = 1;
-}
-
 message ValidateUserResponse {
   bool valid = 1;
   bool active = 2;
@@ -89,37 +85,23 @@ message ValidateUserResponse {
 }
 
 message UserResponse {
-  int64 user_id = 1;
-  string email = 2;
-  string username = 3;
-  string first_name = 8;
-  string last_name = 9;
-  string profile_image_url = 10;
-  string about = 11;
-  string websites = 12;
-  bool is_verified = 4;
-  bool kyc_completed = 5;
-  bool is_active = 6;
-  bool is_blocked = 7;
-  int64 registration_date = 13; // Unix timestamp in milliseconds when user registered
+  string user_id = 1;
+  string phone_number = 2;
+  string email = 3;
+  string full_name = 4;
+  string profile_picture = 5;
+  string status = 6;
+  int64 last_login = 7; // Unix timestamp in milliseconds when user registered
+  int64 created_at = 8; // Unix timestamp in milliseconds when user registered
+  int64 updated_at = 9; // Unix timestamp in milliseconds when user registered
+  bool is_deleted = 10;
+  int64 deleted_at = 11; // Unix timestamp in milliseconds when user registered
+  string roles = 12;
+  string auth_methods = 13;
 
-  // Contact information
-  string phone = 14;              // Phone number
-  string telegram = 15;           // Telegram username
-  string instagram = 16;          // Instagram username
-
-  // Location information
-  string country = 17;            // Country name
-  string city = 18;               // City name
-  double latitude = 19;           // Latitude for location-based features
-  double longitude = 20;          // Longitude for location-based features
-
-  // Personal information
-  string date_of_birth = 21;      // Date of birth (ISO 8601 format: YYYY-MM-DD)
-  string gender = 22;             // Gender: MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY
-
-  // Language preference
-  string preferred_language = 23; // User preferred language code (e.g., en, ko, ja, zh-CN) for notification translation
+  // Relationships
+  double latitude = 14;           // Latitude for location-based features
+  double longitude = 15;          // Longitude for location-based features
 }
 
 message UserStatusResponse {

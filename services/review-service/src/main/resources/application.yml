@@ -129,24 +129,44 @@ bruteforce:
   phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES:60} # Block phone for 1 hour
 
 server:
-  port: 28008
+  port: ${REVIEW_SERVICE_PORT:28008}
   shutdown: graceful
 
 grpc:
   server:
-    port: ${GRPC_PORT:29191}
+    port: ${REVIEW_GRPC_PORT:29008}
   # Global gRPC client deadline (seconds). Prevents indefinite hangs when remote services
   # are unresponsive. 60s is generous for batch operations under heavy load.
   # Used by GrpcClientDeadlineInterceptor.
   client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS:60}
   client:
-
     user-service:
-      address: static://${USER_SERVICE:user-service}:28001
-      negotiationType: plaintext
-#    staking-service:
-#      address: static://${STAKING_SERVICE:staking-service}:29194
-#      negotiationType: plaintext
+      address: static://${USER_SERVICE:localhost}:${USER_GRPC_PORT:29001}
+      negotiation-type: plaintext
+    restaurant-service:
+      address: static://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_GRPC_PORT:29002}
+      negotiation-type: plaintext
+    menu-service:
+      address: static://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_GRPC_PORT:29003}
+      negotiation-type: plaintext
+    booking-service:
+      address: static://${BOOKING_SERVICE:localhost}:${BOOKING_GRPC_PORT:29004}
+      negotiation-type: plaintext
+    order-service:
+      address: static://${ORDER_SERVICE:localhost}:${ORDER_GRPC_PORT:29005}
+      negotiation-type: plaintext
+    payment-service:
+      address: static://${PAYMENT_SERVICE:localhost}:${PAYMENT_GRPC_PORT:29006}
+      negotiation-type: plaintext
+    pos-service:
+      address: static://${POS_SERVICE:localhost}:${POS_GRPC_PORT:29007}
+      negotiation-type: plaintext
+    review-service:
+      address: static://${REVIEW_SERVICE:localhost}:${REVIEW_GRPC_PORT:29008}
+      negotiation-type: plaintext
+    analytics-service:
+      address: static://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_GRPC_PORT:29009}
+      negotiation-type: plaintext
 
 management:
   endpoints:

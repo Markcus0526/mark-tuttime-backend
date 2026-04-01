@@ -41,8 +41,14 @@ public class OpenApiConfig {
 		gatewayServer.setUrl("http://localhost:8080/restaurant-docs");
 		gatewayServer.setDescription("Gateway Route");
 
+		// Create a security requirement pointing to the name used in your annotation above
+		io.swagger.v3.oas.models.security.SecurityRequirement securityRequirement =
+				new io.swagger.v3.oas.models.security.SecurityRequirement()
+						.addList("Bearer Authentication"); // MUST MATCH THE NAME IN YOUR ANNOTATION EXACTLY
+
 		return new OpenAPI()
 				.servers(List.of(gatewayServer)) // Apply the server mapping
+				.addSecurityItem(securityRequirement) // <-- THIS TELLS SWAGGER TO SEND THE TOKEN ON REQUESTS!
 				.info(new Info()
 						.title("Restaurant Service API")
 						.version("1.0")

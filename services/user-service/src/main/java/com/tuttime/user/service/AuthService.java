@@ -98,4 +98,6 @@ public interface AuthService {
 	 * @throws IllegalArgumentException if token/code is invalid or expired
 	 */
 	void resetPassword(PasswordResetConfirmRequest request);
+
+	AuthResponse loginWithOtp(String phoneNumber, String code);
 }

@@ -96,7 +96,6 @@ public class UserController {
 	public ResponseEntity<ApiRes<Void>> softDeleteUser(
 			@Parameter(description = "UUID of the user to soft delete", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID id) {
-		String roles = UserContext.getRoles();
 		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
