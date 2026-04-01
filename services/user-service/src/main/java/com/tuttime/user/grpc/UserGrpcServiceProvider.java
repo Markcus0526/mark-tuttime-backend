@@ -5,7 +5,6 @@ import com.tuttime.common.proto.UserByIdRequest;
 import com.tuttime.common.proto.UserResponse;
 import com.tuttime.common.proto.UserServiceGrpc;
 import com.tuttime.user.entity.*;
-import com.tuttime.user.enums.AuthProvider;
 import com.tuttime.user.repository.UserRepository;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -15,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
-import java.util.List;
 import java.util.SequencedSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,7 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @GrpcService
 @RequiredArgsConstructor
-public class UserGrpcService extends UserServiceGrpc.UserServiceImplBase {
+public class UserGrpcServiceProvider extends UserServiceGrpc.UserServiceImplBase {
 
 	private final UserRepository userRepository;
 
