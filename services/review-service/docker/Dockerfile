@@ -60,7 +60,7 @@ WORKDIR /app
 
 COPY --from=builder /app/services/review-service/target/review-service-*.jar app.jar
 
-EXPOSE 28008 29191
+EXPOSE 28008 29008
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 

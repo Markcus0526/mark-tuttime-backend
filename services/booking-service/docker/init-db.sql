@@ -1,96 +1,55 @@
--- ============================================================================
--- BOOKING SERVICE - Database Schema
--- Database: booking_service_db
--- Schema: booking_service
--- 
--- NOTE: This script runs automatically when the database is first initialized.
--- If the database already exists, you need to drop the volume and recreate it.
--- ============================================================================
-
 CREATE SCHEMA IF NOT EXISTS booking_service;
-SET
-search_path TO booking_service, public;
+SET search_path TO booking_service, public;
 
--- Set timezone to UTC for all timestamp operations
-SET
-timezone = 'UTC';
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Set client encoding to UTF-8 to handle Unicode characters
-SET
-client_encoding = 'UTF8';
+-- Enum for Type-Safe Statuses
+CREATE TYPE booking_status_enum AS ENUM ('CREATED', 'PAID', 'CANCELED', 'NO_SHOW', 'COMPLETED');
 
--- Suppress NOTICE messages
-SET
-client_min_messages TO WARNING;
-
--- Set search_path after schema is created
-SET
-search_path TO booking_service, public;
-
--- Enable required PostgreSQL extensions
-CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
-
-CREATE TYPE booking_status AS ENUM ('CREATED', 'PAID', 'CANCELED', 'NO_SHOW', 'COMPLETED');
-
--- Table: bookings
+-- 1. Bookings Table (Updated for TIMESTAMPTZ and UUID defaults)
 CREATE TABLE bookings
 (
-    booking_id          UUID PRIMARY KEY,
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id             UUID        NOT NULL,
     restaurant_id       UUID        NOT NULL,
     branch_id           UUID        NOT NULL,
     zone_id             UUID        NOT NULL,
     table_id            UUID        NOT NULL,
-    booking_status      VARCHAR(20) NOT NULL,
-    booking_datetime    TIMESTAMP   NOT NULL,
-    party_size          INT         NOT NULL,
-    lead_time_minutes   INT,
-    grace_period_mins   INT,
-    created_at          TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP,
+    status              booking_status_enum NOT NULL DEFAULT 'CREATED',
+    booking_datetime    TIMESTAMPTZ NOT NULL, -- Use TZ for global accuracy
+    party_size          INT         NOT NULL CHECK (party_size > 0),
+    lead_time_minutes   INT         DEFAULT 0,
+    grace_period_mins   INT         DEFAULT 15,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     cancellation_reason VARCHAR(255),
-    auto_cancelled      BOOLEAN              DEFAULT FALSE
+    auto_cancelled      BOOLEAN     DEFAULT FALSE
 );
 
-CREATE INDEX idx_bookings_datetime ON bookings (booking_datetime);
-CREATE INDEX idx_bookings_status ON bookings (booking_status);
-CREATE INDEX idx_bookings_table_id ON bookings (table_id);
-
--- Table: booking_locks
-CREATE TABLE booking_locks
-(
-    lock_id          UUID PRIMARY KEY,
-    booking_id       UUID      NOT NULL,
-    table_id         UUID      NOT NULL,
-    lock_acquired_at TIMESTAMP NOT NULL,
-    lock_expires_at  TIMESTAMP NOT NULL,
-    CONSTRAINT fk_booking_locks_booking FOREIGN KEY (booking_id) REFERENCES bookings (booking_id)
-);
-
--- Table: booking_status_histories
+-- 2. Booking Status History (Auditing)
 CREATE TABLE booking_status_histories
 (
-    history_id BIGSERIAL PRIMARY KEY,
-    booking_id UUID        NOT NULL,
-    old_status VARCHAR(20) NOT NULL,
-    new_status VARCHAR(20) NOT NULL,
-    changed_by UUID,
-    changed_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    reason     VARCHAR(255),
-    CONSTRAINT fk_booking_status_histories_booking FOREIGN KEY (booking_id) REFERENCES bookings (booking_id)
+    id          BIGSERIAL PRIMARY KEY,
+    booking_id  UUID NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    old_status  booking_status_enum,
+    new_status  booking_status_enum NOT NULL,
+    changed_by  UUID, -- User or System ID
+    changed_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason      VARCHAR(255)
 );
 
--- Table: booking_notifications
+-- 3. Booking Notifications (Tracking communication)
 CREATE TABLE booking_notifications
 (
-    notification_id   UUID PRIMARY KEY,
-    booking_id        UUID         NOT NULL,
-    notification_type VARCHAR(50)  NOT NULL,
-    sent_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status            VARCHAR(20)  NOT NULL,
+    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id        UUID NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    notification_type VARCHAR(50) NOT NULL, -- SMS, EMAIL, PUSH
+    status            VARCHAR(20) NOT NULL, -- SENT, FAILED, DELIVERED
     recipient_contact VARCHAR(255) NOT NULL,
-    CONSTRAINT fk_booking_notifications_booking FOREIGN KEY (booking_id) REFERENCES bookings (booking_id)
+    sent_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indices for performance
+CREATE INDEX idx_bookings_branch_date ON bookings (branch_id, booking_datetime);
+CREATE INDEX idx_bookings_table_status ON bookings (table_id, status);
