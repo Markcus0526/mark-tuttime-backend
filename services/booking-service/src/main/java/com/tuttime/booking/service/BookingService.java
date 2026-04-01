@@ -1,62 +1,39 @@
 package com.tuttime.booking.service;
 
-import com.tuttime.booking.dto.BookingDto;
+import com.tuttime.booking.dto.BookingHistoryResponse;
+import com.tuttime.booking.dto.BookingResponse;
 import com.tuttime.booking.entity.Booking;
-import com.tuttime.booking.mapper.BookingMapper;
-import com.tuttime.booking.repository.BookingRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
+import com.tuttime.booking.dto.BookingRequest;
+import com.tuttime.booking.entity.enums.BookingStatus;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-@Service
-@RequiredArgsConstructor
-public class BookingService {
+public interface BookingService {
 
-	private final BookingRepository bookingRepository;
-	private final BookingMapper bookingMapper;
-	private final RedisTableLockService redisTableLockService;
-	private final AvailabilityService availabilityService;
-	private final RedisTemplate<String, String> redisTemplate;
-	private final KafkaTemplate<String, Object> kafkaTemplate;
+	/**
+	 * Creates a new booking with distributed locking for concurrency control.
+	 */
+	Booking createBooking(BookingRequest request);
 
-	public List<BookingDto> getAllBookings() {
-		return bookingRepository.findAll()
-				.stream()
-				.map(bookingMapper::toDto)
-				.collect(Collectors.toList());
-	}
+	/**
+	 * Updates the status of an existing booking and triggers domain events.
+	 */
+	void updateStatus(UUID bookingId, BookingStatus newStatus, UUID actorId, String reason);
 
-	public Optional<BookingDto> getBookingById(UUID id) {
-		return bookingRepository.findById(id)
-				.map(bookingMapper::toDto);
-	}
+	/**
+	 * Confirms payment for a booking (usually called by Payment Service).
+	 */
+	void confirmPayment(UUID bookingId);
 
-	public BookingDto createBooking(BookingDto dto) {
-		Booking booking = bookingMapper.toEntity(dto);
-		booking = bookingRepository.save(booking);
-		return bookingMapper.toDto(booking);
-	}
+	/**
+	 * Cancels an unpaid booking if it exceeds the payment timeout.
+	 */
+	void cancelUnpaidBooking(UUID bookingId);
 
-	public Optional<BookingDto> updateBooking(UUID id, BookingDto dto) {
-		return bookingRepository.findById(id).map(existing -> {
-			// Update fields; example below (add more as needed)
-			existing.setBookingStatus(dto.getBookingStatus());
-			existing.setBookingDatetime(dto.getBookingDatetime());
-			existing.setPartySize(dto.getPartySize());
-			existing.setUpdatedAt(Instant.now());
-			bookingRepository.save(existing);
-			return bookingMapper.toDto(existing);
-		});
-	}
+	public List<BookingResponse> getBookingsByUser(UUID userId);
 
-	public void deleteBooking(UUID id) {
-		bookingRepository.deleteById(id);
-	}
+	public void cancelBooking(UUID bookingId, UUID userId, String reason);
+
+	public List<BookingHistoryResponse> getStatusHistory(UUID bookingId);
 }

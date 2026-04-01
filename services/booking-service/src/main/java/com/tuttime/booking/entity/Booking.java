@@ -1,76 +1,66 @@
 package com.tuttime.booking.entity;
 
+import com.tuttime.booking.entity.enums.BookingStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "bookings")
-@Data
+@Table(name = "bookings", schema = "booking_service")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Booking {
+public class Booking extends BaseUuidEntity {
 
-	@Id
-	@Column(name = "booking_id", columnDefinition = "UUID")
-	private UUID bookingId;
-
-	@Column(name = "user_id", nullable = false, columnDefinition = "UUID")
+	@Column(name = "user_id", nullable = false)
 	private UUID userId;
 
-	@Column(name = "restaurant_id", nullable = false, columnDefinition = "UUID")
+	@Column(name = "restaurant_id", nullable = false)
 	private UUID restaurantId;
 
-	@Column(name = "branch_id", nullable = false, columnDefinition = "UUID")
+	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
-	@Column(name = "zone_id", nullable = false, columnDefinition = "UUID")
+	@Column(name = "zone_id", nullable = false)
 	private UUID zoneId;
 
-	@Column(name = "table_id", nullable = false, columnDefinition = "UUID")
+	@Column(name = "table_id", nullable = false)
 	private UUID tableId;
 
-	@Column(name = "booking_status", nullable = false, length = 20)
-	private String bookingStatus;
+	@Enumerated(EnumType.STRING)
+	@JdbcType(PostgreSQLEnumJdbcType.class)
+	@Column(columnDefinition = "booking_status_enum", nullable = false)
+	@Builder.Default
+	private BookingStatus status = BookingStatus.CREATED;
 
 	@Column(name = "booking_datetime", nullable = false)
 	private Instant bookingDatetime;
 
+	@Column(name = "duration", nullable = false)
+	private Integer duration; // Minutes: Required for the overlap calculation
+
 	@Column(name = "party_size", nullable = false)
-	private int partySize;
+	private Integer partySize;
 
 	@Column(name = "lead_time_minutes")
-	private Integer leadTimeMinutes;
+	@Builder.Default
+	private Integer leadTimeMinutes = 0;
 
 	@Column(name = "grace_period_mins")
-	private Integer gracePeriodMins;
+	@Builder.Default
+	private Integer gracePeriodMins = 15;
 
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt;
-
-	@Column(name = "updated_at")
-	private Instant updatedAt;
-
-	@Column(name = "cancellation_reason", length = 255)
+	@Column(name = "cancellation_reason")
 	private String cancellationReason;
 
 	@Column(name = "auto_cancelled")
-	private Boolean autoCancelled;
-
-	@PrePersist
-	protected void onCreate() {
-		createdAt = Instant.now();
-	}
-
-	@PreUpdate
-	protected void onUpdate() {
-		updatedAt = Instant.now();
-	}
-
+	@Builder.Default
+	private Boolean autoCancelled = false;
 }

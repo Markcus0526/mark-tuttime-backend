@@ -1,45 +1,32 @@
 package com.tuttime.booking.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "booking_notifications")
-@Data
+@Table(name = "booking_notifications", schema = "booking_service")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BookingNotification {
+public class BookingNotification extends BaseUuidEntity {
 
-	@Id
-	@Column(name = "notification_id", columnDefinition = "UUID")
-	private UUID notificationId;
-
-	@Column(name = "booking_id", nullable = false, columnDefinition = "UUID")
+	@Column(name = "booking_id", nullable = false)
 	private UUID bookingId;
 
 	@Column(name = "notification_type", nullable = false, length = 50)
-	private String notificationType;
-
-	@Column(name = "sent_at", nullable = false, updatable = false)
-	private Instant sentAt;
+	private String notificationType; // SMS, EMAIL, PUSH
 
 	@Column(name = "status", nullable = false, length = 20)
-	private String status;
+	private String status; // SENT, FAILED, DELIVERED
 
-	@Column(name = "recipient_contact", nullable = false, length = 255)
+	@Column(name = "recipient_contact", nullable = false)
 	private String recipientContact;
 
-	@PrePersist
-	protected void onCreate() {
-		sentAt = Instant.now();
-	}
-
-	// Getters and Setters omitted for brevity
+	@Column(name = "sent_at", nullable = false)
+	private OffsetDateTime sentAt;
 }
