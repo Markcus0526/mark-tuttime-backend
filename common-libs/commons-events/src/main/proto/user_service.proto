@@ -9,6 +9,8 @@ option java_outer_classname = "UserServiceProto";
 // User Service gRPC
 service UserService {
   rpc GetUserById (UserByIdRequest) returns (UserResponse);
+
+
   rpc ValidateUser (UserByIdRequest) returns (ValidateUserResponse);
   rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
   rpc GetUserByPhone (GetUserByPhoneRequest) returns (UserResponse);

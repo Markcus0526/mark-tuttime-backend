@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
 package com.tuttime.common.proto;
 
 option java_multiple_files = true;
@@ -8,6 +9,9 @@ option java_outer_classname = "RestaurantServiceProto";
 
 // Restaurant Service gRPC
 service RestaurantService {
+  rpc CheckAvailability (AvailabilityRequest) returns (AvailabilityResponse);
+
+  ///////////////////// old ////////////////////////////////////////
   rpc GetRestaurantById (GetRestaurantRequest) returns (RestaurantResponse);
   rpc ValidateRestaurant (ValidateRestaurantRequest) returns (ValidateRestaurantResponse);
   rpc GetRestaurantByEmail (GetRestaurantByEmailRequest) returns (RestaurantResponse);
@@ -22,6 +26,25 @@ service RestaurantService {
   rpc GetRestaurantIdsByNames (GetRestaurantIdsByNamesRequest) returns (GetRestaurantIdsByNamesResponse);
 }
 
+message AvailabilityRequest {
+  string branch_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  int32 duration_minutes = 3;
+  int32 party_size = 4;
+}
+
+message TableInfo {
+  string table_id = 1;
+  string zone_id = 2;
+  int32 seats = 3;
+}
+
+message AvailabilityResponse {
+  bool is_available = 1;
+  repeated TableInfo available_tables = 2;
+}
+
+///////////////////// old ////////////////////////////////////////
 message GetRestaurantRequest {
   int64 restaurant_id = 1;
 }

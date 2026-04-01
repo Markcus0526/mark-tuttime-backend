@@ -2,6 +2,7 @@ package com.tuttime.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
@@ -513,6 +514,11 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
 		return errorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+	}
+
+	@ExceptionHandler(EntityNotFoundException.class)
+	public ResponseEntity<?> handleEntityNotFound(EntityNotFoundException ex) {
+		return errorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
 	}
 
 	private ResponseEntity<Map<String, String>> errorResponse(HttpStatus status, String message) {

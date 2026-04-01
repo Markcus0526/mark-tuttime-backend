@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Slf4j
-@SpringBootApplication(scanBasePackages = {"com.tuttime"})
+@SpringBootApplication(scanBasePackages = "com.tuttime")
 @EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
 @EnableScheduling
 @EntityScan("com.tuttime.restaurant.entity")
