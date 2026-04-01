@@ -47,6 +47,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
+        <!-- Commons Libraries -->
         <dependency>
             <groupId>com.tuttime</groupId>
             <artifactId>commons-exception</artifactId>
@@ -57,6 +59,12 @@
             <artifactId>commons-events</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tuttime</groupId>
+            <artifactId>commons-auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -87,11 +95,19 @@
             <groupId>io.zipkin.reporter2</groupId>
             <artifactId>zipkin-reporter-brave</artifactId>
         </dependency>
+
         <dependency>
             <groupId>net.devh</groupId>
             <artifactId>grpc-client-spring-boot-starter</artifactId>
             <version>3.1.0.RELEASE</version>
             <scope>compile</scope>
+        </dependency>
+
+        <!-- gRPC Server -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-spring-boot-starter</artifactId>
+            <version>${grpc-spring-boot-starter.version}</version>
         </dependency>
 
         <!-- AWS S3 SDK -->
@@ -113,6 +129,7 @@
             <version>3.1.6</version>
             <optional>true</optional>
         </dependency>
+
         <!-- Spring Cloud LoadBalancer for Feign clients (required when using service names) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
