@@ -35,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
 	private final UserAuthMethodRepository authMethodRepository;
 	private final PhoneVerificationCodeRepository phoneVerificationCodeRepository;
 	private final PasswordResetTokenRepository passwordResetTokenRepository;
+	private final UserAuthMethodRepository userAuthMethodRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final EmailService emailService;
@@ -316,6 +317,55 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		throw new IllegalArgumentException("Invalid token or code");
+	}
+
+	@Transactional
+	public AuthResponse loginWithOtp(String phoneNumber, String code) {
+		// Step 1: Verify OTP
+		PhoneVerificationCode otpCode = phoneVerificationCodeRepository.findTopByPhoneNumberAndCodeAndUsedFalseOrderByCreatedAtDesc(phoneNumber, code)
+				.orElseThrow(() -> new IllegalArgumentException("Invalid or expired OTP code"));
+
+		// Step 2: Mark OTP as used
+		otpCode.setUsed(true);
+		phoneVerificationCodeRepository.save(otpCode);
+
+		// Step 3: Find or create user by phone number
+		User user = userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber)
+				.orElseGet(() -> {
+			User newUser = new User();
+			newUser.setPhoneNumber(phoneNumber);
+			newUser.setStatus(UserStatus.ACTIVE);
+			newUser.setCreatedAt(OffsetDateTime.now());
+			// other default user properties
+			return userRepository.save(newUser);
+		});
+
+		// Optional: If you want to ensure the user has an auth method for PHONE_SMS
+		userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.PHONE_SMS)
+				.orElseGet(() -> {
+			UserAuthMethod authMethod = new UserAuthMethod();
+			authMethod.setUserId(user.getId());
+			authMethod.setAuthType(AuthProvider.PHONE_SMS);
+			authMethod.setVerified(true);
+			authMethod.setCreatedAt(OffsetDateTime.now());
+			return userAuthMethodRepository.save(authMethod);
+		});
+
+		// Step 4: Generate JWT tokens or whatever your AuthResponse requires
+		String accessToken = jwtTokenProvider.generateAccessToken(user);
+		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+		AuthResponse auth = new AuthResponse();
+		auth.setAccessToken(accessToken);
+		auth.setRefreshToken(refreshToken);
+		auth.setTokenType("Bearer");
+		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
+		auth.setUserId(user.getId());
+		auth.setFullName(user.getFullName());
+		auth.setEmail(user.getEmail());
+		auth.setPhoneNumber(user.getPhoneNumber());
+
+		return auth;
 	}
 
 	private void updatePasswordForUser(UUID userId, String newPassword) {

@@ -168,4 +168,30 @@ public class AuthController {
 		authService.resetPassword(request);
 		return ResponseEntity.noContent().build();
 	}
+
+	@Operation(summary = "Request OTP login code via SMS for phone number.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "OTP code sent to phone"),
+			@ApiResponse(responseCode = "400", description = "Invalid phone number", content = @Content)
+	})
+	@PostMapping("/otp/request")
+	public ResponseEntity<ApiRes<Void>> requestOtpLogin(
+			@Parameter(description = "Phone number to receive OTP code", required = true)
+			@Valid @RequestBody PhoneVerificationRequest request) {
+		authService.sendPhoneVerificationCode(request.getPhoneNumber());
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Verify OTP code and login with phone number.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "OTP verified and login successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid or expired OTP code", content = @Content)
+	})
+	@PostMapping("/otp/verify")
+	public ResponseEntity<ApiRes<AuthResponse>> verifyOtpLogin(
+			@Parameter(description = "Phone number and OTP code for login", required = true)
+			@Valid @RequestBody PhoneVerificationConfirmRequest request) {
+		AuthResponse response = authService.loginWithOtp(request.getPhoneNumber(), request.getCode());
+		return ResponseEntity.ok(ApiRes.success(response));
+	}
 }

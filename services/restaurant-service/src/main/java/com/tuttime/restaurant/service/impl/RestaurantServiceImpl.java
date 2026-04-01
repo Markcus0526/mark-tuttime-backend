@@ -1,5 +1,9 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.auth.security.UserContext;
+import com.tuttime.common.proto.UserByIdRequest;
+import com.tuttime.common.proto.UserResponse;
+import com.tuttime.common.proto.UserServiceGrpc;
 import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Branch;
@@ -10,6 +14,7 @@ import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,9 +34,17 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final RestaurantMapper restaurantMapper;
 	private final BranchMapper branchMapper;
 
+	@GrpcClient("user-service")
+	private UserServiceGrpc.UserServiceBlockingStub userStub;
 
 	@Override
 	public Page<RestaurantResponse> findRestaurantAll(UUID ownerUserId, Double minRating, Double maxRating, int page, int size) {
+		UserByIdRequest request = UserByIdRequest.newBuilder()
+				.setUserId(UserContext.getUserId())
+				.build();
+		// Make the gRPC network call
+		UserResponse response = userStub.getUserById(request);
+
 		Pageable pageable = PageRequest.of(page, size);
 
 		Page<Restaurant> restaurantPage;
