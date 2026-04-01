@@ -60,7 +60,7 @@ WORKDIR /app
 
 COPY --from=builder /app/services/analytics-service/target/analytics-service-*.jar app.jar
 
-EXPOSE 28009 29191
+EXPOSE 28009 29009
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 

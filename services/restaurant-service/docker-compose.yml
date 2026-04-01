@@ -54,11 +54,11 @@ services:
       # Don't set it here to avoid overriding the value from env_file
       KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
       ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
-      GRPC_PORT: 29191
+      GRPC_PORT: 29002
       JAVA_OPTS: "-Duser.timezone=UTC -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=256m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heapdump.hprof -XX:+PrintGCDetails -Xlog:gc:/tmp/gc.log"
     ports:
       - "28002:28002"
-      - "29191:29191"
+      - "29002:29002"
     networks:
       - tuttime-network
     healthcheck:

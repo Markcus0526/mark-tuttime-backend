@@ -60,7 +60,7 @@ WORKDIR /app
 
 COPY --from=builder /app/services/payment-service/target/payment-service-*.jar app.jar
 
-EXPOSE 28006 29191
+EXPOSE 28006 29006
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 

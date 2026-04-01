@@ -27,6 +27,9 @@ fi
 
 # Set default search_path for the database
 echo "Setting database search_path..."
-psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d booking_service_db -c "ALTER DATABASE booking_service_db SET search_path TO booking_service, public;" 2>/dev/null || true
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d booking_service_db <<-EOSQL
+    CREATE SCHEMA IF NOT EXISTS booking_service;
+    ALTER DATABASE booking_service_db SET search_path TO booking_service, public;
+EOSQL
 
 echo "Database setup complete. PostgreSQL will automatically run init-db.sql for schema initialization."
