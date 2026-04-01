@@ -25,6 +25,7 @@ public class ApiRes<T> {
 	private Boolean success;
 	private String status;
 	private String message;
+
 	private T data;
 	/**
 	 * Response timestamp in UTC timezone.
