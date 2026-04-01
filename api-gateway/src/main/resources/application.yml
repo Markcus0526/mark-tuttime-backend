@@ -683,3 +683,8 @@ springdoc:
       - name: Analytics Service
         url: /analytics-docs/v3/api-docs
 
+  writer-with-default-pretty-printer: true
+  use-fqn: true # Uses Fully Qualified Names to prevent collisions
+  cache:
+    disabled: true
+

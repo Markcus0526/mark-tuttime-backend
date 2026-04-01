@@ -82,6 +82,7 @@ public class CorsConfig {
 				"Content-Type",
 				"X-Requested-With",
 				"X-User-Id",
+				"X-User-Roles",
 				"X-User-Email",
 				"X-Correlation-Id",
 				"X-Request-ID",
