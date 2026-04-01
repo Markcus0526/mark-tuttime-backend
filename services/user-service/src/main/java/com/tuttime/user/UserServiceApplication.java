@@ -29,13 +29,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 				CacheAutoConfiguration.class
 		}
 )
+@Slf4j
 @EnableDiscoveryClient
 @EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
 @EnableScheduling
 @EntityScan("com.tuttime.user.entity")
 @EnableJpaRepositories("com.tuttime.user.repository")
 @EnableConfigurationProperties(EmailProperties.class)
-@Slf4j
 public class UserServiceApplication {
 
 	/**

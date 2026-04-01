@@ -11,13 +11,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = {"com.tuttime.restaurant", "com.tuttime.common"})
-//@EnableDiscoveryClient
+@Slf4j
+@SpringBootApplication(scanBasePackages = {"com.tuttime"})
 @EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
 @EnableScheduling
 @EntityScan("com.tuttime.restaurant.entity")
 @EnableJpaRepositories("com.tuttime.restaurant.repository")
-@Slf4j
 public class RestaurantServiceApplication {
 
 	public static void main(String[] args) {
