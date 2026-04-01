@@ -2,45 +2,43 @@ package com.tuttime.menu.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "menu_items")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class MenuItem {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+public class MenuItem extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "category_id", nullable = false)
 	private MenuCategory category;
 
-	@Column(nullable = false, length = 255)
+	@Column(nullable = false)
 	private String name;
 
-	@Column(columnDefinition = "TEXT")
 	private String description;
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal price;
 
+	@Column(name = "is_available")
 	@Builder.Default
-	@Column(name = "is_available", nullable = false)
 	private Boolean isAvailable = true;
 
-	@CreationTimestamp
-	@Column(name = "created_at", updatable = false)
-	private Timestamp createdAt;
+	@Column(name = "priority")
+	@Builder.Default
+	private Integer priority = 0;
 
-	@UpdateTimestamp
-	@Column(name = "updated_at")
-	private Timestamp updatedAt;
+	@ManyToMany
+	@JoinTable(
+			name = "menu_item_modifier_groups",
+			joinColumns = @JoinColumn(name = "menu_item_id"),
+			inverseJoinColumns = @JoinColumn(name = "modifier_group_id")
+	)
+	@Builder.Default
+	private Set<ModifierGroup> modifierGroups = new HashSet<>();
 }

@@ -1,58 +1,48 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.menu.enums.AppliesTo;
+import com.tuttime.menu.enums.DiscountType;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "discounts")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Discount {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+public class Discount extends BaseUuidEntity {
 
-	@Column(nullable = false, length = 255)
+	@Column(nullable = false)
 	private String name;
 
 	@Enumerated(EnumType.STRING)
+	@JdbcType(PostgreSQLEnumJdbcType.class) // Maps Java Enum directly to PostgreSQL Enum
 	@Column(name = "discount_type", nullable = false)
-	private DiscountTypeEnum discountType;
+	private DiscountType discountType;
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal amount;
 
 	@Enumerated(EnumType.STRING)
+	@JdbcType(PostgreSQLEnumJdbcType.class)
 	@Column(name = "applies_to", nullable = false)
-	private AppliesToEnum appliesTo;
+	private AppliesTo appliesTo;
 
 	@Column(name = "reference_id")
-	private Long referenceId;
+	private UUID referenceId; // Can be a Category UUID or an Item UUID
 
 	@Column(name = "start_date")
-	private OffsetDateTime startDate;
+	private Instant startDate;
 
 	@Column(name = "end_date")
-	private OffsetDateTime endDate;
+	private Instant endDate;
 
 	@Column(name = "is_active")
+	@Builder.Default
 	private Boolean isActive = true;
-
-	@Column(name = "created_at", updatable = false)
-	@CreationTimestamp
-	private OffsetDateTime createdAt;
-
-	public enum DiscountTypeEnum {
-		PERCENTAGE, FIXED_AMOUNT
-	}
-
-	public enum AppliesToEnum {
-		ITEM, CATEGORY, BRANCH
-	}
 }

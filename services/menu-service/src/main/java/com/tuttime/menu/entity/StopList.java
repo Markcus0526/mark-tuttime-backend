@@ -2,30 +2,28 @@ package com.tuttime.menu.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.type.descriptor.jdbc.UUIDJdbcType;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "stop_lists")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StopList {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+public class StopList extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "menu_item_id", nullable = false)
 	private MenuItem menuItem;
 
 	@Column(name = "branch_id", nullable = false)
-	private Long branchId;
+	@JdbcType(UUIDJdbcType.class)
+	private UUID branchId;
 
 	@Column(name = "start_date", nullable = false)
 	private LocalDate startDate;
@@ -33,14 +31,6 @@ public class StopList {
 	@Column(name = "end_date")
 	private LocalDate endDate;
 
-	@Column(length = 255)
+	@Column(name = "reason")
 	private String reason;
-
-	@Column(name = "created_at", updatable = false)
-	@CreationTimestamp
-	private LocalDateTime createdAt;
-
-	@Column(name = "updated_at")
-	@UpdateTimestamp
-	private LocalDateTime updatedAt;
 }
