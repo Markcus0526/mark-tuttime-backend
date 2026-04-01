@@ -1,21 +1,49 @@
 package com.tuttime.booking.dto;
 
-import lombok.*;
+import com.tuttime.booking.entity.Booking;
+import com.tuttime.booking.entity.enums.BookingStatus;
+import java.time.Instant;
+import java.util.UUID;
 
-import java.time.LocalDateTime;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class BookingResponse {
-	private Long id;
-	private Long userId;
-	private Long restaurantId;
-	private Long branchId;
-	private Long tableId;
-	private String status;
-	private LocalDateTime bookingTime;
-	private int numGuests;
-	private int prepTime;
+/**
+ * Immutable response DTO for client applications.
+ */
+public record BookingResponse(
+		UUID id,
+		UUID userId,
+		UUID restaurantId,
+		UUID branchId,
+		UUID zoneId,
+		UUID tableId,
+		BookingStatus status,
+		Instant bookingDatetime,
+		Integer duration,
+		Integer partySize,
+		Integer gracePeriodMins,
+		Instant createdAt,
+		Instant updatedAt,
+		String cancellationReason
+) {
+	/**
+	 * Static factory method to map from Entity to Record.
+	 * Keeps your Controller code clean.
+	 */
+	public static BookingResponse fromEntity(Booking entity) {
+		return new BookingResponse(
+				entity.getId(),
+				entity.getUserId(),
+				entity.getRestaurantId(),
+				entity.getBranchId(),
+				entity.getZoneId(),
+				entity.getTableId(),
+				entity.getStatus(),
+				entity.getBookingDatetime(),
+				entity.getDuration(),
+				entity.getPartySize(),
+				entity.getGracePeriodMins(),
+				entity.getCreatedAt(),
+				entity.getUpdatedAt(),
+				entity.getCancellationReason()
+		);
+	}
 }

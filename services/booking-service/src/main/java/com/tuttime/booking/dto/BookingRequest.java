@@ -1,19 +1,50 @@
 package com.tuttime.booking.dto;
 
-import lombok.*;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
+import java.util.UUID;
 
-import java.time.LocalDateTime;
+/**
+ * Immutable DTO for creating a new booking.
+ */
+public record BookingRequest(
+		@NotNull(message = "User ID is required")
+		UUID userId,
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class BookingRequest {
-	private Long userId;
-	private Long restaurantId;
-	private Long branchId;
-	private Long tableId;
-	private LocalDateTime bookingTime;
-	private int numGuests;
-	private int prepTime;
+		@NotNull(message = "Restaurant ID is required")
+		UUID restaurantId,
+
+		@NotNull(message = "Branch ID is required")
+		UUID branchId,
+
+		@NotNull(message = "Zone ID is required")
+		UUID zoneId,
+
+		@NotNull(message = "Table ID is required")
+		UUID tableId,
+
+		@NotNull(message = "Booking time is required")
+		@Future(message = "Booking must be in the future")
+		Instant bookingDatetime,
+
+		@NotNull(message = "Duration is required")
+		@Min(value = 15, message = "Minimum duration is 15 minutes")
+		Integer duration,
+
+		@NotNull(message = "Party size is required")
+		@Min(value = 1, message = "Party size must be at least 1")
+		Integer partySize,
+
+		Integer leadTimeMinutes,
+
+		@Min(value = 0)
+		Integer gracePeriodMins
+) {
+	// Compact constructor for default values
+	public BookingRequest {
+		if (leadTimeMinutes == null) leadTimeMinutes = 0;
+		if (gracePeriodMins == null) gracePeriodMins = 15;
+	}
 }

@@ -13,7 +13,7 @@ spring:
     password: ${DATABASE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:100}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:50} # Adjust based on DB capacity
       minimum-idle: ${DB_POOL_MIN_IDLE:20}
       connection-timeout: 30000
       idle-timeout: 600000
@@ -44,6 +44,7 @@ spring:
     show-sql: false  # Disable SQL logging
     properties:
       hibernate:
+        default_schema: booking_service
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false  # Disable SQL formatting
         jdbc:
@@ -72,6 +73,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 2000ms
+      ssl:
+        enabled: false
       lettuce:
         pool:
           # Increased pool size for high concurrency
