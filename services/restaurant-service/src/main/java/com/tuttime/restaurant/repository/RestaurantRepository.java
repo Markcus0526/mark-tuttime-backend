@@ -25,11 +25,11 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
 
 	boolean existsByRestaurantIdAndOwnerUserIdAndIsDeletedFalse(UUID restaurantId, UUID ownerId);
 
-	@Query(value = "SELECT * FROM restaurant_service.restaurants r " +
+	@Query(value = "SELECT * FROM restaurants r " +
 			"WHERE r.is_deleted = false AND " +
 			"ST_DWithin(r.location, ST_MakePoint(:lng, :lat)::geography, :radius) " +
 			"ORDER BY ST_Distance(r.location, ST_MakePoint(:lng, :lat)::geography) ASC",
-			countQuery = "SELECT count(*) FROM restaurant_service.restaurants r " +
+			countQuery = "SELECT count(*) FROM restaurants r " +
 					"WHERE r.is_deleted = false AND " +
 					"ST_DWithin(r.location, ST_MakePoint(:lng, :lat)::geography, :radius)",
 			nativeQuery = true)

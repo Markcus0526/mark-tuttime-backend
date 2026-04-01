@@ -31,15 +31,15 @@ public interface TableRepository extends JpaRepository<Table, UUID> {
 	@Query(value = """
         SELECT t.* FROM tables t
         WHERE t.branch_id = :branchId
-        AND t.seats >= :partySize
-        AND NOT EXISTS (
-            SELECT 1 FROM booking_service.bookings b
-            WHERE b.table_id = t.id
-            AND b.status NOT IN ('CANCELED', 'NO_SHOW')
-            -- Overlap Logic: (StartA < EndB) AND (EndA > StartB)
-            AND b.booking_datetime < :endTime
-            AND (b.booking_datetime + (b.duration * INTERVAL '1 minute')) > :startTime
-        )
+        AND t.seats >= :seatSize
+//        AND NOT EXISTS (
+//            SELECT 1 FROM booking_service.bookings b
+//            WHERE b.table_id = t.id
+//            AND b.status NOT IN ('CANCELED', 'NO_SHOW')
+//            -- Overlap Logic: (StartA < EndB) AND (EndA > StartB)
+//            AND b.booking_datetime < :endTime
+//            AND (b.booking_datetime + (b.duration * INTERVAL '1 minute')) > :startTime
+//        )
     """, nativeQuery = true)
 	List<Table> findAvailableTablesInBranch(
 			@Param("branchId") UUID branchId,

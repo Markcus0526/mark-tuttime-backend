@@ -7,7 +7,9 @@ import com.tuttime.common.proto.TableInfo;
 import com.tuttime.restaurant.entity.Table;
 import com.tuttime.restaurant.repository.TableRepository;
 import io.grpc.stub.StreamObserver;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
 import java.time.Duration;
@@ -15,11 +17,17 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @GrpcService // Annotation from net.devh:grpc-server-spring-boot-starter
 @RequiredArgsConstructor
-public class TableAvailabilityGrpcProvider extends RestaurantServiceGrpc.RestaurantServiceImplBase {
+public class RestaurantGrpcProvider extends RestaurantServiceGrpc.RestaurantServiceImplBase {
 
 	private final TableRepository tableRepository;
+
+	@PostConstruct
+	public void init() {
+		log.info("gRPC: RestaurantGrpcProvider initialized");
+	}
 
 	@Override
 	public void checkAvailability(AvailabilityRequest request, StreamObserver<AvailabilityResponse> responseObserver) {
