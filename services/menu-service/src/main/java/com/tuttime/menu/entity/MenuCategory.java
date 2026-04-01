@@ -2,36 +2,29 @@ package com.tuttime.menu.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "menu_categories", schema = "menu_service")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class MenuCategory {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+@Table(name = "menu_categories")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
+public class MenuCategory extends BaseUuidEntity {
 
 	@Column(name = "branch_id", nullable = false)
-	private Long branchId;
+	private UUID branchId; // Connected to external Branch Service
 
-	@Column(nullable = false, length = 255)
+	@Column(nullable = false)
 	private String name;
 
-	@Column(columnDefinition = "TEXT")
 	private String description;
 
-	@CreationTimestamp
-	@Column(name = "created_at", updatable = false)
-	private Timestamp createdAt;
+	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
+	private List<MenuItem> items = new ArrayList<>();
 
-	@UpdateTimestamp
-	@Column(name = "updated_at")
-	private Timestamp updatedAt;
+	@Column(name = "priority")
+	@Builder.Default
+	private Integer priority = 0; // Default to 0, lower numbers show up first
 }

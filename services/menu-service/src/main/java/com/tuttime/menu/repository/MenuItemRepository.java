@@ -1,12 +1,41 @@
 package com.tuttime.menu.repository;
 
 import com.tuttime.menu.entity.MenuItem;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
-	List<MenuItem> findByCategoryId(Long categoryId);
+public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
+
+	/**
+	 * Finds all items belonging to a specific category.
+	 */
+	List<MenuItem> findByCategoryId(UUID categoryId);
+
+	/**
+	 * Efficiently fetches a single menu item with all its modifier groups
+	 * and modifiers in one SQL query.
+	 */
+	@Query("SELECT mi FROM MenuItem mi " +
+			"LEFT JOIN FETCH mi.modifierGroups mg " +
+			"LEFT JOIN FETCH mg.modifiers " +
+			"WHERE mi.id = :id")
+	Optional<MenuItem> findByIdWithModifiers(@Param("id") UUID id);
+
+	/**
+	 * Finds all available items for a specific category.
+	 */
+	List<MenuItem> findByCategoryIdAndIsAvailableTrue(UUID categoryId);
+
+	// Accepts Sort (e.g., Sort.by("price").ascending())
+	List<MenuItem> findByCategoryId(UUID categoryId, Sort sort);
+
+	List<MenuItem> findByCategoryIdOrderByPriorityAsc(UUID categoryId);
 }

@@ -1,30 +1,39 @@
 package com.tuttime.menu.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.*;
-
 import java.time.LocalDate;
+import java.util.UUID;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class StopListDto {
-	private Long id;
 
-	@NotNull(message = "Menu item ID is required")
-	private Long menuItemId;
+	@Schema(description = "Request payload to put an item on the stop list")
+	public record StopListRequest(
+			@NotNull(message = "Menu Item ID is required")
+			UUID menuItemId,
 
-	@NotNull(message = "Branch ID is required")
-	private Long branchId;
+			@NotNull(message = "Branch ID is required")
+			UUID branchId,
 
-	@NotNull(message = "Start date is required")
-	private LocalDate startDate;
+			@NotNull(message = "Start date is required")
+			@Schema(example = "2024-12-01")
+			LocalDate startDate,
 
-	private LocalDate endDate;
+			@Schema(description = "Optional end date when item returns to stock", example = "2024-12-05")
+			LocalDate endDate,
 
-	@Size(max = 255)
-	private String reason;
+			@Schema(description = "Reason for stopping (e.g., Out of avocado)", example = "Supplier delay")
+			String reason
+	) {}
 
+	@Schema(description = "Response payload for stop list entries")
+	public record StopListResponse(
+			UUID id,
+			UUID menuItemId,
+			String menuItemName, // Added for convenience in the frontend UI
+			UUID branchId,
+			LocalDate startDate,
+			LocalDate endDate,
+			String reason
+	) {}
 }

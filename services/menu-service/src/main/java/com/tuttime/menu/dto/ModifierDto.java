@@ -1,16 +1,24 @@
 package com.tuttime.menu.dto;
 
-import lombok.*;
-
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
+import java.util.UUID;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class ModifierDto {
-	private Long id;
-	private String name;
-	private String description;
-	private BigDecimal priceAdjustment;
+
+	@Schema(description = "Modifier request details")
+	public record ModifierRequest(
+			@NotBlank String name,
+			String description,
+			BigDecimal priceAdjustment
+	) {}
+
+	@Schema(description = "Modifier response details")
+	public record ModifierResponse(
+			UUID id,
+			String name,
+			String description,
+			BigDecimal priceAdjustment
+	) {}
 }
