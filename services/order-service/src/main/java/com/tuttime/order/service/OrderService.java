@@ -1,24 +1,29 @@
 package com.tuttime.order.service;
 
-import com.tuttime.order.dto.OrderDto;
+import com.tuttime.order.dto.OrderRequest;
+import com.tuttime.order.dto.OrderResponse;
+import com.tuttime.common.enums.OrderStatus;
+import com.tuttime.order.dto.OrderUpdateRequest;
 
-import java.util.List;
 import java.util.UUID;
-
 
 public interface OrderService {
 
-	OrderDto createOrder(OrderDto orderDto);
+	OrderResponse createOrder(OrderRequest request);
 
-	OrderDto updateOrder(UUID orderId, OrderDto orderDto);
+	OrderResponse updateOrderContent(UUID id, OrderUpdateRequest request);
 
-	OrderDto getOrderById(UUID orderId);
+	OrderResponse getOrderById(UUID id);
 
-	List<OrderDto> getOrdersByBookingId(UUID bookingId);
+	OrderResponse getOrderByBookingId(UUID bookingId);
 
-	List<OrderDto> getOrdersByUserId(UUID userId);
+	OrderResponse updateStatus(UUID id, OrderStatus status);
 
-	void deleteOrder(UUID orderId);
+	void deleteOrder(UUID id);
 
-	OrderDto updateOrderStatus(UUID orderId, String status);
+	OrderResponse cancelOrder(UUID id);
+
+	OrderResponse removeItem(UUID orderId, UUID itemId);
+
+	OrderResponse checkout(UUID id);
 }

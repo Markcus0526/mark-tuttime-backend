@@ -1,74 +1,70 @@
 package com.tuttime.order.entity;
 
-import com.tuttime.order.enums.OrderStatus;
+import com.tuttime.common.entity.BaseSoftDeleteEntity;
+import com.tuttime.common.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "orders")
-@SQLDelete(sql = "UPDATE orders SET deleted_at = now() WHERE id = ?")
-@Where(clause = "deleted_at IS NULL")
-@Data
+@Table(name = "orders", schema = "order_service")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EntityListeners(AuditingEntityListener.class)
-public class Order {
+@SQLDelete(sql = "UPDATE order_service.orders SET deleted_at = now() WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
+public class Order extends BaseSoftDeleteEntity {
 
-	@Id
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "uuid2")
-//	@Type(type = "uuid-char")
-	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
-	private UUID id;
-
-	@Column(name = "booking_id", nullable = false, columnDefinition = "uuid")
+	@Column(name = "booking_id", nullable = false)
 	private UUID bookingId;
 
-	@Column(name = "user_id", nullable = false, columnDefinition = "uuid")
+	@Column(name = "user_id", nullable = false)
 	private UUID userId;
 
-	@Builder.Default
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Builder.Default
+	@Column(columnDefinition = "order_status") // Maps to your PG Enum
 	private OrderStatus status = OrderStatus.CREATED;
 
-	@Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
-	private BigDecimal totalAmount;
-
 	@Builder.Default
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt = Instant.now();
-
-	@Builder.Default
-	@Column(name = "updated_at", nullable = false)
-	private Instant updatedAt = Instant.now();
-
-	@Column(name = "created_by", columnDefinition = "uuid")
-	private UUID createdBy;
-
-	@Column(name = "updated_by", columnDefinition = "uuid")
-	private UUID updatedBy;
-
-	@Column(name = "deleted_at")
-	private Instant deletedAt;
+	@Column(name = "total_amount", nullable = false)
+	private BigDecimal totalAmount = BigDecimal.ZERO;
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<OrderItem> orderItems;
+	@Builder.Default
+	private List<OrderItem> items = new ArrayList<>();
 
-	// Getters and setters omitted for brevity
+	// Comment because performance problem
+//	@PrePersist
+//	@PreUpdate
+//	public void preSave() {
+//		recalculateTotal();
+//	}
 
-	@PreUpdate
-	public void preUpdate() {
-		this.updatedAt = Instant.now();
+	public void addItem(OrderItem item) {
+		items.add(item);
+		item.setOrder(this);
+		calculateTotal();
+	}
+
+	public void calculateTotal() {
+		this.totalAmount = items.stream()
+				.map(OrderItem::calculateSubtotal)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+	}
+
+	public void recalculateTotal() {
+		this.totalAmount = this.items.stream()
+				.filter(item -> item.getDeletedAt() == null) // Important if using soft deletes
+				.map(OrderItem::getSubtotal) // Uses the logic inside OrderItem
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 }

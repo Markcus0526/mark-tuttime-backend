@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,8 +17,8 @@ public class OrderItemDto {
 	private UUID menuItemId;
 	private int quantity;
 	private BigDecimal price;
-	private Instant createdAt;
-	private Instant updatedAt;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
 	private List<OrderItemModifierDto> modifiers;
 
 	// Getters and setters
