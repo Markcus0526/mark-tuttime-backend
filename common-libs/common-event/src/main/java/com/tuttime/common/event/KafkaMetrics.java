@@ -1,4 +1,4 @@
-package com.tuttime.common.kafka;
+package com.tuttime.common.event;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;

@@ -1,25 +1,11 @@
 package com.tuttime.payment.service;
 
-import com.tuttime.payment.entity.Payment;
-import com.tuttime.payment.entity.PaymentAuditLog;
-import com.tuttime.payment.entity.enums.PaymentStatus;
-
-import java.util.List;
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.util.UUID;
 
 public interface PaymentService {
+	// Used by gRPC (Booking Service)
+	String createCheckoutSession(UUID bookingId, UUID userId, BigDecimal amount);
 
-	Payment initiatePayment(Payment payment);
-
-	Optional<Payment> getPaymentById(Long id);
-
-	List<Payment> getPaymentsByBookingId(Long bookingId);
-
-	List<Payment> getPaymentsByStatus(PaymentStatus status);
-
-	Payment updatePaymentStatus(Long paymentId, PaymentStatus status);
-
-	void logPaymentEvent(Long paymentId, String eventType, String eventData);
-
-	List<PaymentAuditLog> getAuditLogsForPayment(Long paymentId);
+	void processRefund(UUID bookingId, BigDecimal amount, String reason);
 }

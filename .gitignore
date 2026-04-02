@@ -12,6 +12,6 @@ services/user-service/target
 api-gateway/target
 admin-gateway/target
 common-libs/common-auth/target
-common-libs/common-events/target
+common-libs/common-event/target
 common-libs/common/target
 /media-uploads

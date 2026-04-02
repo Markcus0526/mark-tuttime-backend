@@ -323,3 +323,9 @@ connection:
     monitoring:
       enabled: ${CONNECTION_POOL_MONITORING_ENABLED:false}
 
+# Strip Payment Configuration
+stripe:
+  api:
+    key: ${STRIPE_API_KEY:sk_test_51...your_test_key}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET:whsec_...your_test_secret}

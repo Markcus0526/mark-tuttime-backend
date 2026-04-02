@@ -1,65 +1,28 @@
 package com.tuttime.payment.entity;
 
-import com.tuttime.payment.entity.enums.RefundStatus;
+import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "refunds",
-		indexes = {
-				@Index(name = "idx_refund_payment_id", columnList = "payment_id"),
-				@Index(name = "idx_refund_status", columnList = "status")
-		})
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Refund {
+@Table(name = "refunds", schema = "payment_service")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class Refund extends BaseUuidEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@Column(name = "payment_id", nullable = false)
+	private UUID paymentId;
 
-	@Column(name = "refund_id", nullable = false, unique = true, length = 255)
-	private String refundId;
-
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "payment_id", nullable = false)
-	private Payment payment;
+	@Column(name = "stripe_refund_id", nullable = false, unique = true)
+	private String stripeRefundId;
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal amount;
 
-	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
-	private RefundStatus status; // Consider Enum
+	private String status; // SUCCEEDED, FAILED
 
 	@Column(length = 255)
 	private String reason;
-
-	@Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
-	private OffsetDateTime createdAt;
-
-	@Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
-	private OffsetDateTime updatedAt;
-
-	// Constructors, getters, setters, equals, hashCode...
-
-	@PrePersist
-	public void prePersist() {
-		OffsetDateTime now = OffsetDateTime.now();
-		createdAt = now;
-		updatedAt = now;
-	}
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = OffsetDateTime.now();
-	}
 }
