@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -110,7 +111,12 @@ public class PaymentServiceImpl implements PaymentService {
 					.reason(reason)
 					.build());
 
-			eventProducer.publishPaymentRefundEvent(new PaymentEvent.PaymentRefundedEvent(bookingId, amount, Instant.now()));
+			PaymentEvent.PaymentRefundedEvent event = new PaymentEvent.PaymentRefundedEvent(
+					bookingId,
+					amount,
+					OffsetDateTime.now()
+			);
+			eventProducer.publishPaymentRefundEvent(event);
 		} catch (StripeException e) {
 			throw new RuntimeException("Stripe Refund Error", e);
 		}

@@ -1,4 +1,4 @@
-package com.tuttime.booking.grpc;
+package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.proto.PaymentServiceGrpc;
 import com.tuttime.common.proto.PaymentSessionRequest;

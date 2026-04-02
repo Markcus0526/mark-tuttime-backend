@@ -23,15 +23,45 @@ public class EventProducer {
 	// Topics
 	public static final String TOPIC_USER = "tuttime.user";
 	public static final String TOPIC_RESTAURANT = "tuttime.restaurant";
+
+	public static final String TOPIC_MENU_UPDATED = "tuttime.menu.updated";
+
+	public static final String TOPIC_BOOKING_CONFIRMED = "tuttime.booking.confirmed";
+
 	public static final String TOPIC_PAYMENT_COMPLETED = "tuttime.payment.completed";
 	public static final String TOPIC_PAYMENT_REFUND = "tuttime.payment.refund";
 
+	public static final String TOPIC_ORDER_CREATED = "tuttime.order.created";
+	public static final String TOPIC_ORDER_STATUS_UPDATED = "tuttime.order.status.updated";
+
+	public static final String TOPIC_POS_SYNCED = "tuttime.pos.synced";
+
+	// Booking Events Publisher
+	public void publishBookingConfirmedEvent(BookingEvent.BookingConfirmedEvent event) {
+		publishEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId(), event);
+	}
+
+	// Payment Events Publisher
 	public void publishPaymentCompletedEvent(PaymentEvent.PaymentCompletedEvent event) {
 		publishEvent(TOPIC_PAYMENT_COMPLETED, event.bookingId().toString(), event);
 	}
 
 	public void publishPaymentRefundEvent(PaymentEvent.PaymentRefundedEvent event) {
 		publishEvent(TOPIC_PAYMENT_REFUND, event.bookingId().toString(), event);
+	}
+
+	// Order Events Publisher
+	public void publishOrderCreatedEvent(OrderEvent.OrderCreatedEvent event) {
+		publishEvent(TOPIC_ORDER_CREATED, event.orderId(), event);
+	}
+
+	public void publishOrderStatusUpdatedEvent(OrderEvent.OrderStatusEvent event) {
+		publishEvent(TOPIC_ORDER_STATUS_UPDATED, event.bookingId().toString(), event);
+	}
+
+	// Pos Events Publisher
+	public void publishPosSyncedEvent(PosEvent.PosSyncedEvent event) {
+		publishEvent(TOPIC_POS_SYNCED, event.entityId(), event);
 	}
 
 	private void publishEvent(String topic, String key, Object event) {

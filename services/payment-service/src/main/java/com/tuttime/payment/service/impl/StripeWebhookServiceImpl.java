@@ -21,6 +21,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -91,7 +92,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 					session.getPaymentIntent(),
 					payment.getAmount(),
 					payment.getCurrency(),
-					Instant.now()
+					OffsetDateTime.now()
 			);
 			eventProducer.publishPaymentCompletedEvent(event);
 

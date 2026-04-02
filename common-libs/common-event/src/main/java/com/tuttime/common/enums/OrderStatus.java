@@ -1,4 +1,4 @@
-package com.tuttime.order.enums;
+package com.tuttime.common.enums;
 
 public enum OrderStatus {
 	CREATED,
