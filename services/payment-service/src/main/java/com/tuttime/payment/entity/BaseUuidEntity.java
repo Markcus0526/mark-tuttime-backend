@@ -1,4 +1,4 @@
-package com.tuttime.booking.entity;
+package com.tuttime.payment.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

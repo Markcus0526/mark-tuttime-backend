@@ -1,4 +1,4 @@
-package com.tuttime.user.enums;
+package com.tuttime.user.entity.enums;
 
 public enum UserStatus {
 	ACTIVE,

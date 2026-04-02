@@ -1,7 +1,7 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.user.entity.User;
-import com.tuttime.user.enums.UserStatus;
+import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

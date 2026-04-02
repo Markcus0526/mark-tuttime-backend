@@ -11,7 +11,7 @@ services/review-service/target
 services/user-service/target
 api-gateway/target
 admin-gateway/target
-common-libs/commons-auth/target
-common-libs/commons-events/target
-common-libs/commons-exception/target
+common-libs/common-auth/target
+common-libs/common-events/target
+common-libs/common/target
 /media-uploads

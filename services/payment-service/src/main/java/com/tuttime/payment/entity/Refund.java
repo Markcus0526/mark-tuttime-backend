@@ -1,6 +1,6 @@
 package com.tuttime.payment.entity;
 
-import com.tuttime.payment.enums.RefundStatus;
+import com.tuttime.payment.entity.enums.RefundStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

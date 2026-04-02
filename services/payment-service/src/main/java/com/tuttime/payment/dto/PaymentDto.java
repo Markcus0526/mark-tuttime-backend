@@ -1,6 +1,6 @@
 package com.tuttime.payment.dto;
 
-import com.tuttime.payment.enums.PaymentStatus;
+import com.tuttime.payment.entity.enums.PaymentStatus;
 import lombok.*;
 
 import java.math.BigDecimal;

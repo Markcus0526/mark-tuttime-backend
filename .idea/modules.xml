@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/common-libs/commons-events/commons-events.iml" filepath="$PROJECT_DIR$/common-libs/commons-events/commons-events.iml" />
-      <module fileurl="file://$PROJECT_DIR$/services/integration-service/pos-service.iml" filepath="$PROJECT_DIR$/services/integration-service/pos-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/common-libs/commons-events/common-event.iml" filepath="$PROJECT_DIR$/common-libs/commons-events/common-event.iml" />
     </modules>
   </component>
 </project>

@@ -1,7 +1,7 @@
 package com.tuttime.payment.service;
 
 import com.tuttime.payment.entity.Refund;
-import com.tuttime.payment.enums.RefundStatus;
+import com.tuttime.payment.entity.enums.RefundStatus;
 
 import java.math.BigDecimal;
 import java.util.List;

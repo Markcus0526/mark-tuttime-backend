@@ -1,4 +1,4 @@
-package com.tuttime.menu.entity;
+package com.tuttime.common.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

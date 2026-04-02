@@ -1,6 +1,6 @@
 package com.tuttime.user.dto;
 
-import com.tuttime.user.enums.AuthProvider;
+import com.tuttime.user.entity.enums.AuthProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -1,7 +1,7 @@
 package com.tuttime.payment.repository;
 
 import com.tuttime.payment.entity.Payment;
-import com.tuttime.payment.enums.PaymentStatus;
+import com.tuttime.payment.entity.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
