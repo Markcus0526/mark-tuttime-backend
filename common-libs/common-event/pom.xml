@@ -55,10 +55,17 @@
             <artifactId>grpc-census</artifactId>
             <version>${grpc.version}</version>
         </dependency>
+
+        <!-- Protobuf -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>${protobuf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>3.25.5</version> <!-- Use the version matching your protobuf-java -->
         </dependency>
 
         <!-- Kafka -->

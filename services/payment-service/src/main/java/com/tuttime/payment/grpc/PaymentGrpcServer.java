@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @GrpcService // Tells Spring Boot to start the gRPC server on port 9090 (default)
 @RequiredArgsConstructor
-public class PaymentProvider extends PaymentServiceGrpc.PaymentServiceImplBase {
+public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase {
 
 	private final PaymentService paymentService;
 

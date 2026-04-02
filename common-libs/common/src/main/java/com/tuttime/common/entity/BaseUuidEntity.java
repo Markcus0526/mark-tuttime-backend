@@ -8,6 +8,7 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @MappedSuperclass
@@ -20,13 +21,16 @@ public abstract class BaseUuidEntity implements Persistable<UUID> {
 	@Column(name = "id", updatable = false, nullable = false)
 	private UUID id;
 
+	@Version // <--- THE MAGIC LINE for Optimistic Locking
+	private Long version;
+
 	@CreatedDate
 	@Column(name = "created_at", updatable = false)
-	private Instant createdAt;
+	private OffsetDateTime createdAt;
 
 	@LastModifiedDate
 	@Column(name = "updated_at")
-	private Instant updatedAt;
+	private OffsetDateTime updatedAt;
 
 	@Transient
 	private boolean isNew = true;

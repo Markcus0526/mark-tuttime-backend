@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -519,6 +520,11 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(EntityNotFoundException.class)
 	public ResponseEntity<?> handleEntityNotFound(EntityNotFoundException ex) {
 		return errorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+	}
+
+	@ExceptionHandler(OptimisticLockingFailureException.class)
+	public ResponseEntity<?> handleConflict(OptimisticLockingFailureException ex) {
+		return errorResponse(HttpStatus.CONFLICT, "The service was updated by someone else. Please refresh and try again.");
 	}
 
 	private ResponseEntity<Map<String, String>> errorResponse(HttpStatus status, String message) {

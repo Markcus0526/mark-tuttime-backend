@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package com.tuttime.common.proto;
+
+option java_multiple_files = true;
+option java_package = "com.tuttime.common.proto";
+option java_outer_classname = "OrderServiceProto";
+
+// User Service gRPC
+service OrderService {
+  rpc GetOrderDetails (OrderRequest) returns (OrderDetailsResponse);
+
+}
+
+message OrderRequest {
+  string order_id = 1;
+}
+
+message OrderDetailsResponse {
+  string order_id = 1 [json_name = "id"];
+  string booking_id = 2;
+  double total_amount = 3;
+  repeated OrderItemDetail items = 4;
+}
+
+message OrderItemDetail {
+  string menu_item_name = 1; // POS needs names for printing
+  int32 quantity = 2;
+  double price = 3;
+  repeated string modifiers = 4;
+}
