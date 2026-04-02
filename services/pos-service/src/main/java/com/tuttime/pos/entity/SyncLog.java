@@ -1,28 +1,47 @@
 package com.tuttime.pos.entity;
 
+import com.tuttime.common.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.Map;
+import java.util.UUID;
 
-@Data
+import jakarta.persistence.*;
+import lombok.*;
+
 @Entity
-@Table(name = "sync_log")
-public class SyncLog {
+@Table(name = "sync_logs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class SyncLog extends BaseEntity {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
 
-	private Long restaurantId;
+	@Column(name = "order_id", nullable = false)
+	private UUID orderId;
 
-	private String type;
+	@Column(name = "restaurant_id", nullable = false)
+	private UUID restaurantId;
 
-	@Column(columnDefinition = "JSONB")
-	private String posResponse;
+	@Column(nullable = false)
+	private String status; // e.g., "SUCCESS", "HARD_FAILURE", "PENDING"
 
-	private String status;
+	@Column(name = "event_type")
+	private String eventType;
 
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(columnDefinition = "jsonb")
+	private Map<String, String> metadata;
+
+	@Column(name = "error_message")
 	private String errorMessage;
-
-	private LocalDateTime syncTime = LocalDateTime.now();
 }

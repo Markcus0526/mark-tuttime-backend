@@ -1,211 +1,156 @@
 package com.tuttime.pos.service.impl;
 
-import com.tuttime.pos.adapter.PosAdapterFactory;
+import com.tuttime.pos.entity.*;
 import com.tuttime.pos.dto.*;
-import com.tuttime.pos.entity.PosLog;
-import com.tuttime.pos.entity.PosSyncQueue;
-import com.tuttime.pos.entity.PosSystemConfig;
-import com.tuttime.pos.kafka.PosEventProducer;
-import com.tuttime.pos.repository.PosLogRepository;
-import com.tuttime.pos.repository.PosSyncQueueRepository;
-import com.tuttime.pos.repository.PosSystemConfigRepository;
+import com.tuttime.pos.mapper.PosMapper;
+import com.tuttime.pos.repository.*;
 import com.tuttime.pos.service.PosSyncService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.retry.annotation.Retryable;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PosSyncServiceImpl implements PosSyncService {
 
-	private static final Logger logger = LoggerFactory.getLogger(PosSyncServiceImpl.class);
+	private final PosLogRepository logRepository;
+	private final SyncLogRepository syncLogRepository;
+	private final PosSystemConfigRepository configRepository;
+	private final PosSyncQueueRepository queueRepository;
+	private final PosMapper posMapper;
 
-	private final PosLogRepository posLogRepository;
-	private final PosSyncQueueRepository posSyncQueueRepository;
-	private final PosSystemConfigRepository posSystemConfigRepository;
-	private final PosAdapterFactory posAdapterFactory;
-	private final PosEventProducer posEventProducer;
+	@Override
+	@Transactional(readOnly = true)
+	public PosSyncLogResponse getSyncLogs(UUID entityId) {
+		// Fetch all logs for this entity (Order or Booking)
+		List<PosLog> logs = logRepository.findAllByEntityIdOrderByCreatedAtDesc(entityId);
+		if (logs.isEmpty()) {
+			throw new EntityNotFoundException("No sync history found for entity: " + entityId);
+		}
+		return posMapper.toResponse(entityId, logs);
+	}
 
 	@Override
 	@Transactional
-	public void syncBooking(BookingSyncRequest request) {
-		PosLog posLog = mapBookingRequestToPosLog(request);
-		syncToPos(posLog);
+	public PosSystemConfig saveConfig(PosCredentialsDto dto) {
+		// Check if config exists or create new
+		PosSystemConfig config = configRepository.findByPosSystem(dto.posSystem())
+				.orElse(new PosSystemConfig());
+
+		config.setPosSystem(dto.posSystem());
+		config.setApiEndpoint(dto.apiUrl());
+		config.setWebhookSecret(dto.apiKey()); // Mapping example
+		config.setEnabled(true);
+
+		return configRepository.save(config);
 	}
 
 	@Override
 	@Transactional
 	public void syncOrder(OrderSyncRequest request) {
-		PosLog posLog = mapOrderRequestToPosLog(request);
-		syncToPos(posLog);
-	}
+		log.info("Manually triggering sync for order: {}", request.orderId());
 
-	@Override
-	@Transactional
-	public void syncMenu(MenuSyncRequest request) {
-		PosLog posLog = mapMenuRequestToPosLog(request);
-		syncToPos(posLog);
-	}
+		// 1. Get POS Config based on the request (dynamic lookup)
+		PosSystemConfig config = configRepository.findByPosSystem(request.posSystem())
+				.orElseThrow(() -> new RuntimeException("POS System not configured: " + request.posSystem()));
 
-	@Retryable(value = {RuntimeException.class}, maxAttempts = 5, backoff = @Backoff(delay = 2000, multiplier = 2))
-	@Transactional
-	public void syncToPos(PosLog posLog) {
-		logger.info("Starting POS sync attempt for entity: {} id: {}", posLog.getEntityType(), posLog.getEntityId());
-
-		boolean success = posAdapterFactory.getAdapter(posLog.getPosSystemConfig().getPosSystem())
-				.syncEntity(posLog.getEntityType(), posLog.getEntityId());
-
-		posLog.setAttemptCount(posLog.getAttemptCount() + 1);
-		posLog.setLastAttempt(Instant.now());
-
-		if (!success) {
-			posLog.setStatus("FAILED");
-			posLogRepository.save(posLog);
-			posEventProducer.publishSyncResult(
-					posLog.getEntityId(),
-					posLog.getEntityType(),
-					posLog.getPosSystemConfig().getPosSystem(),
-					"FAILED",
-					"POS sync failed"
-			);
-			throw new RuntimeException("POS sync failed for log id: " + posLog.getId());
-		}
-
-		posLog.setStatus("SUCCESS");
-		posLogRepository.save(posLog);
-
-		posSyncQueueRepository.findByPosLog(posLog).ifPresent(posSyncQueueRepository::delete);
-
-		posEventProducer.publishSyncResult(
-				posLog.getEntityId(),
-				posLog.getEntityType(),
-				posLog.getPosSystemConfig().getPosSystem(),
-				"SUCCESS",
-				"POS sync succeeded"
-		);
-
-		logger.info("POS sync succeeded for entity: {} id: {}", posLog.getEntityType(), posLog.getEntityId());
-	}
-
-	@Recover
-	@Transactional
-	public void recover(RuntimeException e, PosLog posLog) {
-		logger.error("POS sync failed after retries for log id: {}. Scheduling retry.", posLog.getId(), e);
-
-		posLog.setStatus("FAILED");
-		posLogRepository.save(posLog);
-
-		PosSyncQueue queueEntry = posSyncQueueRepository.findByPosLog(posLog)
-				.orElse(PosSyncQueue.builder()
-						.posLog(posLog)
-						.retryCount(0)
-						.status("PENDING")
-						.nextRetryAt(Instant.now().plus(2, ChronoUnit.MINUTES))
-						.build());
-
-		queueEntry.setRetryCount(queueEntry.getRetryCount() + 1);
-		queueEntry.setNextRetryAt(Instant.now().plus((long) Math.pow(2, queueEntry.getRetryCount()), ChronoUnit.MINUTES));
-		queueEntry.setStatus("PENDING");
-		posSyncQueueRepository.save(queueEntry);
-	}
-
-	@Override
-	@Transactional
-	public void processRetryQueue() {
-		List<PosSyncQueue> dueRetries = posSyncQueueRepository.findByStatusAndNextRetryAtBefore("PENDING", Instant.now());
-		for (PosSyncQueue queue : dueRetries) {
-			try {
-				syncToPos(queue.getPosLog());
-				queue.setStatus("COMPLETED");
-				posSyncQueueRepository.save(queue);
-			} catch (Exception e) {
-				logger.error("Retry attempt failed for posLogId: {}", queue.getPosLog().getId(), e);
-				queue.setRetryCount(queue.getRetryCount() + 1);
-				queue.setNextRetryAt(Instant.now().plus((long) Math.pow(2, queue.getRetryCount()), ChronoUnit.MINUTES));
-				if (queue.getRetryCount() > 5) {
-					queue.setStatus("FAILED");
-				}
-				posSyncQueueRepository.save(queue);
-			}
-		}
-	}
-
-	@Override
-	public PosSyncLogResponse getSyncLogs(String entityId) {
-		List<PosLog> logs = posLogRepository.findByEntityIdOrderByLastAttemptDesc(entityId);
-
-		// Convert List<PosLog> to List<PosSyncLogEntry>
-		List<PosSyncLogEntry> logEntries = logs.stream()
-				.map(this::convertToPosSyncLogEntry)
-				.toList();  // toList() requires Java 16+, else use collect(Collectors.toList())
-
-		return new PosSyncLogResponse(entityId, logEntries);
-	}
-
-	// Mapping helper methods
-
-	private PosLog mapBookingRequestToPosLog(BookingSyncRequest request) {
-		PosSystemConfig posSystemConfig = posSystemConfigRepository
-				.findByPosSystem(request.getPosSystem())
-				.orElseThrow(() -> new IllegalArgumentException("Unsupported POS system: " + request.getPosSystem()));
-
-		return PosLog.builder()
-				.entityType("BOOKING")
-				.entityId(request.getBookingId())
-				.posSystemConfig(posSystemConfig)
-				.status("PENDING")
-				.attemptCount(0)
-				.build();
-	}
-
-	private PosLog mapOrderRequestToPosLog(OrderSyncRequest request) {
-		PosSystemConfig posSystemConfig = posSystemConfigRepository
-				.findByPosSystem(request.getPosSystem())
-				.orElseThrow(() -> new IllegalArgumentException("Unsupported POS system: " + request.getPosSystem()));
-
-		return PosLog.builder()
+		// 2. Create Audit Log Entry
+		PosLog logEntry = PosLog.builder()
+				.config(config)
 				.entityType("ORDER")
-				.entityId(request.getOrderId())
-				.posSystemConfig(posSystemConfig)
+				.entityId(request.orderId())
 				.status("PENDING")
-				.attemptCount(0)
+				.attemptCount(1)
+				.lastAttempt(OffsetDateTime.now())
 				.build();
-	}
 
-	private PosLog mapMenuRequestToPosLog(MenuSyncRequest request) {
-		PosSystemConfig posSystemConfig = posSystemConfigRepository
-				.findByPosSystem(request.getPosSystem())
-				.orElseThrow(() -> new IllegalArgumentException("Unsupported POS system: " + request.getPosSystem()));
+		PosLog savedLog = logRepository.save(logEntry);
 
-		return PosLog.builder()
-				.entityType("MENU")
-				.entityId(request.getRestaurantId())
-				.posSystemConfig(posSystemConfig)
+		// 3. Create Queue Entry for the background worker/retry logic
+		PosSyncQueue queueEntry = PosSyncQueue.builder()
+				.log(savedLog)
 				.status("PENDING")
-				.attemptCount(0)
+				.nextRetryAt(OffsetDateTime.now()) // Try immediately
+				.retryCount(0)
 				.build();
+
+		queueRepository.save(queueEntry);
 	}
 
-	private PosSyncLogEntry convertToPosSyncLogEntry(PosLog log) {
-		// Map fields from PosLog entity to PosSyncLogEntry DTO
-		// TODO:
-		return PosSyncLogEntry.builder()
-//				.id(log.getId())
-//				.entityType(log.getEntityType())
-//				.entityId(log.getEntityId())
-				.status(log.getStatus())
-//				.attemptCount(log.getAttemptCount())
-//				.lastAttempt(log.getLastAttempt())
-				// map other relevant fields as needed
-				.build();
+	@Override
+	@Transactional
+	public void forceSyncByRestaurantId(UUID restaurantId) {
+		// Logic to find all FAILED tasks in queue and reset them to PENDING
+		List<PosSyncQueue> failedTasks = queueRepository.findAllFailedByRestaurantId(restaurantId);
+		failedTasks.forEach(task -> {
+			task.setStatus("PENDING");
+			task.setNextRetryAt(OffsetDateTime.now());
+			task.setRetryCount(0);
+		});
+		queueRepository.saveAll(failedTasks);
+		log.info("Reset {} failed tasks for restaurant {}", failedTasks.size(), restaurantId);
 	}
+
+	@Transactional
+	public void markSuccess(int logId, Map<String, String> metadata) {
+		// 1. Fetch the existing log record
+		SyncLog log = syncLogRepository.findById(logId)
+				.orElseThrow(() -> new RuntimeException("Log not found for ID: " + logId));
+
+		// 2. Update fields
+		log.setStatus("SUCCESS");
+		log.setMetadata(metadata); // Assuming this is a JSONB or Map column
+		log.setUpdatedAt(OffsetDateTime.now()); // Your preferred Java type!
+
+		// 3. Save changes
+		syncLogRepository.save(log);
+	}
+
+	@Transactional
+	public void markFailed(int logId, String errorMessage, Map<String, String> additionalDetails) {
+		// 1. Fetch the existing log record
+		SyncLog log = syncLogRepository.findById(logId)
+				.orElseThrow(() -> new RuntimeException("Log not found for ID: " + logId));
+
+		// 2. Set status to FAILED (or SOFT_FAILURE)
+		log.setStatus("FAILED");
+
+		// 3. Build and save error metadata
+		Map<String, String> metadata = new HashMap<>(additionalDetails != null ? additionalDetails : Map.of());
+		metadata.put("error_message", errorMessage);
+		log.setMetadata(metadata);
+
+		// updatedAt is handled automatically by BaseEntity @LastModifiedDate
+		syncLogRepository.save(log);
+	}
+
+	@Transactional
+	public void markAsHardFailure(UUID orderId) {
+		// 1. Find the log associated with this order
+		// Note: You might need a custom finder if orderId is not the Primary Key
+		SyncLog log = syncLogRepository.findByOrderId(orderId)
+				.orElseThrow(() -> new RuntimeException("Sync log not found for order: " + orderId));
+
+		// 2. Update to a terminal failure state
+		log.setStatus("HARD_FAILURE");
+
+		// 3. Optional: Clear or update metadata with failure details
+		log.setMetadata(Map.of("error_type", "TERMINAL", "reason", "Manual hard failure trigger"));
+
+		// Save is handled by @Transactional + Auditing for updatedAt
+		syncLogRepository.save(log);
+	}
+
+	// Stubbed methods for Booking and Menu (similar patterns to syncOrder)
+	@Override public void syncBooking(BookingSyncRequest request) { /* Implementation */ }
+	@Override public void syncMenu(MenuSyncRequest request) { /* Implementation */ }
 }

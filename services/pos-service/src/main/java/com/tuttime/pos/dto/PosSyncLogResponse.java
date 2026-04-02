@@ -1,16 +1,15 @@
 package com.tuttime.pos.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.UUID;
 
-// DTO for Sync Log Response (aggregate of entries)
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PosSyncLogResponse {
-	private String entityId;
-	private List<PosSyncLogEntry> logs;
-}
+@Schema(description = "History of synchronization attempts")
+public record PosSyncLogResponse(
+
+		@Schema(description = "ID of the order/booking")
+		UUID entityId,
+
+		@Schema(description = "List of attempt details")
+		List<SyncLogDetail> logs
+) {}

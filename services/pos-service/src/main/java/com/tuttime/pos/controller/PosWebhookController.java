@@ -1,5 +1,6 @@
 package com.tuttime.pos.controller;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.pos.entity.PosSystemConfig;
 import com.tuttime.pos.repository.PosSystemConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,12 +38,10 @@ public class PosWebhookController {
 	}
 
 	private ResponseEntity<String> processWebhook(String posSystem, String payload, String signature) {
-
-		PosSystemConfig config = posSystemConfigRepository.findByPosSystemAndEnabledTrue(posSystem);
-		if (config == null) {
-			logger.warn("Webhook received for unknown or disabled POS system: {}", posSystem);
-			return ResponseEntity.badRequest().body("Invalid POS system");
-		}
+		PosSystemConfig config = posSystemConfigRepository.findByPosSystemAndEnabledTrue(posSystem)
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Webhook received for unknown or disabled POS system: " + posSystem
+				));
 
 		if (!validateSignature(payload, signature, config.getWebhookSecret())) {
 			logger.warn("Invalid webhook signature for POS system: {}", posSystem);

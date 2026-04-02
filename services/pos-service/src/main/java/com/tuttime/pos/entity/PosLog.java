@@ -1,55 +1,47 @@
 package com.tuttime.pos.entity;
 
+import com.tuttime.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import java.time.OffsetDateTime;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
-@Table(name = "pos_logs")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class PosLog {
-
+@Table(name = "pos_logs", schema = "pos_service")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class PosLog extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "pos_system_id", nullable = false)
-	private PosSystemConfig posSystemConfig;
+	private PosSystemConfig config;
 
-	@Column(name = "entity_type", nullable = false, length = 50)
-	private String entityType; // e.g., BOOKING, ORDER, MENU
+	@Column(name = "entity_type", nullable = false)
+	private String entityType;
 
 	@Column(name = "entity_id", nullable = false, length = 100)
-	private String entityId; // Backend system entity ID
+	private UUID entityId;
 
-	@Column(name = "status", nullable = false, length = 20)
-	private String status; // SUCCESS, FAILED, PENDING
+	@Column(nullable = false)
+	private String status; // Uses values from pos_status enum
 
+	@Column(name = "attempt_count")
 	@Builder.Default
-	@Column(name = "attempt_count", nullable = false)
 	private Integer attemptCount = 0;
 
 	@Column(name = "last_attempt")
-	private Instant lastAttempt;
+	private OffsetDateTime lastAttempt;
 
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt;
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "request_payload")
+	private Map<String, Object> requestPayload;
 
-	@Column(name = "updated_at", nullable = false)
-	private Instant updatedAt;
-
-	@PrePersist
-	protected void onCreate() {
-		createdAt = updatedAt = Instant.now();
-	}
-
-	@PreUpdate
-	protected void onUpdate() {
-		updatedAt = Instant.now();
-	}
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "response_payload")
+	private Map<String, Object> responsePayload;
 }
