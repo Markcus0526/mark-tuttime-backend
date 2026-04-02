@@ -42,10 +42,12 @@ spring:
     hibernate:
       ddl-auto: update # Change from 'none' or 'validate' to 'update'
     show-sql: false  # Disable SQL logging
+    open-in-view: false
     properties:
       hibernate:
+        ddl-auto: validate # Use validate since you have a custom SQL script
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false  # Disable SQL formatting
+        format_sql: true  # Disable SQL formatting
         jdbc:
           batch_size: 50
           time_zone: UTC
@@ -90,6 +92,7 @@ spring:
         mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+      spring.json.add.type.headers: false # Cleaner headers for cross-service compatibilit
     topics:
       order-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.order-blocks}
     consumer:
@@ -149,6 +152,9 @@ grpc:
     menu-service:
       address: static://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_GRPC_PORT:29003}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-without-calls: true
+      timeout: 5s # Transaction will fail if gRPC takes > 5 seconds
     booking-service:
       address: static://${BOOKING_SERVICE:localhost}:${BOOKING_GRPC_PORT:29004}
       negotiation-type: plaintext

@@ -1,87 +1,136 @@
 package com.tuttime.order.controller;
 
-import com.tuttime.order.dto.OrderDto;
+import com.tuttime.common.dto.ApiRes;
+import com.tuttime.order.dto.OrderRequest;
+import com.tuttime.order.dto.OrderResponse;
+import com.tuttime.common.enums.OrderStatus;
+import com.tuttime.order.dto.OrderUpdateRequest;
 import com.tuttime.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
-@Tag(name = "Orders", description = "APIs for managing orders")
+@Tag(name = "Order Controller", description = "APIs for managing restaurant pre-orders and statuses")
 public class OrderController {
 
 	private final OrderService orderService;
 
-	// Create a new order
-	@Operation(summary = "Create a new order")
 	@PostMapping
-	public ResponseEntity<OrderDto> createOrder(@RequestBody OrderDto orderDto) {
-		OrderDto createdOrder = orderService.createOrder(orderDto);
-		return new ResponseEntity<>(createdOrder, HttpStatus.CREATED);
+	@Operation(summary = "Create a new order", description = "Initializes a pre-order linked to a specific booking")
+	@ApiResponses({
+			@ApiResponse(responseCode = "201", description = "Order created successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid request data")
+	})
+	public ResponseEntity<ApiRes<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest request) {
+		OrderResponse response = orderService.createOrder(request);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiRes.success(response));
 	}
 
-	// Update an existing order by ID
-	@Operation(summary = "Update an existing order by ID")
-	@PutMapping("/{orderId}")
-	public ResponseEntity<OrderDto> updateOrder(
-			@Parameter(description = "ID of the order to update") @PathVariable UUID orderId,
-			@RequestBody OrderDto orderDto) {
-		OrderDto updatedOrder = orderService.updateOrder(orderId, orderDto);
-		return ResponseEntity.ok(updatedOrder);
+	@GetMapping("/{id}")
+	@Operation(summary = "Get order details", description = "Retrieves full order details including items and modifiers")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Order found"),
+			@ApiResponse(responseCode = "404", description = "Order not found")
+	})
+	public ResponseEntity<ApiRes<OrderResponse>> getOrder(
+			@Parameter(description = "UUID of the order") @PathVariable UUID id) {
+		OrderResponse response = orderService.getOrderById(id);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Get order by ID
-	@Operation(summary = "Get order by ID")
-	@GetMapping("/{orderId}")
-	public ResponseEntity<OrderDto> getOrderById(
-			@Parameter(description = "ID of the order to retrieve") @PathVariable UUID orderId) {
-		OrderDto order = orderService.getOrderById(orderId);
-		return ResponseEntity.ok(order);
+	@PutMapping("/{id}")
+	@Operation(summary = "Modify order content", description = "Replaces existing items with the new list and recalculates totals")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Order updated"),
+			@ApiResponse(responseCode = "409", description = "Conflict (Concurrent update)"),
+			@ApiResponse(responseCode = "404", description = "Order not found")
+	})
+	public ResponseEntity<ApiRes<OrderResponse>> updateOrderContent(
+			@PathVariable UUID id,
+			@Valid @RequestBody OrderUpdateRequest request) {
+
+		OrderResponse response = orderService.updateOrderContent(id, request);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Get orders by booking ID
-	@Operation(summary = "Get orders by booking ID")
 	@GetMapping("/booking/{bookingId}")
-	public ResponseEntity<List<OrderDto>> getOrdersByBookingId(
-			@Parameter(description = "Booking ID to filter orders") @PathVariable UUID bookingId) {
-		List<OrderDto> orders = orderService.getOrdersByBookingId(bookingId);
-		return ResponseEntity.ok(orders);
+	@Operation(summary = "Get order by booking ID", description = "Retrieves the active order associated with a specific table booking")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Order found"),
+			@ApiResponse(responseCode = "404", description = "No order found for this booking")
+	})
+	public ResponseEntity<ApiRes<OrderResponse>> getOrderByBookingId(
+			@Parameter(description = "UUID of the booking") @PathVariable UUID bookingId) {
+
+		OrderResponse response = orderService.getOrderByBookingId(bookingId);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Get orders by user ID
-	@Operation(summary = "Get orders by user ID")
-	@GetMapping("/user/{userId}")
-	public ResponseEntity<List<OrderDto>> getOrdersByUserId(
-			@Parameter(description = "User ID to filter orders") @PathVariable UUID userId) {
-		List<OrderDto> orders = orderService.getOrdersByUserId(userId);
-		return ResponseEntity.ok(orders);
+	@PatchMapping("/{id}/status")
+	@Operation(summary = "Update order status", description = "Transitions order through lifecycle (PAID, PREPARING, etc.)")
+	@ApiResponse(responseCode = "200", description = "Status updated")
+	public ResponseEntity<ApiRes<OrderResponse>> updateStatus(
+			@PathVariable UUID id,
+			@RequestParam OrderStatus status) {
+		OrderResponse response = orderService.updateStatus(id, status);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Delete order by ID
-	@Operation(summary = "Delete order by ID")
-	@DeleteMapping("/{orderId}")
-	public ResponseEntity<Void> deleteOrder(
-			@Parameter(description = "ID of the order to delete") @PathVariable UUID orderId) {
-		orderService.deleteOrder(orderId);
-		return ResponseEntity.noContent().build();
+	@PostMapping("/{id}/checkout")
+	@Operation(summary = "Checkout and Pay", description = "Finalizes the order, processes payment, and sets status to PAID")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Payment successful, order marked as PAID"),
+			@ApiResponse(responseCode = "402", description = "Payment required/failed"),
+			@ApiResponse(responseCode = "404", description = "Order not found")
+	})
+	public ResponseEntity<ApiRes<OrderResponse>> checkout(@PathVariable UUID id) {
+		OrderResponse response = orderService.checkout(id);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	// Update order status
-	@Operation(summary = "Update order status")
-	@PatchMapping("/{orderId}/status")
-	public ResponseEntity<OrderDto> updateOrderStatus(
-			@Parameter(description = "ID of the order to update status") @PathVariable UUID orderId,
-			@Parameter(description = "New status value") @RequestParam String status) {
-		OrderDto updatedOrder = orderService.updateOrderStatus(orderId, status);
-		return ResponseEntity.ok(updatedOrder);
+	@PostMapping("/{id}/cancel")
+	@Operation(summary = "Cancel an order", description = "Transitions order status to CANCELED and triggers notifications")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Order cancelled successfully"),
+			@ApiResponse(responseCode = "400", description = "Order cannot be cancelled (e.g., already served)"),
+			@ApiResponse(responseCode = "404", description = "Order not found")
+	})
+	public ResponseEntity<ApiRes<OrderResponse>> cancelOrder(
+			@Parameter(description = "UUID of the order to cancel") @PathVariable UUID id) {
+
+		OrderResponse response = orderService.cancelOrder(id);
+		return ResponseEntity.ok(ApiRes.success(response));
+	}
+
+	@DeleteMapping("/{id}")
+	@Operation(summary = "Soft delete an order", description = "Marks the order as deleted in the database")
+	@ApiResponse(responseCode = "204", description = "Order deleted")
+	public ResponseEntity<ApiRes<Void>> deleteOrder(@PathVariable UUID id) {
+		orderService.deleteOrder(id);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT)
+				.body(ApiRes.success(null));
+	}
+
+	@DeleteMapping("/{orderId}/items/{itemId}")
+	@Operation(summary = "Remove a single item from an order")
+	public ResponseEntity<ApiRes<OrderResponse>> removeItem(
+			@PathVariable UUID orderId,
+			@PathVariable UUID itemId) {
+
+		OrderResponse response = orderService.removeItem(orderId, itemId);
+		return ResponseEntity.ok(ApiRes.success(response));
 	}
 }

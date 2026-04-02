@@ -1,72 +1,57 @@
 package com.tuttime.order.entity;
 
+import com.tuttime.common.entity.BaseSoftDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "order_items")
-@SQLDelete(sql = "UPDATE order_items SET deleted_at = now() WHERE id = ?")
+@Table(name = "order_items", schema = "order_service")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@SQLDelete(sql = "UPDATE order_service.order_items SET deleted_at = now() WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class OrderItem {
-
-	@Id
-	@GeneratedValue(generator = "uuid2")
-	@GenericGenerator(name = "uuid2", strategy = "uuid2")
-//	@Type(type = "uuid-char")
-	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
-	private UUID id;
+public class OrderItem extends BaseSoftDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "order_id", nullable = false)
+	@JoinColumn(name = "order_id")
 	private Order order;
 
-	@Column(name = "menu_item_id", nullable = false, columnDefinition = "uuid")
+	@Column(name = "menu_item_id", nullable = false)
 	private UUID menuItemId;
 
-	@Column(nullable = false)
-	private int quantity;
-
-	@Column(nullable = false, precision = 10, scale = 2)
+	private Integer quantity;
 	private BigDecimal price;
 
-	@Builder.Default
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt = Instant.now();
-
-	@Builder.Default
-	@Column(name = "updated_at", nullable = false)
-	private Instant updatedAt = Instant.now();
-
-	@Column(name = "created_by", columnDefinition = "uuid")
-	private UUID createdBy;
-
-	@Column(name = "updated_by", columnDefinition = "uuid")
-	private UUID updatedBy;
-
-	@Column(name = "deleted_at")
-	private Instant deletedAt;
-
 	@OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<OrderItemModifier> modifiers;
+	@Builder.Default
+	private List<OrderItemModifier> modifiers = new ArrayList<>();
 
-	// Getters and setters omitted for brevity
+	public BigDecimal calculateSubtotal() {
+		BigDecimal modifierTotal = modifiers.stream()
+				.map(OrderItemModifier::getPriceAdjustment)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+		return price.add(modifierTotal).multiply(BigDecimal.valueOf(quantity));
+	}
 
-	@PreUpdate
-	public void preUpdate() {
-		this.updatedAt = Instant.now();
+	public BigDecimal getSubtotal() {
+		// 1. Start with the base price of the item
+		BigDecimal currentPrice = this.price != null ? this.price : BigDecimal.ZERO;
+
+		// 2. Add the sum of all modifier price adjustments
+		BigDecimal modifiersTotal = this.modifiers.stream()
+				// Only include modifiers that aren't soft-deleted
+				.filter(mod -> mod.getDeletedAt() == null)
+				.map(OrderItemModifier::getPriceAdjustment)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+		// 3. (Base + Modifiers) * Quantity
+		return currentPrice.add(modifiersTotal)
+				.multiply(BigDecimal.valueOf(this.quantity != null ? this.quantity : 0));
 	}
 }

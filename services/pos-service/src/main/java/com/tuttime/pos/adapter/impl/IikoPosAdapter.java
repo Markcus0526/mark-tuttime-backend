@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Component("iiko")
 @RequiredArgsConstructor
@@ -57,7 +58,7 @@ public class IikoPosAdapter implements PosAdapter {
 	}
 
 	@Override
-	public boolean syncEntity(String entityType, String entityId) {
+	public boolean syncEntity(String entityType, UUID entityId) {
 		// Implement actual sync logic with iiko POS API
 		// Return true if success, false if failure
 		return true; // dummy implementation
@@ -67,13 +68,13 @@ public class IikoPosAdapter implements PosAdapter {
 	private IikoBookingDTO mapBookingToIikoPayload(PosLog posLog) {
 		// Example dummy mapping, replace with actual data extraction from posLog or associated entities
 		return IikoBookingDTO.builder()
-				.bookingId(posLog.getEntityId())
+				.bookingId(posLog.getEntityId().toString())
 				.customerName("John Doe") // fetch real customer name
 				.customerPhone("1234567890") // fetch real phone
 				.restaurantId("rest123")
 				.tableId("table456")
-				.startTime(ISO_FORMATTER.format(posLog.getLastAttempt().atZone(ZoneOffset.UTC)))
-				.endTime(ISO_FORMATTER.format(posLog.getLastAttempt().plusSeconds(3600).atZone(ZoneOffset.UTC)))
+				.startTime(ISO_FORMATTER.format(posLog.getLastAttempt().atZoneSameInstant(ZoneOffset.UTC)))
+				.endTime(ISO_FORMATTER.format(posLog.getLastAttempt().plusSeconds(3600).atZoneSameInstant(ZoneOffset.UTC)))
 				.guests(4)
 				.build();
 	}
@@ -88,7 +89,7 @@ public class IikoPosAdapter implements PosAdapter {
 				.build();
 
 		return IikoOrderDTO.builder()
-				.orderId(posLog.getEntityId())
+				.orderId(posLog.getEntityId().toString())
 				.bookingId("booking123")
 				.restaurantId("rest123")
 				.items(List.of(item))

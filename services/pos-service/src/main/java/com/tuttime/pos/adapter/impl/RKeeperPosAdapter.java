@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Component("rkeeper")
 @RequiredArgsConstructor
@@ -51,21 +52,19 @@ public class RKeeperPosAdapter implements PosAdapter {
 	}
 
 	@Override
-	public boolean syncEntity(String entityType, String entityId) {
-		// Implement actual sync logic with iiko POS API
-		// Return true if success, false if failure
-		return true; // dummy implementation
+	public boolean syncEntity(String entityType, UUID entityId) {
+		return false;
 	}
 
 	private RKeeperBookingDTO mapBookingToRKeeper(PosLog posLog) {
 		return RKeeperBookingDTO.builder()
-				.reservationId(posLog.getEntityId())
+				.reservationId(posLog.getEntityId().toString())
 				.clientName("Jane Smith")
 				.clientPhone("0987654321")
 				.restaurantCode("rk_rest_001")
 				.tableNumber("T12")
-				.reservationStart(ISO_FORMATTER.format(posLog.getLastAttempt().atZone(ZoneOffset.UTC)))
-				.reservationEnd(ISO_FORMATTER.format(posLog.getLastAttempt().plusSeconds(5400).atZone(ZoneOffset.UTC)))
+				.reservationStart(ISO_FORMATTER.format(posLog.getLastAttempt().atZoneSameInstant(ZoneOffset.UTC)))
+				.reservationEnd(ISO_FORMATTER.format(posLog.getLastAttempt().plusSeconds(5400).atZoneSameInstant(ZoneOffset.UTC)))
 				.personsCount(3)
 				.build();
 	}
@@ -79,7 +78,7 @@ public class RKeeperPosAdapter implements PosAdapter {
 				.build();
 
 		return RKeeperOrderDTO.builder()
-				.orderCode(posLog.getEntityId())
+				.orderCode(posLog.getEntityId().toString())
 				.reservationId("resv001")
 				.restaurantCode("rk_rest_001")
 				.orderItems(List.of(item))

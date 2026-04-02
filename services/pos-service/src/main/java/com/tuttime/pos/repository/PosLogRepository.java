@@ -5,12 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface PosLogRepository extends JpaRepository<PosLog, Long> {
-	List<PosLog> findByEntityIdOrderByLastAttemptDesc(String entityId);
+public interface PosLogRepository extends JpaRepository<PosLog, Integer> {
 
-	// Helper to find PosLog by entityType and entityId (optional)
-	PosLog findByEntityTypeAndEntityId(String entityType, String entityId);
+	// Used by getSyncLogs in the controller to show history
+	List<PosLog> findAllByEntityIdOrderByCreatedAtDesc(UUID entityId);
+
+	// Used to check if an order was already successfully synced (Idempotency)
+	boolean existsByEntityIdAndStatus(UUID entityId, String status);
 }
-

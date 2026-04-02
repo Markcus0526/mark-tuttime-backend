@@ -1,27 +1,23 @@
 package com.tuttime.pos.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class PosCredentialsDto {
-	@NotNull(message = "Restaurant ID must not be null")
-	private Long restaurantId;
+import java.util.UUID;
 
-	@NotBlank(message = "POS system must not be blank")
-	private String posSystem;
+@Schema(description = "Configuration for a restaurant's POS system")
+public record PosCredentialsDto(
 
-	@NotBlank(message = "API URL must not be blank")
-	private String apiUrl;
+		@NotNull
+		UUID restaurantId,
 
-	@NotBlank(message = "API key must not be blank")
-	private String apiKey;
+		@NotNull @Schema(example = "IIKO")
+		String posSystem,
 
-	@NotBlank(message = "API token must not be blank")
-	private String apiToken;
-}
+		@NotNull @Schema(example = "https://iiko.services")
+		String apiUrl,
+
+		String apiKey,
+
+		String apiToken
+) {}

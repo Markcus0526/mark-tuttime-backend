@@ -2,6 +2,8 @@ package com.tuttime.pos.adapter;
 
 import com.tuttime.pos.entity.PosLog;
 
+import java.util.UUID;
+
 public interface PosAdapter {
 	String getPosSystemName();
 	void syncBooking(PosLog posLog);
@@ -14,5 +16,5 @@ public interface PosAdapter {
 	 * @param entityId ID of the entity to sync
 	 * @return true if sync succeeded, false otherwise
 	 */
-	boolean syncEntity(String entityType, String entityId);
+	boolean syncEntity(String entityType, UUID entityId);
 }
