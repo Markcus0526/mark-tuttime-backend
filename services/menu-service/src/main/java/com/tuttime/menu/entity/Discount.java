@@ -1,5 +1,6 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.menu.enums.AppliesTo;
 import com.tuttime.menu.enums.DiscountType;
 import jakarta.persistence.*;

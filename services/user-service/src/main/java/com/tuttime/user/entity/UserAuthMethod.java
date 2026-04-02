@@ -1,6 +1,6 @@
 package com.tuttime.user.entity;
 
-import com.tuttime.user.enums.AuthProvider;
+import com.tuttime.user.entity.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.Data;
 

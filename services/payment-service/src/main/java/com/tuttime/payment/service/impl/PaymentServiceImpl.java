@@ -2,7 +2,7 @@ package com.tuttime.payment.service.impl;
 
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
-import com.tuttime.payment.enums.PaymentStatus;
+import com.tuttime.payment.entity.enums.PaymentStatus;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.service.PaymentService;

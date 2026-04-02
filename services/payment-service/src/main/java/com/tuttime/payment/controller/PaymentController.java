@@ -5,7 +5,7 @@ import com.tuttime.payment.dto.PaymentRequestDto;
 import com.tuttime.payment.dto.PaymentResponseDto;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
-import com.tuttime.payment.enums.PaymentStatus;
+import com.tuttime.payment.entity.enums.PaymentStatus;
 import com.tuttime.payment.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

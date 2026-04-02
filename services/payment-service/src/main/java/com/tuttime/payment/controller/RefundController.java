@@ -3,7 +3,7 @@ package com.tuttime.payment.controller;
 import com.tuttime.payment.dto.RefundRequestDto;
 import com.tuttime.payment.dto.RefundResponseDto;
 import com.tuttime.payment.entity.Refund;
-import com.tuttime.payment.enums.RefundStatus;
+import com.tuttime.payment.entity.enums.RefundStatus;
 import com.tuttime.payment.service.RefundService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

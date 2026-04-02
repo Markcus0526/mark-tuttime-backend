@@ -1,5 +1,6 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;

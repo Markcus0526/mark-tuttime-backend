@@ -1,81 +1,44 @@
 package com.tuttime.payment.entity;
 
-import com.tuttime.payment.enums.PaymentStatus;
+import com.tuttime.payment.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.Set;
+import java.util.UUID;
 
 @Entity
-@Table(name = "payments",
-		indexes = {
-				@Index(name = "idx_payment_booking_id", columnList = "bookingId"),
-				@Index(name = "idx_payment_status", columnList = "status")
-		})
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Payment {
+@Table(name = "payments", schema = "payment_service")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class Payment extends BaseUuidEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@Column(name = "booking_id", nullable = false)
+	private UUID bookingId;
 
-	@Column(name = "payment_intent_id", nullable = false, unique = true, length = 255)
+	@Column(name = "user_id", nullable = false)
+	private UUID userId;
+
+	@Column(name = "stripe_session_id", unique = true)
+	private String stripeSessionId;
+
+	@Column(name = "payment_intent_id", unique = true)
 	private String paymentIntentId;
-
-	@Column(name = "booking_id")
-	private Long bookingId; // Assuming bookingId is a Long; change if different or map as @ManyToOne
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal amount;
 
 	@Column(nullable = false, length = 10)
-	private String currency;
+	private String currency = "USD";
 
-	@Column(name = "payment_method", nullable = false, length = 50)
-	private String paymentMethod;
+	@Column(name = "payment_method_type", length = 50)
+	private String paymentMethodType; // e.g., "card", "apple_pay"
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
-	private PaymentStatus status; // Could be an Enum with @Enumerated
-
-	@Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
-	private OffsetDateTime createdAt;
-
-	@Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
-	private OffsetDateTime updatedAt;
-
-	@Column(columnDefinition = "TEXT")
-	private String description;
+	private PaymentStatus status = PaymentStatus.PENDING;
 
 	@Column(name = "receipt_url", length = 500)
 	private String receiptUrl;
 
-	@OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<Refund> refunds;
-
-	@OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<PaymentAuditLog> auditLogs;
-
-	// Constructors, getters, setters, equals, hashCode...
-
-	@PrePersist
-	public void prePersist() {
-		OffsetDateTime now = OffsetDateTime.now();
-		createdAt = now;
-		updatedAt = now;
-	}
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = OffsetDateTime.now();
-	}
-
+	@Column(name = "failure_message", columnDefinition = "TEXT")
+	private String failureMessage;
 }

@@ -1,7 +1,7 @@
 package com.tuttime.payment.repository;
 
 import com.tuttime.payment.entity.Refund;
-import com.tuttime.payment.enums.RefundStatus;
+import com.tuttime.payment.entity.enums.RefundStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

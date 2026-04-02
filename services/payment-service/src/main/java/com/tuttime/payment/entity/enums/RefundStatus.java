@@ -1,4 +1,4 @@
-package com.tuttime.payment.enums;
+package com.tuttime.payment.entity.enums;
 
 public enum RefundStatus {
 	INITIATED,

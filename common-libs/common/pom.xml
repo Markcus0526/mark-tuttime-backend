@@ -10,8 +10,8 @@
         <relativePath/>
     </parent>
 
-    <artifactId>commons-auth</artifactId>
     <packaging>jar</packaging>
+    <artifactId>common</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -27,6 +27,18 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -34,10 +46,17 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Security -->
+        <!-- JPA (for Saga entities) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

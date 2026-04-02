@@ -29,17 +29,17 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok-mapstruct-binding/0.2.0/lombok-mapstruct-binding-0.2.0.jar" />
         </processorPath>
         <module name="pos-service" />
-        <module name="commons-events" />
         <module name="payment-service" />
         <module name="restaurant-service" />
+        <module name="common" />
         <module name="review-service" />
-        <module name="commons-auth" />
+        <module name="common-auth" />
         <module name="booking-service" />
         <module name="api-gateway" />
         <module name="analytics-service" />
         <module name="order-service" />
         <module name="menu-service" />
-        <module name="commons-exception" />
+        <module name="common-event" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -54,9 +54,9 @@
       <module name="analytics-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
       <module name="booking-service" options="-parameters" />
-      <module name="commons-auth" options="-parameters" />
-      <module name="commons-events" options="-parameters -Xlint:unchecked" />
-      <module name="commons-exception" options="-parameters" />
+      <module name="common" options="-parameters" />
+      <module name="common-auth" options="-parameters" />
+      <module name="common-event" options="-parameters -Xlint:unchecked" />
       <module name="menu-service" options="-parameters" />
       <module name="order-service" options="-parameters" />
       <module name="payment-service" options="-parameters" />

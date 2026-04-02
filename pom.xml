@@ -13,9 +13,9 @@
 
     <modules>
         <module>api-gateway</module>
-        <module>common-libs/commons-exception</module>
-        <module>common-libs/commons-events</module>
-        <module>common-libs/commons-auth</module>
+        <module>common-libs/common</module>
+        <module>common-libs/common-event</module>
+        <module>common-libs/common-auth</module>
         <module>services/user-service</module>
         <module>services/restaurant-service</module>
         <module>services/menu-service</module>
@@ -107,17 +107,17 @@
             </dependency>
             <dependency>
                 <groupId>com.tuttime</groupId>
-                <artifactId>commons-exception</artifactId>
+                <artifactId>commons</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.tuttime</groupId>
-                <artifactId>commons-events</artifactId>
+                <artifactId>common-event</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.tuttime</groupId>
-                <artifactId>commons-auth</artifactId>
+                <artifactId>common-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- Security: Override vulnerable transitive dependencies -->

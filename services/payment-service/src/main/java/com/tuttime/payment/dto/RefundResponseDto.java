@@ -1,6 +1,6 @@
 package com.tuttime.payment.dto;
 
-import com.tuttime.payment.enums.RefundStatus;
+import com.tuttime.payment.entity.enums.RefundStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;

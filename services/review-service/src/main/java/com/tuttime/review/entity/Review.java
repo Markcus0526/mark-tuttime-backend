@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 import java.time.Instant;
 import java.util.UUID;

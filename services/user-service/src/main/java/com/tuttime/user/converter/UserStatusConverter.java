@@ -1,6 +1,6 @@
 package com.tuttime.user.converter;
 
-import com.tuttime.user.enums.UserStatus;
+import com.tuttime.user.entity.enums.UserStatus;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

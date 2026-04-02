@@ -5,12 +5,12 @@
     <file url="file://$PROJECT_DIR$/admin-gateway/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/api-gateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/api-gateway/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/common-libs/commons-auth/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/common-libs/commons-auth/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/common-libs/commons-events/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/common-libs/commons-events/src/main/resources" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/common-libs/commons-exception/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/common-libs/commons-exception/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-libs/common-auth/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-libs/common-auth/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-libs/common-event/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-libs/common-event/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-libs/common/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/common-libs/common/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/admin-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/admin-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/services/analytics-service/src/main/java" charset="UTF-8" />

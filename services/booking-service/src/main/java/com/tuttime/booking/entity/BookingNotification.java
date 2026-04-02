@@ -1,5 +1,6 @@
 package com.tuttime.booking.entity;
 
+import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
