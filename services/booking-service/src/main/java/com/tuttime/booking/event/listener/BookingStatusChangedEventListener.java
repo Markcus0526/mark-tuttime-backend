@@ -29,7 +29,7 @@ public class BookingStatusChangedEventListener {
 				.bookingId(event.bookingId())
 				.oldStatus(event.oldStatus())
 				.newStatus(event.newStatus())
-//				.changedBy(event.actorId()) TODO
+				.changedBy(event.changedBy())
 				.reason(event.reason())
 				.build();
 

@@ -4,12 +4,12 @@ import com.tuttime.payment.entity.PaymentAuditLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public interface PaymentAuditLogRepository extends JpaRepository<PaymentAuditLog, Long> {
 
-	List<PaymentAuditLog> findByPaymentId(Long paymentId);
-
-	List<PaymentAuditLog> findByEventType(String eventType);
+	/**
+	 * Critical for Idempotency: Checks if this specific Stripe Event ID
+	 * has already been processed and logged.
+	 */
+	boolean existsByStripeEventId(String stripeEventId);
 }

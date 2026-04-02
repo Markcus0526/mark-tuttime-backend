@@ -1,5 +1,6 @@
 package com.tuttime.payment.entity;
 
+import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.payment.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,6 +28,7 @@ public class Payment extends BaseUuidEntity {
 	private BigDecimal amount;
 
 	@Column(nullable = false, length = 10)
+	@Builder.Default
 	private String currency = "USD";
 
 	@Column(name = "payment_method_type", length = 50)
@@ -34,6 +36,7 @@ public class Payment extends BaseUuidEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
+	@Builder.Default
 	private PaymentStatus status = PaymentStatus.PENDING;
 
 	@Column(name = "receipt_url", length = 500)

@@ -108,6 +108,12 @@
             <artifactId>micrometer-core</artifactId>
         </dependency>
 
+        <!-- Actuator -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Distributed Tracing -->
         <dependency>
             <groupId>io.micrometer</groupId>

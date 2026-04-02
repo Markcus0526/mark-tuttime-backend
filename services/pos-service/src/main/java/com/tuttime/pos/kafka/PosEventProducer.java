@@ -1,6 +1,5 @@
 package com.tuttime.pos.kafka;
 
-import com.tuttime.common.kafka.PosSyncResultEvent;
 import com.tuttime.pos.config.KafkaConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;

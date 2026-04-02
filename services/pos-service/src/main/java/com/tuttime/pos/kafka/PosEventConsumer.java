@@ -1,8 +1,5 @@
 package com.tuttime.pos.kafka;
 
-import com.tuttime.common.kafka.BookingConfirmedEvent;
-import com.tuttime.common.kafka.MenuUpdatedEvent;
-import com.tuttime.common.kafka.OrderCreatedEvent;
 import com.tuttime.pos.dto.BookingSyncRequest;
 import com.tuttime.pos.dto.OrderSyncRequest;
 import com.tuttime.pos.service.PosSyncService;
@@ -11,7 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import static com.tuttime.common.kafka.EventProducer.*;
+import static com.tuttime.common.event.EventProducer.*;
 
 @Service
 @RequiredArgsConstructor

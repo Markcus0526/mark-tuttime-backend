@@ -1,6 +1,5 @@
 package com.tuttime.pos.config;
 
-import com.tuttime.common.kafka.BookingConfirmedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

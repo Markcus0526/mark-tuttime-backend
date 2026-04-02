@@ -1,21 +1,24 @@
 package com.tuttime.payment.repository;
 
 import com.tuttime.payment.entity.Payment;
-import com.tuttime.payment.entity.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
+public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
-	Optional<Payment> findByPaymentIntentId(String paymentIntentId);
+	/**
+	 * Used by the Webhook logic to find the specific payment record
+	 * associated with a Booking ID.
+	 */
+	Optional<Payment> findByBookingId(UUID bookingId);
 
-	List<Payment> findByBookingId(Long bookingId);
-
-	List<Payment> findByStatus(PaymentStatus status);
-
-	boolean existsByPaymentIntentId(String paymentIntentId);
+	/**
+	 * Used to verify if a Stripe Session already exists to prevent
+	 * creating multiple sessions for the same booking.
+	 */
+	Optional<Payment> findByStripeSessionId(String stripeSessionId);
 }

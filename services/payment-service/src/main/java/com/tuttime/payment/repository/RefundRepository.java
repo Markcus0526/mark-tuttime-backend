@@ -1,21 +1,17 @@
 package com.tuttime.payment.repository;
 
 import com.tuttime.payment.entity.Refund;
-import com.tuttime.payment.entity.enums.RefundStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface RefundRepository extends JpaRepository<Refund, Long> {
+public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
-	Optional<Refund> findByRefundId(String refundId);
-
-	List<Refund> findByPaymentId(Long paymentId);
-
-	List<Refund> findByStatus(RefundStatus status);
-
-	boolean existsByRefundId(String refundId);
+	/**
+	 * Retrieves all refunds associated with a specific payment.
+	 */
+	List<Refund> findAllByPaymentId(UUID paymentId);
 }

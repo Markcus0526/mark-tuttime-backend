@@ -1,46 +1,39 @@
 package com.tuttime.payment.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
-@Table(name = "payment_audit_logs",
-		indexes = {
-				@Index(name = "idx_audit_payment_id", columnList = "payment_id"),
-				@Index(name = "idx_audit_event_type", columnList = "event_type")
-		})
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "payment_audit_logs", schema = "payment_service")
+@EntityListeners(AuditingEntityListener.class)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class PaymentAuditLog {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "payment_id", nullable = true)
-	private Payment payment;
+	@Column(name = "payment_id")
+	private UUID paymentId;
+
+	@Column(name = "stripe_event_id", unique = true, nullable = false)
+	private String stripeEventId;
 
 	@Column(name = "event_type", nullable = false, length = 100)
 	private String eventType;
 
+	@JdbcTypeCode(SqlTypes.JSON) // Hibernate 6 (Spring Boot 3.3) way to handle JSONB
 	@Column(name = "event_data", columnDefinition = "jsonb")
 	private String eventData;
 
-	@Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
-	private OffsetDateTime createdAt;
-
-	// Constructors, getters, setters, equals, hashCode...
-
-	@PrePersist
-	public void prePersist() {
-		createdAt = OffsetDateTime.now();
-	}
+	@CreatedDate
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private Instant createdAt;
 }
