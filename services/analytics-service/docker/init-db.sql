@@ -35,38 +35,20 @@ EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE
 EXTENSION IF NOT EXISTS timescaledb;
 
--- Create raw event log table
-CREATE TABLE event_logs
+CREATE SCHEMA IF NOT EXISTS analytics_service;
+SET
+search_path TO analytics_service, public;
+
+CREATE TABLE system_events
 (
-    id         UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
-    event_type VARCHAR(100) NOT NULL,
-    payload    JSONB        NOT NULL,
-    timestamp  TIMESTAMPTZ  NOT NULL DEFAULT now()
+    id           UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    service_name VARCHAR(50)  NOT NULL, -- e.g., 'REVIEW_SERVICE', 'BOOKING_SERVICE'
+    event_type   VARCHAR(100) NOT NULL, -- e.g., 'REVIEW_APPROVED', 'ORDER_CREATED'
+    entity_id    UUID,                  -- ID of the restaurant/user involved
+    payload      JSONB,                 -- Full event data
+    occurred_at  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Convert event_log into a hypertable partitioned by timestamp
-SELECT create_hypertable('event_logs', 'timestamp', if_not_exists => TRUE);
-
--- Index for event_type and timestamp queries
-CREATE INDEX idx_event_log_type_time ON event_logs (event_type, timestamp);
-
--- Create aggregated metrics table
-CREATE TABLE aggregated_metrics
-(
-    id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    metric_name       VARCHAR(100) NOT NULL,
-    value             NUMERIC      NOT NULL,
-    time_window_start TIMESTAMPTZ  NOT NULL,
-    time_window_end   TIMESTAMPTZ  NOT NULL,
-    restaurant_id     UUID NULL,
-    CONSTRAINT chk_time_window CHECK (time_window_end > time_window_start)
-);
-
--- Convert aggregated_metrics into a hypertable partitioned by time_window_start
-SELECT create_hypertable('aggregated_metrics', 'time_window_start', if_not_exists => TRUE);
-
--- Index on metric_name and time window for fast querying
-CREATE INDEX idx_aggregated_metrics_name_time ON aggregated_metrics (metric_name, time_window_start, time_window_end);
-
--- Optional index on restaurant_id for filtering
-CREATE INDEX idx_aggregated_metrics_restaurant ON aggregated_metrics (restaurant_id);
+-- Index for fast time-range reporting
+CREATE INDEX idx_events_occurred_at ON system_events (occurred_at DESC);
+CREATE INDEX idx_events_type ON system_events (event_type);

@@ -95,6 +95,7 @@ spring:
     consumer:
       group-id: analytics-service-group
       auto-offset-reset: earliest
+      enable-auto-commit: false # We use manual Ack for production safety
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
