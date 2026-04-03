@@ -1,86 +1,144 @@
 package com.tuttime.review.service.impl;
 
-import com.tuttime.review.dto.ReviewDto;
-import com.tuttime.review.entity.Review;
-import com.tuttime.review.mapper.ReviewMapper;
-import com.tuttime.review.repository.ReviewRepository;
+import com.tuttime.review.dto.*;
+import com.tuttime.review.entity.*;
+import com.tuttime.review.entity.enums.ReviewStatus;
+import com.tuttime.review.kafka.RatingEventProducer;
+import com.tuttime.review.repository.*;
 import com.tuttime.review.service.ReviewService;
-import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
 	private final ReviewRepository reviewRepository;
-	private final ReviewMapper reviewMapper;
-
-	public ReviewServiceImpl(ReviewRepository reviewRepository, ReviewMapper reviewMapper) {
-		this.reviewRepository = reviewRepository;
-		this.reviewMapper = reviewMapper;
-	}
+	private final RatingAggregateRepository aggregateRepository;
+	private final ModerationLogRepository moderationLogRepository;
+	private final RatingEventProducer ratingEventProducer;
 
 	@Override
-	public ReviewDto getReviewById(UUID id) {
-		Review review = reviewRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Review not found with id " + id));
-		return reviewMapper.toDTO(review);
-	}
+	@Transactional
+	public ReviewResponse createReview(UUID userId, ReviewRequest request) {
+		log.info("Creating new review for restaurant: {} by user: {}", request.restaurantId(), userId);
 
-	@Override
-	public List<ReviewDto> getReviewsByRestaurant(UUID restaurantId) {
-		List<Review> reviews = reviewRepository.findByRestaurantId(restaurantId);
-		return reviews.stream()
-				.map(reviewMapper::toDTO)
-				.collect(Collectors.toList());
-	}
+		Review review = Review.builder()
+				.userId(userId)
+				.restaurantId(request.restaurantId())
+				.rating(request.rating())
+				.comment(request.comment())
+				.status(ReviewStatus.PENDING)
+				.build();
 
-	@Override
-	public List<ReviewDto> getReviewsByUser(UUID userId) {
-		List<Review> reviews = reviewRepository.findByUserId(userId);
-		return reviews.stream()
-				.map(reviewMapper::toDTO)
-				.collect(Collectors.toList());
-	}
-
-	@Override
-	public List<ReviewDto> getReviewsByStatus(String status) {
-		List<Review> reviews = reviewRepository.findByStatus(status);
-		return reviews.stream()
-				.map(reviewMapper::toDTO)
-				.collect(Collectors.toList());
-	}
-
-	@Override
-	public ReviewDto createReview(ReviewDto reviewDto) {
-		reviewDto.setStatus("PENDING");
-		Review review = reviewMapper.toEntity(reviewDto);
 		Review saved = reviewRepository.save(review);
-		return reviewMapper.toDTO(saved);
+		return mapToResponse(saved);
 	}
 
 	@Override
-	public ReviewDto updateReview(UUID id, ReviewDto reviewDto) {
-		Review existing = reviewRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Review not found with id " + id));
-		existing.setRating(reviewDto.getRating());
-		existing.setComment(reviewDto.getComment());
-		existing.setStatus(reviewDto.getStatus());
-		Review updated = reviewRepository.save(existing);
-		return reviewMapper.toDTO(updated);
+	@Transactional
+	public void approveReview(UUID reviewId, UUID moderatorId, String reason) {
+		Review review = reviewRepository.findById(reviewId)
+				.orElseThrow(() -> new RuntimeException("Review not found with ID: " + reviewId));
+
+		review.setStatus(ReviewStatus.APPROVED);
+
+		// Save Moderation History
+		moderationLogRepository.save(ReviewModerationLog.builder()
+				.review(review)
+				.moderatorId(moderatorId)
+				.action("APPROVE")
+				.reason(reason)
+				.build());
+
+		// Recalculate Aggregate Stats (Page 9 of PDF)
+		updateRestaurantAggregate(review.getRestaurantId());
+
+		// 3. Async broadcast via Kafka after aggregate update
+		RatingAggregate agg = aggregateRepository.findById(review.getRestaurantId()).get();
+		ratingEventProducer.sendRatingUpdate(agg);
 	}
 
 	@Override
-	public void deleteReview(UUID id) {
-		if (!reviewRepository.existsById(id)) {
-			throw new EntityNotFoundException("Review not found with id " + id);
+	@Transactional
+	public void rejectReview(UUID reviewId, UUID moderatorId, String reason) {
+		Review review = reviewRepository.findById(reviewId)
+				.orElseThrow(() -> new RuntimeException("Review not found"));
+
+		review.setStatus(ReviewStatus.REJECTED);
+
+		moderationLogRepository.save(ReviewModerationLog.builder()
+				.review(review)
+				.moderatorId(moderatorId)
+				.action("REJECT")
+				.reason(reason)
+				.build());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public RatingStatsResponse getRestaurantStats(UUID restaurantId) {
+		RatingAggregate aggregate = aggregateRepository.findById(restaurantId)
+				.orElse(new RatingAggregate(restaurantId, BigDecimal.ZERO, 0, Map.of(), OffsetDateTime.now()));
+
+		return new RatingStatsResponse(
+				aggregate.getAverageRating(),
+				aggregate.getTotalReviews(),
+				aggregate.getRatingDistribution()
+		);
+	}
+
+	/**
+	 * Internal logic to sync the 'rating_aggregates' table.
+	 * Uses the JSONB distribution logic from your SQL schema.
+	 */
+	private void updateRestaurantAggregate(UUID restaurantId) {
+		List<Review> approved = reviewRepository.findByRestaurantIdAndStatus(restaurantId, ReviewStatus.APPROVED);
+
+		if (approved.isEmpty()) return;
+
+		double sum = 0;
+		Map<String, Integer> dist = new HashMap<>(Map.of("1",0,"2",0,"3",0,"4",0,"5",0));
+
+		for (Review r : approved) {
+			sum += r.getRating();
+			String starKey = String.valueOf(r.getRating());
+			dist.put(starKey, dist.getOrDefault(starKey, 0) + 1);
 		}
-		reviewRepository.deleteById(id);
+
+		BigDecimal avg = BigDecimal.valueOf(sum / approved.size()).setScale(2, RoundingMode.HALF_UP);
+
+		RatingAggregate aggregate = aggregateRepository.findById(restaurantId)
+				.orElse(new RatingAggregate());
+
+		aggregate.setRestaurantId(restaurantId);
+		aggregate.setAverageRating(avg);
+		aggregate.setTotalReviews(approved.size());
+		aggregate.setRatingDistribution(dist);
+		aggregate.setLastUpdated(OffsetDateTime.now());
+
+		aggregateRepository.save(aggregate);
+	}
+
+	private ReviewResponse mapToResponse(Review r) {
+		return new ReviewResponse(
+				r.getId(),
+				r.getUserId(),
+				r.getRating(),
+				r.getComment(),
+				r.getStatus().name(),
+				r.getCreatedAt().toString()
+		);
 	}
 }
-

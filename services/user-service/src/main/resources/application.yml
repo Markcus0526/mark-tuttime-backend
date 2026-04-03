@@ -268,6 +268,8 @@ server:
 grpc:
   server:
     port: ${USER_GRPC_PORT:29001}
+  security:
+    enabled: false # Enable TLS/SSL for production!
   # Global gRPC client deadline (seconds). Prevents indefinite hangs when remote services
   # are unresponsive. 60s is generous for batch operations under heavy load.
   # Used by GrpcClientDeadlineInterceptor.

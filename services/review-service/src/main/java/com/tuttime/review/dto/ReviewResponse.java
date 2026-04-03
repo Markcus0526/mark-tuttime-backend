@@ -1,14 +1,26 @@
 package com.tuttime.review.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
+import java.util.UUID;
 
-@Data
-@Builder
-public class ReviewResponse {
-	private Long id;
-	private Long userId;
-	private Long restaurantId;
-	private Double rating;
-	private String comment;
-}
+@Schema(description = "Review output payload")
+public record ReviewResponse(
+		@Schema(example = "uuid")
+		UUID id,
+
+		@Schema(example = "uuid")
+		UUID userId,
+
+		@Schema(example = "5")
+		int rating,
+
+		@Schema(example = "Great food!")
+		String comment,
+
+		@Schema(example = "APPROVED")
+		String status,
+
+		@Schema(description = "ISO-8601 Timestamp")
+		String createdAt
+) {}

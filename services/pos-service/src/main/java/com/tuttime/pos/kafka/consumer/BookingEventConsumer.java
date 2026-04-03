@@ -1,8 +1,7 @@
-package com.tuttime.pos.kafka;
+package com.tuttime.pos.kafka.consumer;
 
 import com.tuttime.common.event.BookingEvent;
 import com.tuttime.pos.dto.BookingSyncRequest;
-import com.tuttime.pos.dto.OrderSyncRequest;
 import com.tuttime.pos.service.PosSyncService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

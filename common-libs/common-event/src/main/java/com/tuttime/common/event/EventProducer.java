@@ -36,6 +36,8 @@ public class EventProducer {
 
 	public static final String TOPIC_POS_SYNCED = "tuttime.pos.synced";
 
+	public static final String TOPIC_REVIEW_RATING_UPDATED = "tuttime.reiew.rating.synced";
+
 	// Booking Events Publisher
 	public void publishBookingConfirmedEvent(BookingEvent.BookingConfirmedEvent event) {
 		publishEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId(), event);
@@ -62,6 +64,11 @@ public class EventProducer {
 	// Pos Events Publisher
 	public void publishPosSyncedEvent(PosEvent.PosSyncedEvent event) {
 		publishEvent(TOPIC_POS_SYNCED, event.entityId(), event);
+	}
+
+	// Review Events Publisher
+	public void publishReviewRatingUpdatedEvent(ReviewEvent.RatingUpdateEvent event) {
+		publishEvent(TOPIC_REVIEW_RATING_UPDATED, event.restaurantId().toString(), event);
 	}
 
 	private void publishEvent(String topic, String key, Object event) {

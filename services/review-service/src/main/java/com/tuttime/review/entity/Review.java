@@ -1,75 +1,63 @@
 package com.tuttime.review.entity;
 
+import com.tuttime.review.entity.enums.ReviewStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import org.hibernate.annotations.GenericGenerator;
-import java.time.Instant;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "reviews",
-		indexes = {
-				@Index(name = "idx_review_user_id", columnList = "user_id"),
-				@Index(name = "idx_review_restaurant_id", columnList = "restaurant_id"),
-				@Index(name = "idx_review_status", columnList = "status"),
-				@Index(name = "idx_review_created_at", columnList = "created_at")
-		})
-@Data
+@Table(name = "reviews", schema = "review_service")
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Review Entity representing user feedback for a restaurant")
 public class Review {
 
 	@Id
-	@GeneratedValue(generator = "UUID")
-	@GenericGenerator(name="UUID", strategy = "org.hibernate.id.UUIDGenerator")
-	@Column(name = "id", updatable = false, nullable = false)
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Schema(description = "Unique identifier of the review", example = "550e8400-e29b-41d4-a716-446655440000")
 	private UUID id;
 
 	@Column(name = "user_id", nullable = false)
-	private UUID userId;  // Reference to User Service
+	@Schema(description = "ID of the user who wrote the review", requiredMode = Schema.RequiredMode.REQUIRED)
+	private UUID userId;
 
 	@Column(name = "restaurant_id", nullable = false)
-	private UUID restaurantId;  // Reference to Restaurant Service
+	@Schema(description = "ID of the restaurant being reviewed")
+	private UUID restaurantId;
 
 	@Column(nullable = false)
-	private int rating;
+	@Schema(description = "Rating from 1 to 5", example = "5")
+	private Integer rating;
 
 	@Column(columnDefinition = "TEXT")
+	@Schema(description = "User's textual comment", example = "Great food and atmosphere!")
 	private String comment;
 
-	@Builder.Default
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
-	private String status = "PENDING";
-
 	@Builder.Default
+	@Schema(description = "Moderation status", allowableValues = {"PENDING", "APPROVED", "REJECTED"})
+	private ReviewStatus status = ReviewStatus.PENDING;
+
+	@Version
+	@Schema(description = "Optimistic locking version")
+	private Long version;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt = Instant.now();
-
-	@Builder.Default
-	@Column(name = "updated_at", nullable = false)
-	private Instant updatedAt = Instant.now();
-
-	public void setRating(int rating) {
-		if (rating < 1 || rating > 5) {
-			throw new IllegalArgumentException("Rating must be between 1 and 5.");
-		}
-		this.rating = rating;
-	}
+	private OffsetDateTime createdAt;
 
 	@PrePersist
 	protected void onCreate() {
-		createdAt = Instant.now();
-		updatedAt = createdAt;
+		createdAt = OffsetDateTime.now();
 	}
-
-	@PreUpdate
-	protected void onUpdate() {
-		updatedAt = Instant.now();
-	}
-
 }
