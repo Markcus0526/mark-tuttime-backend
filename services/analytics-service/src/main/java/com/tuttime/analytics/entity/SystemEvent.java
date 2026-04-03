@@ -10,7 +10,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "system_events", schema = "analytics_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SystemEvent {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)

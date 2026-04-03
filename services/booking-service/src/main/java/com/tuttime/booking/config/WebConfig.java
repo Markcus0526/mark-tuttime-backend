@@ -8,13 +8,14 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-@EnableJpaAuditing
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 	private final UserHeaderInterceptor userHeaderInterceptor;
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(userHeaderInterceptor);
+		registry.addInterceptor(userHeaderInterceptor)
+				.addPathPatterns("/api/**") // Apply only to your API routes
+				.excludePathPatterns("/actuator/**", "/swagger-ui/**"); // Skip system routes
 	}
 }

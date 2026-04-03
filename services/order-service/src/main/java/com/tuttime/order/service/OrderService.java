@@ -1,8 +1,8 @@
 package com.tuttime.order.service;
 
+import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.order.dto.OrderRequest;
 import com.tuttime.order.dto.OrderResponse;
-import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.order.dto.OrderUpdateRequest;
 
 import java.util.UUID;

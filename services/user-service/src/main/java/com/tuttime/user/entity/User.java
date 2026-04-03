@@ -48,6 +48,9 @@ public class User {
 	@Column(name = "updated_at", nullable = false)
 	private OffsetDateTime updatedAt = OffsetDateTime.now();
 
+	@Column(name = "is_blocked", nullable = false)
+	private boolean isBlocked = false;
+
 	@Column(name = "is_deleted", nullable = false)
 	private boolean isDeleted = false;
 

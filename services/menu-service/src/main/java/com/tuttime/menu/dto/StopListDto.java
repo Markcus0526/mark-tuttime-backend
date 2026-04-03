@@ -2,6 +2,7 @@ package com.tuttime.menu.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -24,7 +25,8 @@ public class StopListDto {
 
 			@Schema(description = "Reason for stopping (e.g., Out of avocado)", example = "Supplier delay")
 			String reason
-	) {}
+	) {
+	}
 
 	@Schema(description = "Response payload for stop list entries")
 	public record StopListResponse(
@@ -35,5 +37,6 @@ public class StopListDto {
 			LocalDate startDate,
 			LocalDate endDate,
 			String reason
-	) {}
+	) {
+	}
 }

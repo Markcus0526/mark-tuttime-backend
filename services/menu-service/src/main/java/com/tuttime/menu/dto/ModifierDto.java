@@ -2,6 +2,7 @@ package com.tuttime.menu.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -12,7 +13,8 @@ public class ModifierDto {
 			@NotBlank String name,
 			String description,
 			BigDecimal priceAdjustment
-	) {}
+	) {
+	}
 
 	@Schema(description = "Modifier response details")
 	public record ModifierResponse(
@@ -20,5 +22,6 @@ public class ModifierDto {
 			String name,
 			String description,
 			BigDecimal priceAdjustment
-	) {}
+	) {
+	}
 }

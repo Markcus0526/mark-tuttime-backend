@@ -32,8 +32,8 @@ CREATE TABLE pos_system_configs
     api_endpoint   TEXT               NOT NULL,
     webhook_secret TEXT,
     enabled        BOOLEAN            NOT NULL DEFAULT TRUE,
-    created_at     TIMESTAMPTZ        NOT NULL DEFAULT now(),
-    updated_at     TIMESTAMPTZ        NOT NULL DEFAULT now()
+    created_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table: pos_logs
@@ -48,8 +48,8 @@ CREATE TABLE pos_logs
     last_attempt     TIMESTAMPTZ,
     request_payload  JSONB,                -- Added to store Map<String, Object>
     response_payload JSONB,                -- Added to store POS API response
-    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at       TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_pos_logs_entity ON pos_logs (entity_type, entity_id);
@@ -59,10 +59,11 @@ CREATE INDEX idx_pos_logs_status ON pos_logs (status);
 CREATE TABLE pos_error_details
 (
     id               SERIAL PRIMARY KEY,
-    pos_log_id       INT         NOT NULL REFERENCES pos_logs (id) ON DELETE CASCADE,
+    pos_log_id       INT NOT NULL REFERENCES pos_logs (id) ON DELETE CASCADE,
     error_code       VARCHAR(100),
     error_stacktrace TEXT,
-    created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table: pos_sync_queues
@@ -73,8 +74,8 @@ CREATE TABLE pos_sync_queues
     next_retry_at TIMESTAMPTZ NOT NULL,
     retry_count   INT         NOT NULL DEFAULT 0,
     status        VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -90,8 +91,8 @@ CREATE TABLE sync_logs
     status        VARCHAR(50) NOT NULL,
     event_type    VARCHAR(100),
     metadata      JSONB,
-    created_at    TIMESTAMPTZ NOT NULL, -- From BaseEntity
-    updated_at    TIMESTAMPTZ NOT NULL  -- From BaseEntity
+    created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Add indexes for performance

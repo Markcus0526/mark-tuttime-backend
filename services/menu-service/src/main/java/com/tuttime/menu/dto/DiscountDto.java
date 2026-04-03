@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class DiscountDto {
@@ -20,10 +21,11 @@ public class DiscountDto {
 			@NotNull @DecimalMin("0.00") BigDecimal amount,
 			@NotNull AppliesTo appliesTo,
 			UUID referenceId, // Category or Item ID
-			Instant startDate,
-			Instant endDate,
+			OffsetDateTime startDate,
+			OffsetDateTime endDate,
 			Boolean isActive
-	) {}
+	) {
+	}
 
 	@Schema(description = "Discount response details")
 	public record DiscountResponse(
@@ -33,8 +35,9 @@ public class DiscountDto {
 			BigDecimal amount,
 			AppliesTo appliesTo,
 			UUID referenceId,
-			Instant startDate,
-			Instant endDate,
+			OffsetDateTime startDate,
+			OffsetDateTime endDate,
 			Boolean isActive
-	) {}
+	) {
+	}
 }

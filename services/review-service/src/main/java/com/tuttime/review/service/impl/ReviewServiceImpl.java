@@ -1,10 +1,17 @@
 package com.tuttime.review.service.impl;
 
-import com.tuttime.review.dto.*;
-import com.tuttime.review.entity.*;
+import com.tuttime.common.event.ReviewEvent;
+import com.tuttime.review.dto.RatingStatsResponse;
+import com.tuttime.review.dto.ReviewRequest;
+import com.tuttime.review.dto.ReviewResponse;
+import com.tuttime.review.entity.RatingAggregate;
+import com.tuttime.review.entity.Review;
+import com.tuttime.review.entity.ReviewModerationLog;
 import com.tuttime.review.entity.enums.ReviewStatus;
 import com.tuttime.review.kafka.RatingEventProducer;
-import com.tuttime.review.repository.*;
+import com.tuttime.review.repository.ModerationLogRepository;
+import com.tuttime.review.repository.RatingAggregateRepository;
+import com.tuttime.review.repository.ReviewRepository;
 import com.tuttime.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +73,15 @@ public class ReviewServiceImpl implements ReviewService {
 		updateRestaurantAggregate(review.getRestaurantId());
 
 		// 3. Async broadcast via Kafka after aggregate update
-		RatingAggregate agg = aggregateRepository.findById(review.getRestaurantId()).get();
-		ratingEventProducer.sendRatingUpdate(agg);
+		ReviewEvent.ReviewApprovedEvent event = new ReviewEvent.ReviewApprovedEvent(
+				review.getId(),
+				review.getRestaurantId(),
+				review.getUserId(),
+				review.getRating(),
+				review.getComment(),
+				OffsetDateTime.now().toString()
+		);
+		ratingEventProducer.sendReviewApproved(event);
 	}
 
 	@Override
@@ -109,7 +123,7 @@ public class ReviewServiceImpl implements ReviewService {
 		if (approved.isEmpty()) return;
 
 		double sum = 0;
-		Map<String, Integer> dist = new HashMap<>(Map.of("1",0,"2",0,"3",0,"4",0,"5",0));
+		Map<String, Integer> dist = new HashMap<>(Map.of("1", 0, "2", 0, "3", 0, "4", 0, "5", 0));
 
 		for (Review r : approved) {
 			sum += r.getRating();

@@ -11,7 +11,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "order_item_modifiers", schema = "order_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @SQLDelete(sql = "UPDATE order_service.order_item_modifiers SET deleted_at = now() WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")

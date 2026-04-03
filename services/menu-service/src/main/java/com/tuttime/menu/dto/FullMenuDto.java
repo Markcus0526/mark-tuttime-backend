@@ -10,7 +10,8 @@ public class FullMenuDto {
 	public record FullMenuBranchMenuResponse(
 			UUID branchId,
 			List<FullMenuCategoryResponse> categories
-	) {}
+	) {
+	}
 
 	// 2. Category Level
 	public record FullMenuCategoryResponse(
@@ -18,7 +19,8 @@ public class FullMenuDto {
 			String name,
 			String description,
 			List<FullMenuItemResponse> items
-	) {}
+	) {
+	}
 
 	// 3. Item Level
 	public record FullMenuItemResponse(
@@ -28,7 +30,8 @@ public class FullMenuDto {
 			BigDecimal price,
 			Boolean isAvailable,
 			List<FullMenuModifierGroupResponse> modifierGroups
-	) {}
+	) {
+	}
 
 	// 4. Modifier Group Level
 	public record FullMenuModifierGroupResponse(
@@ -37,12 +40,14 @@ public class FullMenuDto {
 			Integer minSelect,
 			Integer maxSelect,
 			List<FullMenuModifierResponse> modifiers
-	) {}
+	) {
+	}
 
 	// 5. Leaf Level: Individual Modifier
 	public record FullMenuModifierResponse(
 			UUID id,
 			String name,
 			BigDecimal priceAdjustment
-	) {}
+	) {
+	}
 }

@@ -3,6 +3,7 @@ package com.tuttime.menu.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -15,7 +16,8 @@ public class CategoryDto {
 			@NotBlank(message = "Category name cannot be empty") String name,
 			String description,
 			Integer priority
-	) {}
+	) {
+	}
 
 	// Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
 	@Schema(description = "Category response details")
@@ -25,5 +27,6 @@ public class CategoryDto {
 			String name,
 			String description,
 			List<MenuItemDto.MenuItemResponseSummary> items
-	) {}
+	) {
+	}
 }

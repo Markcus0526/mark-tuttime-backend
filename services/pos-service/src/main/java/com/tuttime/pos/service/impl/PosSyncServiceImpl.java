@@ -1,9 +1,15 @@
 package com.tuttime.pos.service.impl;
 
-import com.tuttime.pos.entity.*;
 import com.tuttime.pos.dto.*;
+import com.tuttime.pos.entity.PosLog;
+import com.tuttime.pos.entity.PosSyncQueue;
+import com.tuttime.pos.entity.PosSystemConfig;
+import com.tuttime.pos.entity.SyncLog;
 import com.tuttime.pos.mapper.PosMapper;
-import com.tuttime.pos.repository.*;
+import com.tuttime.pos.repository.PosLogRepository;
+import com.tuttime.pos.repository.PosSyncQueueRepository;
+import com.tuttime.pos.repository.PosSystemConfigRepository;
+import com.tuttime.pos.repository.SyncLogRepository;
 import com.tuttime.pos.service.PosSyncService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -151,6 +157,9 @@ public class PosSyncServiceImpl implements PosSyncService {
 	}
 
 	// Stubbed methods for Booking and Menu (similar patterns to syncOrder)
-	@Override public void syncBooking(BookingSyncRequest request) { /* Implementation */ }
-	@Override public void syncMenu(MenuSyncRequest request) { /* Implementation */ }
+	@Override
+	public void syncBooking(BookingSyncRequest request) { /* Implementation */ }
+
+	@Override
+	public void syncMenu(MenuSyncRequest request) { /* Implementation */ }
 }

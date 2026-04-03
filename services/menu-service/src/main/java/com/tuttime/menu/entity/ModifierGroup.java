@@ -9,8 +9,11 @@ import java.util.List;
 
 @Entity
 @Table(name = "modifier_groups")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ModifierGroup extends BaseUuidEntity {
 
 	@Column(nullable = false)

@@ -1,6 +1,9 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.*;
+import com.tuttime.review.dto.RatingStatsResponse;
+import com.tuttime.review.dto.ReviewRequest;
+import com.tuttime.review.dto.ReviewResponse;
+
 import java.util.UUID;
 
 /**

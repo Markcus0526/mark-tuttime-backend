@@ -15,7 +15,8 @@ public class ModifierGroupDto {
 			String description,
 			@Min(0) Integer minSelect,
 			@Min(1) Integer maxSelect
-	) {}
+	) {
+	}
 
 	@Schema(description = "Modifier Group response details")
 	public record ModifierGroupResponse(
@@ -25,5 +26,6 @@ public class ModifierGroupDto {
 			Integer minSelect,
 			Integer maxSelect,
 			List<ModifierDto.ModifierResponse> modifiers
-	) {}
+	) {
+	}
 }

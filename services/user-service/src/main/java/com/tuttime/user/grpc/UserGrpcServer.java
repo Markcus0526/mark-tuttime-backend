@@ -10,10 +10,10 @@ import com.tuttime.user.repository.UserRepository;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.SequencedSet;
 import java.util.UUID;

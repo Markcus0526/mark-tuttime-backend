@@ -8,8 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.OffsetDateTime;
 
 @Slf4j
 @Component
@@ -25,12 +24,12 @@ public class BookingCleanupScheduler {
 	@Scheduled(fixedRate = 60000)
 	@Transactional
 	public void cleanupUnpaidBookings() {
-		LocalDateTime cutoff = LocalDateTime.now().minusMinutes(15);
+		OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(15);
 
 		int deletedCount = bookingRepository.cancelExpiredBookings(
 				BookingStatus.CREATED,
 				BookingStatus.CANCELED,
-				cutoff.toInstant(ZoneOffset.UTC)
+				cutoff
 		);
 
 		if (deletedCount > 0) {

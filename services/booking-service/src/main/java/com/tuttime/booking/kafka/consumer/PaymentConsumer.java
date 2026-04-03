@@ -1,4 +1,4 @@
-package com.tuttime.booking.kafka;
+package com.tuttime.booking.kafka.consumer;
 
 import com.tuttime.booking.entity.enums.BookingStatus;
 import com.tuttime.booking.service.BookingService;
@@ -8,12 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import static com.tuttime.common.event.EventProducer.*;
+import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_COMPLETED;
+import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_REFUND;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BookingPaymentConsumer {
+public class PaymentConsumer {
 	private final BookingService bookingService;
 
 	/**

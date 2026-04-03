@@ -46,7 +46,9 @@ CREATE TABLE system_events
     event_type   VARCHAR(100) NOT NULL, -- e.g., 'REVIEW_APPROVED', 'ORDER_CREATED'
     entity_id    UUID,                  -- ID of the restaurant/user involved
     payload      JSONB,                 -- Full event data
-    occurred_at  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+    occurred_at  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at   TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Index for fast time-range reporting

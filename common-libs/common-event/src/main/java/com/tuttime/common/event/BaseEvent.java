@@ -14,7 +14,7 @@ public sealed interface BaseEvent permits
 
 		PosEvent.PosSyncedEvent,
 
-		ReviewEvent.RatingUpdateEvent
+		ReviewEvent.ReviewApprovedEvent
 {}
 
 

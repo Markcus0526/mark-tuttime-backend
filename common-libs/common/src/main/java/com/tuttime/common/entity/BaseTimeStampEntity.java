@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class BaseEntity {
+public abstract class BaseTimeStampEntity {
 	@CreatedDate
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private OffsetDateTime createdAt;

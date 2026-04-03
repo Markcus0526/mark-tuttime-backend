@@ -7,4 +7,5 @@ public record WaitlistNotificationEvent(
 		UUID branchId,
 		UUID waitlistId,
 		String message
-) {}
+) {
+}

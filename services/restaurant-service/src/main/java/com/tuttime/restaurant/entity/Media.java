@@ -3,7 +3,10 @@ package com.tuttime.restaurant.entity;
 import com.tuttime.restaurant.enums.EntityType;
 import com.tuttime.restaurant.enums.MediaType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;

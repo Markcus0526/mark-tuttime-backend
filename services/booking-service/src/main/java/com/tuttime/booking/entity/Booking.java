@@ -7,7 +7,6 @@ import lombok.*;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -42,7 +41,7 @@ public class Booking extends BaseUuidEntity {
 	private BookingStatus status = BookingStatus.CREATED;
 
 	@Column(name = "booking_datetime", nullable = false)
-	private Instant bookingDatetime;
+	private OffsetDateTime bookingDatetime;
 
 	@Column(name = "duration", nullable = false)
 	private Integer duration; // Minutes: Required for the overlap calculation

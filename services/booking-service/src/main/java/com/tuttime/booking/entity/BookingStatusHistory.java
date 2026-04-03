@@ -8,7 +8,7 @@ import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -43,7 +43,7 @@ public class BookingStatusHistory {
 
 	@CreatedDate
 	@Column(name = "changed_at", nullable = false, updatable = false)
-	private Instant changedAt;
+	private OffsetDateTime changedAt;
 
 	private String reason;
 }

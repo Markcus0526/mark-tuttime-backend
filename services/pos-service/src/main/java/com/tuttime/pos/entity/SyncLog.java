@@ -1,17 +1,13 @@
 package com.tuttime.pos.entity;
 
-import com.tuttime.common.entity.BaseEntity;
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
-
-import jakarta.persistence.*;
-import lombok.*;
 
 @Entity
 @Table(name = "sync_logs")
@@ -20,7 +16,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SyncLog extends BaseEntity {
+public class SyncLog extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

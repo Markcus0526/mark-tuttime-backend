@@ -1,6 +1,9 @@
 package com.tuttime.pos.dto.rkeeper.booking;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor

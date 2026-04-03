@@ -1,5 +1,6 @@
 package com.tuttime.order.service.impl;
 
+import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.OrderEvent;
 import com.tuttime.common.exception.ResourceNotFoundException;
@@ -9,7 +10,6 @@ import com.tuttime.order.dto.OrderUpdateRequest;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.entity.OrderItem;
 import com.tuttime.order.entity.OrderItemModifier;
-import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.order.grpc.client.MenuGrpcClient;
 import com.tuttime.order.mapper.OrderMapper;
 import com.tuttime.order.repository.OrderRepository;

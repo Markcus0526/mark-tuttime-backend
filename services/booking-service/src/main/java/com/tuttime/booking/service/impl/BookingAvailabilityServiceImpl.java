@@ -8,7 +8,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -21,7 +21,7 @@ public class BookingAvailabilityServiceImpl implements BookingAvailabilityServic
 	@Override
 	public boolean reserveTable(BookingRequest request) {
 		// 1. Create a distributed lock key for this specific table and time slot
-		String lockKey = "lock:table:" + request.tableId() + ":" + request.bookingDatetime().getEpochSecond();
+		String lockKey = "lock:table:" + request.tableId() + ":" + request.bookingDatetime();
 		RLock lock = redissonClient.getLock(lockKey);
 
 		try {
@@ -30,7 +30,7 @@ public class BookingAvailabilityServiceImpl implements BookingAvailabilityServic
 				try {
 					// 3. Double-Check DB availability inside the lock
 					// Alternative using seconds
-					Instant endTime = request.bookingDatetime().plusSeconds(request.duration() * 60L);
+					OffsetDateTime endTime = request.bookingDatetime().plusSeconds(request.duration() * 60L);
 
 					boolean isBooked = bookingRepository.existsOverlappingBooking(
 							request.tableId(), request.bookingDatetime(), endTime);

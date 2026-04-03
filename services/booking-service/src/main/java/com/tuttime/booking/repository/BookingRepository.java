@@ -8,8 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,8 +28,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 			nativeQuery = true)
 	boolean existsOverlappingBooking(
 			@Param("tableId") UUID tableId,
-			@Param("startTime") Instant startTime,
-			@Param("endTime") Instant endTime
+			@Param("startTime") OffsetDateTime startTime,
+			@Param("endTime") OffsetDateTime endTime
 	);
 
 	/**
@@ -39,15 +38,15 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 	 */
 	@Modifying
 	@Query("""
-        UPDATE Booking b 
-        SET b.status = :newStatus, b.updatedAt = CURRENT_TIMESTAMP 
-        WHERE b.status = :oldStatus 
-        AND b.createdAt < :cutoff
-        """)
+			UPDATE Booking b 
+			SET b.status = :newStatus, b.updatedAt = CURRENT_TIMESTAMP 
+			WHERE b.status = :oldStatus 
+			AND b.createdAt < :cutoff
+			""")
 	int cancelExpiredBookings(
 			@Param("oldStatus") BookingStatus oldStatus,
 			@Param("newStatus") BookingStatus newStatus,
-			@Param("cutoff") Instant cutoff
+			@Param("cutoff") OffsetDateTime cutoff
 	);
 
 	// Spring Data JPA derives the query: SELECT * FROM bookings WHERE user_id = :userId ORDER BY booking_datetime DESC

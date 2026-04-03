@@ -9,13 +9,16 @@ import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "discounts")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Discount extends BaseUuidEntity {
 
 	@Column(nullable = false)
@@ -38,10 +41,10 @@ public class Discount extends BaseUuidEntity {
 	private UUID referenceId; // Can be a Category UUID or an Item UUID
 
 	@Column(name = "start_date")
-	private Instant startDate;
+	private OffsetDateTime startDate;
 
 	@Column(name = "end_date")
-	private Instant endDate;
+	private OffsetDateTime endDate;
 
 	@Column(name = "is_active")
 	@Builder.Default
