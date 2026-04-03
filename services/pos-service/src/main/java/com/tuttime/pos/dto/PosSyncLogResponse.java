@@ -1,6 +1,7 @@
 package com.tuttime.pos.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -12,4 +13,5 @@ public record PosSyncLogResponse(
 
 		@Schema(description = "List of attempt details")
 		List<SyncLogDetail> logs
-) {}
+) {
+}

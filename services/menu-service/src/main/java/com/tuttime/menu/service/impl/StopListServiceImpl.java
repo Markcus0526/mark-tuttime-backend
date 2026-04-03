@@ -1,9 +1,9 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.menu.dto.StopListDto;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.StopList;
-import com.tuttime.menu.dto.StopListDto;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.StopListRepository;
 import com.tuttime.menu.service.StopListService;
@@ -33,7 +33,9 @@ public class StopListServiceImpl implements StopListService {
 
 		// 2. Check if already on stop list for this branch to avoid duplicates
 		stopListRepository.findByMenuItemIdAndBranchId(request.menuItemId(), request.branchId())
-				.ifPresent(s -> { throw new IllegalStateException("Item already on stop list"); });
+				.ifPresent(s -> {
+					throw new IllegalStateException("Item already on stop list");
+				});
 
 		// 3. Create Entity
 		StopList stopList = StopList.builder()

@@ -31,4 +31,5 @@ public record ReviewDetailRecord(
 
 		@Schema(description = "History of moderation actions")
 		List<ModerationLogResponse> history
-) {}
+) {
+}

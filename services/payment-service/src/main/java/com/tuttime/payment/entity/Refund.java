@@ -1,14 +1,21 @@
 package com.tuttime.payment.entity;
 
 import com.tuttime.common.entity.BaseUuidEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Table(name = "refunds", schema = "payment_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Refund extends BaseUuidEntity {
 
 	@Column(name = "payment_id", nullable = false)

@@ -1,19 +1,15 @@
 package com.tuttime.payment.service.impl;
 
 import com.stripe.exception.StripeException;
-import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
-import com.stripe.net.Webhook;
 import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.payment.entity.Payment;
-import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.entity.Refund;
 import com.tuttime.payment.entity.enums.PaymentStatus;
-import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
 import com.tuttime.payment.service.PaymentService;
@@ -21,11 +17,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 

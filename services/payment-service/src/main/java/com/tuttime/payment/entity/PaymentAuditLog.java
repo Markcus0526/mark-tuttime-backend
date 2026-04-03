@@ -13,7 +13,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "payment_audit_logs", schema = "payment_service")
 @EntityListeners(AuditingEntityListener.class)
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PaymentAuditLog {
 
 	@Id

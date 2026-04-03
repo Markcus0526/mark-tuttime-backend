@@ -1,10 +1,9 @@
 package com.tuttime.order.mapper;
 
-import com.tuttime.order.dto.OrderResponse;
 import com.tuttime.order.dto.OrderRequest;
+import com.tuttime.order.dto.OrderResponse;
 import com.tuttime.order.entity.Order;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)

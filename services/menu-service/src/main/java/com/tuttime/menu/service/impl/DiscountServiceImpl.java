@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -59,7 +58,7 @@ public class DiscountServiceImpl implements DiscountService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID referenceId) {
-		Instant now = Instant.now();
+		OffsetDateTime now = OffsetDateTime.now();
 
 		// Logic: Find all discounts for this ID that are marked active
 		// and where 'now' is between start and end dates (handling null dates as "always")

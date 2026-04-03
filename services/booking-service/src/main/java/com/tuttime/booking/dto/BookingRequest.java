@@ -3,7 +3,8 @@ package com.tuttime.booking.dto;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
+
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -27,7 +28,7 @@ public record BookingRequest(
 
 		@NotNull(message = "Booking time is required")
 		@Future(message = "Booking must be in the future")
-		Instant bookingDatetime,
+		OffsetDateTime bookingDatetime,
 
 		@NotNull(message = "Duration is required")
 		@Min(value = 15, message = "Minimum duration is 15 minutes")

@@ -3,14 +3,18 @@ package com.tuttime.menu.entity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "menu_categories")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MenuCategory extends BaseUuidEntity {
 
 	@Column(name = "branch_id", nullable = false)

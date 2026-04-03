@@ -8,8 +8,11 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "modifiers")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Modifier extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)

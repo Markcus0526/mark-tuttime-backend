@@ -2,12 +2,10 @@ package com.tuttime.pos.kafka;
 
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PosEvent;
-import com.tuttime.pos.config.KafkaConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 
 @Service

@@ -13,7 +13,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "order_items", schema = "order_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @SQLDelete(sql = "UPDATE order_service.order_items SET deleted_at = now() WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
 public class OrderItem extends BaseSoftDeleteEntity {

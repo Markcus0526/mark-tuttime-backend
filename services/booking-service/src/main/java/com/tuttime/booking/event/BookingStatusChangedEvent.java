@@ -10,4 +10,5 @@ public record BookingStatusChangedEvent(
 		BookingStatus newStatus,
 		UUID changedBy,
 		String reason
-) {}
+) {
+}

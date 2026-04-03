@@ -1,18 +1,23 @@
 package com.tuttime.pos.entity;
 
-import com.tuttime.common.entity.BaseEntity;
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
 @Entity
 @Table(name = "pos_logs", schema = "pos_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class PosLog extends BaseEntity {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PosLog extends BaseTimeStampEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;

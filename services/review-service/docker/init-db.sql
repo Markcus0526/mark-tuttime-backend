@@ -47,12 +47,13 @@ CREATE TABLE reviews
 -- 3. Moderation Logs
 CREATE TABLE review_moderation_logs
 (
-    id           UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     review_id    UUID        NOT NULL,
     moderator_id UUID        NOT NULL,
     action       VARCHAR(50) NOT NULL,
     reason       TEXT,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_moderation_review FOREIGN KEY (review_id)
         REFERENCES reviews (id) ON DELETE CASCADE
@@ -72,7 +73,8 @@ CREATE TABLE rating_aggregates
       "4": 0,
       "5": 0
     }',
-    last_updated   TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at     TIMESTAMPTZ            DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ            DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 5. Performance Indexes

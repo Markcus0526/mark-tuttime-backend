@@ -1,7 +1,7 @@
 package com.tuttime.review.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+
 import java.util.UUID;
 
 @Schema(description = "Review output payload")
@@ -23,4 +23,5 @@ public record ReviewResponse(
 
 		@Schema(description = "ISO-8601 Timestamp")
 		String createdAt
-) {}
+) {
+}

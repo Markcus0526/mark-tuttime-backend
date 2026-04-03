@@ -7,8 +7,12 @@ import java.util.UUID;
 
 public interface DiscountService {
 	DiscountDto.DiscountResponse createDiscount(DiscountDto.DiscountRequest request);
+
 	DiscountDto.DiscountResponse updateDiscount(UUID id, DiscountDto.DiscountRequest request);
+
 	DiscountDto.DiscountResponse getDiscountById(UUID id);
+
 	List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID referenceId);
+
 	void deleteDiscount(UUID id);
 }

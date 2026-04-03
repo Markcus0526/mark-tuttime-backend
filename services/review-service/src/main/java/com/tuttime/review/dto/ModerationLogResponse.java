@@ -1,7 +1,6 @@
 package com.tuttime.review.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -13,4 +12,5 @@ public record ModerationLogResponse(
 		String action,
 		String reason,
 		OffsetDateTime createdAt
-) {}
+) {
+}

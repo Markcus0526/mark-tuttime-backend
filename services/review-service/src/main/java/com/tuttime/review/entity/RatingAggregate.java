@@ -9,14 +9,17 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 @Entity
 @Table(name = "rating_aggregates", schema = "review_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RatingAggregate {
 
 	@Id
@@ -39,8 +42,5 @@ public class RatingAggregate {
 	@Column(name = "rating_dist", columnDefinition = "jsonb")
 	@Builder.Default
 	private Map<String, Integer> ratingDistribution = new HashMap<>();
-
-	@Column(name = "last_updated")
-	private OffsetDateTime lastUpdated;
 }
 

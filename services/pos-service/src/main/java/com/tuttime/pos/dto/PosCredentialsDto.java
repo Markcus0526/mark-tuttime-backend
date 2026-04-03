@@ -20,4 +20,5 @@ public record PosCredentialsDto(
 		String apiKey,
 
 		String apiToken
-) {}
+) {
+}

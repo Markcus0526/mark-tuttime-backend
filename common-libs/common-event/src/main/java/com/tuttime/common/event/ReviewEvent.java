@@ -6,12 +6,15 @@ import java.util.UUID;
 public class ReviewEvent {
 
 	/**
-	 * Shared event record for Kafka topics
+	 * Shared Record: Triggered when a moderator approves a review
 	 */
-	public record RatingUpdateEvent(
+	public record ReviewApprovedEvent(
+			UUID reviewId,
 			UUID restaurantId,
-			BigDecimal newAverage,
-			int totalReviews
+			UUID userId,
+			int rating,
+			String comment,
+			String approvedAt
 	)  implements BaseEvent {
 	}
 }

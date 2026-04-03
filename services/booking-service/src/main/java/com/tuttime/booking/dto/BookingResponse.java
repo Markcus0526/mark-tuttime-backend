@@ -2,7 +2,8 @@ package com.tuttime.booking.dto;
 
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.enums.BookingStatus;
-import java.time.Instant;
+
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -16,12 +17,12 @@ public record BookingResponse(
 		UUID zoneId,
 		UUID tableId,
 		BookingStatus status,
-		Instant bookingDatetime,
+		OffsetDateTime bookingDatetime,
 		Integer duration,
 		Integer partySize,
 		Integer gracePeriodMins,
-		Instant createdAt,
-		Instant updatedAt,
+		OffsetDateTime createdAt,
+		OffsetDateTime updatedAt,
 		String cancellationReason
 ) {
 	/**

@@ -10,8 +10,11 @@ import java.util.Set;
 
 @Entity
 @Table(name = "menu_items")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MenuItem extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)

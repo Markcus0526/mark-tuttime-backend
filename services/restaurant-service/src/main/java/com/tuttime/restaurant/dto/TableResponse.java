@@ -1,7 +1,10 @@
 package com.tuttime.restaurant.dto;
 
 import com.tuttime.restaurant.enums.TableStatus;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

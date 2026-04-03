@@ -332,24 +332,24 @@ public class AuthServiceImpl implements AuthService {
 		// Step 3: Find or create user by phone number
 		User user = userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber)
 				.orElseGet(() -> {
-			User newUser = new User();
-			newUser.setPhoneNumber(phoneNumber);
-			newUser.setStatus(UserStatus.ACTIVE);
-			newUser.setCreatedAt(OffsetDateTime.now());
-			// other default user properties
-			return userRepository.save(newUser);
-		});
+					User newUser = new User();
+					newUser.setPhoneNumber(phoneNumber);
+					newUser.setStatus(UserStatus.ACTIVE);
+					newUser.setCreatedAt(OffsetDateTime.now());
+					// other default user properties
+					return userRepository.save(newUser);
+				});
 
 		// Optional: If you want to ensure the user has an auth method for PHONE_SMS
 		userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.PHONE_SMS)
 				.orElseGet(() -> {
-			UserAuthMethod authMethod = new UserAuthMethod();
-			authMethod.setUserId(user.getId());
-			authMethod.setAuthType(AuthProvider.PHONE_SMS);
-			authMethod.setVerified(true);
-			authMethod.setCreatedAt(OffsetDateTime.now());
-			return userAuthMethodRepository.save(authMethod);
-		});
+					UserAuthMethod authMethod = new UserAuthMethod();
+					authMethod.setUserId(user.getId());
+					authMethod.setAuthType(AuthProvider.PHONE_SMS);
+					authMethod.setVerified(true);
+					authMethod.setCreatedAt(OffsetDateTime.now());
+					return userAuthMethodRepository.save(authMethod);
+				});
 
 		// Step 4: Generate JWT tokens or whatever your AuthResponse requires
 		String accessToken = jwtTokenProvider.generateAccessToken(user);

@@ -25,10 +25,10 @@ CREATE TABLE bookings
     party_size          INT                 NOT NULL CHECK (party_size > 0),
     lead_time_minutes   INT                          DEFAULT 0,
     grace_period_mins   INT                          DEFAULT 15,
-    created_at          TIMESTAMPTZ         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP,
     cancellation_reason VARCHAR(255),
-    auto_cancelled      BOOLEAN                      DEFAULT FALSE
+    auto_cancelled      BOOLEAN                      DEFAULT FALSE,
+    created_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 2. Booking Status History (Auditing)
@@ -40,7 +40,9 @@ CREATE TABLE booking_status_histories
     new_status booking_status_enum NOT NULL,
     changed_by UUID, -- User or System ID
     changed_at TIMESTAMPTZ         NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    reason     VARCHAR(255)
+    reason     VARCHAR(255),
+    created_at TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 3. Booking Notifications (Tracking communication)
@@ -51,7 +53,9 @@ CREATE TABLE booking_notifications
     notification_type VARCHAR(50)  NOT NULL, -- SMS, EMAIL, PUSH
     status            VARCHAR(20)  NOT NULL, -- SENT, FAILED, DELIVERED
     recipient_contact VARCHAR(255) NOT NULL,
-    sent_at           TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+    sent_at           TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at        TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE waitlist_entries

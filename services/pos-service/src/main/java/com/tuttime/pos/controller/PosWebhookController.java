@@ -24,7 +24,7 @@ public class PosWebhookController {
 	// Example for iiko webhook endpoint
 	@PostMapping("/iiko")
 	public ResponseEntity<String> receiveIikoWebhook(@RequestBody String payload,
-	                                                       @RequestHeader(name = "X-Signature", required = false) String signature) {
+	                                                 @RequestHeader(name = "X-Signature", required = false) String signature) {
 
 		return processWebhook("iiko", payload, signature);
 	}
@@ -32,7 +32,7 @@ public class PosWebhookController {
 	// Example for rkeeper webhook endpoint
 	@PostMapping("/rkeeper")
 	public ResponseEntity<String> receiveRKeeperWebhook(@RequestBody String payload,
-	                                                          @RequestHeader(name = "X-Signature", required = false) String signature) {
+	                                                    @RequestHeader(name = "X-Signature", required = false) String signature) {
 
 		return processWebhook("rkeeper", payload, signature);
 	}

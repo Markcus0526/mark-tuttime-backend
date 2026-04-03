@@ -1,7 +1,10 @@
 package com.tuttime.pos.dto.rkeeper.menu;
 
 import com.tuttime.pos.dto.rkeeper.order.RKeeperModifierDTO;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 

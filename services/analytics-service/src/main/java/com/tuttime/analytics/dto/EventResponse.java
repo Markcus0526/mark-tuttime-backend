@@ -10,4 +10,5 @@ public record EventResponse(
 		UUID entityId,
 		Object payload,
 		OffsetDateTime occurredAt
-) {}
+) {
+}

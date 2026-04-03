@@ -8,7 +8,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "review_moderation_logs", schema = "review_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ReviewModerationLog {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)

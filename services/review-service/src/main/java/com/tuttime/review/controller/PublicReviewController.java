@@ -1,8 +1,10 @@
 package com.tuttime.review.controller;
 
 import com.tuttime.common.auth.security.UserContext;
-import com.tuttime.review.dto.*;
-import com.tuttime.common.dto.ApiRes; // Assuming your ApiRes is in a common package
+import com.tuttime.common.dto.ApiRes;
+import com.tuttime.review.dto.RatingStatsResponse;
+import com.tuttime.review.dto.ReviewRequest;
+import com.tuttime.review.dto.ReviewResponse;
 import com.tuttime.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

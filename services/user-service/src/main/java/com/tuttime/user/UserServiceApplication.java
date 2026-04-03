@@ -11,6 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -23,18 +24,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication(
 		scanBasePackages = "com.tuttime",
-		exclude = {
-				// Exclude Spring Boot's default cache auto-configuration
-				// Our custom RedisConfig in commons-events will provide the CacheManager
-				CacheAutoConfiguration.class
-		}
+		exclude = CacheAutoConfiguration.class
 )
 @Slf4j
-@EnableDiscoveryClient
-@EnableJpaAuditing(dateTimeProviderRef = "offsetDateTimeProvider")
 @EnableScheduling
-@EntityScan("com.tuttime.user.entity")
-@EnableJpaRepositories("com.tuttime.user.repository")
 @EnableConfigurationProperties(EmailProperties.class)
 public class UserServiceApplication {
 
@@ -50,16 +43,15 @@ public class UserServiceApplication {
 	@EventListener(ApplicationReadyEvent.class)
 	public void logStartupInfo(ApplicationReadyEvent event) {
 		Environment env = event.getApplicationContext().getEnvironment();
-		String[] activeProfiles = env.getActiveProfiles();
-		String graylogHost = env.getProperty("graylog.host");
-		String graylogPort = env.getProperty("graylog.port");
+
+		// Modern way to check profiles in Spring 3.x
+		boolean isGraylogEnabled = env.acceptsProfiles(Profiles.of("graylog-enabled"));
 
 		log.info("==========================================");
-		log.info("Active Spring Profiles: {}", String.join(", ", activeProfiles.length > 0 ? activeProfiles : new String[]{"default"}));
-		log.info("Graylog Host: {}", graylogHost);
-		log.info("Graylog Port: {}", graylogPort);
-		log.info("Graylog Enabled: {}", java.util.Arrays.asList(activeProfiles).contains("graylog-enabled"));
-		log.info("Test log message to verify Graylog integration");
+		log.info("Active Profiles: {}", String.join(", ", env.getActiveProfiles()));
+		log.info("Graylog Host: {}", env.getProperty("graylog.host", "NOT SET"));
+		log.info("Graylog Port: {}", env.getProperty("graylog.port", "NOT SET"));
+		log.info("Graylog Status: {}", isGraylogEnabled ? "ENABLED" : "DISABLED");
 		log.info("==========================================");
 	}
 }

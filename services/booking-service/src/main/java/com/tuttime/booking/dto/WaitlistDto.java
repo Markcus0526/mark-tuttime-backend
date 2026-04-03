@@ -1,10 +1,8 @@
 package com.tuttime.booking.dto;
 
 import com.tuttime.booking.entity.enums.WaitlistStatus;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -15,7 +13,8 @@ public class WaitlistDto {
 			@NotNull UUID branchId,
 			UUID zoneId,
 			@NotNull Integer partySize
-	) {}
+	) {
+	}
 
 	public record WaitlistResponse(
 			UUID id,

@@ -37,7 +37,7 @@ public class IikoApiClient {
 				.retrieve()
 				.bodyToMono(Void.class)
 				.doOnSuccess(v -> logger.info("iiko booking sync successful"))
-                .doOnError(e -> logger.error("iiko booking sync failed", e));
+				.doOnError(e -> logger.error("iiko booking sync failed", e));
 	}
 
 	// Sync order example
@@ -50,7 +50,7 @@ public class IikoApiClient {
 				.retrieve()
 				.bodyToMono(Void.class)
 				.doOnSuccess(v -> logger.info("iiko order sync successful"))
-                .doOnError(e -> logger.error("iiko order sync failed", e));
+				.doOnError(e -> logger.error("iiko order sync failed", e));
 	}
 
 	// Sync menu example
@@ -63,6 +63,6 @@ public class IikoApiClient {
 				.retrieve()
 				.bodyToMono(Void.class)
 				.doOnSuccess(v -> logger.info("iiko menu sync successful"))
-                .doOnError(e -> logger.error("iiko menu sync failed", e));
+				.doOnError(e -> logger.error("iiko menu sync failed", e));
 	}
 }

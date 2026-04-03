@@ -1,6 +1,7 @@
 package com.tuttime.pos.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.OffsetDateTime;
 
 @Schema(description = "Details of an individual synchronization attempt")
@@ -17,4 +18,5 @@ public record SyncLogDetail(
 
 		@Schema(description = "Error message or code if the status is FAILED", example = "POS_TERMINAL_OFFLINE")
 		String errorMessage
-) {}
+) {
+}

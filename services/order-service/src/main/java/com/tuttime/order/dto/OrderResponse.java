@@ -15,4 +15,5 @@ public record OrderResponse(
 		BigDecimal totalAmount,
 		List<OrderItemResponse> items,
 		OffsetDateTime createdAt
-) {}
+) {
+}

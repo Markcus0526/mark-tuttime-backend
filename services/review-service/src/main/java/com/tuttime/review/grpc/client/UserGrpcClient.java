@@ -5,6 +5,7 @@ import com.tuttime.common.proto.UserServiceGrpc;
 import com.tuttime.common.proto.UserValidResponse;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
+
 import java.util.UUID;
 
 @Service

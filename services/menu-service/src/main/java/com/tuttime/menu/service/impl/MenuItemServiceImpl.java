@@ -1,11 +1,11 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.menu.entity.MenuItem;
-import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.dto.MenuItemDto;
-import com.tuttime.menu.repository.MenuItemRepository;
+import com.tuttime.menu.entity.MenuCategory;
+import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.repository.MenuCategoryRepository;
+import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -104,7 +104,8 @@ public class MenuItemServiceImpl implements MenuItemService {
 	}
 
 	@CacheEvict(value = "branch_menus", key = "#branchId")
-	public void evictCacheByBranch(UUID branchId) {}
+	public void evictCacheByBranch(UUID branchId) {
+	}
 
 	private MenuItemDto.MenuItemDetailedResponse mapToDetailedResponse(MenuItem item) {
 		return new MenuItemDto.MenuItemDetailedResponse(

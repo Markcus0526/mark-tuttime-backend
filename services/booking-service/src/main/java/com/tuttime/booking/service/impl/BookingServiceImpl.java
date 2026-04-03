@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -41,12 +41,12 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional
 	public Booking createBooking(BookingRequest request) {
 		// Calculate the end time based on requested duration
-		Instant startTime = request.bookingDatetime();
-		Instant endTime = startTime.plus(Duration.ofMinutes(request.duration()));
+		OffsetDateTime startTime = request.bookingDatetime();
+		OffsetDateTime endTime = startTime.plus(Duration.ofMinutes(request.duration()));
 
 		// 1. Distributed Locking (Redis)
 		// Lock key includes table ID and start time to prevent concurrent requests for the same slot
-		String lockKey = LOCK_PREFIX + request.tableId() + ":" + startTime.getEpochSecond();
+		String lockKey = LOCK_PREFIX + request.tableId() + ":" + startTime;
 		RLock lock = redissonClient.getLock(lockKey);
 
 		try {

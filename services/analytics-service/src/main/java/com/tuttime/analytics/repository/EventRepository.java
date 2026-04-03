@@ -20,24 +20,24 @@ public interface EventRepository extends JpaRepository<SystemEvent, UUID> {
 	List<SystemEvent> findByEntityId(UUID entityId);
 
 	@Query(value = """
-        SELECT entity_id as restaurantId, COUNT(*) as bookingCount
-        FROM analytics_service.system_events
-        WHERE event_type = 'BOOKING_CREATED'
-        AND occurred_at >= :since
-        GROUP BY entity_id
-        ORDER BY bookingCount DESC
-        LIMIT 10
-        """, nativeQuery = true)
+			SELECT entity_id as restaurantId, COUNT(*) as bookingCount
+			FROM analytics_service.system_events
+			WHERE event_type = 'BOOKING_CREATED'
+			AND occurred_at >= :since
+			GROUP BY entity_id
+			ORDER BY bookingCount DESC
+			LIMIT 10
+			""", nativeQuery = true)
 	List<TopRestaurantProjection> findTopRestaurantsByBookingCount(@Param("since") OffsetDateTime since);
 
 	@Query(value = """
-        SELECT EXTRACT(HOUR FROM occurred_at) as hourOfDay, COUNT(*) as count
-        FROM analytics_service.system_events
-        WHERE event_type = 'BOOKING_CREATED'
-        AND occurred_at >= :since
-        GROUP BY hourOfDay
-        ORDER BY hourOfDay ASC
-        """, nativeQuery = true)
+			SELECT EXTRACT(HOUR FROM occurred_at) as hourOfDay, COUNT(*) as count
+			FROM analytics_service.system_events
+			WHERE event_type = 'BOOKING_CREATED'
+			AND occurred_at >= :since
+			GROUP BY hourOfDay
+			ORDER BY hourOfDay ASC
+			""", nativeQuery = true)
 	List<HourlyBookingProjection> findBookingHeatmap(@Param("since") OffsetDateTime since);
 
 	/**

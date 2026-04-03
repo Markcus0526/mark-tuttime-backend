@@ -1,14 +1,19 @@
 package com.tuttime.pos.entity;
 
-import com.tuttime.common.entity.BaseEntity;
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "pos_sync_queues", schema = "pos_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class PosSyncQueue extends BaseEntity {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PosSyncQueue extends BaseTimeStampEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;

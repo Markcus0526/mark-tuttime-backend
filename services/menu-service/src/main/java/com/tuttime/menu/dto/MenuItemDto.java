@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +27,8 @@ public class MenuItemDto {
 
 			@Schema(description = "If false, prevents customer selection", example = "true")
 			Boolean isAvailable
-	) {}
+	) {
+	}
 
 	// Detailed response with all groups and modifiers (for item selection in Flutter)
 	@Schema(description = "Menu Item response details")
@@ -38,7 +40,8 @@ public class MenuItemDto {
 			BigDecimal price,
 			Boolean isAvailable,
 			List<ModifierGroupDto.ModifierGroupResponse> modifierGroups
-	) {}
+	) {
+	}
 
 	// Compact summary response (for basic list rendering)
 	public record MenuItemResponseSummary(
@@ -47,5 +50,6 @@ public class MenuItemDto {
 			BigDecimal price,
 			Boolean isAvailable,
 			Integer priority
-	) {}
+	) {
+	}
 }
