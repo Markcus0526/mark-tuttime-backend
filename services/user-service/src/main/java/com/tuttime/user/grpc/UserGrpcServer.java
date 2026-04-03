@@ -4,6 +4,7 @@ import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.UserByIdRequest;
 import com.tuttime.common.proto.UserResponse;
 import com.tuttime.common.proto.UserServiceGrpc;
+import com.tuttime.common.proto.UserValidResponse;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.repository.UserRepository;
 import io.grpc.Status;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @GrpcService
 @RequiredArgsConstructor
-public class UserGrpcServiceProvider extends UserServiceGrpc.UserServiceImplBase {
+public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 	private final UserRepository userRepository;
 
@@ -68,7 +69,7 @@ public class UserGrpcServiceProvider extends UserServiceGrpc.UserServiceImplBase
 						.map(Enum::name)
 						.collect(Collectors.joining(","));
 
-				responseBuilder.setRoles(authMethods);
+				responseBuilder.setAuthMethods(authMethods);
 			}
 			if (!user.getLocations().isEmpty()) {
 				SequencedSet<UserLocation> sequencedLocations = (SequencedSet<UserLocation>) user.getLocations();
@@ -93,5 +94,42 @@ public class UserGrpcServiceProvider extends UserServiceGrpc.UserServiceImplBase
 					.withCause(e)
 					.asRuntimeException());
 		}
+	}
+
+	@Override
+	public void validateUser(UserByIdRequest request, StreamObserver<UserValidResponse> responseObserver) {
+		log.info("gRPC Request: Validating user ID {}", request.getUserId());
+
+		boolean isValid = false;
+		String role = "UNKNOWN";
+
+		try {
+			UUID userId = UUID.fromString(request.getUserId());
+			User user = userRepository.findByIdAndIsDeletedFalse(userId)
+					.orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+			UserValidResponse.Builder responseBuilder = UserValidResponse.newBuilder()
+					.setIsValid(!user.isDeleted());
+			if (user.getRoles() != null) {
+				String combinedRoles = user.getRoles().stream()
+						.map(UserRole::getRole)
+						.map(Role::getName)
+						.collect(Collectors.joining(","));
+
+				responseBuilder.setRoles(combinedRoles);
+			}
+		} catch (IllegalArgumentException e) {
+			log.error("Invalid UUID format provided via gRPC: {}", request.getUserId());
+		}
+
+		// Build the Protobuf response
+		UserValidResponse response = UserValidResponse.newBuilder()
+				.setIsValid(isValid)
+				.setRoles(role)
+				.build();
+
+		// Send response and close the stream
+		responseObserver.onNext(response);
+		responseObserver.onCompleted();
 	}
 }

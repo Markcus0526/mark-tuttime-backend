@@ -1,82 +1,87 @@
 -- ============================================================================
--- REVIEW SERVICE - Database Schema
--- Database: review_service_db
--- Schema: review_service
--- 
--- NOTE: This script runs automatically when the database is first initialized.
--- If the database already exists, you need to drop the volume and recreate it.
+-- REVIEW SERVICE - Optimized Schema
+-- Improvements: Automatic Timestamp Triggers, Plural Consistency,
+-- and Aggregate Sync Logic.
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS review_service;
 SET
 search_path TO review_service, public;
 
--- Set timezone to UTC for all timestamp operations
-SET
-timezone = 'UTC';
-
--- Set client encoding to UTF-8 to handle Unicode characters
-SET
-client_encoding = 'UTF8';
-
--- Suppress NOTICE messages
-SET
-client_min_messages TO WARNING;
-
--- Set search_path after schema is created
-SET
-search_path TO review_service, public;
-
--- Enable required PostgreSQL extensions
+-- Enable UUID extension
 CREATE
 EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Table: Review
+-- 1. Create a Reusable Trigger Function for 'updated_at'
+-- PostgreSQL requires this to automate the updated_at column
+CREATE
+OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at
+= CURRENT_TIMESTAMP;
+RETURN NEW;
+END;
+$$
+LANGUAGE plpgsql;
+
+-- 2. Reviews Table
 CREATE TABLE reviews
 (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id       UUID     NOT NULL,
-    restaurant_id UUID     NOT NULL,
-    rating        SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    comment TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES "users" (id) ON DELETE CASCADE,
-    CONSTRAINT fk_review_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants (id) ON DELETE CASCADE
+    id            UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
+    user_id       UUID        NOT NULL,           -- Logical FK to User Service
+    restaurant_id UUID        NOT NULL,           -- Logical FK to Restaurant Service
+    rating        SMALLINT    NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment       TEXT,
+
+    -- Status for Moderation (Page 9 of PDF)
+    status        VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'DELETED')),
+
+    -- Metadata
+    version       BIGINT      NOT NULL DEFAULT 0, -- For JPA Optimistic Locking
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes for Review
-CREATE INDEX idx_review_user_id ON review (user_id);
-CREATE INDEX idx_review_restaurant_id ON review (restaurant_id);
-CREATE INDEX idx_review_status ON review (status);
-CREATE INDEX idx_review_created_at ON review (created_at);
-
--- Table: Review_Moderation_Log
+-- 3. Moderation Logs
 CREATE TABLE review_moderation_logs
 (
     id           UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     review_id    UUID        NOT NULL,
-    moderator_id UUID,
+    moderator_id UUID        NOT NULL,
     action       VARCHAR(50) NOT NULL,
     reason       TEXT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_moderation_review FOREIGN KEY (review_id) REFERENCES reviews (id) ON DELETE CASCADE,
-    CONSTRAINT fk_moderation_moderator FOREIGN KEY (moderator_id) REFERENCES "users" (id) ON DELETE SET NULL
+
+    CONSTRAINT fk_moderation_review FOREIGN KEY (review_id)
+        REFERENCES reviews (id) ON DELETE CASCADE
 );
 
--- Indexes for Review_Moderation_Log
-CREATE INDEX idx_moderation_review_id ON review_moderation_logs (review_id);
-CREATE INDEX idx_moderation_moderator_id ON review_moderation_logs (moderator_id);
-
--- Table: Rating_Aggregate
-CREATE TABLE rating_aggregate
+-- 4. Rating Aggregates (Optimized for Read Performance)
+CREATE TABLE rating_aggregates
 (
     restaurant_id  UUID PRIMARY KEY,
     average_rating DECIMAL(3, 2) NOT NULL DEFAULT 0.00,
     total_reviews  INTEGER       NOT NULL DEFAULT 0,
-    last_updated   TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_rating_aggregate_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants (id) ON DELETE CASCADE
+    -- Store distribution for UI: {1: 5, 2: 10, ...}
+    rating_dist    JSONB                  DEFAULT '{
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    }',
+    last_updated   TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 5. Performance Indexes
+CREATE INDEX idx_reviews_restaurant_status ON reviews (restaurant_id, status);
+CREATE INDEX idx_reviews_user_id ON reviews (user_id);
+CREATE INDEX idx_reviews_created_at ON reviews (created_at DESC);
+
+-- 6. Apply Updated_At Triggers
+CREATE TRIGGER trg_reviews_updated_at
+    BEFORE UPDATE
+    ON reviews
+    FOR EACH ROW EXECUTE PROCEDURE update_timestamp();

@@ -1,24 +1,30 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.ReviewDto;
-
-import java.util.List;
-
+import com.tuttime.review.dto.*;
 import java.util.UUID;
 
+/**
+ * Service interface for managing restaurant reviews and aggregate ratings.
+ */
 public interface ReviewService {
 
-	ReviewDto getReviewById(UUID id);
+	/**
+	 * Creates a new review in PENDING status.
+	 */
+	ReviewResponse createReview(UUID userId, ReviewRequest request);
 
-	List<ReviewDto> getReviewsByRestaurant(UUID restaurantId);
+	/**
+	 * Approves a review and updates the restaurant's aggregate rating.
+	 */
+	void approveReview(UUID reviewId, UUID moderatorId, String reason);
 
-	List<ReviewDto> getReviewsByUser(UUID userId);
+	/**
+	 * Rejects a review for policy violations.
+	 */
+	void rejectReview(UUID reviewId, UUID moderatorId, String reason);
 
-	List<ReviewDto> getReviewsByStatus(String status);
-
-	ReviewDto createReview(ReviewDto reviewDto);
-
-	ReviewDto updateReview(UUID id, ReviewDto reviewDto);
-
-	void deleteReview(UUID id);
+	/**
+	 * Retrieves aggregated ratings for a specific restaurant.
+	 */
+	RatingStatsResponse getRestaurantStats(UUID restaurantId);
 }

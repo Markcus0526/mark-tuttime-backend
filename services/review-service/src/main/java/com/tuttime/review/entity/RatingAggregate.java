@@ -1,42 +1,46 @@
 package com.tuttime.review.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@Table(name = "rating_aggregate")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "rating_aggregates", schema = "review_service")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class RatingAggregate {
 
 	@Id
-	@Column(name = "restaurant_id", nullable = false, updatable = false)
+	@Column(name = "restaurant_id")
 	private UUID restaurantId;
 
+	@Column(precision = 3, scale = 2)
 	@Builder.Default
-	@Column(name = "average_rating", nullable = false, precision = 3, scale = 2)
 	private BigDecimal averageRating = BigDecimal.ZERO;
 
+	@Column(name = "total_reviews")
 	@Builder.Default
-	@Column(name = "total_reviews", nullable = false)
-	private int totalReviews = 0;
+	private Integer totalReviews = 0;
 
+	/**
+	 * Perfect JSONB Mapping: Hibernate 6.5 (Boot 3.3.x default)
+	 * automatically converts this Map to/from a PostgreSQL JSONB column.
+	 */
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "rating_dist", columnDefinition = "jsonb")
 	@Builder.Default
-	@Column(name = "last_updated", nullable = false)
-	private Instant lastUpdated = Instant.now();
+	private Map<String, Integer> ratingDistribution = new HashMap<>();
 
-	@PrePersist
-	@PreUpdate
-	protected void onUpdate() {
-		lastUpdated = Instant.now();
-	}
+	@Column(name = "last_updated")
+	private OffsetDateTime lastUpdated;
 }
+

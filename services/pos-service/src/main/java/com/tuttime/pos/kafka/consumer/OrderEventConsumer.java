@@ -1,4 +1,4 @@
-package com.tuttime.pos.kafka;
+package com.tuttime.pos.kafka.consumer;
 
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.OrderEvent;

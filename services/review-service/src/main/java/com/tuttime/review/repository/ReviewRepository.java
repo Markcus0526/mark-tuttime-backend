@@ -1,6 +1,9 @@
 package com.tuttime.review.repository;
 
 import com.tuttime.review.entity.Review;
+import com.tuttime.review.entity.enums.ReviewStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,7 +12,28 @@ import java.util.UUID;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
-	List<Review> findByRestaurantId(UUID restaurantId);
-	List<Review> findByUserId(UUID userId);
-	List<Review> findByStatus(String status);
+
+	// Spring generates the SQL:
+	// SELECT * FROM reviews WHERE restaurant_id = ? AND status = ?
+	List<Review> findByRestaurantIdAndStatus(UUID restaurantId, ReviewStatus status);
+
+	/**
+	 * Fetches approved reviews for a restaurant with Pagination.
+	 * Perfect for infinite scroll on the Mobile App.
+	 */
+	Page<Review> findByRestaurantIdAndStatusOrderByCreatedAtDesc(
+			UUID restaurantId,
+			ReviewStatus status,
+			Pageable pageable
+	);
+
+	/**
+	 * Used by the Admin Panel to find reviews requiring moderation.
+	 */
+	List<Review> findByStatus(ReviewStatus status);
+
+	/**
+	 * Prevents a user from spamming multiple reviews for the same restaurant.
+	 */
+	boolean existsByUserIdAndRestaurantId(UUID userId, UUID restaurantId);
 }

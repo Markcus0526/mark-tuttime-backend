@@ -11,7 +11,9 @@ public sealed interface BaseEvent permits
 		PaymentEvent.PaymentCompletedEvent,
 		PaymentEvent.PaymentRefundedEvent,
 
-		PosEvent.PosSyncedEvent
+		PosEvent.PosSyncedEvent,
+
+		ReviewEvent.RatingUpdateEvent
 {}
 
 

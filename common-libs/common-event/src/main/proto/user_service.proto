@@ -9,6 +9,7 @@ option java_outer_classname = "UserServiceProto";
 // User Service gRPC
 service UserService {
   rpc GetUserById (UserByIdRequest) returns (UserResponse);
+  rpc ValidateUser(UserByIdRequest) returns (UserValidResponse);
 
 }
 
@@ -34,4 +35,9 @@ message UserResponse {
   // Relationships
   double latitude = 14;           // Latitude for location-based features
   double longitude = 15;          // Longitude for location-based features
+}
+
+message UserValidResponse {
+  string roles = 1;
+  bool is_valid = 2;
 }
