@@ -92,7 +92,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 					payment.getCurrency(),
 					OffsetDateTime.now()
 			);
-			eventProducer.publishPaymentCompletedEvent(event);
+			eventProducer.sendPaymentCompletedEvent(event);
 
 			log.info("Payment SUCCESS confirmed for Booking ID: {}", bookingId);
 		}

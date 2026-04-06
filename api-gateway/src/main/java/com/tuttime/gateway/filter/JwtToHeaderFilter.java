@@ -1,8 +1,12 @@
 package com.tuttime.gateway.filter;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -13,40 +17,52 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Component
+@Slf4j
+@RequiredArgsConstructor
 public class JwtToHeaderFilter implements GlobalFilter, Ordered {
+
+	// Inject the Reactive template we configured earlier
+	private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 		return ReactiveSecurityContextHolder.getContext()
 				.flatMap(securityContext -> {
-					// Check if the authentication principal is actually a JWT
 					if (securityContext.getAuthentication() != null &&
 							securityContext.getAuthentication().getPrincipal() instanceof Jwt jwt) {
 
-						// Extract custom claims
+						String jti = jwt.getId(); // Extract unique JWT ID (JTI)
 						String userId = jwt.getClaimAsString("userId");
-						List<String> roles = jwt.getClaimAsStringList("roles");
-						String rolesString = roles != null ? String.join(",", roles) : "";
 
-						// Mutate the request with headers
-						ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
-								.header("X-User-Id", userId != null ? userId : "")
-								.header("X-User-Roles", rolesString)
-								.build();
+						// 1. Check Redis for JTI Blacklist
+						return reactiveRedisTemplate.hasKey("blacklist:jti:" + jti)
+								.flatMap(isBlacklisted -> {
+									if (Boolean.TRUE.equals(isBlacklisted)) {
+										log.warn("Blocking request: JTI {} is blacklisted for user {}", jti, userId);
+										exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+										return exchange.getResponse().setComplete();
+									}
 
-						// Return the chain with the modified exchange
-						return chain.filter(exchange.mutate().request(modifiedRequest).build());
+									// 2. If not blacklisted, proceed with header injection
+									List<String> roles = jwt.getClaimAsStringList("roles");
+									String rolesString = roles != null ? String.join(",", roles) : "";
+
+									ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+											.header("X-User-Id", userId != null ? userId : "")
+											.header("X-User-Roles", rolesString)
+											.build();
+
+									return chain.filter(exchange.mutate().request(modifiedRequest).build());
+								});
 					}
-					// If auth exists but isn't a JWT, proceed normally
 					return chain.filter(exchange);
 				})
-				// CRITICAL: If the security context is empty (Guest/Public API), proceed normally!
 				.switchIfEmpty(chain.filter(exchange));
 	}
 
 	@Override
 	public int getOrder() {
-		// High priority: run right after security context resolves
+		// Run late enough for SecurityContext to be populated, but early enough for routing
 		return Ordered.LOWEST_PRECEDENCE - 10;
 	}
 }

@@ -3,7 +3,6 @@ package com.tuttime.common.event;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +20,8 @@ public class EventProducer {
 	private final KafkaMetrics kafkaMetrics;
 
 	// Topics
-	public static final String TOPIC_USER = "tuttime.user";
+	public static final String TOPIC_USER_SECURITY_UPDATED = "tuttime.user.security.updated";
+
 	public static final String TOPIC_RESTAURANT = "tuttime.restaurant";
 
 	public static final String TOPIC_MENU_UPDATED = "tuttime.menu.updated";
@@ -39,45 +39,50 @@ public class EventProducer {
 
 	public static final String TOPIC_REVIEW_APPROVED = "tuttime.review.approved";
 
-	// Booking Events Publisher
-	public void publishBookingCreatedEvent(BookingEvent.BookingCreatedEvent event) {
-		publishEvent(TOPIC_BOOKING_CREATED, event.restaurantId().toString(), event);
+	// User Events Publisher
+	public void sendUserSecurityEvent(UserEvent.SecurityEvent event) {
+		sendEvent(TOPIC_USER_SECURITY_UPDATED, event.userId(), event);
 	}
 
-	public void publishBookingConfirmedEvent(BookingEvent.BookingConfirmedEvent event) {
-		publishEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId(), event);
+	// Booking Events Publisher
+	public void sendBookingCreatedEvent(BookingEvent.BookingCreatedEvent event) {
+		sendEvent(TOPIC_BOOKING_CREATED, event.restaurantId().toString(), event);
+	}
+
+	public void sendBookingConfirmedEvent(BookingEvent.BookingConfirmedEvent event) {
+		sendEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId(), event);
 	}
 
 
 	// Payment Events Publisher
-	public void publishPaymentCompletedEvent(PaymentEvent.PaymentCompletedEvent event) {
-		publishEvent(TOPIC_PAYMENT_COMPLETED, event.bookingId().toString(), event);
+	public void sendPaymentCompletedEvent(PaymentEvent.PaymentCompletedEvent event) {
+		sendEvent(TOPIC_PAYMENT_COMPLETED, event.bookingId().toString(), event);
 	}
 
-	public void publishPaymentRefundEvent(PaymentEvent.PaymentRefundedEvent event) {
-		publishEvent(TOPIC_PAYMENT_REFUND, event.bookingId().toString(), event);
+	public void sendPaymentRefundEvent(PaymentEvent.PaymentRefundedEvent event) {
+		sendEvent(TOPIC_PAYMENT_REFUND, event.bookingId().toString(), event);
 	}
 
 	// Order Events Publisher
-	public void publishOrderCreatedEvent(OrderEvent.OrderCreatedEvent event) {
-		publishEvent(TOPIC_ORDER_CREATED, event.orderId(), event);
+	public void sendOrderCreatedEvent(OrderEvent.OrderCreatedEvent event) {
+		sendEvent(TOPIC_ORDER_CREATED, event.orderId(), event);
 	}
 
-	public void publishOrderStatusUpdatedEvent(OrderEvent.OrderStatusEvent event) {
-		publishEvent(TOPIC_ORDER_STATUS_UPDATED, event.bookingId().toString(), event);
+	public void sendOrderStatusUpdatedEvent(OrderEvent.OrderStatusEvent event) {
+		sendEvent(TOPIC_ORDER_STATUS_UPDATED, event.bookingId().toString(), event);
 	}
 
 	// Pos Events Publisher
-	public void publishPosSyncedEvent(PosEvent.PosSyncedEvent event) {
-		publishEvent(TOPIC_POS_SYNCED, event.entityId(), event);
+	public void sendPosSyncedEvent(PosEvent.PosSyncedEvent event) {
+		sendEvent(TOPIC_POS_SYNCED, event.entityId(), event);
 	}
 
 	// Review Events Publisher
-	public void publishReviewApprovedEvent(ReviewEvent.ReviewApprovedEvent event) {
-		publishEvent(TOPIC_REVIEW_APPROVED, event.restaurantId().toString(), event);
+	public void sendReviewApprovedEvent(ReviewEvent.ReviewApprovedEvent event) {
+		sendEvent(TOPIC_REVIEW_APPROVED, event.restaurantId().toString(), event);
 	}
 
-	private void publishEvent(String topic, String key, Object event) {
+	private void sendEvent(String topic, String key, Object event) {
 		try {
 			ensureTimestamp(event);
 

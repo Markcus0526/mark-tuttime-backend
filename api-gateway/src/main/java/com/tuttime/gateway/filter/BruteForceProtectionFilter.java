@@ -32,12 +32,10 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
 	 * List of endpoints that require brute-force protection
 	 */
 	private static final List<String> PROTECTED_ENDPOINTS = Arrays.asList(
-			"/api/v1/auth/signin",
-			"/api/v1/auth/signup",
+			"/api/v1/auth/login",
+			"/api/v1/auth/register",
 			"/api/v1/auth/refresh",
-			"/api/v1/password/forgot",
-			"/api/v1/users/login",
-			"/api/v1/users/register"
+			"/api/v1/password/forgot"
 	);
 
 	/**

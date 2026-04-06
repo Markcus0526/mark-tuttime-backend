@@ -254,4 +254,50 @@ public class UserController {
 		userService.updateUserLocation(id, userLocationRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
+
+	@Operation(summary = "Block user", description = "Blocks a user's access to the system. Triggers real-time rejection at the Gateway level.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "User blocked successfully",
+					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+							schema = @Schema(implementation = UserResponse.class))),
+			@ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+	})
+	@PatchMapping(value = "/{id}/block", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ApiRes<UserResponse>> blockUser(
+			@Parameter(description = "UUID of the user to block", required = true, in = ParameterIn.PATH)
+			@PathVariable UUID id) {
+
+		// Perfect security check using your UserContext pattern
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(ApiRes.error("Only administrators can block users"));
+		}
+
+		UserResponse blockedUser = userService.blockUser(id);
+		return ResponseEntity.ok(ApiRes.success(blockedUser));
+	}
+
+	@Operation(summary = "Unblock user", description = "Restores access for a previously blocked user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "User unblocked successfully",
+					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+							schema = @Schema(implementation = UserResponse.class))),
+			@ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
+			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+	})
+	@PatchMapping(value = "/{id}/unblock", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ApiRes<UserResponse>> unblockUser(
+			@Parameter(description = "UUID of the user to unblock", required = true, in = ParameterIn.PATH)
+			@PathVariable UUID id) {
+
+		if (!UserContext.isRoleAdmin()) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(ApiRes.error("Only administrators can unblock users"));
+		}
+
+		UserResponse unblockedUser = userService.unblockUser(id);
+		return ResponseEntity.ok(ApiRes.success(unblockedUser));
+	}
+
 }

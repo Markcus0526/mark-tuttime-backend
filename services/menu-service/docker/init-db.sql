@@ -73,8 +73,8 @@ CREATE TABLE menu_item_modifier_groups
     modifier_group_id UUID NOT NULL REFERENCES modifier_groups (id) ON DELETE CASCADE,
     priority          INT  NOT NULL    DEFAULT 0, -- For ordering display in the app
     created_at        TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
-        UNIQUE (menu_item_id, modifier_group_id)
+    updated_at        TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (menu_item_id, modifier_group_id)
 );
 
 -- 6. Stop Lists

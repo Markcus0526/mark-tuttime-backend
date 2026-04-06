@@ -1,16 +1,62 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
+
 package com.tuttime.common.proto;
 
 option java_multiple_files = true;
 option java_package = "com.tuttime.common.proto";
 option java_outer_classname = "UserServiceProto";
 
-// User Service gRPC
+// The User Service definition
 service UserService {
-  rpc GetUserById (UserByIdRequest) returns (UserResponse);
-  rpc ValidateUser(UserByIdRequest) returns (UserValidResponse);
+  // Synchronous call for Gateway and Services to validate a user
+  rpc ValidateUser(ValidateUserRequest) returns (UserContextResponse);
 
+  // Fetch basic profile info for display in Reviews/Bookings
+  rpc GetUserProfile(GetUserRequest) returns (UserProfileResponse);
+
+//  rpc GetUserById (UserByIdRequest) returns (UserResponse);
+
+}
+
+// REQUESTS
+message ValidateUserRequest {
+  string jwt_token = 1;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message UserContextResponse {
+  string user_id = 1;
+  string email = 2;
+  string roles = 3;
+  string status = 4;        // 'ACTIVE', 'INACTIVE', etc.
+  bool is_blocked = 5;      // Mapping from your 'is_blocked' column
+}
+
+message UserProfileResponse {
+  string id = 1;
+  string phone_number = 2;
+  string email = 3;
+  string full_name = 4;
+  string profile_picture = 5;
+  string status = 7; // Mapping the 'user_status' enum to String
+  bool is_blocked = 8;
+  bool is_deleted = 9;
+
+  string roles = 10;
+  string auth_methods = 11;
+
+  // Relationships
+  double latitude = 12;           // Latitude for location-based features
+  double longitude = 13;          // Longitude for location-based features
+
+  google.protobuf.Timestamp last_login = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
 }
 
 message UserByIdRequest {

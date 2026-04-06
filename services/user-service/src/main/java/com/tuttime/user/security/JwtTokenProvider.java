@@ -74,13 +74,30 @@ public class JwtTokenProvider {
 				.compact();
 	}
 
-	public boolean validateAccessToken(String token, UserDetails userDetails) {
+	/**
+	 * Validates the Access Token specifically using the accessTokenKey.
+	 */
+	public boolean validateAccessToken(String token) {
 		try {
-			String userId = getUserIdFromAccessToken(token).toString();
-			return userId.equals(userDetails.getUsername()) && !isTokenExpired(token, accessTokenKey);
+			Jwts.parser()
+					.verifyWith(accessTokenKey)
+					.build()
+					.parseSignedClaims(token);
+			return true;
 		} catch (JwtException | IllegalArgumentException e) {
 			return false;
 		}
+	}
+
+	/**
+	 * Extracts claims from the Access Token.
+	 */
+	public Claims getAccessClaims(String token) {
+		return Jwts.parser()
+				.verifyWith(accessTokenKey)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
 	}
 
 	public boolean validateRefreshToken(String token) {

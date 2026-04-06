@@ -16,6 +16,6 @@ public class RatingEventProducer {
 	public void sendReviewApproved(ReviewEvent.ReviewApprovedEvent event) {
 
 		// Use restaurantId as the message key to ensure ordered processing in Kafka partitions
-		eventProducer.publishReviewApprovedEvent(event);
+		eventProducer.sendReviewApprovedEvent(event);
 	}
 }

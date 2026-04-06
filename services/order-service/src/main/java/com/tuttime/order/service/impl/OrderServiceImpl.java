@@ -6,7 +6,8 @@ import com.tuttime.common.event.OrderEvent;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.order.dto.OrderRequest;
 import com.tuttime.order.dto.OrderResponse;
-import com.tuttime.order.dto.OrderUpdateRequest;
+import com.tuttime.order.dto
+		.OrderUpdateRequest;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.entity.OrderItem;
 import com.tuttime.order.entity.OrderItemModifier;
@@ -155,7 +156,7 @@ public class OrderServiceImpl implements OrderService {
 				newStatus,
 				OffsetDateTime.now()
 		);
-		eventProducer.publishOrderStatusUpdatedEvent(event);
+		eventProducer.sendOrderStatusUpdatedEvent(event);
 
 		return orderMapper.toResponse(orderRepository.save(order));
 	}
@@ -181,7 +182,7 @@ public class OrderServiceImpl implements OrderService {
 		Order updated = orderRepository.save(order);
 
 		// Kafka Event
-		eventProducer.publishOrderStatusUpdatedEvent(new OrderEvent.OrderStatusEvent(
+		eventProducer.sendOrderStatusUpdatedEvent(new OrderEvent.OrderStatusEvent(
 				updated.getId(), updated.getBookingId(), oldStatus, OrderStatus.CANCELED, OffsetDateTime.now()
 		));
 
@@ -235,7 +236,7 @@ public class OrderServiceImpl implements OrderService {
 		Order savedOrder = orderRepository.save(order);
 
 		// 4. Emit Kafka Event for POS and Analytics
-		eventProducer.publishOrderStatusUpdatedEvent(new OrderEvent.OrderStatusEvent(
+		eventProducer.sendOrderStatusUpdatedEvent(new OrderEvent.OrderStatusEvent(
 				savedOrder.getId(),
 				savedOrder.getBookingId(),
 				oldStatus,

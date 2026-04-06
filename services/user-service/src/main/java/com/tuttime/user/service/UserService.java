@@ -30,5 +30,9 @@ public interface UserService {
 	void resetPassword(String token, String newPassword);
 
 	void updateUserLocation(UUID userId, UserLocationRequest userLocationRequest);
+
+	UserResponse blockUser(UUID id);
+
+	UserResponse unblockUser(UUID id);
 }
 
