@@ -94,6 +94,7 @@ spring:
         mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+      spring.json.add.type.headers: true
     topics:
       user-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.user-blocks}
     consumer:

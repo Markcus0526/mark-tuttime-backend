@@ -493,6 +493,17 @@ spring:
     virtual:
       enabled: true
 
+  # Kafka configuration (uses environment variables from docker-compose.yml)
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: gateway-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
 server:
   port: 8080
 

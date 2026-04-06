@@ -24,6 +24,6 @@ public class PosEventProducer {
 				message,
 				OffsetDateTime.now()
 		);
-		eventProducer.publishPosSyncedEvent(event);
+		eventProducer.sendPosSyncedEvent(event);
 	}
 }

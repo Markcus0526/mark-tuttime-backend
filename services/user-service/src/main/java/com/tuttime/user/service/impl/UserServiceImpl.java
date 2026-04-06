@@ -7,6 +7,7 @@ import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.user.kafka.UserSecurityProducer;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.service.UserService;
@@ -23,6 +24,8 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -37,6 +40,7 @@ public class UserServiceImpl implements UserService {
 	private final UserLocationRepository userLocationRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final UserSecurityProducer userSecurityProducer;
 	// Inject services/utilities for sending SMS/email etc.
 	// private final NotificationService notificationService;
 
@@ -125,6 +129,12 @@ public class UserServiceImpl implements UserService {
 		user.setStatus(UserStatus.DELETED);
 		user.setDeletedAt(OffsetDateTime.now());
 		userRepository.save(user);
+
+		// 2. Broadcast to Kafka
+		// This tells the Gateway and Redis to block this ID permanently
+		userSecurityProducer.sendUserDeleted(id.toString());
+
+		log.info("User {} soft deleted and broadcasted to security topic", id);
 	}
 
 	@Override
@@ -276,6 +286,34 @@ public class UserServiceImpl implements UserService {
 		location.setRecordedAt(userLocationRequest.getRecordedAt() != null ? userLocationRequest.getRecordedAt() : OffsetDateTime.now());
 
 		userLocationRepository.save(location);
+	}
+
+	@Transactional
+	public UserResponse blockUser(UUID id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+		user.setBlocked(true); // Updates the is_blocked column from your SQL schema
+		userRepository.save(user);
+
+		// Broadcast to Kafka topic so Gateway updates Redis immediately
+		userSecurityProducer.sendUserBlocked(id.toString());
+
+		return userMapper.toResponse(user);
+	}
+
+	@Transactional
+	public UserResponse unblockUser(UUID id) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+		user.setBlocked(false);
+		userRepository.save(user);
+
+		// Broadcast to Kafka to remove from Redis blocklist
+		userSecurityProducer.sendUserUnblocked(id.toString());
+
+		return userMapper.toResponse(user);
 	}
 //
 //	// Helper method to map User entity to UserResponse

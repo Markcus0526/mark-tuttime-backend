@@ -110,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService {
 					amount,
 					OffsetDateTime.now()
 			);
-			eventProducer.publishPaymentRefundEvent(event);
+			eventProducer.sendPaymentRefundEvent(event);
 		} catch (StripeException e) {
 			throw new RuntimeException("Stripe Refund Error", e);
 		}
