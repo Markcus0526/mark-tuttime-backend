@@ -18,4 +18,8 @@ public interface MenuCategoryService {
 	FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId); // Master Endpoint
 
 	void deleteCategory(UUID id);
+
+	void validateBranchManager(UUID branchId);
+
+	void validateMenuCategory(UUID id);
 }

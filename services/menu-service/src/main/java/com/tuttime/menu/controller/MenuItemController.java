@@ -2,6 +2,7 @@ package com.tuttime.menu.controller;
 
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.menu.dto.MenuItemDto;
+import com.tuttime.menu.service.MenuCategoryService;
 import com.tuttime.menu.service.MenuItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @Tag(name = "Menu Items", description = "Endpoints for administering specific dishes and their prices")
 public class MenuItemController {
 
+	private final MenuCategoryService categoryService;
 	private final MenuItemService menuItemService;
 
 	@PostMapping
@@ -38,7 +40,11 @@ public class MenuItemController {
 					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailedResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid request payload")
 	})
-	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> createMenuItem(@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
+	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> createMenuItem(
+			@Valid @PathVariable UUID categoryId,
+			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
+		categoryService.validateMenuCategory(categoryId);
+
 		MenuItemDto.MenuItemDetailedResponse data = menuItemService.createMenuItem(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
@@ -50,7 +56,9 @@ public class MenuItemController {
 					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailedResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
-	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> getMenuItemById(@PathVariable UUID id) {
+	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> getMenuItemById(
+			@Valid @PathVariable UUID categoryId,
+			@PathVariable UUID id) {
 		MenuItemDto.MenuItemDetailedResponse data = menuItemService.getMenuItemById(id);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
@@ -62,7 +70,7 @@ public class MenuItemController {
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponseSummary.class))))
 	})
 	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponseSummary>>> getItemsByCategory(
-			@PathVariable UUID categoryId,
+			@Valid @PathVariable UUID categoryId,
 			@Parameter(description = "Field to sort by (e.g., name, price, priority)") @RequestParam(defaultValue = "name") String sortBy,
 			@Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "asc") String direction) {
 
@@ -78,8 +86,11 @@ public class MenuItemController {
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> updateMenuItem(
+			@Valid @PathVariable UUID categoryId,
 			@PathVariable UUID id,
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
+		categoryService.validateMenuCategory(categoryId);
+
 		MenuItemDto.MenuItemDetailedResponse data = menuItemService.updateMenuItem(id, request);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
@@ -90,7 +101,11 @@ public class MenuItemController {
 			@ApiResponse(responseCode = "204", description = "Item successfully deleted"),
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
-	public ResponseEntity<Void> deleteMenuItem(@PathVariable UUID id) {
+	public ResponseEntity<Void> deleteMenuItem(
+			@Valid @PathVariable UUID categoryId,
+			@PathVariable UUID id) {
+		categoryService.validateMenuCategory(categoryId);
+
 		menuItemService.deleteMenuItem(id);
 		return ResponseEntity.noContent().build();
 	}

@@ -15,4 +15,6 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID
 
 	@EntityGraph(attributePaths = {"items"})
 	List<MenuCategory> findAllByBranchIdOrderByPriorityAsc(UUID branchId);
+
+	boolean existsById(UUID id);
 }
