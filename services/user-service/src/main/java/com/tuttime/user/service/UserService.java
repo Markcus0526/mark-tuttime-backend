@@ -1,6 +1,7 @@
 package com.tuttime.user.service;
 
 import com.tuttime.user.dto.*;
+import com.tuttime.user.entity.enums.UserStatus;
 import org.springframework.data.domain.Page;
 
 import java.util.UUID;
@@ -13,9 +14,9 @@ public interface UserService {
 
 	UserResponse updateUser(UUID id, UserUpdateRequest request);
 
-	void softDeleteUser(UUID id);
+	void deleteUser(UUID id);
 
-	Page<UserResponse> listUsers(boolean includeDeleted, int page, int size, String sortBy, String direction);
+	Page<UserResponse> listUsers(UserStatus status, String roleNames, int page, int size, String sortBy, String direction);
 
 	void assignRoleToUser(UUID userId, String roleName);
 

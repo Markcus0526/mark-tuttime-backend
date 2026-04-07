@@ -2,6 +2,7 @@ package com.tuttime.user.grpc;
 
 import com.tuttime.common.proto.*;
 import com.tuttime.user.entity.*;
+import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.repository.UserRepository;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.TokenBlacklistService;
@@ -67,11 +68,11 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 							.withDescription("User record not found")));
 
 			// 5. Business Logic: Blocked or Soft-Deleted users cannot pass
-			if (user.isBlocked()) {
+			if (user.getStatus() == UserStatus.BLOCKED) {
 				throw new StatusRuntimeException(Status.PERMISSION_DENIED
 						.withDescription("User account is blocked"));
 			}
-			if (user.isDeleted()) {
+			if (user.getStatus() == UserStatus.DELETED) {
 				throw new StatusRuntimeException(Status.NOT_FOUND
 						.withDescription("User account has been deleted"));
 			}
@@ -80,8 +81,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			UserContextResponse.Builder responseBuilder = UserContextResponse.newBuilder()
 					.setUserId(user.getId().toString())
 					.setEmail(user.getEmail() != null ? user.getEmail() : "")
-					.setStatus(user.getStatus().name())
-					.setIsBlocked(user.isBlocked());
+					.setStatus(user.getStatus().name());
 
 			if (user.getRoles() != null) {
 				String combinedRoles = user.getRoles().stream()
@@ -114,7 +114,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// Fetching from DB (Ensure Repository handles the UUID correctly)
 			User user = userRepository.findById(userId)
-					.filter(u -> !u.isDeleted()) // PDF logic: Don't return soft-deleted users
+					.filter(u -> u.getStatus() != UserStatus.DELETED) // PDF logic: Don't return soft-deleted users
 					.orElseThrow(() -> new StatusRuntimeException(
 							Status.NOT_FOUND.withDescription("User not found or deleted")));
 
@@ -125,9 +125,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 					.setFullName(user.getFullName())
 					.setStatus(user.getStatus().toString())
 					.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
-					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()))
-					.setIsBlocked(user.isBlocked())
-					.setIsDeleted(user.isDeleted());
+					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
 			if (user.getProfilePicture() != null) {
 				responseBuilder.setRoles(user.getProfilePicture());
 			}

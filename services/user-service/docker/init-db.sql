@@ -24,7 +24,7 @@ $$
 BEGIN
     IF
 NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_status') THEN
-CREATE TYPE user_status AS ENUM ('ACTIVE', 'SUSPENDED', 'DELETED', 'PENDING_VERIFICATION');
+CREATE TYPE user_status AS ENUM ('ACTIVE', 'BLOCKED', 'DELETED', 'PENDING_VERIFICATION');
 END IF;
     IF
 NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auth_provider') THEN
@@ -56,39 +56,17 @@ CREATE TABLE users
     profile_picture TEXT,
     status          user_status NOT NULL DEFAULT 'ACTIVE',
     last_login      TIMESTAMPTZ,
-    is_blocked      BOOLEAN     NOT NULL DEFAULT FALSE,
-    is_deleted      BOOLEAN     NOT NULL DEFAULT FALSE,
-    deleted_at      TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT contact_exists CHECK (phone_number IS NOT NULL OR email IS NOT NULL)
 );
 
 CREATE INDEX idx_users_phone_email ON users (phone_number, email);
-CREATE INDEX idx_users_is_deleted ON users (is_deleted);
 
 CREATE TRIGGER trg_users_updated_at
     BEFORE UPDATE
     ON users
     FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
-
--- Enforce soft delete by preventing hard deletes
-CREATE
-OR REPLACE FUNCTION prevent_user_delete()
-RETURNS trigger AS $$
-BEGIN
-    RAISE
-EXCEPTION 'Direct DELETE is forbidden. Use soft delete by setting is_deleted = TRUE and status = ''DELETED''';
-RETURN NULL;
-END;
-$$
-LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_prevent_delete ON users;
-CREATE TRIGGER trg_prevent_delete
-    BEFORE DELETE
-    ON users
-    FOR EACH ROW EXECUTE FUNCTION prevent_user_delete();
 
 -- Roles Table
 CREATE TABLE roles
@@ -180,11 +158,7 @@ CREATE INDEX idx_user_locations_gist ON user_locations USING GIST(location);
 
 -- === COMMENTS ===
 COMMENT
-ON TABLE users IS 'User accounts table with soft-delete implemented using is_deleted and status columns';
-COMMENT
-ON COLUMN users.is_deleted IS 'Soft delete flag, true if user is deleted';
-COMMENT
-ON COLUMN users.deleted_at IS 'Timestamp when user was soft deleted';
+ON TABLE users IS 'User accounts table with delete implemented using status columns';
 
 COMMENT
 ON TABLE roles IS 'User roles table';

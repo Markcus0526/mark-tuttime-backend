@@ -30,30 +30,4 @@ public class CustomUserDetailsService implements UserDetailsService {
 		throw new UsernameNotFoundException("Load by username not supported");
 	}
 
-	/**
-	 * Loads UserDetails by user UUID string.
-	 * Used in JWT filter to authenticate requests.
-	 *
-	 * @param userIdString the UUID string of the user.
-	 * @return UserDetails object with roles as authorities.
-	 */
-	public UserDetails loadUserById(String userIdString) {
-		UUID userId = UUID.fromString(userIdString);
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found with id " + userId));
-
-		Set<GrantedAuthority> authorities = user.getRoles().stream()
-				.map(userRole -> userRole.getRole().getName())
-				.map(roleName -> new SimpleGrantedAuthority("ROLE_" + roleName))
-				.collect(Collectors.toSet());
-
-		return new org.springframework.security.core.userdetails.User(
-				user.getId().toString(),
-				"", // password not needed here
-				!user.isDeleted(),
-				true,
-				true,
-				user.getStatus() == UserStatus.ACTIVE,
-				authorities);
-	}
 }

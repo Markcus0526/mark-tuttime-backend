@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.BadRequestException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
@@ -21,8 +22,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
@@ -53,13 +56,11 @@ public class UserServiceImpl implements UserService {
 		}
 
 		// Check uniqueness of phone and email
-		userCreateRequest.getPhoneNumber();
-		userCreateRequest.getEmail();
-		userRepository.findByPhoneNumberAndIsDeletedFalse(userCreateRequest.getPhoneNumber())
+		userRepository.findByPhoneNumber(userCreateRequest.getPhoneNumber())
 				.ifPresent(u -> {
 					throw new ConflictException("Phone number already in use");
 				});
-		userRepository.findByEmailAndIsDeletedFalse(userCreateRequest.getEmail())
+		userRepository.findByEmail(userCreateRequest.getEmail())
 				.ifPresent(u -> {
 					throw new ConflictException("Email already in use");
 				});
@@ -70,42 +71,54 @@ public class UserServiceImpl implements UserService {
 		user.setFullName(userCreateRequest.getFullName());
 		user.setProfilePicture(userCreateRequest.getProfilePicture());
 		user.setStatus(UserStatus.ACTIVE);
-		user.setIsDeleted(false);
 		user = userRepository.saveAndFlush(user);
 
-		// Assign default role USER
-		Role userRole = roleRepository.findByName("USER")
-				.orElseThrow(() -> new ResourceNotFoundException("Default role USER not found"));
+		String targetRole = UserRoleKind.isValid(userCreateRequest.getRoleName())
+				? userCreateRequest.getRoleName()
+				: "USER";
+		Role userRole = roleRepository.findByName(targetRole)
+				.orElseThrow(() -> new ResourceNotFoundException("Role " + targetRole + " not found"));
 		UserRole ur = new UserRole();
 		ur.setUserId(user.getId());
 		ur.setRole(userRole);
 		ur.setAssignedAt(OffsetDateTime.now());
 		userRoleRepository.save(ur);
 
-		return userMapper.toResponse(user);
+		return UserResponse.builder()
+				.id(user.getId())
+				.fullName(user.getFullName())
+				.email(user.getEmail())
+				.phoneNumber(user.getPhoneNumber())
+				.status(user.getStatus().name())
+				.roles(targetRole)
+				.profilePicture(user.getProfilePicture())
+				.lastLogin(user.getLastLogin())
+				.createdAt(user.getCreatedAt())
+				.updatedAt(user.getUpdatedAt())
+				.build();
 	}
 
 	@Override
 	public UserResponse getUserById(UUID id) {
-		User user = userRepository.findByIdAndIsDeletedFalse(id)
+		User user = userRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		return userMapper.toResponse(user);
 	}
 
 	@Override
 	public UserResponse updateUser(UUID id, UserUpdateRequest userUpdateRequest) {
-		User user = userRepository.findByIdAndIsDeletedFalse(id)
+		User user = userRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		if (userUpdateRequest.getPhoneNumber() != null && !userUpdateRequest.getPhoneNumber().equals(user.getPhoneNumber())) {
-			userRepository.findByPhoneNumberAndIsDeletedFalse(userUpdateRequest.getPhoneNumber())
+			userRepository.findByPhoneNumber(userUpdateRequest.getPhoneNumber())
 					.ifPresent(u -> {
 						throw new ConflictException("Phone number already in use");
 					});
 			user.setPhoneNumber(userUpdateRequest.getPhoneNumber());
 		}
 		if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().equals(user.getEmail())) {
-			userRepository.findByEmailAndIsDeletedFalse(userUpdateRequest.getEmail())
+			userRepository.findByEmail(userUpdateRequest.getEmail())
 					.ifPresent(u -> {
 						throw new ConflictException("Email already in use");
 					});
@@ -118,16 +131,28 @@ public class UserServiceImpl implements UserService {
 			user.setProfilePicture(userUpdateRequest.getProfilePicture());
 		}
 		user = userRepository.save(user);
-		return userMapper.toResponse(user);
+
+		return UserResponse.builder()
+				.id(user.getId())
+				.fullName(user.getFullName())
+				.email(user.getEmail())
+				.phoneNumber(user.getPhoneNumber())
+				.status(user.getStatus().name())
+				.roles(user.getRoles().stream()
+						.map(ur -> ur.getRole().getName())
+						.collect(Collectors.joining(", ")))
+				.profilePicture(user.getProfilePicture())
+				.lastLogin(user.getLastLogin())
+				.createdAt(user.getCreatedAt())
+				.updatedAt(user.getUpdatedAt())
+				.build();
 	}
 
 	@Override
-	public void softDeleteUser(UUID id) {
-		User user = userRepository.findByIdAndIsDeletedFalse(id)
+	public void deleteUser(UUID id) {
+		User user = userRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
-		user.setIsDeleted(true);
 		user.setStatus(UserStatus.DELETED);
-		user.setDeletedAt(OffsetDateTime.now());
 		userRepository.save(user);
 
 		// 2. Broadcast to Kafka
@@ -138,23 +163,39 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Page<UserResponse> listUsers(boolean includeDeleted, int page, int size, String sortBy, String direction) {
+	public Page<UserResponse> listUsers(
+			UserStatus status,
+			String roleNames,
+			int page,
+			int size,
+			String sortBy,
+			String direction) {
+
 		Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 		PageRequest pageRequest = PageRequest.of(page, size, sortDirection, sortBy);
 
-		Page<User> userPage;
-		if (includeDeleted) {
-			userPage = userRepository.findAll(pageRequest);  // include deleted users
-		} else {
-			userPage = userRepository.findByIsDeletedFalse(pageRequest);  // exclude deleted users
-		}
-
-		return userPage.map(userMapper::toResponse);
+		return userRepository.findAllByOptionalStatusAndRole(status, roleNames, pageRequest)
+				.map(user -> UserResponse.builder()
+						.id(user.getId())
+						.fullName(user.getFullName())
+						.email(user.getEmail())
+						.phoneNumber(user.getPhoneNumber())
+						.status(user.getStatus().name())
+						// Join all role names for the DTO field
+						.roles(user.getRoles().stream()
+								.map(ur -> ur.getRole().getName())
+								.collect(Collectors.joining(", ")))
+						.profilePicture(user.getProfilePicture())
+						.lastLogin(user.getLastLogin())
+						.createdAt(user.getCreatedAt())
+						.updatedAt(user.getUpdatedAt())
+						.build());
 	}
+
 
 	@Override
 	public void assignRoleToUser(UUID userId, String roleName) {
-		User user = userRepository.findByIdAndIsDeletedFalse(userId)
+		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		Role role = roleRepository.findByName(roleName)
 				.orElseThrow(() -> new ResourceNotFoundException("Role not found"));
@@ -173,7 +214,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void removeRoleFromUser(UUID userId, String roleName) {
-		User user = userRepository.findByIdAndIsDeletedFalse(userId)
+		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		Role role = roleRepository.findByName(roleName)
 				.orElseThrow(() -> new ResourceNotFoundException("Role not found"));
@@ -186,7 +227,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void addAuthMethod(UUID userId, AuthMethodCreateRequest authMethodCreateRequest) {
-		User user = userRepository.findByIdAndIsDeletedFalse(userId)
+		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		authMethodRepository.findByUserIdAndAuthType(user.getId(), authMethodCreateRequest.getAuthType())
@@ -228,9 +269,9 @@ public class UserServiceImpl implements UserService {
 	public void requestPasswordReset(String emailOrPhone) {
 		Optional<User> userOpt = Optional.empty();
 		if (emailOrPhone.contains("@")) {
-			userOpt = userRepository.findByEmailAndIsDeletedFalse(emailOrPhone);
+			userOpt = userRepository.findByEmail(emailOrPhone);
 		} else {
-			userOpt = userRepository.findByPhoneNumberAndIsDeletedFalse(emailOrPhone);
+			userOpt = userRepository.findByPhoneNumber(emailOrPhone);
 		}
 
 		if (userOpt.isEmpty()) {
@@ -276,7 +317,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void updateUserLocation(UUID userId, UserLocationRequest userLocationRequest) {
-		User user = userRepository.findByIdAndIsDeletedFalse(userId)
+		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		UserLocation location = new UserLocation();
@@ -293,7 +334,7 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-		user.setBlocked(true); // Updates the is_blocked column from your SQL schema
+		user.setStatus(UserStatus.BLOCKED);
 		userRepository.save(user);
 
 		// Broadcast to Kafka topic so Gateway updates Redis immediately
@@ -307,7 +348,7 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-		user.setBlocked(false);
+		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);
 
 		// Broadcast to Kafka to remove from Redis blocklist
@@ -315,21 +356,6 @@ public class UserServiceImpl implements UserService {
 
 		return userMapper.toResponse(user);
 	}
-//
-//	// Helper method to map User entity to UserResponse
-//	private UserResponse mapToDto(User user) {
-//		UserResponse dto = new UserResponse();
-//		dto.setId(user.getId());
-//		dto.setPhoneNumber(user.getPhoneNumber());
-//		dto.setEmail(user.getEmail());
-//		dto.setFullName(user.getFullName());
-//		dto.setProfilePicture(user.getProfilePicture());
-//		dto.setStatus(user.getStatus().name());
-//		dto.setLastLogin(user.getLastLogin());
-//		dto.setCreatedAt(user.getCreatedAt());
-//		dto.setUpdatedAt(user.getUpdatedAt());
-//		return dto;
-//	}
 
 	// Helper to create PostGIS geography point (depends on your JPA configuration)
 	private Point createGeographyPoint(Double latitude, Double longitude) {
@@ -338,17 +364,5 @@ public class UserServiceImpl implements UserService {
 		// GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
 		// return gf.createPoint(new Coordinate(longitude, latitude));
 		throw new UnsupportedOperationException("Implement geography point creation based on your PostGIS setup");
-	}
-
-	private UserResponse toUserResponse(User user) {
-		if (user == null) return null;
-		return UserResponse.builder()
-				.id(user.getId())
-				.email(user.getEmail())
-				.phoneNumber(user.getPhoneNumber())
-				.fullName(user.getFullName())
-				.profilePicture(user.getProfilePicture())
-				.lastLogin((user.getLastLogin()))
-				.build();
 	}
 }

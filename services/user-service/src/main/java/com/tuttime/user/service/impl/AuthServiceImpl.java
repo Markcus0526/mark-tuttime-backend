@@ -92,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
 		User user = userOpt.get();
 
 		// Check user status
-		if (user.isDeleted() || !user.getStatus().equals(UserStatus.ACTIVE)) {
+		if (!user.getStatus().equals(UserStatus.ACTIVE)) {
 			throw new SecurityException("User account is not active");
 		}
 
@@ -330,7 +330,7 @@ public class AuthServiceImpl implements AuthService {
 		phoneVerificationCodeRepository.save(otpCode);
 
 		// Step 3: Find or create user by phone number
-		User user = userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber)
+		User user = userRepository.findByPhoneNumberAndStatusIsNot(phoneNumber, UserStatus.DELETED)
 				.orElseGet(() -> {
 					User newUser = new User();
 					newUser.setPhoneNumber(phoneNumber);

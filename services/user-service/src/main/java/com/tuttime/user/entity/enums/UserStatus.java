@@ -2,7 +2,7 @@ package com.tuttime.user.entity.enums;
 
 public enum UserStatus {
 	ACTIVE,
-	SUSPENDED,
+	BLOCKED,
 	DELETED,
 	PENDING_VERIFICATION
 }

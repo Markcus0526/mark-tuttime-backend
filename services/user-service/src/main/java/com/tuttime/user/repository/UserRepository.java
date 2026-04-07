@@ -1,10 +1,12 @@
 package com.tuttime.user.repository;
 
 import com.tuttime.user.entity.User;
+import com.tuttime.user.entity.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,28 +16,46 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-	Optional<User> findByPhoneNumberAndIsDeletedFalse(String phoneNumber);
+	Optional<User> findByIdAndStatusNot(UUID id, UserStatus status);
 
-	Optional<User> findByEmailAndIsDeletedFalse(String email);
+	Optional<User> findByPhoneNumberAndStatusIsNot(String phoneNumber, UserStatus status);
 
-	List<User> findAllByIsDeletedFalse();
-
-	Optional<User> findByIdAndIsDeletedFalse(UUID id);
-
+	// Standard lookups
 	Optional<User> findByEmail(String email);
 
 	Optional<User> findByPhoneNumber(String phoneNumber);
 
+	// Check if a user exists with either credential
 	Optional<User> findByPhoneNumberOrEmail(String phoneNumber, String email);
 
-	Page<User> findByIsDeletedFalse(Pageable pageable);
-
 	// Standard lookup: only active, non-deleted users
-	@Query("SELECT u FROM User u WHERE u.id = :id AND u.isDeleted = false")
-	Optional<User> findActiveById(UUID id);
+	@Query("SELECT u FROM User u WHERE u.id = :id AND u.status = :status")
+	Optional<User> findActiveById(UUID id, UserStatus status);
 
-	// Used for the 'listUsers' method where 'includeDeleted' might be true
-	Page<User> findAllByIsDeleted(boolean isDeleted, Pageable pageable);
+	Page<User> findAllByStatus(UserStatus status, Pageable pageable);
+
+	@Query(value = "SELECT u FROM User u " +
+			"LEFT JOIN FETCH u.roles ur " +
+			"LEFT JOIN FETCH ur.role " +
+			"WHERE (:status IS NULL OR u.status = :status)",
+			countQuery = "SELECT COUNT(u) FROM User u WHERE (:status IS NULL OR u.status = :status)")
+	Page<User> findAllByOptionalStatus(@Param("status") UserStatus status, Pageable pageable);
+
+	@Query(value = "SELECT DISTINCT u FROM User u " +
+			"LEFT JOIN FETCH u.roles ur " + // Changed from userRoles to roles
+			"LEFT JOIN FETCH ur.role r " +
+			"WHERE (cast(:status as string) IS NULL OR u.status = :status) " +
+			"AND (cast(:roleName as string) IS NULL OR r.name = :roleName)",
+			countQuery = "SELECT COUNT(DISTINCT u) FROM User u " +
+					"LEFT JOIN u.roles ur " +
+					"LEFT JOIN ur.role r " +
+					"WHERE (cast(:status as string) IS NULL OR u.status = :status) " +
+					"AND (cast(:roleName as string) IS NULL OR r.name = :roleName)")
+	Page<User> findAllByOptionalStatusAndRole(
+			@Param("status") UserStatus status,
+			@Param("roleName") String roleName,
+			Pageable pageable
+	);
 }
 
 

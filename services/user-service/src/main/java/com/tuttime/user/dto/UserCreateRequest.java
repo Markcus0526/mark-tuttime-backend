@@ -28,5 +28,7 @@ public class UserCreateRequest {
 	@Schema(description = "URL to the user's profile picture", example = "https://example.com/pic.jpg", nullable = true)
 	private String profilePicture;
 
+	@Schema(description = "User's role name", example = "OWNER", nullable = true)
+	private String roleName;
 }
 
