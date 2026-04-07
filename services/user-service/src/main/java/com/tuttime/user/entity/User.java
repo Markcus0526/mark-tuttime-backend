@@ -1,8 +1,12 @@
 package com.tuttime.user.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 import java.util.HashSet;
@@ -10,13 +14,18 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Data
 @Table(name = "users",
 		indexes = {
 				@Index(name = "idx_users_phone_email", columnList = "phoneNumber, email"),
 				@Index(name = "idx_users_is_deleted", columnList = "isDeleted")
 		})
-public class User {
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class User extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue(generator = "UUID")
@@ -37,36 +46,28 @@ public class User {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)
+	@Builder.Default
 	private UserStatus status = UserStatus.ACTIVE;
 
 	@Column(name = "last_login")
 	private OffsetDateTime lastLogin;
 
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt = OffsetDateTime.now();
-
-	@Column(name = "updated_at", nullable = false)
-	private OffsetDateTime updatedAt = OffsetDateTime.now();
-
 	// Relationships
 	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private Set<UserRole> roles = new HashSet<>();
 
 	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private Set<UserAuthMethod> authMethods = new HashSet<>();
 
 	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private Set<PasswordResetToken> passwordResetTokens = new HashSet<>();
 
 	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
 	private Set<UserLocation> locations = new HashSet<>();
-
-	// Constructors, getters, setters
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = OffsetDateTime.now();
-	}
 
 	public void addAuthMethod(UserAuthMethod method) {
 		this.authMethods.add(method);

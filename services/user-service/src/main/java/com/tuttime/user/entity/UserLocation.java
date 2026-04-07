@@ -1,9 +1,13 @@
 package com.tuttime.user.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.locationtech.jts.geom.Point;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -13,8 +17,13 @@ import java.util.UUID;
 		indexes = {
 				@Index(name = "idx_user_locations_gist", columnList = "location")
 		})
-@Data
-public class UserLocation {
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class UserLocation extends BaseTimeStampEntity {
 	@Id
 	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
 	private UUID id;

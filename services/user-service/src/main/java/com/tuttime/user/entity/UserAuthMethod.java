@@ -1,8 +1,12 @@
 package com.tuttime.user.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.user.entity.enums.AuthProvider;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -15,8 +19,13 @@ import java.util.UUID;
 		uniqueConstraints = {
 				@UniqueConstraint(columnNames = {"user_id", "auth_type"})
 		})
-@Data
-public class UserAuthMethod {
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class UserAuthMethod extends BaseTimeStampEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
@@ -32,8 +41,6 @@ public class UserAuthMethod {
 	private String credential;
 
 	@Column(name = "verified", nullable = false)
+	@Builder.Default
 	private boolean verified = false;
-
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt = OffsetDateTime.now();
 }

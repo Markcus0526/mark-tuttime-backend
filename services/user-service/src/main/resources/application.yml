@@ -137,14 +137,17 @@ spring:
     port: ${EMAIL_SMTP_PORT:465}
     username: ${EMAIL_SMTP_USERNAME:}
     password: ${EMAIL_SMTP_PASSWORD:}
+    protocol: smtps
     properties:
       mail:
+        debug: true
         smtp:
           # Enable SMTP authentication
           auth: ${EMAIL_SMTP_AUTH:true}
           ssl:
             enable: ${EMAIL_SMTP_SSL_ENABLE:true}
             trust: ${EMAIL_SMTP_SSL_TRUST:smtp.yandex.ru}
+          from: ${EMAIL_SMTP_FROM_EMAIL:}
           starttls:
             enable: ${EMAIL_SMTP_STARTTLS_ENABLE:false}
             required: ${EMAIL_SMTP_STARTTLS_REQUIRED:false}

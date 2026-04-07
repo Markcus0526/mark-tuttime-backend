@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.auth.security.UserContext;
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.proto.UserByIdRequest;
 import com.tuttime.common.proto.UserResponse;
 import com.tuttime.common.proto.UserServiceGrpc;
@@ -14,7 +15,12 @@ import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -35,16 +44,10 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final BranchMapper branchMapper;
 
 	@GrpcClient("user-service")
-	private UserServiceGrpc.UserServiceBlockingStub userStub;
+	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
 	@Override
 	public Page<RestaurantResponse> findRestaurantAll(UUID ownerUserId, Double minRating, Double maxRating, int page, int size) {
-		UserByIdRequest request = UserByIdRequest.newBuilder()
-				.setUserId(UserContext.getUserId())
-				.build();
-		// Make the gRPC network call
-		UserResponse response = userStub.getUserById(request);
-
 		Pageable pageable = PageRequest.of(page, size);
 
 		Page<Restaurant> restaurantPage;
@@ -64,6 +67,12 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	public RestaurantResponse getRestaurantById(UUID restaurantId) {
+		UserByIdRequest request = UserByIdRequest.newBuilder()
+				.setUserId(UserContext.getUserId())
+				.build();
+		// Make the gRPC network call
+		UserResponse response = userServiceBlockingStub.getUserById(request);
+
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
 				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
 		return restaurantMapper.toResponse(restaurant);
@@ -76,14 +85,18 @@ public class RestaurantServiceImpl implements RestaurantService {
 		Restaurant restaurant = restaurantMapper.toEntity(request);
 
 		// Persist restaurant
+		restaurant.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+
 		Restaurant savedRestaurant = restaurantRepository.save(restaurant);
 
 		// Create default branch linked to restaurant
 		Branch defaultBranch = new Branch();
 		defaultBranch.setRestaurantId(savedRestaurant.getRestaurantId());
+		defaultBranch.setManagerUserId(savedRestaurant.getOwnerUserId());
 		defaultBranch.setAddress(savedRestaurant.getAddress());
 		defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
 		defaultBranch.setPhone(null);
+		defaultBranch.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
 		branchRepository.save(defaultBranch);
 
 		// Return mapped response DTO
@@ -96,10 +109,16 @@ public class RestaurantServiceImpl implements RestaurantService {
 		Restaurant existing = restaurantRepository.findById(restaurantId)
 				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
 
+		// Map fields (Standard fields like name, address, phone)
 		restaurantMapper.updateEntityFromRequest(request, existing);
 
-		Restaurant updated = restaurantRepository.save(existing);
-		return restaurantMapper.toResponse(updated);
+		// Manual mapping for the PostGIS Point
+		if (request.getLongitude() != null && request.getLatitude() != null) {
+			existing.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+		}
+
+		// No need for .save(existing) - Hibernate dirty checking handles it
+		return restaurantMapper.toResponse(existing);
 	}
 
 	@Override
@@ -120,6 +139,22 @@ public class RestaurantServiceImpl implements RestaurantService {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Restaurant> entities = restaurantRepository.findByLocationNear(latitude, longitude, radiusMeters, pageable);
 		return entities.map(this::mapToResponse);
+	}
+
+	@Transactional(readOnly = true)
+	public void validateRestaurantOwner(UUID restaurantId) {
+		if (UserContext.getUserId() == null)
+			throw new BusinessException("You do not manage this specific restaurant or branch");
+
+		UUID currentUserId = UUID.fromString(UserContext.getUserId());
+
+		if (UserContext.isRoleAdmin()) return;
+
+		boolean isOwner = restaurantRepository.existsByRestaurantIdAndOwnerUserIdAndIsDeletedFalse(restaurantId, currentUserId);
+
+		if (!isOwner) {
+			throw new BusinessException("You do not manage this specific restaurant");
+		}
 	}
 
 	private RestaurantResponse mapToResponse(Restaurant entity) {

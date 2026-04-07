@@ -1,8 +1,8 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.Media;
-import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.enums.MediaType;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

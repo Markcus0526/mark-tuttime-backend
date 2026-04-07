@@ -19,4 +19,6 @@ public interface RestaurantService {
 	void deleteRestaurant(UUID restaurantId);
 
 	Page<RestaurantResponse> findRestaurantsNearLocation(double latitude, double longitude, double radiusMeters, int page, int size);
+
+	void validateRestaurantOwner(UUID restaurantId);
 }

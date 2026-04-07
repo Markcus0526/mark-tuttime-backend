@@ -37,4 +37,5 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
 	                                    @Param("lng") double longitude,
 	                                    @Param("radius") double radiusMeters,
 	                                    Pageable pageable);
+
 }

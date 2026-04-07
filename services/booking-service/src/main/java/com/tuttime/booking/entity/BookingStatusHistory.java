@@ -13,12 +13,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "booking_status_histories", schema = "booking_service")
-@EntityListeners(AuditingEntityListener.class)
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class BookingStatusHistory {
 
 	@Id

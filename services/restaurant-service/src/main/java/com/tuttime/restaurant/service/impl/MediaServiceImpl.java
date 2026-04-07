@@ -3,13 +3,14 @@ package com.tuttime.restaurant.service.impl;
 import com.tuttime.restaurant.dto.MediaRequest;
 import com.tuttime.restaurant.dto.MediaResponse;
 import com.tuttime.restaurant.entity.Media;
-import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.enums.MediaType;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.mapper.MediaMapper;
 import com.tuttime.restaurant.repository.MediaRepository;
 import com.tuttime.restaurant.service.FileStorageService;
 import com.tuttime.restaurant.service.MediaService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -61,8 +63,6 @@ public class MediaServiceImpl implements MediaService {
 		media.setIsPrimary(request.getIsPrimary() != null ? request.getIsPrimary() : false);
 		media.setMediaType(request.getMediaType() != null ? request.getMediaType() : MediaType.IMAGE);
 		media.setIsDeleted(false);
-		media.setCreatedAt(Instant.now().atOffset(ZoneOffset.UTC));
-		media.setUpdatedAt(Instant.now().atOffset(ZoneOffset.UTC));
 
 		Media saved = mediaRepository.save(media);
 		return mediaMapper.toResponse(saved);
@@ -90,7 +90,6 @@ public class MediaServiceImpl implements MediaService {
 		// Soft delete
 		media.setIsDeleted(true);
 		media.setDeletedAt(Instant.now().atOffset(ZoneOffset.UTC));
-		media.setUpdatedAt(Instant.now().atOffset(ZoneOffset.UTC));
 		mediaRepository.save(media);
 	}
 
@@ -125,8 +124,6 @@ public class MediaServiceImpl implements MediaService {
 					.svgContent(svgContent)
 					.isMap(true)
 					.isPrimary(true) // Mark as primary map if needed
-					.createdAt(now.atOffset(ZoneOffset.UTC))
-					.updatedAt(now.atOffset(ZoneOffset.UTC))
 					.isDeleted(false)
 					.build();
 		}

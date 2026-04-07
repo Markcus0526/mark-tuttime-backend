@@ -5,6 +5,7 @@ import com.tuttime.restaurant.dto.MediaResponse;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 

@@ -1,8 +1,12 @@
 package com.tuttime.user.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -12,8 +16,13 @@ import java.util.UUID;
 		indexes = {
 				@Index(name = "idx_password_reset_tokens_user_id", columnList = "user_id")
 		})
-@Data
-public class PasswordResetToken {
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class PasswordResetToken extends BaseTimeStampEntity {
 	@Id
 	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -29,9 +38,6 @@ public class PasswordResetToken {
 	private OffsetDateTime expiresAt;
 
 	@Column(nullable = false)
+	@Builder.Default
 	private boolean used = false;
-
-	@Column(nullable = false, updatable = false)
-	@CreationTimestamp
-	private OffsetDateTime createdAt;
 }

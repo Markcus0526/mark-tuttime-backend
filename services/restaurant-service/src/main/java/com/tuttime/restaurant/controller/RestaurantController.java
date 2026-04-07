@@ -3,8 +3,8 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.enums.MediaType;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.RestaurantService;
 import com.tuttime.restaurant.service.ScheduleService;
@@ -101,9 +101,7 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Updated restaurant details", required = true)
 			@Valid @RequestBody RestaurantRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
 		RestaurantResponse updated = restaurantService.updateRestaurant(restaurantId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
@@ -172,9 +170,7 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Schedule details to create", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
 		ScheduleResponse created = scheduleService.createScheduleForRestaurant(restaurantId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
@@ -195,11 +191,9 @@ public class RestaurantController {
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
-		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, restaurantId, null, request);
+		ScheduleResponse updated = scheduleService.updateRestaurantSchedule(scheduleId, restaurantId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -215,11 +209,9 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the schedule to delete", required = true)
 			@PathVariable UUID scheduleId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
-		scheduleService.deleteSchedule(scheduleId, restaurantId, null);
+		scheduleService.deleteRestaurantSchedule(scheduleId, restaurantId);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -256,9 +248,7 @@ public class RestaurantController {
 			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
@@ -325,9 +315,7 @@ public class RestaurantController {
 			@PathVariable UUID mediaId,
 			@Parameter(description = "Updated media details", required = true)
 			@Valid @RequestBody MediaRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
 		MediaResponse updated = mediaService.updateMedia(mediaId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
@@ -345,9 +333,7 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
 
 		mediaService.deleteMedia(mediaId);
 		return ResponseEntity.noContent().build();

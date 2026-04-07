@@ -18,7 +18,7 @@ public class EmailServiceImpl implements EmailService {
 
 	@Override
 	public void sendVerificationEmail(String toEmail, String token) {
-		String verificationUrl = "https://yourdomain.com/api/v1/auth/email/verify?token=" + token;
+		String verificationUrl = "http://173.249.29.61:8080/api/v1/auth/email/verify?token=" + token;
 		String subject = "Email Verification";
 		String body = "Please verify your email by clicking the link below:\n" + verificationUrl;
 
@@ -27,7 +27,7 @@ public class EmailServiceImpl implements EmailService {
 
 	@Override
 	public void sendPasswordResetEmail(String toEmail, String token) {
-		String resetUrl = "https://yourdomain.com/reset-password?token=" + token;
+		String resetUrl = "http://173.249.29.61:8080/api/v1/auth/email/verify?token=" + token;
 		String subject = "Password Reset Request";
 		String body = "To reset your password, please click the link below:\n" + resetUrl;
 
@@ -42,7 +42,8 @@ public class EmailServiceImpl implements EmailService {
 			message.setSubject(subject);
 			message.setText(body);
 
-			mailSender.send(message);
+			// comment for testing
+			// mailSender.send(message);
 			log.info("Sent email to {}", toEmail);
 		} catch (Exception e) {
 			log.error("Failed to send email to {}", toEmail, e);

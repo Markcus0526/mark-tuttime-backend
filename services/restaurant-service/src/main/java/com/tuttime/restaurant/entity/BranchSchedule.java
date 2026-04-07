@@ -1,10 +1,11 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -18,11 +19,13 @@ import java.util.UUID;
 		@Index(name = "idx_branch_schedule_day_of_week", columnList = "day_of_week"),
 		@Index(name = "idx_branch_schedule_is_deleted", columnList = "is_deleted")
 })
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
-public class BranchSchedule {
+@EntityListeners(AuditingEntityListener.class)
+public class BranchSchedule extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue
@@ -51,20 +54,4 @@ public class BranchSchedule {
 
 	@Column(name = "deleted_at")
 	private OffsetDateTime deletedAt;
-
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt;
-
-	@Column(name = "updated_at")
-	private OffsetDateTime updatedAt;
-
-	@PrePersist
-	public void prePersist() {
-		updatedAt = createdAt;
-	}
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
-	}
 }

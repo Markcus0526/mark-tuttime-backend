@@ -12,15 +12,17 @@ public interface ScheduleService {
 
 	ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request);
 
-	ScheduleResponse updateSchedule(UUID scheduleId, UUID restaurantId, Object unused, ScheduleRequest request);
+	ScheduleResponse updateRestaurantSchedule(UUID scheduleId, UUID restaurantId, ScheduleRequest request);
 
-	void deleteSchedule(UUID scheduleId, UUID restaurantId, Object unused);
+	void deleteRestaurantSchedule(UUID scheduleId, UUID restaurantId);
+
 
 	List<ScheduleResponse> getSchedulesByBranchId(UUID branchId);
 
 	ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request);
 
-	ScheduleResponse updateSchedule(UUID scheduleId, UUID restaurantId, String userId, ScheduleRequest request);
+	ScheduleResponse updateBranchSchedule(UUID scheduleId, UUID branchId, ScheduleRequest request);
 
-	void deleteSchedule(UUID scheduleId, UUID restaurantId, String userId);
+	void deleteBranchSchedule(UUID scheduleId, UUID branchId);
+
 }

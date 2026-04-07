@@ -17,4 +17,6 @@ public interface BranchService {
 	BranchResponse updateBranch(UUID branchId, BranchRequest request);
 
 	void deleteBranch(UUID branchId);
+
+	void validateBranchManager(UUID branchId, UUID restaurantId);
 }
