@@ -34,7 +34,6 @@ message UserContextResponse {
   string email = 2;
   string roles = 3;
   string status = 4;        // 'ACTIVE', 'INACTIVE', etc.
-  bool is_blocked = 5;      // Mapping from your 'is_blocked' column
 }
 
 message UserProfileResponse {
@@ -44,8 +43,6 @@ message UserProfileResponse {
   string full_name = 4;
   string profile_picture = 5;
   string status = 7; // Mapping the 'user_status' enum to String
-  bool is_blocked = 8;
-  bool is_deleted = 9;
 
   string roles = 10;
   string auth_methods = 11;

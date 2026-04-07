@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -29,6 +30,9 @@ public class UserResponse {
 
 	@Schema(description = "User's status", example = "ACTIVE")
 	private String status;
+
+	@Schema(description = "User's roles", example = "{\"ADMIN\", \"USER\"}")
+	private String roles;
 
 	@Schema(description = "Timestamp of last login", example = "2024-01-01T12:00:00Z", nullable = true)
 	private OffsetDateTime lastLogin;

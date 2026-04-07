@@ -1,8 +1,10 @@
 package com.tuttime.user.controller;
 
+import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.user.dto.*;
+import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,7 +44,7 @@ public class UserController {
 	public ResponseEntity<ApiRes<UserResponse>> createUser(
 			@Parameter(description = "User details to create", required = true)
 			@Valid @RequestBody UserCreateRequest request) {
-		if (!UserContext.isRoleAdmin()) {
+		if (!(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -61,6 +63,10 @@ public class UserController {
 	public ResponseEntity<ApiRes<UserResponse>> getUserById(
 			@Parameter(description = "UUID of the user to retrieve", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID id) {
+		if (!(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
+		}
+
 		UserResponse user = userService.getUserById(id);
 		return ResponseEntity.ok(ApiRes.success(user));
 	}
@@ -79,7 +85,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Fields to update", required = true)
 			@Valid @RequestBody UserUpdateRequest request) {
-		if (!UserContext.isRoleAdmin()) {
+		if (!(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -87,20 +93,20 @@ public class UserController {
 		return ResponseEntity.ok(ApiRes.success(updatedUser));
 	}
 
-	@Operation(summary = "Soft delete user", description = "Marks a user as deleted without removing from database")
+	@Operation(summary = "Delete user", description = "Marks a user as deleted without removing from database")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "User soft deleted successfully"),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
 	@DeleteMapping("/{id}")
-	public ResponseEntity<ApiRes<Void>> softDeleteUser(
+	public ResponseEntity<ApiRes<Void>> deleteUser(
 			@Parameter(description = "UUID of the user to soft delete", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID id) {
 		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		userService.softDeleteUser(id);
+		userService.deleteUser(id);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -112,8 +118,11 @@ public class UserController {
 	})
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ApiRes<Page<UserResponse>>> listUsers(
-			@Parameter(description = "Include soft deleted users in results", required = false)
-			@RequestParam(required = false) Boolean includeDeleted,
+			@Parameter(description = "Include blocked, deleted, pending request users in results", required = false)
+			@RequestParam(required = false) UserStatus status,
+
+			@Parameter(description = "Include ADMIN, OWNER, MANAGER... users in results", required = false)
+			@RequestParam(required = false) String roleName,
 
 			@Parameter(description = "Page number (0-based)", required = false)
 			@RequestParam(defaultValue = "0") int page,
@@ -126,7 +135,11 @@ public class UserController {
 
 			@Parameter(description = "Sort direction: asc or desc", required = false)
 			@RequestParam(defaultValue = "asc") String direction) {
-		Page<UserResponse> users = userService.listUsers(includeDeleted != null && includeDeleted, page, size, sort, direction);
+		if (!(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
+		}
+
+		Page<UserResponse> users = userService.listUsers(status, roleName, page, size, sort, direction);
 		return ResponseEntity.ok(ApiRes.success(users));
 	}
 
@@ -141,7 +154,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Role to assign", required = true)
 			@RequestBody RoleAssignRequest request) {
-		if (!UserContext.isRoleAdmin()) {
+		if (!(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 
@@ -160,7 +173,7 @@ public class UserController {
 			@PathVariable UUID id,
 			@Parameter(description = "Role name to remove", required = true, in = ParameterIn.PATH)
 			@PathVariable String roleName) {
-		if (!UserContext.isRoleAdmin()) {
+		if (!(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}
 

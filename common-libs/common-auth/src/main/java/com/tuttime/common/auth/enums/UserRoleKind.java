@@ -6,6 +6,15 @@ public enum UserRoleKind {
 	MANAGER, // -- for Restaurant
 	HOSTESS, // -- for Restaurant
 	USER, // -- for Mobile user
-	GUEST // -- for Mobile user, not signed
+	GUEST; // -- for Mobile user, not signed
+
+	public static boolean isValid(String name) {
+		for (UserRoleKind status : values()) {
+			if (status.name().equalsIgnoreCase(name)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
 

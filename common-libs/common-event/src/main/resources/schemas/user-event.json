@@ -37,9 +37,6 @@
     "is_active": {
       "type": "boolean"
     },
-    "is_blocked": {
-      "type": "boolean"
-    },
     "status_level": {
       "type": "string",
       "enum": [

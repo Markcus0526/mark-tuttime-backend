@@ -48,17 +48,6 @@ public class User {
 	@Column(name = "updated_at", nullable = false)
 	private OffsetDateTime updatedAt = OffsetDateTime.now();
 
-	@Column(name = "is_blocked", nullable = false)
-	private boolean isBlocked = false;
-
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
-
-	// Soft delete check constraint equivalent can be handled in service logic
-
 	// Relationships
 	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<UserRole> roles = new HashSet<>();
@@ -77,11 +66,6 @@ public class User {
 	@PreUpdate
 	public void preUpdate() {
 		updatedAt = OffsetDateTime.now();
-	}
-
-	// Add helper methods to manage bi-directional relationships if needed
-	public void setIsDeleted(boolean isDeleted) {
-		this.isDeleted = isDeleted;
 	}
 
 	public void addAuthMethod(UserAuthMethod method) {
