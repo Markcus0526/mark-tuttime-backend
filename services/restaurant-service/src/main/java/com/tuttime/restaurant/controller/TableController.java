@@ -4,7 +4,8 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.TableRequest;
 import com.tuttime.restaurant.dto.TableResponse;
-import com.tuttime.restaurant.enums.TableStatus;
+import com.tuttime.restaurant.entity.enums.TableStatus;
+import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.TableService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,11 +14,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +30,7 @@ import java.util.UUID;
 @Tag(name = "Tables", description = "Operations related to tables within zones of branches")
 public class TableController {
 
+	private final BranchService branchService;
 	private final TableService tableService;
 
 	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")
@@ -84,10 +88,8 @@ public class TableController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "Table creation payload", required = true)
 			@Valid @RequestBody TableRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
-		// Service should validate zone -> branch -> restaurant hierarchy
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		TableResponse created = tableService.createTable(zoneId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -111,9 +113,8 @@ public class TableController {
 			@PathVariable UUID tableId,
 			@Parameter(description = "Updated table details", required = true)
 			@Valid @RequestBody TableRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		// Service should confirm the table belongs to the zone, branch, restaurant
 		TableResponse updated = tableService.updateTable(tableId, zoneId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
@@ -135,9 +136,8 @@ public class TableController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		// Service should verify hierarchical ownership before deletion
 		tableService.deleteTable(tableId, zoneId);
 		return ResponseEntity.noContent().build();
@@ -151,11 +151,14 @@ public class TableController {
 			@PathVariable UUID restaurantId,
 			@PathVariable UUID branchId,
 			@PathVariable UUID zoneId,
-			@RequestParam @Parameter(description = "Reservation start time in ISO 8601 format", required = true)
-			Instant from,
-			@RequestParam @Parameter(description = "Reservation end time in ISO 8601 format", required = true)
-			Instant to) {
-
+			@RequestParam
+			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T14:00:00+02:00)", required = true)
+			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+			OffsetDateTime from,
+			@RequestParam
+			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T16:00:00+02:00)", required = true)
+			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+			OffsetDateTime to) {
 		List<TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
 		return ResponseEntity.ok(ApiRes.success(availableTables));
 	}
@@ -180,9 +183,8 @@ public class TableController {
 			@PathVariable UUID zoneId,
 			@PathVariable UUID tableId,
 			@PathVariable UUID reservationId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		tableService.confirmReservation(tableId, reservationId);
 		return ResponseEntity.ok(ApiRes.success(null));
 	}

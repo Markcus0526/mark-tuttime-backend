@@ -2,7 +2,7 @@ package com.tuttime.restaurant.service;
 
 import com.tuttime.restaurant.dto.MediaRequest;
 import com.tuttime.restaurant.dto.MediaResponse;
-import com.tuttime.restaurant.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.EntityType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

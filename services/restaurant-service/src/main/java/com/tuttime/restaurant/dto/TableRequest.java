@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.dto;
 
-import com.tuttime.restaurant.enums.TableStatus;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Min;

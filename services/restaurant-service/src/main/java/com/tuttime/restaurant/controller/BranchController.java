@@ -3,10 +3,11 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.enums.MediaType;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
+import com.tuttime.restaurant.service.RestaurantService;
 import com.tuttime.restaurant.service.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +35,7 @@ import java.util.UUID;
 public class BranchController {
 
 	private final BranchService branchService;
+	private final RestaurantService restaurantService;
 	private final ScheduleService scheduleService;
 	private final MediaService mediaService;
 
@@ -83,9 +85,8 @@ public class BranchController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Branch creation payload", required = true)
 			@Valid @RequestBody BranchRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		restaurantService.validateRestaurantOwner(restaurantId);
+
 		BranchResponse created = branchService.createBranch(restaurantId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -105,9 +106,8 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "Updated branch details", required = true)
 			@Valid @RequestBody BranchRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		BranchResponse updated = branchService.updateBranch(branchId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -124,9 +124,8 @@ public class BranchController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch to delete", required = true)
 			@PathVariable UUID branchId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		branchService.deleteBranch(branchId);
 		return ResponseEntity.noContent().build();
 	}
@@ -163,9 +162,8 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "SVG XML content", required = true)
 			@RequestBody String svgContent) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		mediaService.setOrUpdateSvgMap(EntityType.BRANCH, branchId, svgContent);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
@@ -202,9 +200,8 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "Schedule details to create", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -226,10 +223,9 @@ public class BranchController {
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
-		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, null, branchId, request);
+		branchService.validateBranchManager(branchId, restaurantId);
+
+		ScheduleResponse updated = scheduleService.updateBranchSchedule(scheduleId, branchId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -247,10 +243,9 @@ public class BranchController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the schedule to delete", required = true)
 			@PathVariable UUID scheduleId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
-		scheduleService.deleteSchedule(scheduleId, null, branchId);
+		branchService.validateBranchManager(branchId, restaurantId);
+
+		scheduleService.deleteBranchSchedule(scheduleId, branchId);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -292,9 +287,8 @@ public class BranchController {
 			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
 		if (file.getSize() > maxFileSize) {

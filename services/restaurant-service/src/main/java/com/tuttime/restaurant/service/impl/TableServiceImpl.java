@@ -6,7 +6,7 @@ import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.Table;
 import com.tuttime.restaurant.entity.Zone;
-import com.tuttime.restaurant.enums.TableStatus;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -133,7 +134,7 @@ public class TableServiceImpl implements TableService {
 	}
 
 	@Override
-	public List<TableResponse> findAvailableTables(UUID zoneId, Instant from, Instant to) {
+	public List<TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to) {
 		List<Table> tables = tableRepository.findByZoneIdAndIsDeletedFalseAndIsClosedFalse(zoneId);
 
 		return tables.stream()

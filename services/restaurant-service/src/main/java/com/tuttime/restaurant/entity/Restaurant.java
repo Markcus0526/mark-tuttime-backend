@@ -1,11 +1,12 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.locationtech.jts.geom.Point;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,11 +16,13 @@ import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "restaurants")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
-public class Restaurant {
+@EntityListeners(AuditingEntityListener.class)
+public class Restaurant extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue
@@ -57,23 +60,11 @@ public class Restaurant {
 	@Column(name = "deleted_at")
 	private OffsetDateTime deletedAt;
 
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt;
-
-	@Column(name = "updated_at")
-	private OffsetDateTime updatedAt;
-
 	@PrePersist
 	public void prePersist() {
-		updatedAt = createdAt;
 		if (rating == null) {
 			rating = BigDecimal.ZERO;
 		}
-	}
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
 	}
 
 }

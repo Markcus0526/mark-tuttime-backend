@@ -5,6 +5,7 @@ import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
@@ -13,9 +14,12 @@ import org.mapstruct.ReportingPolicy;
 		unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface RestaurantMapper {
 
+	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
+	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	RestaurantResponse toResponse(Restaurant entity);
 
 	Restaurant toEntity(RestaurantRequest request);
 
+	@Mapping(target = "location", ignore = true)
 	void updateEntityFromRequest(RestaurantRequest request, @MappingTarget Restaurant entity);
 }

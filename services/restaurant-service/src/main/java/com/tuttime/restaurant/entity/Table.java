@@ -1,11 +1,12 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.restaurant.enums.TableStatus;
+import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -18,11 +19,13 @@ import java.util.UUID;
 }, uniqueConstraints = {
 		@UniqueConstraint(name = "unique_zone_table_number", columnNames = {"zone_id", "number"})
 })
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
-public class Table {
+@EntityListeners(AuditingEntityListener.class)
+public class Table extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue
@@ -53,22 +56,6 @@ public class Table {
 
 	@Column(name = "deleted_at")
 	private OffsetDateTime deletedAt;
-
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt;
-
-	@Column(name = "updated_at")
-	private OffsetDateTime updatedAt;
-
-	@PrePersist
-	public void prePersist() {
-		updatedAt = createdAt;
-	}
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
-	}
 
 	public void setIsClosed(boolean isClosed) {
 		this.isClosed = isClosed;

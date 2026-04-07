@@ -113,6 +113,7 @@ CREATE TABLE branches
 (
     branch_id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     restaurant_id UUID         NOT NULL REFERENCES restaurants (restaurant_id) ON DELETE CASCADE,
+    manager_user_id UUID         NOT NULL,
     address       VARCHAR(512) NOT NULL,
     phone         VARCHAR(20),
     timezone      VARCHAR(50)  NOT NULL,
@@ -134,6 +135,8 @@ COMMENT
 ON TABLE branches IS 'Branches of restaurants';
 COMMENT
 ON COLUMN branches.restaurant_id IS 'Reference to parent restaurant';
+COMMENT
+ON COLUMN branches.manager_user_id IS 'Reference to user who owns the branch';
 COMMENT
 ON COLUMN branches.is_deleted IS 'Soft-delete flag';
 COMMENT

@@ -4,7 +4,8 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.restaurant.dto.ZoneRequest;
 import com.tuttime.restaurant.dto.ZoneResponse;
-import com.tuttime.restaurant.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.ZoneService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +28,7 @@ import java.util.UUID;
 @Tag(name = "Zones", description = "Operations related to zones within branches of restaurants")
 public class ZoneController {
 
+	private final BranchService branchService;
 	private final ZoneService zoneService;
 	private final MediaService mediaService;
 
@@ -79,9 +81,8 @@ public class ZoneController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "Zone creation payload", required = true)
 			@Valid @RequestBody ZoneRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		ZoneResponse created = zoneService.createZone(branchId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
@@ -103,9 +104,8 @@ public class ZoneController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "Updated zone details", required = true)
 			@Valid @RequestBody ZoneRequest request) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		ZoneResponse updated = zoneService.updateZone(branchId, zoneId, request);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
@@ -124,9 +124,8 @@ public class ZoneController {
 			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		zoneService.deleteZone(branchId, zoneId);
 		return ResponseEntity.noContent().build();
 	}
@@ -165,9 +164,8 @@ public class ZoneController {
 			@PathVariable UUID zoneId,
 			@Parameter(description = "SVG XML content", required = true)
 			@RequestBody String svgContent) {
-		if (!UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		branchService.validateBranchManager(branchId, restaurantId);
+
 		mediaService.setOrUpdateSvgMap(EntityType.ZONE, zoneId, svgContent);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}

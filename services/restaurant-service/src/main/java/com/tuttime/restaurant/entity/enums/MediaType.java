@@ -1,4 +1,4 @@
-package com.tuttime.restaurant.enums;
+package com.tuttime.restaurant.entity.enums;
 
 public enum MediaType {
 	IMAGE,

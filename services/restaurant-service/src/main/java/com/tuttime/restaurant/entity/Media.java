@@ -1,12 +1,13 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.enums.MediaType;
+import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -19,11 +20,13 @@ import java.util.UUID;
 		@Index(name = "idx_medias_is_map", columnList = "is_map"),
 		@Index(name = "idx_media_lookup", columnList = "entity_type, entity_id")
 })
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
-public class Media {
+@EntityListeners(AuditingEntityListener.class)
+public class Media extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue
@@ -65,22 +68,6 @@ public class Media {
 
 	@Column(name = "deleted_at")
 	private OffsetDateTime deletedAt;
-
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt;
-
-	@Column(name = "updated_at")
-	private OffsetDateTime updatedAt;
-
-	@PrePersist
-	public void prePersist() {
-		updatedAt = createdAt;
-	}
-
-	@PreUpdate
-	public void preUpdate() {
-		updatedAt = Instant.now().atOffset(ZoneOffset.UTC);
-	}
 
 	public void setIsDeleted(boolean isDeleted) {
 		this.isDeleted = isDeleted;

@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.dto;
 
-import com.tuttime.restaurant.enums.TableStatus;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

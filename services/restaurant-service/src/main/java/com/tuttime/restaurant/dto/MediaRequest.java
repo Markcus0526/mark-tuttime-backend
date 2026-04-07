@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.dto;
 
-import com.tuttime.restaurant.enums.EntityType;
-import com.tuttime.restaurant.enums.MediaType;
+import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
