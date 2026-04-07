@@ -40,6 +40,8 @@ public class CategoryController {
 			@ApiResponse(responseCode = "400", description = "Invalid input data")
 	})
 	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody CategoryDto.CategoryRequest request) {
+		categoryService.validateBranchManager(request.branchId());
+
 		CategoryDto.CategoryResponse data = categoryService.createCategory(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
@@ -90,6 +92,8 @@ public class CategoryController {
 	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> updateCategory(
 			@PathVariable UUID id,
 			@Valid @RequestBody CategoryDto.CategoryRequest request) {
+		categoryService.validateMenuCategory(id);
+
 		CategoryDto.CategoryResponse data = categoryService.updateCategory(id, request);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
@@ -101,6 +105,8 @@ public class CategoryController {
 			@ApiResponse(responseCode = "404", description = "Category not found")
 	})
 	public ResponseEntity<Void> deleteCategory(@PathVariable UUID id) {
+		categoryService.validateMenuCategory(id);
+
 		categoryService.deleteCategory(id);
 		return ResponseEntity.noContent().build();
 	}

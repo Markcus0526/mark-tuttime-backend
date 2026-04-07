@@ -6,7 +6,9 @@ import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "modifier_groups")
@@ -31,7 +33,7 @@ public class ModifierGroup extends BaseUuidEntity {
 	@Builder.Default
 	private Integer maxSelect = 1;
 
-	@OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "group", fetch = FetchType.EAGER)
 	@Builder.Default
-	private List<Modifier> modifiers = new ArrayList<>();
+	private Set<Modifier> modifiers = new LinkedHashSet<>();
 }

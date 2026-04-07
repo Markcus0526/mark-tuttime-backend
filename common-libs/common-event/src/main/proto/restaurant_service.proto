@@ -9,8 +9,20 @@ option java_outer_classname = "RestaurantServiceProto";
 
 // Restaurant Service gRPC
 service RestaurantService {
+
+  rpc ValidateBranch (BranchRequest) returns (BranchResponse);
+
   rpc CheckAvailability (AvailabilityRequest) returns (AvailabilityResponse);
 
+}
+
+message BranchRequest {
+  string branch_id = 1; // Branch UUID
+  string user_id = 2; // User UUID
+}
+
+message BranchResponse {
+  bool exists = 1;
 }
 
 message AvailabilityRequest {

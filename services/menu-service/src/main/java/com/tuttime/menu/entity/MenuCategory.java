@@ -5,9 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "menu_categories")
@@ -27,9 +25,9 @@ public class MenuCategory extends BaseUuidEntity {
 
 	private String description;
 
-	@OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
 	@Builder.Default
-	private List<MenuItem> items = new ArrayList<>();
+	private Set<MenuItem> items = new LinkedHashSet<>();
 
 	@Column(name = "priority")
 	@Builder.Default

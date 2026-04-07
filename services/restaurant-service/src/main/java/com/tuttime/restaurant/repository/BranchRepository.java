@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface BranchRepository extends JpaRepository<Branch, UUID> {
 
+	Optional<Branch> findByBranchIdAndIsDeletedFalse(UUID branchId);
+
 	Page<Branch> findByRestaurantIdAndIsDeletedFalse(UUID restaurantId, Pageable pageable);
 
 	Page<Branch> findByIsDeletedFalse(Pageable pageable);

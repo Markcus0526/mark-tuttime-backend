@@ -3,6 +3,7 @@ package com.tuttime.order.grpc;
 import com.tuttime.common.proto.OrderDetailsResponse;
 import com.tuttime.common.proto.OrderItemDetail;
 import com.tuttime.common.proto.OrderRequest;
+import com.tuttime.common.proto.OrderServiceGrpc;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.repository.OrderRepository;
 import io.grpc.stub.StreamObserver;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @GrpcService
 @RequiredArgsConstructor
-public class OrderGrpcServer extends OrderGrpcServiceGrpc.OrderServiceImplBase {
+public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {
 
 	private final OrderRepository orderRepository;
 
