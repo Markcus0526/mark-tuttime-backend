@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -14,11 +15,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "discounts")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Discount extends BaseUuidEntity {
 
 	@Column(nullable = false)

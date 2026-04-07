@@ -16,7 +16,7 @@ service UserService {
   // Fetch basic profile info for display in Reviews/Bookings
   rpc GetUserProfile(GetUserRequest) returns (UserProfileResponse);
 
-//  rpc GetUserById (UserByIdRequest) returns (UserResponse);
+  rpc GetUserById (UserByIdRequest) returns (UserResponse);
 
 }
 
@@ -43,17 +43,16 @@ message UserProfileResponse {
   string full_name = 4;
   string profile_picture = 5;
   string status = 7; // Mapping the 'user_status' enum to String
-
-  string roles = 10;
-  string auth_methods = 11;
+  string roles = 8;
+  string auth_methods = 9;
 
   // Relationships
-  double latitude = 12;           // Latitude for location-based features
-  double longitude = 13;          // Longitude for location-based features
+  double latitude = 11;           // Latitude for location-based features
+  double longitude = 12;          // Longitude for location-based features
 
-  google.protobuf.Timestamp last_login = 14;
-  google.protobuf.Timestamp created_at = 15;
-  google.protobuf.Timestamp updated_at = 16;
+  google.protobuf.Timestamp last_login = 21;
+  google.protobuf.Timestamp created_at = 22;
+  google.protobuf.Timestamp updated_at = 23;
 }
 
 message UserByIdRequest {
@@ -61,23 +60,21 @@ message UserByIdRequest {
 }
 
 message UserResponse {
-  string user_id = 1;
+  string id = 1;
   string phone_number = 2;
   string email = 3;
   string full_name = 4;
-  string profile_picture = 5;
-  string status = 6;
-  int64 last_login = 7; // Unix timestamp in milliseconds when user registered
-  int64 created_at = 8; // Unix timestamp in milliseconds when user registered
-  int64 updated_at = 9; // Unix timestamp in milliseconds when user registered
-  bool is_deleted = 10;
-  int64 deleted_at = 11; // Unix timestamp in milliseconds when user registered
-  string roles = 12;
-  string auth_methods = 13;
+  string status = 5;
+  string roles = 6;
 
   // Relationships
-  double latitude = 14;           // Latitude for location-based features
-  double longitude = 15;          // Longitude for location-based features
+  double latitude = 11;           // Latitude for location-based features
+  double longitude = 12;          // Longitude for location-based features
+
+  google.protobuf.Timestamp last_login = 21;
+  google.protobuf.Timestamp created_at = 22;
+  google.protobuf.Timestamp updated_at = 23;
+
 }
 
 message UserValidResponse {

@@ -4,17 +4,19 @@ import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.payment.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Table(name = "payments", schema = "payment_service")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Payment extends BaseUuidEntity {
 
 	@Column(name = "booking_id", nullable = false)

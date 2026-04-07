@@ -1,7 +1,10 @@
 package com.tuttime.review.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -13,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReviewModerationLog {
+public class ReviewModerationLog extends BaseTimeStampEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private UUID id;
@@ -30,8 +33,4 @@ public class ReviewModerationLog {
 
 	@Column(columnDefinition = "TEXT")
 	private String reason;
-
-	@Column(name = "created_at", nullable = false, updatable = false)
-	@Builder.Default
-	private OffsetDateTime createdAt = OffsetDateTime.now();
 }

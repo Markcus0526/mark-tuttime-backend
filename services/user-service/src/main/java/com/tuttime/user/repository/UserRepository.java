@@ -4,6 +4,7 @@ import com.tuttime.user.entity.User;
 import com.tuttime.user.entity.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,8 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-	Optional<User> findByIdAndStatusNot(UUID id, UserStatus status);
+	@EntityGraph(attributePaths = {"roles", "roles.role"})
+	Optional<User> findById(UUID id);
 
 	Optional<User> findByPhoneNumberAndStatusIsNot(String phoneNumber, UserStatus status);
 
@@ -25,8 +27,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
 	Optional<User> findByPhoneNumber(String phoneNumber);
 
-	// Check if a user exists with either credential
-	Optional<User> findByPhoneNumberOrEmail(String phoneNumber, String email);
+	@Query("SELECT u FROM User u WHERE " +
+			"(u.phoneNumber = :phone AND cast(:phone as string) IS NOT NULL) OR " +
+			"(u.email = :email AND cast(:email as string) IS NOT NULL)")
+	Optional<User> findByPhoneNumberOrEmail(@Param("phone") String phone, @Param("email") String email);
+
 
 	// Standard lookup: only active, non-deleted users
 	@Query("SELECT u FROM User u WHERE u.id = :id AND u.status = :status")

@@ -20,7 +20,7 @@ public class RegisterRequest {
 	@NotBlank(message = "Password is required")
 	String password;
 
-	@Schema(description = "Full name of the user", example = "John Doe")
-	@NotBlank(message = "Full name is required")
-	String fullName;
+//	@Schema(description = "Full name of the user", example = "John Doe", nullable = true)
+//	@NotBlank(message = "Full name is required")
+//	String fullName;
 }

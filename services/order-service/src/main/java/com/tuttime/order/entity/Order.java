@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -14,13 +15,13 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "orders", schema = "order_service")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE order_service.orders SET deleted_at = now() WHERE id = ?")
-@Where(clause = "deleted_at IS NULL")
 public class Order extends BaseSoftDeleteEntity {
 
 	@Column(name = "booking_id", nullable = false)

@@ -3,6 +3,7 @@ package com.tuttime.menu.entity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -10,11 +11,12 @@ import java.util.Set;
 
 @Entity
 @Table(name = "menu_items")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class MenuItem extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)

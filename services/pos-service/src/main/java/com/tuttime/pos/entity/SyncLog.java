@@ -5,17 +5,19 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Map;
 import java.util.UUID;
 
 @Entity
 @Table(name = "sync_logs")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class SyncLog extends BaseTimeStampEntity {
 
 	@Id

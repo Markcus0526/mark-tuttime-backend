@@ -3,19 +3,22 @@ package com.tuttime.booking.entity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "booking_notifications", schema = "booking_service")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class BookingNotification extends BaseUuidEntity {
 
 	@Column(name = "booking_id", nullable = false)

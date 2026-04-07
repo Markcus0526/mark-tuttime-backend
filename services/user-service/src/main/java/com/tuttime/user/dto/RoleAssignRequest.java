@@ -11,10 +11,6 @@ import java.util.UUID;
 @Schema(description = "DTO for assigning a role to a user")
 public class RoleAssignRequest {
 
-	@Schema(description = "User ID")
-	@NotNull
-	UUID userId;
-
 	@Schema(description = "Role name to assign or remove", example = "ADMIN")
 	@NotBlank
 	String roleName;

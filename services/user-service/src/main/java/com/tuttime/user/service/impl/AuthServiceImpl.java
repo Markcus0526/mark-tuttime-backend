@@ -17,6 +17,7 @@ import com.tuttime.user.service.AuthService;
 import com.tuttime.user.service.EmailService;
 import com.tuttime.user.service.SmsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -58,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
 		User user = new User();
 		user.setPhoneNumber(request.getPhoneNumber());
 		user.setEmail(request.getEmail());
-		user.setFullName(request.getFullName());
+//		user.setFullName(request.getFullName());
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
 		user = userRepository.saveAndFlush(user);
 
@@ -193,12 +195,35 @@ public class AuthServiceImpl implements AuthService {
 				.orElseThrow(() -> new IllegalArgumentException("Email not registered"));
 		// Generate token, save it and send email (pseudo-code)
 		String token = generateVerificationToken(user);
+		log.info("=== Sent email to {} is {} ===", user.getEmail(), token);
+
+		PasswordResetToken prt = new PasswordResetToken();
+		prt.setUserId(user.getId());
+		prt.setToken(token);
+		prt.setExpiresAt(OffsetDateTime.now().plusSeconds(3600)); // 1 hour expiration
+		prt.setUsed(false);
+		prt.setCreatedAt(OffsetDateTime.now());
+
+		passwordResetTokenRepository.save(prt);
+
 		emailService.sendVerificationEmail(email, token);
 	}
 
 	@Override
 	public void verifyEmailToken(String token) {
-		User user = validateVerificationToken(token);
+		// 1. Find the token in the database
+		PasswordResetToken verificationToken = passwordResetTokenRepository.findByToken(token)
+				.orElseThrow(() -> new ResourceNotFoundException("Invalid verification token"));
+
+		// 2. Check if the token has expired
+		if (verificationToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
+			throw new IllegalArgumentException("Verification code expired");
+		}
+
+		// 3. Return the fully loaded user entity from the database
+		User user = userRepository.findById(verificationToken.getUserId())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
 		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);
 
@@ -266,10 +291,14 @@ public class AuthServiceImpl implements AuthService {
 		if (user.getEmail() != null && user.getEmail().equalsIgnoreCase(emailOrPhone)) {
 			// Email reset token flow
 			String token = generatePasswordResetToken(user);
+			log.info("=== Sent email to {} is {} ===", user.getEmail(), token);
+
 			emailService.sendPasswordResetEmail(user.getEmail(), token);
 		} else if (user.getPhoneNumber() != null && user.getPhoneNumber().equals(emailOrPhone)) {
 			// Phone reset code flow
 			String code = generateRandomCode();
+			log.info("=== Sent phone to {} is {} ===", user.getPhoneNumber(), code);
+
 			PasswordResetToken resetToken = new PasswordResetToken();
 			resetToken.setUserId(user.getId());
 			resetToken.setToken(code);

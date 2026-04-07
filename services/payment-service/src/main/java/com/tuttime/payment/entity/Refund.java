@@ -3,19 +3,22 @@ package com.tuttime.payment.entity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Table(name = "refunds", schema = "payment_service")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Refund extends BaseUuidEntity {
 
 	@Column(name = "payment_id", nullable = false)

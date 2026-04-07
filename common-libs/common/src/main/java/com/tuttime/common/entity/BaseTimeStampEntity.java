@@ -2,6 +2,7 @@ package com.tuttime.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -10,6 +11,7 @@ import java.time.OffsetDateTime;
 
 @Getter
 @Setter
+@Data
 @MappedSuperclass
 public abstract class BaseTimeStampEntity {
 	@CreatedDate
@@ -17,6 +19,6 @@ public abstract class BaseTimeStampEntity {
 	private OffsetDateTime createdAt;
 
 	@LastModifiedDate
-	@Column(name = "updated_at", nullable = false)
+	@Column(name = "updated_at")
 	private OffsetDateTime updatedAt;
 }

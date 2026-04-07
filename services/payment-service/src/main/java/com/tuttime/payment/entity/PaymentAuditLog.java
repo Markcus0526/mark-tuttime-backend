@@ -12,12 +12,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "payment_audit_logs", schema = "payment_service")
-@EntityListeners(AuditingEntityListener.class)
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class PaymentAuditLog {
 
 	@Id
@@ -37,7 +37,4 @@ public class PaymentAuditLog {
 	@Column(name = "event_data", columnDefinition = "jsonb")
 	private String eventData;
 
-	@CreatedDate
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private Instant createdAt;
 }

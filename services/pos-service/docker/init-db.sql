@@ -78,8 +78,6 @@ CREATE TABLE pos_sync_queues
     updated_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP
 );
 
-
-
 CREATE INDEX idx_pos_sync_queues_status ON pos_sync_queues (status);
 CREATE INDEX idx_pos_sync_queues_next_retry ON pos_sync_queues (next_retry_at);
 

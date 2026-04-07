@@ -1,9 +1,12 @@
 package com.tuttime.review.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.review.entity.enums.ReviewStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -16,7 +19,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Review Entity representing user feedback for a restaurant")
-public class Review {
+public class Review extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -48,12 +51,4 @@ public class Review {
 	@Version
 	@Schema(description = "Optimistic locking version")
 	private Long version;
-
-	@Column(name = "created_at", nullable = false, updatable = false)
-	private OffsetDateTime createdAt;
-
-	@PrePersist
-	protected void onCreate() {
-		createdAt = OffsetDateTime.now();
-	}
 }
