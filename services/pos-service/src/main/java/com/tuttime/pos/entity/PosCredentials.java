@@ -34,8 +34,6 @@ public class PosCredentials extends BaseTimeStampEntity {
 
 	private LocalDateTime lastSync;
 
-	private LocalDateTime createdAt = LocalDateTime.now();
-
 	public enum PosSystem {
 		IIKO, RKEEPER
 	}
