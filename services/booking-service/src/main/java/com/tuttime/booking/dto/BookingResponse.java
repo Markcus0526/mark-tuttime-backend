@@ -3,6 +3,7 @@ package com.tuttime.booking.dto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.enums.BookingStatus;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -12,18 +13,15 @@ import java.util.UUID;
 public record BookingResponse(
 		UUID id,
 		UUID userId,
-		UUID restaurantId,
-		UUID branchId,
-		UUID zoneId,
 		UUID tableId,
-		BookingStatus status,
 		OffsetDateTime bookingDatetime,
 		Integer duration,
 		Integer partySize,
 		Integer gracePeriodMins,
-		OffsetDateTime createdAt,
-		OffsetDateTime updatedAt,
-		String cancellationReason
+		String status,
+		String cancellationReason,
+		BigDecimal totalAmount,
+		String paymentUrl // Optional: To redirect user to a gateway like Stripe/Apple Pay
 ) {
 	/**
 	 * Static factory method to map from Entity to Record.
@@ -33,18 +31,15 @@ public record BookingResponse(
 		return new BookingResponse(
 				entity.getId(),
 				entity.getUserId(),
-				entity.getRestaurantId(),
-				entity.getBranchId(),
-				entity.getZoneId(),
 				entity.getTableId(),
-				entity.getStatus(),
 				entity.getBookingDatetime(),
 				entity.getDuration(),
 				entity.getPartySize(),
 				entity.getGracePeriodMins(),
-				entity.getCreatedAt(),
-				entity.getUpdatedAt(),
-				entity.getCancellationReason()
+				entity.getStatus().name(),
+				entity.getCancellationReason(),
+				entity.getTotalAmount(),
+				null // Populate with actual gateway link if needed
 		);
 	}
 }

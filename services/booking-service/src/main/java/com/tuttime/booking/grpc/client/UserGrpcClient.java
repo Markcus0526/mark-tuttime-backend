@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserGrpcClient {
 
 	@GrpcClient("user-service")
-	private UserServiceGrpc.UserServiceBlockingStub userStub;
+	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
 
 	/**
@@ -23,7 +23,7 @@ public class UserGrpcClient {
 			UserByIdRequest request = UserByIdRequest.newBuilder()
 					.setUserId(userId)
 					.build();
-			return userStub.getUserProfile(request);
+			return userServiceBlockingStub.getUserProfile(request);
 		} catch (StatusRuntimeException e) {
 			log.error("Failed to fetch profile for user {}: {}", userId, e.getStatus());
 			return null;

@@ -70,4 +70,30 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		responseObserver.onNext(AvailableTableResponse.newBuilder().setIsAvailable(available).build());
 		responseObserver.onCompleted();
 	}
+
+	@Override
+	public void getTablesForBooking(SlotAvailabilityRequest request, StreamObserver<TableListResponse> responseObserver) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		int partySize = request.getPartySize();
+
+		// 1. Fetch tables from SQL that are active and can fit the party size
+		List<Object[]> results = tableRepository.findTablesWithZoneName(branchId, partySize);
+
+		// 2. Build the Protobuf response
+		TableListResponse.Builder responseBuilder = TableListResponse.newBuilder();
+
+		for (Object[] row : results) {
+			TableInfo info = TableInfo.newBuilder()
+					.setTableId(row[0].toString())
+					.setTableNumber(row[1].toString())
+					.setZoneName(row[3].toString()) // Accesses the Zone Name directly from the query
+					.setMaxCapacity((Integer) row[2])
+					.build();
+			responseBuilder.addTables(info);
+		}
+
+		// 3. Send back to the Booking Service
+		responseObserver.onNext(responseBuilder.build());
+		responseObserver.onCompleted();
+	}
 }

@@ -23,6 +23,7 @@ CREATE TABLE bookings
     booking_datetime    TIMESTAMPTZ         NOT NULL, -- Use TZ for global accuracy
     duration            INT                 NOT NULL,
     party_size          INT                 NOT NULL CHECK (party_size > 0),
+    total_amount        DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     lead_time_minutes   INT                          DEFAULT 0,
     grace_period_mins   INT                          DEFAULT 15,
     cancellation_reason VARCHAR(255),

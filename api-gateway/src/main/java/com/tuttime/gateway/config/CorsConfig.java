@@ -60,9 +60,12 @@ public class CorsConfig {
 		if (allowAllOrigins || processedOrigins.isEmpty()) {
 			// If "*" is configured or no origins specified, allow ALL origins
 			// This includes mobile apps that may not send Origin headers
-			apiConfig.setAllowedOrigins(Arrays.asList("*"));
-			apiConfig.setAllowCredentials(false); // Must be false when using "*" (CORS spec)
-			log.info("CORS configured to allow ALL origins (*) - mobile apps supported, credentials disabled");
+//			apiConfig.setAllowedOrigins(Arrays.asList("*"));
+//			apiConfig.setAllowCredentials(false); // Must be false when using "*" (CORS spec)
+//			log.info("CORS configured to allow ALL origins (*) - mobile apps supported, credentials disabled");
+			apiConfig.setAllowedOriginPatterns(List.of("*"));
+			apiConfig.setAllowCredentials(true);
+			log.info("CORS: Server is now open to ALL computers and devices.");
 		} else {
 			// Specific origins configured - use origin patterns for flexibility
 			// setAllowedOriginPatterns() is more flexible and handles edge cases better

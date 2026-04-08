@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -50,6 +51,9 @@ public class Booking extends BaseUuidEntity {
 
 	@Column(name = "party_size", nullable = false)
 	private Integer partySize;
+
+	@Column(name = "total_amount", nullable = false)
+	private BigDecimal totalAmount;
 
 	@Column(name = "lead_time_minutes")
 	@Builder.Default

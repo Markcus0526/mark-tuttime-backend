@@ -14,6 +14,8 @@ service RestaurantService {
 
   rpc checkAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
 
+  rpc getTablesForBooking (SlotAvailabilityRequest) returns (TableListResponse);
+
 }
 
 message BranchRequest {
@@ -40,5 +42,24 @@ message AvailableTableResponse {
   int32 seats = 2;
 }
 
+message SlotAvailabilityRequest {
+  string restaurant_id = 1;
+  string branch_id = 2;
+  google.protobuf.Timestamp target_date = 3;
+  int32 party_size = 4; // Crucial filter: only return tables that can fit this many people
+  optional string zone_id = 5; // Optional: filter for specific areas like 'Terrace' or 'VIP'
+}
 
+message TableListResponse {
+  repeated TableInfo tables = 1;
+}
+
+message TableInfo {
+  string table_id = 1;
+  string table_number = 2;
+  string zone_name = 3;
+  int32 min_capacity = 4;
+  int32 max_capacity = 5;
+  bool is_active = 6;
+}
 

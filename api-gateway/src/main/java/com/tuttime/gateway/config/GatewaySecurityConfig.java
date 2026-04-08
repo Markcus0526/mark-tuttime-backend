@@ -35,7 +35,8 @@ public class GatewaySecurityConfig {
 				.authorizeExchange(exchanges -> exchanges
 						// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
 						.pathMatchers(
-								"/api/v1/auth/**",
+								"/api/v1/**",
+//								"/api/v1/auth/**",
 //								"/api/v1/restaurants/**",
 
 								"/swagger-ui.html",

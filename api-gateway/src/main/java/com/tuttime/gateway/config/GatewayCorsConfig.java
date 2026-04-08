@@ -1,5 +1,6 @@
 package com.tuttime.gateway.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -10,6 +11,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Configuration
 public class GatewayCorsConfig {
 
@@ -17,9 +19,12 @@ public class GatewayCorsConfig {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		// ... Your existing list processing logic remains perfectly fine ...
-		List<String> origins = Arrays.asList("http://localhost:3000", "https://tuttime-admin.frontare.ink");
-		configuration.setAllowedOrigins(origins);
+		log.info("==================================");
+
+		// ... Your existing list processing logic remains perfectly fine ... TODO
+//		List<String> origins = Arrays.asList("http://localhost:3000", "https://tuttime-admin.frontare.ink");
+//		configuration.setAllowedOrigins(origins);
+		configuration.setAllowedOriginPatterns(List.of("*"));
 
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));

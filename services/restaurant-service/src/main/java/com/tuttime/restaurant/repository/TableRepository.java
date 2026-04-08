@@ -28,4 +28,9 @@ public interface TableRepository extends JpaRepository<Table, UUID> {
 	// Find a specific table by ID and status excluding soft-deleted entries
 	Optional<Table> findByTableIdAndIsDeletedFalse(UUID tableId);
 
+	@Query("SELECT t.tableId, t.number, t.seats, z.name " +
+			"FROM Table t JOIN Zone z ON t.zoneId = z.zoneId " +
+			"WHERE z.branchId = :branchId AND t.seats >= :partySize AND t.status = 'ACTIVE'")
+	List<Object[]> findTablesWithZoneName(@Param("branchId") UUID branchId, @Param("partySize") int partySize);
+
 }
