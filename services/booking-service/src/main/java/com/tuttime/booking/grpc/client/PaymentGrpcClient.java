@@ -16,7 +16,7 @@ public class PaymentGrpcClient {
 
 	// This name must match the name in application.yml
 	@GrpcClient("payment-service")
-	private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
+	private PaymentServiceGrpc.PaymentServiceBlockingStub paymentServiceBlockingStub;
 
 	public String getStripeUrl(UUID bookingId, UUID userId, BigDecimal amount) {
 		// 1. Build the Request
@@ -28,7 +28,7 @@ public class PaymentGrpcClient {
 				.build();
 
 		// 2. Execute synchronous gRPC call
-		PaymentSessionResponse response = paymentStub.createCheckoutSession(request);
+		PaymentSessionResponse response = paymentServiceBlockingStub.createCheckoutSession(request);
 
 		// 3. Return the URL for the Flutter/React Native app
 		return response.getCheckoutUrl();

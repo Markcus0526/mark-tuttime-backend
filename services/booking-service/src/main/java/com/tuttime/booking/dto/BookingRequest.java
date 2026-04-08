@@ -4,7 +4,9 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -41,8 +43,17 @@ public record BookingRequest(
 		Integer leadTimeMinutes,
 
 		@Min(value = 0)
-		Integer gracePeriodMins
+		Integer gracePeriodMins,
+
+		List<PreOrderItemRequest> preOrderItems
 ) {
+	public record PreOrderItemRequest(
+			@NotNull UUID menuItemId,
+			@Min(1) Integer quantity,
+			List<UUID> modifierIds, // For extras like "extra cheese"
+			BigDecimal price // For initial client-side total calculation
+	) {}
+
 	// Compact constructor for default values
 	public BookingRequest {
 		if (leadTimeMinutes == null) leadTimeMinutes = 0;

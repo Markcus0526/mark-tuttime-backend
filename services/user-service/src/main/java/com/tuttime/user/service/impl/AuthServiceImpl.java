@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.PasswordResetToken;
@@ -89,8 +90,9 @@ public class AuthServiceImpl implements AuthService {
 		String identifier = request.getEmailOrPhone();
 		Optional<User> userOpt = userRepository.findByPhoneNumberOrEmail(identifier, identifier);
 		if (userOpt.isEmpty()) {
-			throw new SecurityException("Invalid credentials");
+			throw new SecurityException("Either phone number or email not registered");
 		}
+
 		User user = userOpt.get();
 
 		// Check user status

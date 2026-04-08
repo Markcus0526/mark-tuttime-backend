@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.tuttime.common.util.DatetimeUtil.convertOffsetDatetimeToProtobuf;
@@ -35,5 +36,13 @@ public class RestaurantGrpcClient {
 		if (!response.getIsAvailable()) {
 			throw new ConflictException("You do not reserve this specific booking");
 		}
+	}
+
+	public List<TableInfo> getTablesForBooking(UUID branchId, int partySize) {
+		SlotAvailabilityRequest req = SlotAvailabilityRequest.newBuilder()
+				.setBranchId(branchId.toString())
+				.setPartySize(partySize)
+				.build();
+		return restaurantServiceBlockingStub.getTablesForBooking(req).getTablesList();
 	}
 }

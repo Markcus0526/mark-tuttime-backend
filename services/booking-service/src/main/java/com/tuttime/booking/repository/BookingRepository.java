@@ -51,4 +51,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
 	// Spring Data JPA derives the query: SELECT * FROM bookings WHERE user_id = :userId ORDER BY booking_datetime DESC
 	List<Booking> findAllByUserIdOrderByBookingDatetimeDesc(UUID userId);
+
+	List<Booking> findByRestaurantIdAndBookingDatetimeBetween(UUID restaurantId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
+
+	List<Booking> findAllByBranchIdAndBookingDatetime(UUID branchId, OffsetDateTime date);
 }

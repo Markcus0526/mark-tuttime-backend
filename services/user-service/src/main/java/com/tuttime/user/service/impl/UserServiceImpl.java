@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -47,34 +48,32 @@ public class UserServiceImpl implements UserService {
 	// private final NotificationService notificationService;
 
 	@Override
-	public UserResponse createUser(UserCreateRequest userCreateRequest) {
+	public UserResponse createUser(UserCreateRequest request) {
+		String phoneNumber = request.getPhoneNumber();
+		String email = request.getEmail();
+
 		// Check at least one contact exists
-		if ((userCreateRequest.getPhoneNumber() == null || userCreateRequest.getPhoneNumber().isBlank())
-				&& (userCreateRequest.getEmail() == null || userCreateRequest.getEmail().isBlank())) {
+		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
 			throw new BadRequestException("Either phone number or email must be provided");
 		}
 
-		// Check uniqueness of phone and email
-		userRepository.findByPhoneNumber(userCreateRequest.getPhoneNumber())
+		// Check if user already exists by phone or email
+		userRepository.findByPhoneNumberOrEmail(phoneNumber, email)
 				.ifPresent(u -> {
-					throw new ConflictException("Phone number already in use");
-				});
-		userRepository.findByEmail(userCreateRequest.getEmail())
-				.ifPresent(u -> {
-					throw new ConflictException("Email already in use");
+					throw new ConflictException("Either phone number or email already in use");
 				});
 
 		User user = new User();
-		user.setPhoneNumber(userCreateRequest.getPhoneNumber());
-		user.setEmail(userCreateRequest.getEmail());
-		user.setFullName(userCreateRequest.getFullName());
-		user.setProfilePicture(userCreateRequest.getProfilePicture());
-		user.setStatus(UserStatus.ACTIVE);
+		user.setPhoneNumber(phoneNumber);
+		user.setEmail(email);
+		user.setFullName(request.getFullName());
+		user.setProfilePicture(request.getProfilePicture());
+		user.setStatus(UserStatus.PENDING_VERIFICATION);
 		user = userRepository.saveAndFlush(user);
 
-		String targetRole = UserRoleKind.isValid(userCreateRequest.getRoleName())
-				? userCreateRequest.getRoleName()
-				: "USER";
+		String targetRole = UserRoleKind.isValid(request.getRoleName())
+				? request.getRoleName()
+				: UserRoleKind.USER.name();
 		Role userRole = roleRepository.findByName(targetRole)
 				.orElseThrow(() -> new ResourceNotFoundException("Role " + targetRole + " not found"));
 		UserRole ur = new UserRole();
@@ -85,14 +84,12 @@ public class UserServiceImpl implements UserService {
 		return UserResponse.builder()
 				.id(user.getId())
 				.fullName(user.getFullName())
-				.email(user.getEmail())
-				.phoneNumber(user.getPhoneNumber())
+				.email(email)
+				.phoneNumber(phoneNumber)
 				.status(user.getStatus().name())
 				.roles(targetRole)
 				.profilePicture(user.getProfilePicture())
 				.lastLogin(user.getLastLogin())
-				.createdAt(user.getCreatedAt())
-				.updatedAt(user.getUpdatedAt())
 				.build();
 	}
 
@@ -141,8 +138,6 @@ public class UserServiceImpl implements UserService {
 						.collect(Collectors.joining(", ")))
 				.profilePicture(user.getProfilePicture())
 				.lastLogin(user.getLastLogin())
-				.createdAt(user.getCreatedAt())
-				.updatedAt(user.getUpdatedAt())
 				.build();
 	}
 
@@ -185,8 +180,6 @@ public class UserServiceImpl implements UserService {
 								.collect(Collectors.joining(", ")))
 						.profilePicture(user.getProfilePicture())
 						.lastLogin(user.getLastLogin())
-						.createdAt(user.getCreatedAt())
-						.updatedAt(user.getUpdatedAt())
 						.build());
 	}
 

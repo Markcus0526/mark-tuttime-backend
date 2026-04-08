@@ -8,7 +8,10 @@ option java_outer_classname = "MenuServiceProto";
 
 // Menu Service gRPC
 service MenuService {
+
   rpc getPriceForOrder (PriceRequest) returns (PriceResponse);
+
+  rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
 
 }
 
@@ -20,4 +23,34 @@ message PriceRequest {
 message PriceResponse {
   double base_price = 1;
   double modifiers_total = 2;
+}
+
+message MenuRequest {
+  string branch_id = 1;
+}
+
+message MenuResponse {
+  repeated MenuItemDetail items = 1;
+}
+
+message MenuItemDetail {
+  string menu_item_id = 1;
+  string name = 2;
+  string description = 3;
+  double base_price = 4;
+  string category = 5;
+  bool is_available = 6;
+  repeated ModifierGroup modifier_groups = 7;
+}
+
+message ModifierGroup {
+  string group_id = 1;
+  string group_name = 2;
+  repeated Modifier options = 3;
+}
+
+message Modifier {
+  string modifier_id = 1;
+  string name = 2;
+  double extra_price = 3;
 }

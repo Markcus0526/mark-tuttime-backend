@@ -183,7 +183,7 @@ public class RateLimitingConfig {
 		// /api/v1/auth/signin: Configurable requests per IP per time window
 		int signinCapacityValue = signinCapacity;
 		int signinRefillPeriodMinutesValue = signinRefillPeriodMinutes;
-		configurations.put("/api/v1/auth/signin", () -> {
+		configurations.put("/api/v1/auth/register", () -> {
 			Bandwidth limit = Bandwidth.builder()
 					.capacity(signinCapacityValue)
 					.refillIntervally(signinCapacityValue, Duration.ofMinutes(signinRefillPeriodMinutesValue))
@@ -198,7 +198,7 @@ public class RateLimitingConfig {
 		// /api/v1/auth/signup: Configurable requests per IP per time window
 		int signupCapacityValue = signupCapacity;
 		int signupRefillPeriodMinutesValue = signupRefillPeriodMinutes;
-		configurations.put("/api/v1/auth/signup", () -> {
+		configurations.put("/api/v1/auth/register", () -> {
 			Bandwidth limit = Bandwidth.builder()
 					.capacity(signupCapacityValue)
 					.refillIntervally(signupCapacityValue, Duration.ofMinutes(signupRefillPeriodMinutesValue))

@@ -1,15 +1,19 @@
 package com.tuttime.booking.service;
 
+import com.tuttime.booking.dto.BookingSetupResponse;
 import com.tuttime.booking.dto.BookingHistoryResponse;
 import com.tuttime.booking.dto.BookingRequest;
 import com.tuttime.booking.dto.BookingResponse;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.enums.BookingStatus;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public interface BookingService {
+
+	BookingSetupResponse getBookingSetupData(UUID branchId, OffsetDateTime date, int partySize);
 
 	/**
 	 * Creates a new booking with distributed locking for concurrency control.
@@ -19,7 +23,7 @@ public interface BookingService {
 	/**
 	 * Updates the status of an existing booking and triggers domain events.
 	 */
-	void updateStatus(UUID bookingId, BookingStatus newStatus, UUID actorId, String reason);
+	Booking updateStatus(UUID bookingId, BookingStatus newStatus, UUID actorId, String reason);
 
 	/**
 	 * Confirms payment for a booking (usually called by Payment Service).
@@ -31,9 +35,11 @@ public interface BookingService {
 	 */
 	void cancelUnpaidBooking(UUID bookingId);
 
-	public List<BookingResponse> getBookingsByUser(UUID userId);
+	List<BookingResponse> getBookingsByUser(UUID userId);
 
-	public void cancelBooking(UUID bookingId, UUID userId, String reason);
+	void cancelBooking(UUID bookingId, UUID userId, String reason);
 
-	public List<BookingHistoryResponse> getStatusHistory(UUID bookingId);
+	List<BookingHistoryResponse> getStatusHistory(UUID bookingId);
+
+	List<BookingResponse> getBookingsByRestaurant(UUID restaurantId, OffsetDateTime date);
 }
