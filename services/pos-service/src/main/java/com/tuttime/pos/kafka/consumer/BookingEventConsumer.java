@@ -20,8 +20,7 @@ public class BookingEventConsumer {
 
 	@KafkaListener(
 			topics = TOPIC_BOOKING_CONFIRMED,
-			groupId = "pos-service-group",
-			containerFactory = "bookingConfirmedKafkaListenerContainerFactory")
+			groupId = "pos-service-group")
 	public void consumeBookingConfirmed(ConsumerRecord<String, BookingEvent.BookingConfirmedEvent> record) {
 		BookingEvent.BookingConfirmedEvent event = record.value();
 		BookingSyncRequest request = new BookingSyncRequest(UUID.fromString(event.restaurantId()), event.posSystem());

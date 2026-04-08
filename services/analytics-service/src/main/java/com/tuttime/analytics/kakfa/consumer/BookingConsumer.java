@@ -23,9 +23,7 @@ public class BookingConsumer {
 	 */
 	@KafkaListener(
 			topics = TOPIC_BOOKING_CREATED,
-			groupId = "analytics-service-group",
-			containerFactory = "kafkaListenerContainerFactory"
-	)
+			groupId = "analytics-service-group")
 	public void handleBookingCreated(BookingEvent.BookingCreatedEvent event, Acknowledgment ack) {
 		log.info("Analytics received Booking Event: {} for Restaurant: {}",
 				event.bookingId(), event.restaurantId());

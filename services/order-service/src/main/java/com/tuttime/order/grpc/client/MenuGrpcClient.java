@@ -3,6 +3,7 @@ package com.tuttime.order.grpc.client;
 import com.tuttime.common.proto.MenuServiceGrpc;
 import com.tuttime.common.proto.PriceRequest;
 import com.tuttime.common.proto.PriceResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MenuGrpcClient {
 
 	@GrpcClient("menu-service") // Name matches config in application.yml

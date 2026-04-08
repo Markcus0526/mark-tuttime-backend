@@ -6,6 +6,7 @@ import com.tuttime.common.proto.BranchRequest;
 import com.tuttime.common.proto.BranchResponse;
 import com.tuttime.common.proto.RestaurantServiceGrpc;
 import com.tuttime.common.proto.UserServiceGrpc;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RestaurantGrpcClient {
 
 	@GrpcClient("restaurant-service")
