@@ -13,15 +13,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_locations",
-		indexes = {
-				@Index(name = "idx_user_locations_gist", columnList = "location")
-		})
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-@Builder
+@Table(name = "user_locations")
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class UserLocation extends BaseTimeStampEntity {
 	@Id
@@ -40,3 +34,4 @@ public class UserLocation extends BaseTimeStampEntity {
 	@CreationTimestamp
 	private OffsetDateTime recordedAt;
 }
+

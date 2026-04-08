@@ -71,9 +71,9 @@ public interface AuthService {
 	/**
 	 * Sends a phone verification code via SMS to the specified phone number.
 	 *
-	 * @param phoneNumber Phone number to verify
+	 * @param request to verify
 	 */
-	void sendPhoneVerificationCode(String phoneNumber);
+	void sendOtpVerificationCode(OtpVerificationRequest request);
 
 	/**
 	 * Verifies a phone number using the received SMS verification code.
@@ -99,5 +99,5 @@ public interface AuthService {
 	 */
 	void resetPassword(PasswordResetConfirmRequest request);
 
-	AuthResponse loginWithOtp(String phoneNumber, String code);
+	AuthResponse loginWithOtp(OtpVerificationConfirmRequest request);
 }

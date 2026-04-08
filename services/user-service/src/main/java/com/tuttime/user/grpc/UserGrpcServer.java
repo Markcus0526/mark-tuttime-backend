@@ -111,7 +111,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public void getUserProfile(GetUserRequest request, StreamObserver<UserProfileResponse> responseObserver) {
+	public void getUserProfile(UserByIdRequest request, StreamObserver<UserProfileResponse> responseObserver) {
 		try {
 			UUID userId = UUID.fromString(request.getUserId());
 

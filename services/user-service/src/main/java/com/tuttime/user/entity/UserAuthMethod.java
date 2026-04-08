@@ -12,18 +12,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_auth_methods",
-		indexes = {
-				@Index(name = "idx_auth_methods_user_id", columnList = "user_id")
-		},
-		uniqueConstraints = {
-				@UniqueConstraint(columnNames = {"user_id", "auth_type"})
-		})
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-@Builder
+@Table(name = "user_auth_methods")
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class UserAuthMethod extends BaseTimeStampEntity {
 	@Id
@@ -44,3 +35,4 @@ public class UserAuthMethod extends BaseTimeStampEntity {
 	@Builder.Default
 	private boolean verified = false;
 }
+

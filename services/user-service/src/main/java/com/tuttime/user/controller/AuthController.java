@@ -91,58 +91,6 @@ public class AuthController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@Operation(summary = "Send email verification link to user email.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Verification email sent"),
-			@ApiResponse(responseCode = "400", description = "Invalid email address", content = @Content)
-	})
-	@PostMapping("/email/send-verification")
-	public ResponseEntity<ApiRes<Void>> sendEmailVerificationLink(
-			@Parameter(description = "Request containing email address to send verification", required = true)
-			@Valid @RequestBody EmailRequest request) {
-		authService.sendEmailVerificationLink(request.getEmail());
-		return ResponseEntity.noContent().build();
-	}
-
-	@Operation(summary = "Verify email using token from verification link.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Email verified successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
-	})
-	@GetMapping("/email/verify")
-	public ResponseEntity<ApiRes<Void>> verifyEmail(
-			@Parameter(description = "Verification token", required = true)
-			@RequestParam("token") String token) {
-		authService.verifyEmailToken(token);
-		return ResponseEntity.noContent().build();
-	}
-
-	@Operation(summary = "Send phone verification code via SMS.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Verification code sent"),
-			@ApiResponse(responseCode = "400", description = "Invalid phone number", content = @Content)
-	})
-	@PostMapping("/phone/send-code")
-	public ResponseEntity<ApiRes<Void>> sendPhoneVerificationCode(
-			@Parameter(description = "Request containing phone number to send code", required = true)
-			@Valid @RequestBody PhoneVerificationRequest request) {
-		authService.sendPhoneVerificationCode(request.getPhoneNumber());
-		return ResponseEntity.noContent().build();
-	}
-
-	@Operation(summary = "Verify phone with received SMS code.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Phone verified successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid phone number or code", content = @Content)
-	})
-	@PostMapping("/phone/verify")
-	public ResponseEntity<ApiRes<Void>> verifyPhoneCode(
-			@Parameter(description = "Request containing phone number and code", required = true)
-			@Valid @RequestBody PhoneVerificationConfirmRequest request) {
-		authService.verifyPhoneCode(request.getPhoneNumber(), request.getCode());
-		return ResponseEntity.noContent().build();
-	}
-
 	@Operation(summary = "Request password reset. Sends email or phone reset depending on contact.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "Password reset initiated"),
@@ -177,8 +125,8 @@ public class AuthController {
 	@PostMapping("/otp/request")
 	public ResponseEntity<ApiRes<Void>> requestOtpLogin(
 			@Parameter(description = "Phone number to receive OTP code", required = true)
-			@Valid @RequestBody PhoneVerificationRequest request) {
-		authService.sendPhoneVerificationCode(request.getPhoneNumber());
+			@Valid @RequestBody OtpVerificationRequest request) {
+		authService.sendOtpVerificationCode(request);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -190,8 +138,8 @@ public class AuthController {
 	@PostMapping("/otp/verify")
 	public ResponseEntity<ApiRes<AuthResponse>> verifyOtpLogin(
 			@Parameter(description = "Phone number and OTP code for login", required = true)
-			@Valid @RequestBody PhoneVerificationConfirmRequest request) {
-		AuthResponse response = authService.loginWithOtp(request.getPhoneNumber(), request.getCode());
+			@Valid @RequestBody OtpVerificationConfirmRequest request) {
+		AuthResponse response = authService.loginWithOtp(request);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 }

@@ -22,6 +22,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
 	Optional<User> findByPhoneNumberAndStatusIsNot(String phoneNumber, UserStatus status);
 
+	Optional<User> findByEmailAndStatusIsNot(String email, UserStatus status);
+
 	// Standard lookups
 	Optional<User> findByEmail(String email);
 
