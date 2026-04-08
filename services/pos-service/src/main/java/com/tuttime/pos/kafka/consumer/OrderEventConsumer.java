@@ -35,8 +35,7 @@ public class OrderEventConsumer {
 
 	@KafkaListener(
 			topics = TOPIC_ORDER_CREATED,
-			groupId = "pos-service-group",
-			containerFactory = "orderCreatedKafkaListenerContainerFactory")
+			groupId = "pos-service-group")
 	public void consumeOrderCreated(ConsumerRecord<String, OrderEvent.OrderCreatedEvent> record) {
 		OrderEvent.OrderCreatedEvent event = record.value();
 		OrderSyncRequest request = new OrderSyncRequest(UUID.fromString(event.orderId()), event.posSystem());
@@ -80,7 +79,9 @@ public class OrderEventConsumer {
 			attempts = "4",                          // 1 initial + 3 retries
 			backoff = @Backoff(delay = 5000, multiplier = 2.0), // Exponential backoff
 			topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE)
-	@KafkaListener(topics = "order-status-topic", groupId = "pos-service-group")
+	@KafkaListener(
+			topics = TOPIC_ORDER_STATUS_UPDATED,
+			groupId = "pos-service-group")
 	public void consumeWithRetry(OrderEvent.OrderStatusEvent event) {
 		// ... same logic as above
 	}

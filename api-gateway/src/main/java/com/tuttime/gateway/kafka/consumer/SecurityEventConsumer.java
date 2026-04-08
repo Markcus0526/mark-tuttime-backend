@@ -23,7 +23,9 @@ public class SecurityEventConsumer {
 	private static final String JTI_BLACKLIST_PREFIX = "blacklist:jti:";
 	private final ObjectMapper objectMapper;
 
-	@KafkaListener(topics = TOPIC_USER_SECURITY_UPDATED, groupId = "gateway-group")
+	@KafkaListener(
+			topics = TOPIC_USER_SECURITY_UPDATED,
+			groupId = "gateway-group")
 	public void handleSecurityEvent(String eventString) {
 
 		UserEvent.SecurityEvent event = null;

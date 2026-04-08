@@ -2,6 +2,7 @@ package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.proto.*;
 import io.grpc.StatusRuntimeException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MenuGrpcClient {
 
 	@GrpcClient("menu-service")

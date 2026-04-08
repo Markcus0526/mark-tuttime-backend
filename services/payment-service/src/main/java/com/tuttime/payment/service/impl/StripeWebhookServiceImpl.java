@@ -10,6 +10,7 @@ import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.entity.enums.PaymentStatus;
+import com.tuttime.payment.kafka.PaymentEventProducer;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.service.StripeWebhookService;
@@ -29,7 +30,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 
 	private final PaymentRepository paymentRepository;
 	private final PaymentAuditLogRepository auditLogRepository;
-	private final EventProducer eventProducer;
+	private final PaymentEventProducer paymentEventProducer;
 
 	@Value("${stripe.webhook.secret}")
 	private String webhookSecret; // Found in Stripe Dashboard -> Developers -> Webhooks
@@ -84,15 +85,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 			// Trigger internal and external confirmation (e.g. Kafka/Email)
 			// Notify Kafka/Events
 			// BROADCAST TO KAFKA
-			PaymentEvent.PaymentCompletedEvent event = new PaymentEvent.PaymentCompletedEvent(
-					payment.getBookingId(),
-					payment.getUserId(),
-					session.getPaymentIntent(),
-					payment.getAmount(),
-					payment.getCurrency(),
-					OffsetDateTime.now()
-			);
-			eventProducer.sendPaymentCompletedEvent(event);
+			paymentEventProducer.sendPaymentSuccess(payment);
 
 			log.info("Payment SUCCESS confirmed for Booking ID: {}", bookingId);
 		}

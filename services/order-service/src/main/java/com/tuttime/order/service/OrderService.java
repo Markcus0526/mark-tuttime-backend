@@ -4,6 +4,7 @@ import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.order.dto.OrderRequest;
 import com.tuttime.order.dto.OrderResponse;
 import com.tuttime.order.dto.OrderUpdateRequest;
+import com.tuttime.order.entity.Order;
 
 import java.util.UUID;
 
@@ -26,4 +27,6 @@ public interface OrderService {
 	OrderResponse removeItem(UUID orderId, UUID itemId);
 
 	OrderResponse checkout(UUID id);
+
+	Order confirmOrderPayment(UUID bookingId);
 }

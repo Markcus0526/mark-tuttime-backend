@@ -16,6 +16,7 @@ import com.tuttime.order.mapper.OrderMapper;
 import com.tuttime.order.repository.OrderRepository;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -245,5 +247,27 @@ public class OrderServiceImpl implements OrderService {
 		));
 
 		return orderMapper.toResponse(savedOrder);
+	}
+
+	@Transactional
+	public Order confirmOrderPayment(UUID bookingId) {
+		// 1. Locate the specific order linked to this booking
+		Order order = orderRepository.findByBookingId(bookingId)
+				.orElseThrow(() -> new ResourceNotFoundException("No order found for booking: " + bookingId));
+
+		// 2. Validate current state (prevent redundant updates or illegal transitions)
+		if (order.getStatus() == OrderStatus.PAID) {
+			log.info("Order for booking {} is already marked as PAID.", bookingId);
+			return order;
+		}
+
+		// 3. Update status to PAID (or PLACED)
+		order.setStatus(OrderStatus.PAID);
+
+		// 4. Update audit fields (optional but recommended)
+		order.setUpdatedAt(OffsetDateTime.now());
+
+		// 5. Save and return for further processing (like pushing to POS)
+		return orderRepository.save(order);
 	}
 }
