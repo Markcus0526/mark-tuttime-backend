@@ -99,7 +99,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: tuttime-kafka-ui
     ports:
-      - "9000:8080" # Change 9000 to whatever port you prefer
+      - "9001:8080" # Change 9001 to whatever port you prefer
     env_file:
       - .env.docker
     environment:
@@ -140,10 +140,60 @@ services:
     networks:
       - tuttime-network
 
+  # ============================================================================
+  # Graylog Logging Stack
+  # ============================================================================
+
+  mongodb:
+    image: mongo:5.0
+    container_name: tuttime-mongodb
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - tuttime-network
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: tuttime-opensearch
+    environment:
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "bootstrap.memory_lock=true"
+      - "discovery.type=single-node"
+      - "action.auto_create_index=false"
+      - "plugins.security.disabled=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - os_data:/usr/share/opensearch/data
+    networks:
+      - tuttime-network
+
+  graylog:
+    image: graylog/graylog:5.2
+    container_name: tuttime-graylog
+    depends_on:
+      - mongodb
+      - opensearch
+    ports:
+      - "9002:9002/tcp"   # Web UI
+      - "12203:12203/udp" # GELF UDP Input for your Java App
+    environment:
+      - GRAYLOG_PASSWORD_SECRET=***REMOVED***
+      - GRAYLOG_ROOT_PASSWORD_SHA2=***REMOVED*** # admin
+      - GRAYLOG_HTTP_BIND_ADDRESS=0.0.0.0:9002
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://173.249.29.61/
+      - GRAYLOG_MONGODB_URI=mongodb://mongodb:27017/graylog
+      - GRAYLOG_ELASTICSEARCH_HOSTS=http://opensearch:9200
+    networks:
+      - tuttime-network
+
 volumes:
   redis_data:
   kafka-data:
-  # Note: PostgreSQL volumes are defined in each service's docker-compose.yml
+  mongodb_data:
+  os_data:
 
 networks:
   tuttime-network:
