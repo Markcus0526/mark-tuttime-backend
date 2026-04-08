@@ -38,7 +38,7 @@ public class OpenApiConfig {
 	public OpenAPI customOpenAPI() {
 		// Force Swagger UI to make calls to the Gateway port (8080) instead of 28001!
 		Server gatewayServer = new Server();
-		gatewayServer.setUrl("http://173.249.29.61:8080/menu-docs");
+		gatewayServer.setUrl("http://173.249.29.61:8080/booking-docs");
 		gatewayServer.setDescription("Gateway Route");
 
 		// Create a security requirement pointing to the name used in your annotation above

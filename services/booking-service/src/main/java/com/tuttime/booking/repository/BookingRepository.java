@@ -20,7 +20,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 	 * Checks if a table has any active bookings that overlap with the given time range.
 	 * Logic: An overlap exists if (existingStart < newEnd) AND (existingEnd > newStart).
 	 */
-	@Query(value = "SELECT COUNT(*) > 0 FROM booking b " +
+	@Query(value = "SELECT COUNT(*) > 0 FROM bookings b " +
 			"WHERE b.table_id = :tableId " +
 			"AND b.status NOT IN ('CANCELED', 'NO_SHOW') " +
 			"AND b.booking_datetime < :endTime " +

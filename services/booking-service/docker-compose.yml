@@ -41,7 +41,7 @@ services:
       # Example: SPRING_PROFILES_ACTIVE=docker,graylog-enabled
       SPRING_PROFILES_ACTIVE: docker
       # Graylog Configuration (optional - only used if graylog-enabled profile is active)
-      GRAYLOG_HOST: ${GRAYLOG_HOST:-90.156.157.241}
+      GRAYLOG_HOST: ${GRAYLOG_HOST:-173.249.29.61}
       GRAYLOG_PORT: ${GRAYLOG_PORT:-12203}
       # Database configuration
       DATABASE_URL: jdbc:postgresql://tuttime-booking-service-db:5432/booking_service_db?currentSchema=booking_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC
