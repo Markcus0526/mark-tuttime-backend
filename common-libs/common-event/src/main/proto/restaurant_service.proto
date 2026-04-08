@@ -12,7 +12,7 @@ service RestaurantService {
 
   rpc ValidateBranch (BranchRequest) returns (BranchResponse);
 
-  rpc CheckAvailability (AvailabilityRequest) returns (AvailabilityResponse);
+  rpc CheckAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
 
 }
 
@@ -25,20 +25,20 @@ message BranchResponse {
   bool exists = 1;
 }
 
-message AvailabilityRequest {
-  string branch_id = 1;
-  google.protobuf.Timestamp start_time = 2;
-  int32 duration_minutes = 3;
-  int32 party_size = 4;
+message AvailableTableRequest {
+  string restaurant_id = 1;
+  string branch_id = 2;
+  string zone_id = 3;
+  string table_id = 4;
+  int32 party_size = 5;
+  int32 duration_minutes = 6;
+  google.protobuf.Timestamp start_time = 7;
 }
 
-message TableInfo {
-  string table_id = 1;
-  string zone_id = 2;
-  int32 seats = 3;
-}
-
-message AvailabilityResponse {
+message AvailableTableResponse {
   bool is_available = 1;
-  repeated TableInfo available_tables = 2;
+  int32 seats = 2;
 }
+
+
+

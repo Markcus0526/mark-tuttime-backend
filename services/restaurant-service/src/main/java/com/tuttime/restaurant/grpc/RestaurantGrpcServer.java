@@ -3,6 +3,7 @@ package com.tuttime.restaurant.grpc;
 import com.tuttime.common.proto.*;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Table;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.TableRepository;
@@ -15,6 +16,7 @@ import net.devh.boot.grpc.server.service.GrpcService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -56,30 +58,16 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 
 
 	@Override
-	public void checkAvailability(AvailabilityRequest request, StreamObserver<AvailabilityResponse> responseObserver) {
-		// 1. Convert Protobuf Timestamp to Java Instant
-		Instant start = Instant.ofEpochSecond(request.getStartTime().getSeconds(), request.getStartTime().getNanos());
-		Instant end = start.plus(Duration.ofMinutes(request.getDurationMinutes()));
-		UUID branchId = UUID.fromString(request.getBranchId());
+	public void checkAvailableTableForBooking(AvailableTableRequest request, StreamObserver<AvailableTableResponse> responseObserver) {
+		UUID tableId = UUID.fromString(request.getTableId());
+		int partSize = request.getPartySize();
 
-		// 2. Query DB (Using the native overlap check logic we built earlier)
-		List<Table> freeTables = tableRepository.findAvailableTablesInBranch(
-				branchId, start, end, request.getPartySize()
-		);
+		boolean available = tableRepository.findByTableIdAndIsDeletedFalse(tableId)
+				.map(table ->
+						table.getStatus() == TableStatus.ACTIVE && table.getSeats() <= partSize
+				).orElse(false);
 
-		// 3. Build Response
-		var responseBuilder = AvailabilityResponse.newBuilder()
-				.setIsAvailable(!freeTables.isEmpty());
-
-		freeTables.forEach(t -> responseBuilder.addAvailableTables(
-				TableInfo.newBuilder()
-						.setTableId(t.getTableId().toString())
-						.setZoneId(t.getZoneId().toString())
-						.setSeats(t.getSeats())
-						.build()
-		));
-
-		responseObserver.onNext(responseBuilder.build());
+		responseObserver.onNext(AvailableTableResponse.newBuilder().setIsAvailable(available).build());
 		responseObserver.onCompleted();
 	}
 }

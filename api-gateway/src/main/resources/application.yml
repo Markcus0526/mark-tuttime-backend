@@ -176,90 +176,15 @@ spring:
                 name: bookingServiceCircuitBreaker
                 fallbackUri: forward:/fallback/booking-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/booking-locks/**
-        - id: booking-service-booking-lock
-          order: 42
-          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
-          predicates:
-            - Path=/api/v1/booking-locks/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: bookingServiceCircuitBreaker
-                fallbackUri: forward:/fallback/booking-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/booking-status-histories/**
-        - id: booking-service-booking-status-history
-          order: 43
-          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
-          predicates:
-            - Path=/api/v1/booking-status-histories/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: bookingServiceCircuitBreaker
-                fallbackUri: forward:/fallback/booking-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/booking-notifications/**
-        - id: booking-service-booking-notification
-          order: 44
-          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
-          predicates:
-            - Path=/api/v1/booking-notifications/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: bookingServiceCircuitBreaker
-                fallbackUri: forward:/fallback/booking-service
-
         ################# Order Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/orders/**
-        - id: booking-service-order
+        - id: order-service-order
           order: 51
           uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
           predicates:
             - Path=/api/v1/orders/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: orderServiceCircuitBreaker
-                fallbackUri: forward:/fallback/order-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/order-items/**
-        - id: booking-service-order-item
-          order: 52
-          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
-          predicates:
-            - Path=/api/v1/order-items/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: orderServiceCircuitBreaker
-                fallbackUri: forward:/fallback/order-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/order-item-modifiers/**
-        - id: booking-service-order-item-modifier
-          order: 53
-          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
-          predicates:
-            - Path=/api/v1/order-item-modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             #            - name: JwtAuthentication
@@ -277,36 +202,6 @@ spring:
           uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
           predicates:
             - Path=/api/v1/payments/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: paymentServiceCircuitBreaker
-                fallbackUri: forward:/fallback/payment-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/refunds/**
-        - id: payment-service-refunds
-          order: 62
-          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
-          predicates:
-            - Path=/api/v1/refunds/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: paymentServiceCircuitBreaker
-                fallbackUri: forward:/fallback/payment-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/payment-audit-logs/**
-        - id: payment-service-payment-audit-log
-          order: 63
-          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
-          predicates:
-            - Path=/api/v1/payment-audit-logs/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             #            - name: JwtAuthentication
@@ -602,7 +497,7 @@ logging:
 # To enable: Add 'graylog-enabled' to spring.profiles.active
 # Example: SPRING_PROFILES_ACTIVE=local,graylog-enabled
 graylog:
-  host: ${GRAYLOG_HOST:90.156.157.241} # Graylog server host
+  host: ${GRAYLOG_HOST:173.249.29.61} # Graylog server host
   port: ${GRAYLOG_PORT:12203} # Graylog UDP port
   origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
   facility: ${GRAYLOG_FACILITY:api-gateway} # Facility name for log categorization
@@ -672,6 +567,8 @@ rate:
           minutes: ${RATE_LIMIT_AUTHENTICATED_REFILL_PERIOD_MINUTES:1}
 
 springdoc:
+  cache:
+    disabled: true  # Prevents server-side caching of the OpenAPI spec
   swagger-ui:
     path: /swagger-ui.html
     urls:
@@ -696,6 +593,4 @@ springdoc:
 
   writer-with-default-pretty-printer: true
   use-fqn: true # Uses Fully Qualified Names to prevent collisions
-  cache:
-    disabled: true
 

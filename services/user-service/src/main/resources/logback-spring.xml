@@ -10,7 +10,7 @@
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
     <!-- GELF Appender Configuration Properties -->
-    <springProperty scope="context" name="graylogHost" source="graylog.host" defaultValue="90.156.157.241"/>
+    <springProperty scope="context" name="graylogHost" source="graylog.host" defaultValue="173.249.29.61"/>
     <springProperty scope="context" name="graylogPort" source="graylog.port" defaultValue="12203"/>
     <springProperty scope="context" name="graylogOriginHost" source="graylog.origin-host"
                     defaultValue="${spring.application.name}"/>

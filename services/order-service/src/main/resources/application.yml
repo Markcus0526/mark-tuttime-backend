@@ -269,7 +269,7 @@ logging:
 # To enable: Add 'graylog-enabled' to spring.profiles.active
 # Example: SPRING_PROFILES_ACTIVE=graylog-enabled
 graylog:
-  host: ${GRAYLOG_HOST:90.156.157.241} # Graylog server host
+  host: ${GRAYLOG_HOST:173.249.29.61} # Graylog server host
   port: ${GRAYLOG_PORT:12203} # Graylog UDP port
   origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
   facility: ${GRAYLOG_FACILITY:order-service} # Facility name for log categorization
@@ -329,3 +329,11 @@ connection:
     monitoring:
       enabled: ${CONNECTION_POOL_MONITORING_ENABLED:false}
 
+springdoc:
+  cache:
+    disabled: true  # Prevents server-side caching of the OpenAPI spec
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+  model-and-parameter-ignores: X-User-Id,X-User-Roles

@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
-public class PaymentClient {
+public class PaymentGrpcClient {
 
 	// This name must match the name in application.yml
 	@GrpcClient("payment-service")

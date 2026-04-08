@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class UserClient {
+public class UserGrpcClient {
 
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userStub;

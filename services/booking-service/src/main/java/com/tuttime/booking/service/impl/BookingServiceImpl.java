@@ -6,9 +6,11 @@ import com.tuttime.booking.dto.BookingResponse;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.enums.BookingStatus;
 import com.tuttime.booking.event.BookingStatusChangedEvent;
+import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.booking.service.BookingService;
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class BookingServiceImpl implements BookingService {
 
 	private final BookingRepository bookingRepository;
 	private final BookingStatusHistoryRepository historyRepository;
+	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final RedissonClient redissonClient;
 	private final ApplicationEventPublisher eventPublisher;
 
@@ -40,6 +43,8 @@ public class BookingServiceImpl implements BookingService {
 	@Override
 	@Transactional
 	public Booking createBooking(BookingRequest request) {
+		restaurantGrpcClient.checkAvailableTableForBooking(request);
+
 		// Calculate the end time based on requested duration
 		OffsetDateTime startTime = request.bookingDatetime();
 		OffsetDateTime endTime = startTime.plus(Duration.ofMinutes(request.duration()));
@@ -52,7 +57,7 @@ public class BookingServiceImpl implements BookingService {
 		try {
 			// Try to acquire lock for 5s, release after 10s if process hangs
 			if (!lock.tryLock(5, 10, TimeUnit.SECONDS)) {
-				throw new RuntimeException("This table is currently being reserved by another user.");
+				throw new ConflictException("This table is currently being reserved by another user.");
 			}
 
 			// 2. Overlap Check (Postgres Native Logic)
@@ -64,7 +69,7 @@ public class BookingServiceImpl implements BookingService {
 			);
 
 			if (hasOverlap) {
-				throw new RuntimeException("Table is already booked for the selected time range.");
+				throw new ConflictException("Table is already booked for the selected time range.");
 			}
 
 			// 3. Entity Creation (Using Builder pattern)
