@@ -8,10 +8,12 @@ import com.tuttime.order.entity.Order;
 import com.tuttime.order.repository.OrderRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
 import java.util.UUID;
 
+@Slf4j
 @GrpcService
 @RequiredArgsConstructor
 public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {

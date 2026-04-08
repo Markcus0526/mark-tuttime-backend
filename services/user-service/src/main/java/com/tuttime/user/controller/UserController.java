@@ -1,6 +1,5 @@
 package com.tuttime.user.controller;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.user.dto.*;
@@ -209,7 +208,7 @@ public class UserController {
 	@PostMapping(value = "/verify-phone", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ApiRes<Void>> verifyPhoneCode(
 			@Parameter(description = "Phone verification details", required = true)
-			@Valid @RequestBody PhoneVerificationConfirmRequest request) {
+			@Valid @RequestBody OtpVerificationConfirmRequest request) {
 		if (!UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific user"));
 		}

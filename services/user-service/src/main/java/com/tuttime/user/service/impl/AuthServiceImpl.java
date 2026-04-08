@@ -3,13 +3,14 @@ package com.tuttime.user.service.impl;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.PasswordResetToken;
-import com.tuttime.user.entity.PhoneVerificationCode;
+import com.tuttime.user.entity.VerificationCode;
 import com.tuttime.user.entity.User;
 import com.tuttime.user.entity.UserAuthMethod;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.user.entity.enums.VerificationType;
 import com.tuttime.user.repository.PasswordResetTokenRepository;
-import com.tuttime.user.repository.PhoneVerificationCodeRepository;
+import com.tuttime.user.repository.VerificationCodeRepository;
 import com.tuttime.user.repository.UserAuthMethodRepository;
 import com.tuttime.user.repository.UserRepository;
 import com.tuttime.user.security.JwtTokenProvider;
@@ -35,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
 
 	private final UserRepository userRepository;
 	private final UserAuthMethodRepository authMethodRepository;
-	private final PhoneVerificationCodeRepository phoneVerificationCodeRepository;
+	private final VerificationCodeRepository verificationCodeRepository;
 	private final PasswordResetTokenRepository passwordResetTokenRepository;
 	private final UserAuthMethodRepository userAuthMethodRepository;
 	private final PasswordEncoder passwordEncoder;
@@ -77,11 +78,10 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 
 		// Send verification (email or phone)
-		if (request.getEmail() != null) {
-			sendEmailVerificationLink(request.getEmail());
-		} else if (request.getPhoneNumber() != null) {
-			sendPhoneVerificationCode(request.getPhoneNumber());
-		}
+		OtpVerificationRequest optRequest = new OtpVerificationRequest();
+		optRequest.setEmail(request.getEmail());
+		optRequest.setPhoneNumber(request.getPhoneNumber());
+		sendOtpVerificationCode(optRequest);
 	}
 
 	@Override
@@ -236,27 +236,116 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public void sendPhoneVerificationCode(String phoneNumber) {
-		User user = userRepository.findByPhoneNumber(phoneNumber)
-				.orElseThrow(() -> new IllegalArgumentException("Phone number not registered"));
+	public void sendOtpVerificationCode(OtpVerificationRequest request) {
+		String phoneNumber = request.getPhoneNumber();
+		String email = request.getEmail();
+
+		// Validate phone/email presence
+		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
+			throw new IllegalArgumentException("Either phone number or email must be provided");
+		}
+
+		// Check if user already exists by phone or email
+		Optional<User> user = userRepository.findByPhoneNumberOrEmail(phoneNumber, email);
+		if (user.isEmpty()) {
+			throw new IllegalArgumentException("\"Either phone number or email not registered");
+		}
 
 		// Generate code and save
 		String code = generateRandomCode();
-		PhoneVerificationCode verificationCode = new PhoneVerificationCode();
-		verificationCode.setPhoneNumber(phoneNumber);
-		verificationCode.setCode(code);
+		VerificationCode verificationCode = new VerificationCode();
+		verificationCode.setType(StringUtils.hasText(email) ? VerificationType.EMAIL_VERIFY : VerificationType.PHONE_VERIFY);
+		verificationCode.setTarget(StringUtils.hasText(email) ? email : phoneNumber);
+		verificationCode.setCodeHash(code);
 		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(300)); // 5 min expiry
 		verificationCode.setUsed(false);
-		phoneVerificationCodeRepository.save(verificationCode);
+		verificationCodeRepository.save(verificationCode);
 
-		// Send SMS (pseudo-code)
-		smsService.sendVerificationCode(phoneNumber, code);
+		if (StringUtils.hasText(email)) {
+			emailService.sendVerificationEmail(email, code);
+		} else {
+			// Send SMS (pseudo-code)
+			smsService.sendVerificationCode(phoneNumber, code);
+		}
+	}
+
+	@Transactional
+	public AuthResponse loginWithOtp(OtpVerificationConfirmRequest request) {
+		String phoneNumber = request.getPhoneNumber();
+		String email = request.getEmail();
+		String code = request.getCode();
+
+		// Validate phone/email presence
+		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
+			throw new IllegalArgumentException("Either phone number or email must be provided");
+		}
+
+		String target = StringUtils.hasText(phoneNumber) ? phoneNumber : email;
+		// Step 1: Verify OTP
+		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, code)
+				.orElseThrow(() -> new IllegalArgumentException("Invalid or expired OTP code"));
+
+		// Step 2: Mark OTP as used
+		otpCode.setUsed(true);
+		verificationCodeRepository.save(otpCode);
+
+		// Step 3: Find or create user by phone number
+		User user;
+		if (otpCode.getType() == VerificationType.PHONE_VERIFY) {
+			user = userRepository.findByPhoneNumberAndStatusIsNot(phoneNumber, UserStatus.DELETED)
+					.orElseGet(() -> {
+						User newUser = new User();
+						newUser.setPhoneNumber(phoneNumber);
+						newUser.setStatus(UserStatus.ACTIVE);
+						return userRepository.save(newUser);
+					});
+		} else {
+			user = userRepository.findByEmailAndStatusIsNot(email, UserStatus.DELETED)
+					.orElseGet(() -> {
+						User newUser = new User();
+						newUser.setEmail(email);
+						newUser.setStatus(UserStatus.ACTIVE);
+						return userRepository.save(newUser);
+					});
+		}
+
+		user.setStatus(UserStatus.ACTIVE);
+		userRepository.save(user);
+
+		// Optional: If you want to ensure the user has an auth method for PHONE_SMS
+		UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(
+				user.getId(),
+				otpCode.getType() == VerificationType.PHONE_VERIFY ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS)
+				.orElseGet(() -> {
+					UserAuthMethod newAuthMethod = new UserAuthMethod();
+					newAuthMethod.setUserId(user.getId());
+					newAuthMethod.setAuthType(AuthProvider.PHONE_SMS);
+					newAuthMethod.setVerified(true);
+					return userAuthMethodRepository.save(newAuthMethod);
+				});
+		authMethod.setVerified(true);
+
+		// Step 4: Generate JWT tokens or whatever your AuthResponse requires
+		String accessToken = jwtTokenProvider.generateAccessToken(user);
+		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+		AuthResponse auth = new AuthResponse();
+		auth.setAccessToken(accessToken);
+		auth.setRefreshToken(refreshToken);
+		auth.setTokenType("Bearer");
+		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
+		auth.setUserId(user.getId());
+		auth.setFullName(user.getFullName());
+		auth.setEmail(user.getEmail());
+		auth.setPhoneNumber(user.getPhoneNumber());
+
+		return auth;
 	}
 
 	@Override
 	public void verifyPhoneCode(String phoneNumber, String code) {
-		PhoneVerificationCode verification = phoneVerificationCodeRepository
-				.findTopByPhoneNumberAndCodeAndUsedFalseOrderByCreatedAtDesc(phoneNumber, code)
+		VerificationCode verification = verificationCodeRepository
+				.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(phoneNumber, code)
 				.orElseThrow(() -> new IllegalArgumentException("Invalid verification code"));
 
 		if (verification.getExpiresAt().isBefore(OffsetDateTime.now())) {
@@ -264,7 +353,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		verification.setUsed(true);
-		phoneVerificationCodeRepository.save(verification);
+		verificationCodeRepository.save(verification);
 
 		// Activate user and mark auth method verified
 		User user = userRepository.findByPhoneNumber(phoneNumber)
@@ -331,70 +420,21 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		// Otherwise, check phone verification codes (treat as password reset code)
-		Optional<PhoneVerificationCode> phoneCodeOpt = phoneVerificationCodeRepository.findTopByCodeAndUsedFalseOrderByCreatedAtDesc(tokenOrCode);
-		if (phoneCodeOpt.isPresent()) {
-			PhoneVerificationCode phoneCode = phoneCodeOpt.get();
+		Optional<VerificationCode> verificationCode = verificationCodeRepository.findTopByCodeHashAndUsedFalseOrderByCreatedAtDesc(tokenOrCode);
+		if (verificationCode.isPresent()) {
+			VerificationCode phoneCode = verificationCode.get();
 			if (phoneCode.getExpiresAt().isBefore(OffsetDateTime.now())) {
 				throw new IllegalArgumentException("Expired verification code");
 			}
-			User user = userRepository.findByPhoneNumber(phoneCode.getPhoneNumber())
+			User user = userRepository.findByPhoneNumber(phoneCode.getTarget())
 					.orElseThrow(() -> new IllegalArgumentException("User not found"));
 			updatePasswordForUser(user.getId(), newPassword);
 			phoneCode.setUsed(true);
-			phoneVerificationCodeRepository.save(phoneCode);
+			verificationCodeRepository.save(phoneCode);
 			return;
 		}
 
 		throw new IllegalArgumentException("Invalid token or code");
-	}
-
-	@Transactional
-	public AuthResponse loginWithOtp(String phoneNumber, String code) {
-		// Step 1: Verify OTP
-		PhoneVerificationCode otpCode = phoneVerificationCodeRepository.findTopByPhoneNumberAndCodeAndUsedFalseOrderByCreatedAtDesc(phoneNumber, code)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid or expired OTP code"));
-
-		// Step 2: Mark OTP as used
-		otpCode.setUsed(true);
-		phoneVerificationCodeRepository.save(otpCode);
-
-		// Step 3: Find or create user by phone number
-		User user = userRepository.findByPhoneNumberAndStatusIsNot(phoneNumber, UserStatus.DELETED)
-				.orElseGet(() -> {
-					User newUser = new User();
-					newUser.setPhoneNumber(phoneNumber);
-					newUser.setStatus(UserStatus.ACTIVE);
-					newUser.setCreatedAt(OffsetDateTime.now());
-					// other default user properties
-					return userRepository.save(newUser);
-				});
-
-		// Optional: If you want to ensure the user has an auth method for PHONE_SMS
-		userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.PHONE_SMS)
-				.orElseGet(() -> {
-					UserAuthMethod authMethod = new UserAuthMethod();
-					authMethod.setUserId(user.getId());
-					authMethod.setAuthType(AuthProvider.PHONE_SMS);
-					authMethod.setVerified(true);
-					authMethod.setCreatedAt(OffsetDateTime.now());
-					return userAuthMethodRepository.save(authMethod);
-				});
-
-		// Step 4: Generate JWT tokens or whatever your AuthResponse requires
-		String accessToken = jwtTokenProvider.generateAccessToken(user);
-		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
-
-		AuthResponse auth = new AuthResponse();
-		auth.setAccessToken(accessToken);
-		auth.setRefreshToken(refreshToken);
-		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getId());
-		auth.setFullName(user.getFullName());
-		auth.setEmail(user.getEmail());
-		auth.setPhoneNumber(user.getPhoneNumber());
-
-		return auth;
 	}
 
 	private void updatePasswordForUser(UUID userId, String newPassword) {

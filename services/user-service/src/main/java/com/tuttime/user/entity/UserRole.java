@@ -37,8 +37,6 @@ public class UserRole extends BaseTimeStampEntity {
 	@MapsId("roleId")
 	@JoinColumn(name = "role_id", nullable = false)
 	private Role role;
-
-	@Column(name = "assigned_at", nullable = false)
-	@Builder.Default
-	private OffsetDateTime assignedAt = OffsetDateTime.now();
 }
+
+

@@ -286,7 +286,7 @@ grpc:
       address: static://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_GRPC_PORT:29002}
       negotiation-type: plaintext
     menu-service:
-      address: static://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_GRPC_PORT:29003}
+      address: static://${MENU_SERVICE:localhost}:${MENU_GRPC_PORT:29003}
       negotiation-type: plaintext
     booking-service:
       address: static://${BOOKING_SERVICE:localhost}:${BOOKING_GRPC_PORT:29004}

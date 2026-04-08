@@ -14,16 +14,11 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users",
-		indexes = {
-				@Index(name = "idx_users_phone_email", columnList = "phoneNumber, email"),
-				@Index(name = "idx_users_is_deleted", columnList = "isDeleted")
-		})
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-@Builder
+@Table(name = "users", indexes = {
+		@Index(name = "idx_users_phone_email", columnList = "phone_number, email")
+})
+@Getter @Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class User extends BaseTimeStampEntity {
 
@@ -63,14 +58,11 @@ public class User extends BaseTimeStampEntity {
 
 	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
-	private Set<PasswordResetToken> passwordResetTokens = new HashSet<>();
-
-	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
-	@Builder.Default
 	private Set<UserLocation> locations = new HashSet<>();
 
+	// Helper method to keep bi-directional relationship in sync
 	public void addAuthMethod(UserAuthMethod method) {
 		this.authMethods.add(method);
-		method.setUserId(this.getId()); // This is the 'userId' field in UserAuthMethod.java
+		method.setUserId(this.getId());
 	}
 }

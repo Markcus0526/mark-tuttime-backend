@@ -10,9 +10,9 @@ option java_outer_classname = "RestaurantServiceProto";
 // Restaurant Service gRPC
 service RestaurantService {
 
-  rpc ValidateBranch (BranchRequest) returns (BranchResponse);
+  rpc validateBranch (BranchRequest) returns (BranchResponse);
 
-  rpc CheckAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
+  rpc checkAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
 
 }
 

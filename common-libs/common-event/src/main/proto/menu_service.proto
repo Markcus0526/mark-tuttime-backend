@@ -6,9 +6,9 @@ option java_multiple_files = true;
 option java_package = "com.tuttime.common.proto";
 option java_outer_classname = "MenuServiceProto";
 
-// User Service gRPC
+// Menu Service gRPC
 service MenuService {
-  rpc GetPrice (PriceRequest) returns (PriceResponse);
+  rpc getPriceForOrder (PriceRequest) returns (PriceResponse);
 
 }
 

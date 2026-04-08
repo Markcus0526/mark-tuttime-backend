@@ -22,7 +22,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,7 +37,7 @@ public class UserServiceImpl implements UserService {
 	private final RoleRepository roleRepository;
 	private final UserRoleRepository userRoleRepository;
 	private final UserAuthMethodRepository authMethodRepository;
-	private final PhoneVerificationCodeRepository phoneVerificationCodeRepository;
+	private final VerificationCodeRepository verificationCodeRepository;
 	private final PasswordResetTokenRepository passwordResetTokenRepository;
 	private final UserLocationRepository userLocationRepository;
 	private final UserMapper userMapper;
@@ -81,7 +80,6 @@ public class UserServiceImpl implements UserService {
 		UserRole ur = new UserRole();
 		ur.setUserId(user.getId());
 		ur.setRole(userRole);
-		ur.setAssignedAt(OffsetDateTime.now());
 		userRoleRepository.save(ur);
 
 		return UserResponse.builder()
@@ -208,7 +206,6 @@ public class UserServiceImpl implements UserService {
 		UserRole userRole = new UserRole();
 		userRole.setUserId(user.getId());
 		userRole.setRole(role);
-		userRole.setAssignedAt(OffsetDateTime.now());
 		userRoleRepository.save(userRole);
 	}
 
@@ -255,12 +252,12 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public void verifyPhoneCode(String phoneNumber, String code) {
-		PhoneVerificationCode pvc = phoneVerificationCodeRepository
-				.findFirstByPhoneNumberAndCodeAndUsedFalseAndExpiresAtAfter(phoneNumber, code, OffsetDateTime.now())
+		VerificationCode pvc = verificationCodeRepository
+				.findFirstByTargetAndCodeHashAndUsedFalseAndExpiresAtAfter(phoneNumber, code, OffsetDateTime.now())
 				.orElseThrow(() -> new BadRequestException("Invalid or expired verification code"));
 
 		pvc.setUsed(true);
-		phoneVerificationCodeRepository.save(pvc);
+		verificationCodeRepository.save(pvc);
 
 		// Optionally update user verified status or create user if needed
 	}

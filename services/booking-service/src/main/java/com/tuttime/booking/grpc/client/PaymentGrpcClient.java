@@ -3,6 +3,7 @@ package com.tuttime.booking.grpc.client;
 import com.tuttime.common.proto.PaymentServiceGrpc;
 import com.tuttime.common.proto.PaymentSessionRequest;
 import com.tuttime.common.proto.PaymentSessionResponse;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class PaymentGrpcClient {
 
 	// This name must match the name in application.yml

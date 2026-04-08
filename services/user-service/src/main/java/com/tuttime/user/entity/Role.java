@@ -1,21 +1,18 @@
 package com.tuttime.user.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "roles", schema = "user_service")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "roles")
+@Getter
+@Setter @Builder
+@NoArgsConstructor @AllArgsConstructor
 public class Role {
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
@@ -30,3 +27,4 @@ public class Role {
 	@OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<UserRole> userRoles = new HashSet<>();
 }
+

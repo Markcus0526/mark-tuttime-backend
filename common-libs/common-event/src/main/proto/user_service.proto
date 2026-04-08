@@ -8,15 +8,15 @@ option java_multiple_files = true;
 option java_package = "com.tuttime.common.proto";
 option java_outer_classname = "UserServiceProto";
 
-// The User Service definition
+// User Service gRPC
 service UserService {
   // Synchronous call for Gateway and Services to validate a user
-  rpc ValidateUser(ValidateUserRequest) returns (UserContextResponse);
+  rpc validateUser (ValidateUserRequest) returns (UserContextResponse);
 
   // Fetch basic profile info for display in Reviews/Bookings
-  rpc GetUserProfile(GetUserRequest) returns (UserProfileResponse);
+  rpc getUserProfile (UserByIdRequest) returns (UserProfileResponse);
 
-  rpc GetUserById (UserByIdRequest) returns (UserResponse);
+  rpc getUserById (UserByIdRequest) returns (UserResponse);
 
 }
 
@@ -25,7 +25,7 @@ message ValidateUserRequest {
   string jwt_token = 1;
 }
 
-message GetUserRequest {
+message UserByIdRequest {
   string user_id = 1;
 }
 
@@ -53,10 +53,6 @@ message UserProfileResponse {
   google.protobuf.Timestamp last_login = 21;
   google.protobuf.Timestamp created_at = 22;
   google.protobuf.Timestamp updated_at = 23;
-}
-
-message UserByIdRequest {
-  string user_id = 1;
 }
 
 message UserResponse {

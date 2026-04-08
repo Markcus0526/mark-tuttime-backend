@@ -104,7 +104,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional(readOnly = true)
 	public RatingStatsResponse getRestaurantStats(UUID restaurantId) {
 		RatingAggregate aggregate = aggregateRepository.findById(restaurantId)
-				.orElse(new RatingAggregate(restaurantId, BigDecimal.ZERO, 0, Map.of(), OffsetDateTime.now()));
+				.orElse(new RatingAggregate());
 
 		return new RatingStatsResponse(
 				aggregate.getAverageRating(),
@@ -140,7 +140,6 @@ public class ReviewServiceImpl implements ReviewService {
 		aggregate.setAverageRating(avg);
 		aggregate.setTotalReviews(approved.size());
 		aggregate.setRatingDistribution(dist);
-		aggregate.setLastUpdated(OffsetDateTime.now());
 
 		aggregateRepository.save(aggregate);
 	}

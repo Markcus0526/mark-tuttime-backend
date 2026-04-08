@@ -56,7 +56,7 @@ public class UserClient {
 	 */
 	public UserProfileResponse getProfile(String userId) {
 		try {
-			GetUserRequest request = GetUserRequest.newBuilder()
+			UserByIdRequest request = UserByIdRequest.newBuilder()
 					.setUserId(userId)
 					.build();
 			return userBockingStub.getUserProfile(request);

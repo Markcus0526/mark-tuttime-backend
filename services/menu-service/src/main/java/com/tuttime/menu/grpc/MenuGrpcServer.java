@@ -7,11 +7,13 @@ import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.ModifierRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Slf4j
 @GrpcService
 @RequiredArgsConstructor
 public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
@@ -20,7 +22,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	private final ModifierRepository modifierRepository;
 
 	@Override
-	public void getPrice(PriceRequest request, StreamObserver<PriceResponse> responseObserver) {
+	public void getPriceForOrder(PriceRequest request, StreamObserver<PriceResponse> responseObserver) {
 		try {
 			// 1. Fetch Base Item Price
 			UUID itemId = UUID.fromString(request.getItemId());

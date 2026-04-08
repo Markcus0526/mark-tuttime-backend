@@ -46,7 +46,7 @@ public class OrderServiceImpl implements OrderService {
 		// 2. Map Request Records to Entities manually to ensure Business Rules
 		request.items().forEach(itemReq -> {
 			// gRPC Call: If this fails, the whole transaction rolls back
-			BigDecimal verifiedPrice = menuGrpcClient.fetchVerifiedPrice(
+			BigDecimal verifiedPrice = menuGrpcClient.getPriceForOrder(
 					itemReq.menuItemId(),
 					itemReq.modifiers().stream().map(m -> m.modifierId()).toList()
 			);
@@ -107,7 +107,7 @@ public class OrderServiceImpl implements OrderService {
 			List<UUID> modIds = itemReq.modifiers().stream().map(m -> m.modifierId()).toList();
 
 			// Verified Price via gRPC
-			BigDecimal verifiedPrice = menuGrpcClient.fetchVerifiedPrice(itemReq.menuItemId(), modIds);
+			BigDecimal verifiedPrice = menuGrpcClient.getPriceForOrder(itemReq.menuItemId(), modIds);
 
 			OrderItem newItem = OrderItem.builder()
 					.menuItemId(itemReq.menuItemId())
