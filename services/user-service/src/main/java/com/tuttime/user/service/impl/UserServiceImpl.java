@@ -1,6 +1,7 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.exception.BadRequestException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
@@ -8,10 +9,14 @@ import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.user.entity.enums.VerificationType;
 import com.tuttime.user.kafka.UserSecurityProducer;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.repository.*;
+import com.tuttime.user.service.EmailService;
+import com.tuttime.user.service.SmsService;
 import com.tuttime.user.service.UserService;
+import com.tuttime.user.util.TokenUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
@@ -34,28 +39,37 @@ import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 @Transactional
 public class UserServiceImpl implements UserService {
 
+	private final EmailService emailService;
+	private final SmsService smsService;
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final UserRoleRepository userRoleRepository;
 	private final UserAuthMethodRepository authMethodRepository;
 	private final VerificationCodeRepository verificationCodeRepository;
-	private final PasswordResetTokenRepository passwordResetTokenRepository;
 	private final UserLocationRepository userLocationRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
 	private final UserSecurityProducer userSecurityProducer;
-	// Inject services/utilities for sending SMS/email etc.
-	// private final NotificationService notificationService;
+	private final TokenUtil tokenUtil;
 
 	@Override
 	public UserResponse createUser(UserCreateRequest request) {
-		String phoneNumber = request.getPhoneNumber();
-		String email = request.getEmail();
+		String identifier = request.getEmailOrPhone();
+		String roleName = request.getRoleName();
 
-		// Check at least one contact exists
-		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new BadRequestException("Either phone number or email must be provided");
+		if (!StringUtils.hasText(identifier)) {
+			throw new ResourceNotFoundException("Either phone number or email must be provided");
 		}
+		if (!StringUtils.hasText(roleName)) {
+			throw new ResourceNotFoundException("Role must be provided");
+		}
+
+		String phoneNumber = null;
+		String email =  null;
+		if (identifier.contains("@"))
+			email = identifier;
+		else
+			phoneNumber = identifier;
 
 		// Check if user already exists by phone or email
 		userRepository.findByPhoneNumberOrEmail(phoneNumber, email)
@@ -63,23 +77,49 @@ public class UserServiceImpl implements UserService {
 					throw new ConflictException("Either phone number or email already in use");
 				});
 
+		// 1. Create and populate User first
 		User user = new User();
 		user.setPhoneNumber(phoneNumber);
 		user.setEmail(email);
-		user.setFullName(request.getFullName());
-		user.setProfilePicture(request.getProfilePicture());
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
 		user = userRepository.saveAndFlush(user);
 
-		String targetRole = UserRoleKind.isValid(request.getRoleName())
-				? request.getRoleName()
-				: UserRoleKind.USER.name();
-		Role userRole = roleRepository.findByName(targetRole)
-				.orElseThrow(() -> new ResourceNotFoundException("Role " + targetRole + " not found"));
+		Role userRole = roleRepository.findByName(roleName)
+				.orElseThrow(() -> new ResourceNotFoundException("Role " + roleName + " not found"));
 		UserRole ur = new UserRole();
 		ur.setUserId(user.getId());
 		ur.setRole(userRole);
 		userRoleRepository.save(ur);
+
+		// 2. Create and link AuthMethod to the SAVED user
+		String password = tokenUtil.generateRandomPassword();
+		UserAuthMethod authMethod = new UserAuthMethod();
+		authMethod.setUserId(user.getId()); // Now 'user' has an ID!
+		authMethod.setCredential(passwordEncoder.encode(password));
+		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
+		authMethod.setVerified(false);
+
+		user.addAuthMethod(authMethod);
+
+		authMethodRepository.save(authMethod);
+		user = userRepository.save(user);
+
+		// Send verification (email or phone)
+		// Generate code and save
+		String code = tokenUtil.generateRandomCode();
+		VerificationCode verificationCode = new VerificationCode();
+		verificationCode.setType(StringUtils.hasText(phoneNumber) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY);
+		verificationCode.setTarget(StringUtils.hasText(phoneNumber) ? phoneNumber : email);
+		verificationCode.setCodeHash(code);
+		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(3600)); // 5 min expiry
+		verificationCode.setUsed(false);
+		verificationCodeRepository.save(verificationCode);
+
+		if (StringUtils.hasText(phoneNumber)) {
+			smsService.sendVerificationCode(phoneNumber, code);
+		} else {
+			emailService.sendVerificationPasswordEmail(email, code, password);
+		}
 
 		return UserResponse.builder()
 				.id(user.getId())
@@ -87,7 +127,7 @@ public class UserServiceImpl implements UserService {
 				.email(email)
 				.phoneNumber(phoneNumber)
 				.status(user.getStatus().name())
-				.roles(targetRole)
+				.roles(ur.getRole().getName())
 				.profilePicture(user.getProfilePicture())
 				.lastLogin(user.getLastLogin())
 				.build();
@@ -163,7 +203,6 @@ public class UserServiceImpl implements UserService {
 			int size,
 			String sortBy,
 			String direction) {
-
 		Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 		PageRequest pageRequest = PageRequest.of(page, size, sortDirection, sortBy);
 
@@ -180,6 +219,8 @@ public class UserServiceImpl implements UserService {
 								.collect(Collectors.joining(", ")))
 						.profilePicture(user.getProfilePicture())
 						.lastLogin(user.getLastLogin())
+						.createdAt(user.getCreatedAt())
+						.updatedAt(user.getUpdatedAt())
 						.build());
 	}
 
@@ -241,68 +282,6 @@ public class UserServiceImpl implements UserService {
 		authMethod.setCreatedAt(OffsetDateTime.now());
 
 		authMethodRepository.save(authMethod);
-	}
-
-	@Override
-	public void verifyPhoneCode(String phoneNumber, String code) {
-		VerificationCode pvc = verificationCodeRepository
-				.findFirstByTargetAndCodeHashAndUsedFalseAndExpiresAtAfter(phoneNumber, code, OffsetDateTime.now())
-				.orElseThrow(() -> new BadRequestException("Invalid or expired verification code"));
-
-		pvc.setUsed(true);
-		verificationCodeRepository.save(pvc);
-
-		// Optionally update user verified status or create user if needed
-	}
-
-	@Override
-	public void requestPasswordReset(String emailOrPhone) {
-		Optional<User> userOpt = Optional.empty();
-		if (emailOrPhone.contains("@")) {
-			userOpt = userRepository.findByEmail(emailOrPhone);
-		} else {
-			userOpt = userRepository.findByPhoneNumber(emailOrPhone);
-		}
-
-		if (userOpt.isEmpty()) {
-			// Do not reveal user existence, silently return to avoid user enumeration
-			return;
-		}
-
-		User user = userOpt.get();
-
-		// Generate token
-		String token = UUID.randomUUID().toString();
-		PasswordResetToken prt = new PasswordResetToken();
-		prt.setUserId(user.getId());
-		prt.setToken(token);
-		prt.setExpiresAt(OffsetDateTime.now().plusSeconds(3600)); // 1 hour expiration
-		prt.setUsed(false);
-		prt.setCreatedAt(OffsetDateTime.now());
-
-		passwordResetTokenRepository.save(prt);
-
-		// Send token via email or SMS (implement notification service)
-		// notificationService.sendPasswordReset(user, token);
-	}
-
-	@Override
-	public void resetPassword(String token, String newPassword) {
-		PasswordResetToken prt = passwordResetTokenRepository.findByToken(token)
-				.orElseThrow(() -> new BadRequestException("Invalid password reset token"));
-
-		if (prt.isUsed() || prt.getExpiresAt().isBefore(OffsetDateTime.now())) {
-			throw new BadRequestException("Password reset token expired or already used");
-		}
-
-		UserAuthMethod emailPassAuth = authMethodRepository.findByUserIdAndAuthType(prt.getUserId(), AuthProvider.EMAIL_PASS)
-				.orElseThrow(() -> new BadRequestException("User does not have password authentication"));
-
-		emailPassAuth.setCredential(passwordEncoder.encode(newPassword));
-		authMethodRepository.save(emailPassAuth);
-
-		prt.setUsed(true);
-		passwordResetTokenRepository.save(prt);
 	}
 
 	@Override

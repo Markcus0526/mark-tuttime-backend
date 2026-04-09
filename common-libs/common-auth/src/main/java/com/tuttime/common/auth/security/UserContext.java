@@ -5,6 +5,7 @@ import com.tuttime.common.auth.enums.UserRoleKind;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserContext {
@@ -64,6 +65,17 @@ public class UserContext {
 
 	public static boolean isRoleGuest() {
 		return hasRole(UserRoleKind.GUEST);
+	}
+
+	public static boolean isValidUUID() {
+		String uuidString = currentUserId.get();
+		if (uuidString == null) return false;
+		try {
+			UUID.fromString(uuidString);
+			return true;
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
 	}
 
 	public static void clear() {

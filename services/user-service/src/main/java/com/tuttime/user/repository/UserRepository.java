@@ -22,18 +22,23 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
 	Optional<User> findByPhoneNumberAndStatusIsNot(String phoneNumber, UserStatus status);
 
+	Optional<User> findByEmail(String email);
+
 	Optional<User> findByEmailAndStatusIsNot(String email, UserStatus status);
 
 	// Standard lookups
-	Optional<User> findByEmail(String email);
+	Optional<User> findByEmailAndStatusNot(String email, UserStatus status);
 
 	Optional<User> findByPhoneNumber(String phoneNumber);
 
 	@Query("SELECT u FROM User u WHERE " +
-			"(u.phoneNumber = :phone AND cast(:phone as string) IS NOT NULL) OR " +
-			"(u.email = :email AND cast(:email as string) IS NOT NULL)")
+			"(cast(:phone as string) IS NOT NULL AND u.phoneNumber = :phone) OR " +
+			"(cast(:email as string) IS NOT NULL AND u.email = :email)")
 	Optional<User> findByPhoneNumberOrEmail(@Param("phone") String phone, @Param("email") String email);
 
+	boolean existsByPhoneNumberAndStatusNot(String phoneNumber, UserStatus status);
+
+	boolean existsByEmailAndStatusNot(String phoneNumber, UserStatus status);
 
 	// Standard lookup: only active, non-deleted users
 	@Query("SELECT u FROM User u WHERE u.id = :id AND u.status = :status")

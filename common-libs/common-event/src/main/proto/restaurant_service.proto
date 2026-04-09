@@ -16,6 +16,10 @@ service RestaurantService {
 
   rpc getTablesForBooking (SlotAvailabilityRequest) returns (TableListResponse);
 
+  rpc VerifyOwnerAndGetRestaurantIdForUser (OwnerVerificationRequest) returns (OwnerVerificationResponse);
+
+  rpc GetStaffByRestaurantForUser (StaffRequest) returns (StaffListResponse);
+
 }
 
 message BranchRequest {
@@ -63,3 +67,28 @@ message TableInfo {
   bool is_active = 6;
 }
 
+message OwnerVerificationRequest {
+  string user_id = 1;
+}
+
+message OwnerVerificationResponse {
+  bool is_owner = 1;
+  string restaurant_id = 2;
+}
+
+message StaffRequest {
+  string restaurant_id = 1;
+  optional string branch_id = 2; // Optional: if filtering for a specific branch
+}
+
+message StaffListResponse {
+  repeated StaffMember users = 1;
+}
+
+message StaffMember {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4; // e.g., "MANAGER", "WAITER", "CHEF"
+  optional string branch_name = 5;
+}

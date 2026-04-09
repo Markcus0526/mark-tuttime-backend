@@ -56,7 +56,6 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		}
 	}
 
-
 	@Override
 	public void checkAvailableTableForBooking(AvailableTableRequest request, StreamObserver<AvailableTableResponse> responseObserver) {
 		UUID tableId = UUID.fromString(request.getTableId());
