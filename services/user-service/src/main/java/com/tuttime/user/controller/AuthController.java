@@ -36,7 +36,7 @@ public class AuthController {
 			@Parameter(description = "Registration request with email or phone", required = true)
 			@Valid @RequestBody RegisterRequest request) {
 		authService.registerUser(request);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success("New user registered successfully", null));
 	}
 
 	@Operation(summary = "Login user with email or phone and password.")
@@ -45,11 +45,24 @@ public class AuthController {
 			@ApiResponse(responseCode = "401", description = "Invalid credentials or account not verified", content = @Content)
 	})
 	@PostMapping("/login")
-	public ResponseEntity<ApiRes<AuthResponse>> login(
+	public ResponseEntity<ApiRes<Void>> login(
 			@Parameter(description = "Login request containing email or phone and password", required = true)
 			@Valid @RequestBody LoginRequest request) {
-		AuthResponse response = authService.loginUser(request);
-		return ResponseEntity.ok(ApiRes.success(response));
+		authService.loginUser(request);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Logout user by invalidating refresh token.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Logout successful"),
+			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content)
+	})
+	@PostMapping("/logout")
+	public ResponseEntity<ApiRes<Void>> logout(
+			@Parameter(description = "Logout request with refresh token", required = true)
+			@Valid @RequestBody LogoutRequest request) {
+		authService.logoutUser(request.getRefreshToken());
+		return ResponseEntity.noContent().build();
 	}
 
 	@Operation(summary = "Login user via OAuth providers (Google, Apple, etc.)")
@@ -78,19 +91,6 @@ public class AuthController {
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	@Operation(summary = "Logout user by invalidating refresh token.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Logout successful"),
-			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content)
-	})
-	@PostMapping("/logout")
-	public ResponseEntity<ApiRes<Void>> logout(
-			@Parameter(description = "Logout request with refresh token", required = true)
-			@Valid @RequestBody LogoutRequest request) {
-		authService.logoutUser(request.getRefreshToken());
-		return ResponseEntity.noContent().build();
-	}
-
 	@Operation(summary = "Request password reset. Sends email or phone reset depending on contact.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "Password reset initiated"),
@@ -100,7 +100,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<Void>> requestPasswordReset(
 			@Parameter(description = "Request with email or phone to initiate password reset", required = true)
 			@Valid @RequestBody PasswordResetRequest request) {
-		authService.initiatePasswordReset(request.getEmailOrPhone());
+		authService.initiatePasswordReset(request);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -137,7 +137,7 @@ public class AuthController {
 	})
 	@PostMapping("/otp/verify")
 	public ResponseEntity<ApiRes<AuthResponse>> verifyOtpLogin(
-			@Parameter(description = "Phone number and OTP code for login", required = true)
+			@Parameter(description = "Phone number or email and OTP code for login", required = true)
 			@Valid @RequestBody OtpVerificationConfirmRequest request) {
 		AuthResponse response = authService.loginWithOtp(request);
 		return ResponseEntity.ok(ApiRes.success(response));

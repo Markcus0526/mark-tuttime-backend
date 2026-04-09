@@ -22,10 +22,9 @@ public interface AuthService {
 	 * Only verified users can authenticate.
 	 *
 	 * @param request Login request DTO with emailOrPhone and password
-	 * @return AuthResponseDto containing JWT tokens and user info
 	 * @throws SecurityException if authentication fails or user not verified
 	 */
-	AuthResponse loginUser(LoginRequest request);
+	void loginUser(LoginRequest request);
 
 	/**
 	 * Authenticates user via OAuth provider token.
@@ -54,21 +53,6 @@ public interface AuthService {
 	void logoutUser(String refreshToken);
 
 	/**
-	 * Sends an email verification link to the specified email address.
-	 *
-	 * @param email User's email address to verify
-	 */
-	void sendEmailVerificationLink(String email);
-
-	/**
-	 * Verifies email account using the token received from email link.
-	 *
-	 * @param token Email verification token
-	 * @throws IllegalArgumentException if token is invalid or expired
-	 */
-	void verifyEmailToken(String token);
-
-	/**
 	 * Sends a phone verification code via SMS to the specified phone number.
 	 *
 	 * @param request to verify
@@ -76,20 +60,11 @@ public interface AuthService {
 	void sendOtpVerificationCode(OtpVerificationRequest request);
 
 	/**
-	 * Verifies a phone number using the received SMS verification code.
-	 *
-	 * @param phoneNumber Phone number being verified
-	 * @param code        Verification code received via SMS
-	 * @throws IllegalArgumentException if code is invalid or expired
-	 */
-	void verifyPhoneCode(String phoneNumber, String code);
-
-	/**
 	 * Initiates password reset by sending an email or SMS code depending on user contact.
 	 *
-	 * @param emailOrPhone Email or phone number of the user
+	 * @param PasswordResetRequest request
 	 */
-	void initiatePasswordReset(String emailOrPhone);
+	void initiatePasswordReset(PasswordResetRequest request);
 
 	/**
 	 * Resets the user's password using a token (email) or code (phone).

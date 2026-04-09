@@ -24,12 +24,6 @@ public interface UserService {
 
 	void addAuthMethod(UUID userId, AuthMethodCreateRequest request);
 
-	void verifyPhoneCode(String phoneNumber, String code);
-
-	void requestPasswordReset(String emailOrPhone);
-
-	void resetPassword(String token, String newPassword);
-
 	void updateUserLocation(UUID userId, UserLocationRequest userLocationRequest);
 
 	UserResponse blockUser(UUID id);

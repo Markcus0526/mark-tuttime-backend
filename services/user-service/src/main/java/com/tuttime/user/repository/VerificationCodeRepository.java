@@ -11,14 +11,14 @@ import java.util.UUID;
 @Repository
 public interface VerificationCodeRepository extends JpaRepository<VerificationCode, UUID> {
 
-	Optional<VerificationCode> findTopByTargetAndUsedFalseOrderByCreatedAtDesc(String phoneNumber);
+	Optional<VerificationCode> findTopByTargetAndUsedFalseOrderByCreatedAtDesc(String target);
 
 	Optional<VerificationCode> findTopByCodeHashAndUsedFalseOrderByCreatedAtDesc(String code);
 
 	Optional<VerificationCode> findFirstByTargetAndCodeHashAndUsedFalseAndExpiresAtAfter(
-			String phoneNumber, String code, OffsetDateTime currentTime);
+			String target, String code, OffsetDateTime currentTime);
 
 	Optional<VerificationCode> findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(
-			String phoneNumber, String code);
+			String target, String code);
 }
 
