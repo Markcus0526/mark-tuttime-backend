@@ -20,7 +20,7 @@ import java.util.UUID;
 public class UserLocation extends BaseTimeStampEntity {
 	@Id
 	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
-	private UUID id;
+	private UUID locationId;
 
 	@JoinColumn(name = "user_id", nullable = false)
 	private UUID userId;

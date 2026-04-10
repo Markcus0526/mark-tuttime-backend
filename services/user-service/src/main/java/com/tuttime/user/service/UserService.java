@@ -3,6 +3,7 @@ package com.tuttime.user.service;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.enums.UserStatus;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ public interface UserService {
 
 	void deleteUser(UUID id);
 
-	Page<UserResponse> listUsers(UserStatus status, String roleNames, int page, int size, String sortBy, String direction);
+	Page<UserResponse> findUsers(String query, UserStatus status, String roleName, Pageable pageable);
 
 	void assignRoleToUser(UUID userId, String roleName);
 

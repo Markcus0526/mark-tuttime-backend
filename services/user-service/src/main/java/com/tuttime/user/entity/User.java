@@ -1,5 +1,6 @@
 package com.tuttime.user.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
@@ -20,12 +21,12 @@ import java.util.UUID;
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class User extends BaseTimeStampEntity {
+public class User extends BaseDeleteEntity {
 
 	@Id
 	@GeneratedValue(generator = "UUID")
-	@Column(name = "id", updatable = false, nullable = false, length = 36)
-	private UUID id;
+	@Column(name = "user_id", updatable = false, nullable = false, length = 36)
+	private UUID userId;
 
 	@Column(name = "phone_number", length = 20, unique = true)
 	private String phoneNumber;
@@ -63,6 +64,6 @@ public class User extends BaseTimeStampEntity {
 	// Helper method to keep bi-directional relationship in sync
 	public void addAuthMethod(UserAuthMethod method) {
 		this.authMethods.add(method);
-		method.setUserId(this.getId());
+		method.setUserId(this.getUserId());
 	}
 }

@@ -21,7 +21,7 @@ DO
 $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_status') THEN
-CREATE TYPE user_status AS ENUM ('ACTIVE', 'BLOCKED', 'DELETED', 'PENDING_VERIFICATION');
+CREATE TYPE user_status AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING_VERIFICATION');
 END IF;
     IF
 NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auth_provider') THEN
@@ -50,13 +50,15 @@ LANGUAGE plpgsql;
 -- Users table
 CREATE TABLE users
 (
-    id              UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
+    user_id         UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
     phone_number    VARCHAR(20) UNIQUE,
     email           VARCHAR(255) UNIQUE,
     full_name       VARCHAR(255),
     profile_picture TEXT,
     status          user_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
     last_login      TIMESTAMPTZ,
+    is_deleted      BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at      TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT contact_exists CHECK (phone_number IS NOT NULL OR email IS NOT NULL)
@@ -65,7 +67,7 @@ CREATE TABLE users
 -- Roles Table
 CREATE TABLE roles
 (
-    id          SERIAL PRIMARY KEY,
+    role_id     SERIAL PRIMARY KEY,
     name        VARCHAR(50) UNIQUE NOT NULL,
     description TEXT
 );
@@ -73,8 +75,8 @@ CREATE TABLE roles
 -- User Roles Table (Mapping table)
 CREATE TABLE user_roles
 (
-    user_id     UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    role_id     INT         NOT NULL REFERENCES roles (id) ON DELETE CASCADE,
+    user_id     UUID        NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
+    role_id     INT         NOT NULL REFERENCES roles (role_id) ON DELETE CASCADE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, role_id)
@@ -83,8 +85,8 @@ CREATE TABLE user_roles
 -- Authentication Methods Table
 CREATE TABLE user_auth_methods
 (
-    id         SERIAL PRIMARY KEY,
-    user_id    UUID          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    method_id  SERIAL        PRIMARY KEY,
+    user_id    UUID          NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
     auth_type  auth_provider NOT NULL,
     credential TEXT, -- Hashed password or OAuth ID
     verified   BOOLEAN       NOT NULL DEFAULT FALSE,
@@ -96,7 +98,7 @@ CREATE TABLE user_auth_methods
 -- Verification Codes Table (Unified & Secure)
 CREATE TABLE verification_codes
 (
-    id         UUID PRIMARY KEY           DEFAULT gen_random_uuid(),
+    verification_id         UUID PRIMARY KEY           DEFAULT gen_random_uuid(),
     target     VARCHAR(255)      NOT NULL, -- email or phone
     code_hash  TEXT              NOT NULL, -- Securely stored hash
     type       verification_type NOT NULL,
@@ -109,8 +111,8 @@ CREATE TABLE verification_codes
 -- User Locations Table (PostGIS)
 CREATE TABLE user_locations
 (
-    id              UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
-    user_id         UUID        NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    location_id     UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
+    user_id         UUID        NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
     location        geography(Point, 4326) NOT NULL,
     accuracy_meters FLOAT,
     recorded_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -166,11 +168,11 @@ INT;
 BEGIN
     -- 1. Create Admin User
 INSERT INTO users (email, full_name, status)
-VALUES ('admin@tuttime.com', 'Administrator', 'ACTIVE') RETURNING id
+VALUES ('admin@tuttime.com', 'Administrator', 'ACTIVE') RETURNING user_id
 INTO v_admin_id;
 
 -- 2. Assign ADMIN Role
-SELECT id
+SELECT role_id
 INTO v_role_id
 FROM roles
 WHERE name = 'ADMIN';

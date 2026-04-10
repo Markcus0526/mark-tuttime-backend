@@ -17,7 +17,7 @@ import java.util.UUID;
 public class VerificationCode extends BaseTimeStampEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
-	private UUID id;
+	private UUID verificationId;
 
 	@Column(nullable = false)
 	private String target; // email or phone
