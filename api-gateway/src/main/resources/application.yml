@@ -101,6 +101,48 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/branches/**
+        - id: restaurant-service-branch
+          order: 22
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          predicates:
+            - Path=/api/v1/branches/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/zones/**
+        - id: restaurant-service-zone
+          order: 23
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          predicates:
+            - Path=/api/v1/zones/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/tables/**
+        - id: restaurant-service-table
+          order: 24
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          predicates:
+            - Path=/api/v1/tables/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
         ################# Menu Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE
@@ -571,6 +613,8 @@ springdoc:
     disabled: true  # Prevents server-side caching of the OpenAPI spec
   swagger-ui:
     path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
     urls:
       - name: User Service
         url: /user-docs/v3/api-docs

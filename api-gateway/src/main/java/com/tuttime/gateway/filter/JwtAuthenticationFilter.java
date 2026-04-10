@@ -104,7 +104,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 						try {
 							UUID userId = jwtTokenUtil.getUserIdFromToken(token);
 							String email = jwtTokenUtil.getEmailFromToken(token);
-							String roles = jwtTokenUtil.getRoleFromToken(token);
+							String role = jwtTokenUtil.getRoleFromToken(token);
 
 							if (userId == null || email == null) {
 								log.warn("JWT Filter: Failed to extract user information from token");
