@@ -23,7 +23,7 @@ public class MenuEventConsumer {
 			groupId = "pos-service-group")
 	public void consumeMenuUpdated(ConsumerRecord<String, MenuEvent.MenuUpdatedEvent> record) {
 		MenuEvent.MenuUpdatedEvent event = record.value();
-		OrderSyncRequest request = new OrderSyncRequest(UUID.fromString(event.restaurantId()), event.posSystem());
+		OrderSyncRequest request = new OrderSyncRequest(event.restaurantId(), event.posSystem());
 		posSyncService.syncOrder(request);
 	}
 }

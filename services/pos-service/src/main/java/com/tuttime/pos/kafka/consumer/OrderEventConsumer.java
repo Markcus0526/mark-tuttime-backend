@@ -38,7 +38,7 @@ public class OrderEventConsumer {
 			groupId = "pos-service-group")
 	public void consumeOrderCreated(ConsumerRecord<String, OrderEvent.OrderCreatedEvent> record) {
 		OrderEvent.OrderCreatedEvent event = record.value();
-		OrderSyncRequest request = new OrderSyncRequest(UUID.fromString(event.orderId()), event.posSystem());
+		OrderSyncRequest request = new OrderSyncRequest(event.orderId(), event.posSystem());
 		posSyncService.syncOrder(request);
 	}
 

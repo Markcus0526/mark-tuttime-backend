@@ -23,7 +23,7 @@ public class BookingEventConsumer {
 			groupId = "pos-service-group")
 	public void consumeBookingConfirmed(ConsumerRecord<String, BookingEvent.BookingConfirmedEvent> record) {
 		BookingEvent.BookingConfirmedEvent event = record.value();
-		BookingSyncRequest request = new BookingSyncRequest(UUID.fromString(event.restaurantId()), event.posSystem());
+		BookingSyncRequest request = new BookingSyncRequest(event.restaurantId(), event.posSystem());
 		posSyncService.syncBooking(request);
 	}
 }
