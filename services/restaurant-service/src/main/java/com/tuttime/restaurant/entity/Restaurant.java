@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -22,15 +24,12 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Restaurant extends BaseTimeStampEntity {
+public class Restaurant extends BaseDeleteEntity {
 
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "restaurant_id", nullable = false, updatable = false)
 	private UUID restaurantId;
-
-	@Column(name = "owner_user_id", nullable = false)
-	private UUID ownerUserId;
 
 	@Column(name = "name", nullable = false, length = 255)
 	private String name;
@@ -53,18 +52,10 @@ public class Restaurant extends BaseTimeStampEntity {
 	@Column(name = "rating", precision = 2, scale = 1)
 	private BigDecimal rating;
 
-	@Builder.Default
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
-
 	@PrePersist
 	public void prePersist() {
 		if (rating == null) {
 			rating = BigDecimal.ZERO;
 		}
 	}
-
 }

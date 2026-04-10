@@ -1,8 +1,12 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.dto.ScheduleRequest;
 import com.tuttime.restaurant.dto.ScheduleResponse;
+import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.BranchSchedule;
+import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.RestaurantSchedule;
 import com.tuttime.restaurant.mapper.BranchScheduleMapper;
 import com.tuttime.restaurant.mapper.RestaurantScheduleMapper;
@@ -10,11 +14,14 @@ import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.BranchScheduleRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.RestaurantScheduleRepository;
+import com.tuttime.restaurant.service.RestaurantStaffService;
 import com.tuttime.restaurant.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,6 +31,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ScheduleServiceImpl implements ScheduleService {
 
+	private final RestaurantStaffService restaurantStaffService;
 	private final RestaurantScheduleRepository restaurantScheduleRepository;
 	private final RestaurantRepository restaurantRepository;
 	private final RestaurantScheduleMapper restaurantScheduleMapper;
@@ -36,7 +44,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 		if (!restaurantRepository.existsById(restaurantId)) {
 			throw new IllegalArgumentException("Restaurant not found: " + restaurantId);
 		}
-		List<RestaurantSchedule> schedules = restaurantScheduleRepository.findByRestaurantId(restaurantId);
+		List<RestaurantSchedule> schedules = restaurantScheduleRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId);
 		return schedules.stream()
 				.map(restaurantScheduleMapper::toResponse)
 				.collect(Collectors.toList());
@@ -44,9 +52,18 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	@Transactional
-	public ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request) {
-		var restaurant = restaurantRepository.findById(restaurantId)
-				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
+	public ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request, UUID currentUserId, String userRoles) {
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		}
 
 		RestaurantSchedule schedule = restaurantScheduleMapper.toEntity(request);
 		schedule.setRestaurantId(restaurant.getRestaurantId());
@@ -57,12 +74,20 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	@Transactional
-	public ScheduleResponse updateRestaurantSchedule(UUID scheduleId, UUID restaurantId, ScheduleRequest request) {
-		var schedule = restaurantScheduleRepository.findById(scheduleId)
-				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
+	public ScheduleResponse updateRestaurantSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles) {
+		RestaurantSchedule schedule = restaurantScheduleRepository.findByScheduleIdAndIsDeletedFalse(scheduleId)
+				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		if (!schedule.getRestaurantId().equals(restaurantId)) {
-			throw new IllegalArgumentException("Schedule does not belong to the restaurant");
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(schedule.getRestaurantId())
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + schedule.getRestaurantId()));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
 
 		restaurantScheduleMapper.updateEntityFromRequest(request, schedule);
@@ -72,15 +97,25 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	@Transactional
-	public void deleteRestaurantSchedule(UUID scheduleId, UUID restaurantId) {
-		var schedule = restaurantScheduleRepository.findById(scheduleId)
-				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
+	public void deleteRestaurantSchedule(UUID scheduleId, UUID currentUserId, String userRoles) {
+		RestaurantSchedule schedule = restaurantScheduleRepository.findById(scheduleId)
+				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		if (!schedule.getRestaurantId().equals(restaurantId)) {
-			throw new IllegalArgumentException("Schedule does not belong to the restaurant");
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(schedule.getRestaurantId())
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + schedule.getRestaurantId()));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
 
-		restaurantScheduleRepository.delete(schedule);
+		schedule.setDeleted(true);
+		schedule.setDeletedAt(OffsetDateTime.now());
+		restaurantScheduleRepository.save(schedule);
 	}
 
 	///////////// Branch /////////////////
@@ -89,16 +124,27 @@ public class ScheduleServiceImpl implements ScheduleService {
 		if (!branchRepository.existsById(branchId)) {
 			throw new IllegalArgumentException("Branch not found: " + branchId);
 		}
-		List<BranchSchedule> schedules = branchScheduleRepository.findByBranchId(branchId);
+		List<BranchSchedule> schedules = branchScheduleRepository.findByBranchIdAndIsDeletedFalse(branchId);
 		return schedules.stream()
 				.map(branchScheduleMapper::toResponse)
 				.collect(Collectors.toList());
 	}
 
 	@Override
-	public ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request) {
-		var branch = branchRepository.findById(branchId)
-				.orElseThrow(() -> new IllegalArgumentException("Branch not found: " + branchId));
+	public ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request, UUID currentUserId, String userRoles) {
+		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(branchId)
+				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + branchId));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		boolean isManager = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
+			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner && !isManager) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		}
 
 		BranchSchedule schedule = branchScheduleMapper.toEntity(request);
 		schedule.setBranchId(branch.getBranchId());
@@ -108,12 +154,22 @@ public class ScheduleServiceImpl implements ScheduleService {
 	}
 
 	@Override
-	public ScheduleResponse updateBranchSchedule(UUID scheduleId, UUID branchId, ScheduleRequest request) {
-		var schedule = branchScheduleRepository.findById(scheduleId)
-				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
+	public ScheduleResponse updateBranchSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles) {
+		BranchSchedule schedule = branchScheduleRepository.findByScheduleIdAndIsDeletedFalse(scheduleId)
+				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		if (!schedule.getBranchId().equals(branchId)) {
-			throw new IllegalArgumentException("Schedule does not belong to the branch");
+		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(schedule.getBranchId())
+				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + schedule.getBranchId()));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		boolean isManager = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
+			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner && !isManager) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
 
 		branchScheduleMapper.updateEntityFromRequest(request, schedule);
@@ -122,15 +178,27 @@ public class ScheduleServiceImpl implements ScheduleService {
 	}
 
 	@Override
-	public void deleteBranchSchedule(UUID scheduleId, UUID branchId) {
-		var schedule = branchScheduleRepository.findById(scheduleId)
-				.orElseThrow(() -> new IllegalArgumentException("Schedule not found: " + scheduleId));
+	public void deleteBranchSchedule(UUID scheduleId, UUID currentUserId, String userRoles) {
+		BranchSchedule schedule = branchScheduleRepository.findByScheduleIdAndIsDeletedFalse(scheduleId)
+				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		if (!schedule.getBranchId().equals(branchId)) {
-			throw new IllegalArgumentException("Schedule does not belong to the branch");
+		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(schedule.getBranchId())
+				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + schedule.getBranchId()));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		boolean isManager = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
+			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner && !isManager) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
 
-		branchScheduleRepository.delete(schedule);
+		schedule.setDeleted(true);
+		schedule.setDeletedAt(OffsetDateTime.now());
+		branchScheduleRepository.save(schedule);
 	}
 
 }

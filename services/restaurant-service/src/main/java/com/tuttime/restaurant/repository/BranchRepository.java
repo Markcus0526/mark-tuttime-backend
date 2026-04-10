@@ -15,8 +15,4 @@ public interface BranchRepository extends JpaRepository<Branch, UUID> {
 	Page<Branch> findByRestaurantIdAndIsDeletedFalse(UUID restaurantId, Pageable pageable);
 
 	Page<Branch> findByIsDeletedFalse(Pageable pageable);
-
-	Optional<Branch> findByBranchIdAndRestaurantIdAndIsDeletedFalse(UUID branchId, UUID restaurantId);
-
-	boolean existsByBranchIdAndRestaurantIdAndManagerUserIdAndIsDeletedFalse(UUID branchId, UUID restaurantId, UUID managerUserId);
 }

@@ -3,6 +3,7 @@ package com.tuttime.restaurant.service;
 import com.tuttime.restaurant.dto.MediaRequest;
 import com.tuttime.restaurant.dto.MediaResponse;
 import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -12,11 +13,11 @@ public interface MediaService {
 
 	List<MediaResponse> getMediaByEntity(EntityType entityType, UUID entityId);
 
-	MediaResponse createMedia(MediaRequest request, MultipartFile file);
+	MediaResponse createMedia(MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles);
 
-	MediaResponse updateMedia(UUID mediaId, MediaRequest request);
+	MediaResponse updateMedia(UUID mediaId, MediaRequest request, UUID currentUserId, String userRoles);
 
-	void deleteMedia(UUID mediaId);
+	void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles);
 
 	/**
 	 * Retrieves the primary SVG map content for the given entity type and entity ID.
@@ -27,5 +28,5 @@ public interface MediaService {
 	 */
 	String getPrimarySvgMap(EntityType entityType, UUID entityId);
 
-	void setOrUpdateSvgMap(EntityType entityType, UUID entityId, String svgContent);
+	void setOrUpdateSvgMap(EntityType entityType, UUID entityId, String svgContent, UUID currentUserId, String userRoles);
 }

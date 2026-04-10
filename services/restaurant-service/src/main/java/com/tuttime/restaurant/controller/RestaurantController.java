@@ -2,12 +2,11 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.entity.enums.EntityType;
-import com.tuttime.restaurant.entity.enums.MediaType;
-import com.tuttime.restaurant.service.MediaService;
-import com.tuttime.restaurant.service.RestaurantService;
-import com.tuttime.restaurant.service.ScheduleService;
+import com.tuttime.restaurant.entity.*;
+import com.tuttime.restaurant.entity.enums.*;
+import com.tuttime.restaurant.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,15 +14,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.apache.tika.Tika;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,24 +35,38 @@ public class RestaurantController {
 	private final RestaurantService restaurantService;
 	private final ScheduleService scheduleService;
 	private final MediaService mediaService;
+	private final BranchService branchService;
+	private final RestaurantStaffService staffService;
 
 	// --- Restaurant CRUD ---
 
-	@Operation(summary = "Get all restaurants", description = "Retrieve paginated list of restaurants with optional filters")
+	@Operation(summary = "Get/Search all restaurants", description = "Retrieve paginated restaurants with filters for keyword, owner, and ratings.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "List of restaurants retrieved successfully"),
+			@ApiResponse(responseCode = "200", description = "Restaurants retrieved successfully"),
 			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
 	})
 	@GetMapping
 	public ResponseEntity<ApiRes<Page<RestaurantResponse>>> getAllRestaurants(
+			@Parameter(description = "Search by name or address")
+			@RequestParam(required = false) String query,
+
+			@Parameter(description = "Filter by specific owner")
 			@RequestParam(required = false) UUID ownerUserId,
+
 			@RequestParam(required = false) Double minRating,
 			@RequestParam(required = false) Double maxRating,
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-		int maxPageSize = 100;
-		if (size > maxPageSize) size = maxPageSize;
-		Page<RestaurantResponse> restaurants = restaurantService.findRestaurantAll(ownerUserId, minRating, maxRating, page, size);
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "createdAt") String sort,
+			@RequestParam(defaultValue = "desc") String direction) {
+
+		// Cap the page size for performance
+		int pageSize = Math.min(size, 100);
+
+		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
+		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
+
+		Page<RestaurantResponse> restaurants = restaurantService.findRestaurants(query, ownerUserId, minRating, maxRating, pageable);
 		return ResponseEntity.ok(ApiRes.success(restaurants));
 	}
 
@@ -66,6 +79,7 @@ public class RestaurantController {
 	public ResponseEntity<ApiRes<RestaurantResponse>> getRestaurantById(
 			@Parameter(description = "UUID of the restaurant to retrieve", required = true)
 			@PathVariable UUID restaurantId) {
+
 		RestaurantResponse restaurant = restaurantService.getRestaurantById(restaurantId);
 		return ResponseEntity.ok(ApiRes.success(restaurant));
 	}
@@ -80,11 +94,14 @@ public class RestaurantController {
 	public ResponseEntity<ApiRes<RestaurantResponse>> createRestaurant(
 			@Parameter(description = "Restaurant creation payload", required = true)
 			@Valid @RequestBody RestaurantRequest request) {
-		if (!UserContext.isRoleAdmin()) {
+
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
-		RestaurantResponse created = restaurantService.createRestaurant(request);
+		RestaurantResponse created = restaurantService.createRestaurant(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -101,9 +118,14 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Updated restaurant details", required = true)
 			@Valid @RequestBody RestaurantRequest request) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		RestaurantResponse updated = restaurantService.updateRestaurant(restaurantId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		RestaurantResponse updated = restaurantService.updateRestaurant(restaurantId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -117,11 +139,14 @@ public class RestaurantController {
 	public ResponseEntity<ApiRes<Void>> deleteRestaurant(
 			@Parameter(description = "UUID of the restaurant to delete", required = true)
 			@PathVariable UUID restaurantId) {
-		if (!UserContext.isRoleAdmin()) {
+
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
-		restaurantService.deleteRestaurant(restaurantId);
+		restaurantService.deleteRestaurant(restaurantId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -135,6 +160,7 @@ public class RestaurantController {
 			@RequestParam(defaultValue = "1000") double radiusMeters,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
+
 		int maxPageSize = 100;
 		if (size > maxPageSize) size = maxPageSize;
 
@@ -153,6 +179,7 @@ public class RestaurantController {
 	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId) {
+
 		List<ScheduleResponse> schedules = scheduleService.getSchedulesByRestaurantId(restaurantId);
 		return ResponseEntity.ok(ApiRes.success(schedules));
 	}
@@ -170,9 +197,14 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Schedule details to create", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		ScheduleResponse created = scheduleService.createScheduleForRestaurant(restaurantId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		ScheduleResponse created = scheduleService.createScheduleForRestaurant(restaurantId, request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -191,9 +223,14 @@ public class RestaurantController {
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		ScheduleResponse updated = scheduleService.updateRestaurantSchedule(scheduleId, restaurantId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		ScheduleResponse updated = scheduleService.updateRestaurantSchedule(scheduleId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -209,9 +246,14 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the schedule to delete", required = true)
 			@PathVariable UUID scheduleId) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		scheduleService.deleteRestaurantSchedule(scheduleId, restaurantId);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		scheduleService.deleteRestaurantSchedule(scheduleId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -226,6 +268,7 @@ public class RestaurantController {
 	public ResponseEntity<ApiRes<List<MediaResponse>>> getMediaForRestaurant(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId) {
+
 		List<MediaResponse> medias = mediaService.getMediaByEntity(EntityType.RESTAURANT, restaurantId);
 		return ResponseEntity.ok(ApiRes.success(medias));
 	}
@@ -248,46 +291,12 @@ public class RestaurantController {
 			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		// Validate file size (e.g., max 5MB)
-		long maxFileSize = 5 * 1024 * 1024; // 5 MB
-		if (file.getSize() > maxFileSize) {
-			throw new IllegalArgumentException("File size exceeds the maximum allowed limit of 5 MB");
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
-
-		// Validate file type using Apache Tika
-		Tika tika = new Tika();
-		String detectedType;
-		try {
-			detectedType = tika.detect(file.getInputStream());
-		} catch (IOException e) {
-			throw new IllegalArgumentException("Could not detect file type");
-		}
-
-		// Allowed MIME types based on mediaType parameter
-		List<String> allowedMimeTypes = switch (mediaType) {
-			case IMAGE -> List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
-			case VIDEO -> List.of("video/mp4", "video/webm", "video/ogg");
-			case SVG -> List.of("image/svg+xml");
-			default -> throw new IllegalArgumentException("Unsupported media type");
-		};
-
-		if (!allowedMimeTypes.contains(detectedType)) {
-			throw new IllegalArgumentException("Invalid file type: " + detectedType);
-		}
-
-		// Optional: further validate SVG content if mediaType == SVG
-		if (mediaType == MediaType.SVG) {
-			try {
-				String svgContent = new String(file.getBytes(), StandardCharsets.UTF_8);
-				if (!isValidSvg(svgContent)) {
-					throw new IllegalArgumentException("Invalid or unsafe SVG content");
-				}
-			} catch (IOException e) {
-				throw new IllegalArgumentException("Failed to read SVG content");
-			}
-		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
 		MediaRequest request = new MediaRequest();
 		request.setEntityType(EntityType.RESTAURANT);
@@ -296,7 +305,7 @@ public class RestaurantController {
 		request.setIsPrimary(isPrimary);
 		request.setMediaType(mediaType);
 
-		MediaResponse created = mediaService.createMedia(request, file);
+		MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -315,9 +324,14 @@ public class RestaurantController {
 			@PathVariable UUID mediaId,
 			@Parameter(description = "Updated media details", required = true)
 			@Valid @RequestBody MediaRequest request) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		MediaResponse updated = mediaService.updateMedia(mediaId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		MediaResponse updated = mediaService.updateMedia(mediaId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -333,22 +347,123 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		mediaService.deleteMedia(mediaId);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		mediaService.deleteMedia(mediaId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
-	/**
-	 * Simple SVG validation example.
-	 * You should use a library or custom sanitizer to remove scripts and unsafe elements.
-	 */
-	private boolean isValidSvg(String svgContent) {
-		// Basic check: SVG must start with <svg and end with </svg>
-		if (!svgContent.trim().startsWith("<svg") || !svgContent.trim().endsWith("</svg>")) {
-			return false;
-		}
-		// Additional checks can be added here, e.g., disallow <script> tags
-		return !svgContent.toLowerCase().contains("<script");
+	@Operation(summary = "Get all branches", description = "Retrieve paginated list of branches with optional filters")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "List of branches retrieved successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
+	})
+	@GetMapping("/{restaurantId}/branches")
+	public ResponseEntity<ApiRes<Page<BranchResponse>>> getAllBranches(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+
+		int maxPageSize = 100;
+		if (size > maxPageSize) size = maxPageSize;
+		Page<BranchResponse> branches = branchService.findAllBranches(restaurantId, page, size);
+		return ResponseEntity.ok(ApiRes.success(branches));
 	}
+
+	// --- Restaurant Staff ---
+
+	@Operation(summary = "Assign a staff member", description = "Allows a Restaurant Owner to assign a user as a Manager or Hostess to a restaurant or specific branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "201", description = "Staff assigned successfully"),
+			@ApiResponse(responseCode = "403", description = "Access denied - Only Owners can manage staff"),
+			@ApiResponse(responseCode = "404", description = "Restaurant or Branch not found")
+	})
+	@PostMapping("/{restaurantId}/staffs")
+	public ResponseEntity<ApiRes<StaffResponse>> assignStaff(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@RequestBody @Valid StaffRequest request) {
+
+		// Check if user is authenticated and is an Owner or Admin
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		StaffResponse response = staffService.assignStaff(restaurantId, request, currentUserId, userRoles);
+
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(response));
+	}
+
+	@Operation(summary = "Get all restaurant staff", description = "Retrieve a list of all staff members (Managers, Hostesses, etc.) for a specific restaurant")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Staff list retrieved successfully"),
+			@ApiResponse(responseCode = "403", description = "Access denied")
+	})
+	@GetMapping("/{restaurantId}/staffs")
+	public ResponseEntity<ApiRes<List<StaffResponse>>> getStaffs(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId) {
+
+		// Owners and Admins can see the full staff list
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		List<StaffResponse> staffs = staffService.getStaffByRestaurant(restaurantId, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(staffs));
+	}
+
+	@Operation(summary = "Remove a staff member", description = "Remove a staff member from the restaurant (unassign their role)")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "204", description = "Staff removed successfully"),
+			@ApiResponse(responseCode = "403", description = "Access denied"),
+			@ApiResponse(responseCode = "404", description = "Staff record not found")
+	})
+	@DeleteMapping("/{restaurantId}/staffs/{staffId}")
+	public ResponseEntity<ApiRes<Void>> removeStaff(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@Parameter(description = "UUID of the staff record to delete", required = true)
+			@PathVariable UUID staffId) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		staffService.removeStaff(restaurantId, staffId, currentUserId, userRoles);
+
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(summary = "Update staff role or status", description = "Update the role (e.g., Hostess to Manager) or toggle active status of a staff member")
+	@PatchMapping("/{restaurantId}/staffs/{staffId}")
+	public ResponseEntity<ApiRes<StaffResponse>> updateStaff(
+			@PathVariable UUID restaurantId,
+			@PathVariable UUID staffId,
+			@RequestBody @Valid StaffUpdateRequest request) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		StaffResponse updated = staffService.updateStaff(restaurantId, staffId, request, currentUserId, userRoles);
+
+		return ResponseEntity.ok(ApiRes.success(updated));
+	}
+
 }

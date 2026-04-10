@@ -2,11 +2,14 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
+import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.dto.ZoneRequest;
 import com.tuttime.restaurant.dto.ZoneResponse;
 import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
+import com.tuttime.restaurant.service.TableService;
 import com.tuttime.restaurant.service.ZoneService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,39 +18,26 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/restaurants/{restaurantId}/branches/{branchId}/zones")
+@RequestMapping("/api/v1/zones")
 @Tag(name = "Zones", description = "Operations related to zones within branches of restaurants")
 public class ZoneController {
 
 	private final BranchService branchService;
 	private final ZoneService zoneService;
 	private final MediaService mediaService;
-
+	private final TableService tableService;
 	// --- Zone CRUD ---
-
-	@Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Zones retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	@GetMapping
-	public ResponseEntity<ApiRes<List<ZoneResponse>>> getZonesByBranch(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId) {
-		List<ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
-		return ResponseEntity.ok(ApiRes.success(zones));
-	}
 
 	@Operation(summary = "Get zone by ID", description = "Retrieve detailed information about a zone")
 	@ApiResponses(value = {
@@ -56,13 +46,10 @@ public class ZoneController {
 	})
 	@GetMapping("/{zoneId}")
 	public ResponseEntity<ApiRes<ZoneResponse>> getZoneById(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
-		ZoneResponse zone = zoneService.getZoneById(branchId, zoneId);
+
+		ZoneResponse zone = zoneService.getZoneById(zoneId);
 		return ResponseEntity.ok(ApiRes.success(zone));
 	}
 
@@ -75,15 +62,16 @@ public class ZoneController {
 	})
 	@PostMapping
 	public ResponseEntity<ApiRes<ZoneResponse>> createZone(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
 			@Parameter(description = "Zone creation payload", required = true)
 			@Valid @RequestBody ZoneRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		ZoneResponse created = zoneService.createZone(branchId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		ZoneResponse created = zoneService.createZone(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -96,17 +84,18 @@ public class ZoneController {
 	})
 	@PutMapping("/{zoneId}")
 	public ResponseEntity<ApiRes<ZoneResponse>> updateZone(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId,
 			@Parameter(description = "Updated zone details", required = true)
 			@Valid @RequestBody ZoneRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		ZoneResponse updated = zoneService.updateZone(branchId, zoneId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		ZoneResponse updated = zoneService.updateZone(zoneId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -118,15 +107,16 @@ public class ZoneController {
 	})
 	@DeleteMapping("/{zoneId}")
 	public ResponseEntity<ApiRes<Void>> deleteZone(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		zoneService.deleteZone(branchId, zoneId);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		zoneService.deleteZone(zoneId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -139,10 +129,9 @@ public class ZoneController {
 	})
 	@GetMapping("/{zoneId}/map")
 	public ResponseEntity<ApiRes<String>> getZoneMapSvg(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
+
 		String svgContent = mediaService.getPrimarySvgMap(EntityType.ZONE, zoneId);
 		return ResponseEntity.ok(ApiRes.success(svgContent));
 	}
@@ -156,17 +145,51 @@ public class ZoneController {
 	})
 	@PostMapping("/{zoneId}/map")
 	public ResponseEntity<ApiRes<Void>> setZoneMapSvg(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId,
 			@Parameter(description = "SVG XML content", required = true)
 			@RequestBody String svgContent) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		mediaService.setOrUpdateSvgMap(EntityType.ZONE, zoneId, svgContent);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		mediaService.setOrUpdateSvgMap(EntityType.ZONE, zoneId, svgContent, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
+	}
+
+	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Tables retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Zone not found")
+	})
+	@GetMapping("/{zoneId}/tables")
+	public ResponseEntity<ApiRes<List<TableResponse>>> getTablesInZone(
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId) {
+
+		List<TableResponse> tables = tableService.getTablesByZoneId(zoneId);
+		return ResponseEntity.ok(ApiRes.success(tables));
+	}
+
+	// Reservation
+
+	@Operation(summary = "Get available tables in a zone for a time range")
+	@GetMapping("/{zoneId}/available")
+	public ResponseEntity<ApiRes<List<TableResponse>>> getAvailableTables(
+			@PathVariable UUID zoneId,
+			@RequestParam
+			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T14:00:00+02:00)", required = true)
+			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+			OffsetDateTime from,
+			@RequestParam
+			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T16:00:00+02:00)", required = true)
+			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+			OffsetDateTime to) {
+
+		List<TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
+		return ResponseEntity.ok(ApiRes.success(availableTables));
 	}
 }

@@ -13,7 +13,5 @@ public interface ZoneRepository extends JpaRepository<Zone, UUID> {
 
 	List<Zone> findByBranchIdAndIsDeletedFalse(UUID branchId);
 
-	Optional<Zone> findByZoneIdAndBranchIdAndIsDeletedFalse(UUID zoneId, UUID branchId);
-
 	Optional<Zone> findByZoneIdAndIsDeletedFalse(UUID branchId);
 }

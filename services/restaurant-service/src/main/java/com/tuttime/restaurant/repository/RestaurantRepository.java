@@ -4,6 +4,7 @@ import com.tuttime.restaurant.entity.Restaurant;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,17 +14,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
-
-	Page<Restaurant> findByOwnerUserId(UUID ownerUserId, Pageable pageable);
-
-	Page<Restaurant> findByRatingBetween(BigDecimal minRating, BigDecimal maxRating, Pageable pageable);
-
-	Page<Restaurant> findByOwnerUserIdAndRatingBetween(UUID ownerUserId, BigDecimal minRating, BigDecimal maxRating, Pageable pageable);
+public interface RestaurantRepository extends JpaRepository<Restaurant, UUID>, JpaSpecificationExecutor<Restaurant> {
 
 	Optional<Restaurant> findByRestaurantIdAndIsDeletedFalse(UUID restaurantId);
-
-	boolean existsByRestaurantIdAndOwnerUserIdAndIsDeletedFalse(UUID restaurantId, UUID ownerId);
 
 	@Query(value = "SELECT * FROM restaurants r " +
 			"WHERE r.is_deleted = false AND " +

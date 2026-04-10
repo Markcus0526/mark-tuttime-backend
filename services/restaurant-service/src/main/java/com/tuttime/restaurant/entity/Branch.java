@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -23,18 +25,15 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Branch extends BaseTimeStampEntity {
+public class Branch extends BaseDeleteEntity {
 
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "branch_id", nullable = false, updatable = false)
 	private UUID branchId;
 
-	@Column(name = "restaurant_id", nullable = false)
+	@JoinColumn(name = "restaurant_id")
 	private UUID restaurantId;
-
-	@Column(name = "manager_user_id", nullable = false)
-	private UUID managerUserId;
 
 	@Column(name = "address", nullable = false, length = 512)
 	private String address;
@@ -47,11 +46,4 @@ public class Branch extends BaseTimeStampEntity {
 
 	@Column(name = "location", columnDefinition = "geography(Point,4326)")
 	private Point location;
-
-	@Builder.Default
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
 }

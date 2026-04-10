@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.entity.enums.MediaType;
@@ -26,10 +27,10 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Media extends BaseTimeStampEntity {
+public class Media extends BaseDeleteEntity {
 
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "media_id", nullable = false, updatable = false)
 	private UUID mediaId;
 
@@ -61,15 +62,4 @@ public class Media extends BaseTimeStampEntity {
 	@Builder.Default
 	@Column(name = "is_map")
 	private Boolean isMap = false;
-
-	@Builder.Default
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
-
-	public void setIsDeleted(boolean isDeleted) {
-		this.isDeleted = isDeleted;
-	}
 }

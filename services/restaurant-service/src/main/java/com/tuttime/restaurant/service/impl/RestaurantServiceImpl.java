@@ -1,19 +1,27 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.auth.security.UserContext;
+import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.UserByIdRequest;
 import com.tuttime.common.proto.UserResponse;
 import com.tuttime.common.proto.UserServiceGrpc;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.entity.RestaurantStaff;
 import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.mapper.RestaurantMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
+import com.tuttime.restaurant.repository.RestaurantStaffRepository;
 import com.tuttime.restaurant.service.RestaurantService;
+import com.tuttime.restaurant.service.RestaurantStaffService;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -24,10 +32,15 @@ import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
@@ -38,31 +51,21 @@ import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
 @Transactional(readOnly = true)
 public class RestaurantServiceImpl implements RestaurantService {
 
+	private final RestaurantStaffService restaurantStaffService;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
+	private final RestaurantStaffRepository staffRepository;
 	private final RestaurantMapper restaurantMapper;
-	private final BranchMapper branchMapper;
 
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
 	@Override
-	public Page<RestaurantResponse> findRestaurantAll(UUID ownerUserId, Double minRating, Double maxRating, int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-
-		Page<Restaurant> restaurantPage;
-
-		if (ownerUserId != null && minRating != null && maxRating != null) {
-			restaurantPage = restaurantRepository.findByOwnerUserIdAndRatingBetween(ownerUserId, BigDecimal.valueOf(minRating), BigDecimal.valueOf(maxRating), pageable);
-		} else if (ownerUserId != null) {
-			restaurantPage = restaurantRepository.findByOwnerUserId(ownerUserId, pageable);
-		} else if (minRating != null && maxRating != null) {
-			restaurantPage = restaurantRepository.findByRatingBetween(BigDecimal.valueOf(minRating), BigDecimal.valueOf(maxRating), pageable);
-		} else {
-			restaurantPage = restaurantRepository.findAll(pageable);
-		}
-
-		return restaurantPage.map(restaurantMapper::toResponse);
+	@Transactional(readOnly = true)
+	public Page<RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
+		Specification<Restaurant> spec = createSpecification(query, ownerUserId, minRating, maxRating);
+		return restaurantRepository.findAll(spec, pageable)
+				.map(restaurantMapper::toResponse);
 	}
 
 	@Override
@@ -80,7 +83,12 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional
-	public RestaurantResponse createRestaurant(RestaurantRequest request) {
+	public RestaurantResponse createRestaurant(RestaurantRequest request, UUID currentUserId, String userRoles) {
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		if (!isAdmin) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		}
+
 		// Map request DTO to entity
 		Restaurant restaurant = restaurantMapper.toEntity(request);
 
@@ -92,7 +100,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 		// Create default branch linked to restaurant
 		Branch defaultBranch = new Branch();
 		defaultBranch.setRestaurantId(savedRestaurant.getRestaurantId());
-		defaultBranch.setManagerUserId(savedRestaurant.getOwnerUserId());
 		defaultBranch.setAddress(savedRestaurant.getAddress());
 		defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
 		defaultBranch.setPhone(null);
@@ -105,29 +112,49 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional
-	public RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantRequest request) {
-		Restaurant existing = restaurantRepository.findById(restaurantId)
-				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
+	public RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantRequest request, UUID currentUserId, String userRoles) {
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
+		}
+		if (!isAdmin && !isOwner) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		}
 
 		// Map fields (Standard fields like name, address, phone)
-		restaurantMapper.updateEntityFromRequest(request, existing);
+		restaurantMapper.updateEntityFromRequest(request, restaurant);
 
 		// Manual mapping for the PostGIS Point
 		if (request.getLongitude() != null && request.getLatitude() != null) {
-			existing.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+			restaurant.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
 		}
 
-		// No need for .save(existing) - Hibernate dirty checking handles it
-		return restaurantMapper.toResponse(existing);
+		// No need for .save(restaurant) - Hibernate dirty checking handles it
+		return restaurantMapper.toResponse(restaurant);
 	}
 
 	@Override
 	@Transactional
-	public void deleteRestaurant(UUID restaurantId) {
-		if (!restaurantRepository.existsById(restaurantId)) {
-			throw new IllegalArgumentException("Restaurant not found: " + restaurantId);
+	public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+
+		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
+		boolean isOwner = false;
+		if (!isAdmin) {
+			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
 		}
-		restaurantRepository.deleteById(restaurantId);
+		if (!isAdmin && !isOwner) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		}
+
+		restaurant.setDeleted(true);
+		restaurant.setDeletedAt(OffsetDateTime.now());
+		restaurantRepository.save(restaurant);
 	}
 
 	public Page<RestaurantResponse> findRestaurantsNearLocation(
@@ -139,22 +166,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Restaurant> entities = restaurantRepository.findByLocationNear(latitude, longitude, radiusMeters, pageable);
 		return entities.map(this::mapToResponse);
-	}
-
-	@Transactional(readOnly = true)
-	public void validateRestaurantOwner(UUID restaurantId) {
-		if (UserContext.getUserId() == null)
-			throw new BusinessException("You do not manage this specific restaurant or branch");
-
-		UUID currentUserId = UUID.fromString(UserContext.getUserId());
-
-		if (UserContext.isRoleAdmin()) return;
-
-		boolean isOwner = restaurantRepository.existsByRestaurantIdAndOwnerUserIdAndIsDeletedFalse(restaurantId, currentUserId);
-
-		if (!isOwner) {
-			throw new BusinessException("You do not manage this specific restaurant");
-		}
 	}
 
 	private RestaurantResponse mapToResponse(Restaurant entity) {
@@ -170,4 +181,36 @@ public class RestaurantServiceImpl implements RestaurantService {
 		return response;
 	}
 
+	private Specification<Restaurant> createSpecification(String query, UUID ownerId, Double minRating, Double maxRating) {
+		return (root, criteriaQuery, cb) -> {
+			List<Predicate> predicates = new ArrayList<>();
+
+			// 1. Keyword search (Name or Address)
+			if (query != null && !query.isBlank()) {
+				String pattern = "%" + query.toLowerCase() + "%";
+				predicates.add(cb.or(
+						cb.like(cb.lower(root.get("name")), pattern),
+						cb.like(cb.lower(root.get("address")), pattern)
+				));
+			}
+
+			// 2. Owner filter TODO
+//			if (ownerId != null) {
+//				predicates.add(cb.equal(root.get("ownerUserId"), ownerId));
+//			}
+
+			// 3. Rating range
+			if (minRating != null) {
+				predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), minRating));
+			}
+			if (maxRating != null) {
+				predicates.add(cb.lessThanOrEqualTo(root.get("rating"), maxRating));
+			}
+
+			// 4. Soft-delete filter (Always exclude deleted by default)
+			predicates.add(cb.equal(root.get("isDeleted"), false));
+
+			return cb.and(predicates.toArray(new Predicate[0]));
+		};
+	}
 }

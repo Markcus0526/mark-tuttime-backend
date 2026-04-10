@@ -13,17 +13,17 @@ public interface TableService {
 
 	List<TableResponse> getTablesByZoneId(UUID zoneId);
 
-	TableResponse getTableById(UUID tableId, UUID zoneId);
+	TableResponse getTableById(UUID tableId);
 
-	TableResponse createTable(UUID zoneId, TableRequest request);
+	TableResponse createTable(TableRequest request, UUID currentUserId, String userRoles);
 
-	TableResponse updateTable(UUID tableId, UUID zoneId, TableRequest request);
+	TableResponse updateTable(UUID tableId, TableRequest request, UUID currentUserId, String userRoles);
 
-	void deleteTable(UUID tableId, UUID zoneId);
+	void deleteTable(UUID tableId, UUID currentUserId, String userRoles);
 
 	List<TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to);
 
 	TableStatus getTableCurrentStatus(UUID tableId);
 
-	void confirmReservation(UUID tableId, UUID reservationId);
+	void confirmReservation(UUID tableId, UUID reservationId, UUID currentUserId, String userRoles);
 }

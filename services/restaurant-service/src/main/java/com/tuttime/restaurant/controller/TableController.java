@@ -2,6 +2,7 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.TableRequest;
 import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.entity.enums.TableStatus;
@@ -26,30 +27,12 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/restaurants/{restaurantId}/branches/{branchId}/zones/{zoneId}/tables")
+@RequestMapping("/api/v1/tables")
 @Tag(name = "Tables", description = "Operations related to tables within zones of branches")
 public class TableController {
 
 	private final BranchService branchService;
 	private final TableService tableService;
-
-	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Tables retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Zone not found")
-	})
-	@GetMapping
-	public ResponseEntity<ApiRes<List<TableResponse>>> getTablesInZone(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId) {
-		// Service should verify zone belongs to branch and restaurant for data integrity
-		List<TableResponse> tables = tableService.getTablesByZoneId(zoneId);
-		return ResponseEntity.ok(ApiRes.success(tables));
-	}
 
 	@Operation(summary = "Get a table by ID", description = "Retrieve details of a specific table")
 	@ApiResponses(value = {
@@ -58,16 +41,10 @@ public class TableController {
 	})
 	@GetMapping("/{tableId}")
 	public ResponseEntity<ApiRes<TableResponse>> getTableById(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId,
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId) {
-		// Service should validate table belongs to zone, branch, and restaurant
-		TableResponse table = tableService.getTableById(tableId, zoneId);
+
+		TableResponse table = tableService.getTableById(tableId);
 		return ResponseEntity.ok(ApiRes.success(table));
 	}
 
@@ -80,17 +57,16 @@ public class TableController {
 	})
 	@PostMapping
 	public ResponseEntity<ApiRes<TableResponse>> createTable(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId,
 			@Parameter(description = "Table creation payload", required = true)
 			@Valid @RequestBody TableRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		TableResponse created = tableService.createTable(zoneId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		TableResponse created = tableService.createTable(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -103,20 +79,19 @@ public class TableController {
 	})
 	@PutMapping("/{tableId}")
 	public ResponseEntity<ApiRes<TableResponse>> updateTable(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId,
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId,
 			@Parameter(description = "Updated table details", required = true)
 			@Valid @RequestBody TableRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
 		// Service should confirm the table belongs to the zone, branch, restaurant
-		TableResponse updated = tableService.updateTable(tableId, zoneId, request);
+		TableResponse updated = tableService.updateTable(tableId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -128,47 +103,23 @@ public class TableController {
 	})
 	@DeleteMapping("/{tableId}")
 	public ResponseEntity<ApiRes<Void>> deleteTable(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId,
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId,
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId) {
-		branchService.validateBranchManager(branchId, restaurantId);
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
 		// Service should verify hierarchical ownership before deletion
-		tableService.deleteTable(tableId, zoneId);
+		tableService.deleteTable(tableId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
-	}
-
-	// Reservation
-
-	@Operation(summary = "Get available tables in a zone for a time range")
-	@GetMapping("/available")
-	public ResponseEntity<ApiRes<List<TableResponse>>> getAvailableTables(
-			@PathVariable UUID restaurantId,
-			@PathVariable UUID branchId,
-			@PathVariable UUID zoneId,
-			@RequestParam
-			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T14:00:00+02:00)", required = true)
-			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-			OffsetDateTime from,
-			@RequestParam
-			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T16:00:00+02:00)", required = true)
-			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-			OffsetDateTime to) {
-		List<TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
-		return ResponseEntity.ok(ApiRes.success(availableTables));
 	}
 
 	@Operation(summary = "Get reservation status of a table")
 	@GetMapping("/{tableId}/status")
 	public ResponseEntity<ApiRes<TableStatus>> getTableStatus(
-			@PathVariable UUID restaurantId,
-			@PathVariable UUID branchId,
-			@PathVariable UUID zoneId,
 			@PathVariable UUID tableId) {
 
 		TableStatus status = tableService.getTableCurrentStatus(tableId);
@@ -178,14 +129,16 @@ public class TableController {
 	@Operation(summary = "Confirm or link a reservation to a table")
 	@PostMapping("/{tableId}/reservations/{reservationId}/confirm")
 	public ResponseEntity<ApiRes<Void>> confirmReservation(
-			@PathVariable UUID restaurantId,
-			@PathVariable UUID branchId,
-			@PathVariable UUID zoneId,
 			@PathVariable UUID tableId,
 			@PathVariable UUID reservationId) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		tableService.confirmReservation(tableId, reservationId);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		tableService.confirmReservation(tableId, reservationId, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(null));
 	}
 }

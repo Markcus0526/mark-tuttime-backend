@@ -30,7 +30,11 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/v1/restaurants/**").permitAll() // Add /v1
+						.requestMatchers(
+								"/api/v1/restaurants/**",
+								"/api/v1/branches/**",
+								"/api/v1/zones/**",
+								"/api/v1/tables/**").permitAll() // Add /v1
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 				)
 				.addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
