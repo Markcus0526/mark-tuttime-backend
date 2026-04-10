@@ -16,7 +16,6 @@ import java.util.UUID;
 public class RestaurantResponse {
 
 	private UUID restaurantId;
-	private UUID ownerUserId;
 	private String name;
 	private String description;
 	private String address;

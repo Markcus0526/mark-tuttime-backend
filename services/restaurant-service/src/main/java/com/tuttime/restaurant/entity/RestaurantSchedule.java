@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,14 +27,14 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class RestaurantSchedule extends BaseTimeStampEntity {
+public class RestaurantSchedule extends BaseDeleteEntity {
 
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "schedule_id", nullable = false, updatable = false)
 	private UUID scheduleId;
 
-	@Column(name = "restaurant_id", nullable = false)
+	@JoinColumn(name = "restaurant_id", nullable = false)
 	private UUID restaurantId;
 
 	@Column(name = "day_of_week", nullable = false)
@@ -50,11 +51,4 @@ public class RestaurantSchedule extends BaseTimeStampEntity {
 	@Builder.Default
 	@Column(name = "is_closed", nullable = false)
 	private boolean isClosed = false;
-
-	@Builder.Default
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
 }

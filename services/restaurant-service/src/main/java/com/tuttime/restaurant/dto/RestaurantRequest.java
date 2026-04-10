@@ -13,9 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class RestaurantRequest {
 
-	@NotNull(message = "Owner user ID is required")
-	private UUID ownerUserId;
-
 	@NotBlank(message = "Restaurant name is required")
 	@Size(max = 255, message = "Restaurant name must be at most 255 characters")
 	private String name;

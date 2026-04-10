@@ -2,13 +2,11 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.*;
 import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.entity.enums.MediaType;
-import com.tuttime.restaurant.service.BranchService;
-import com.tuttime.restaurant.service.MediaService;
-import com.tuttime.restaurant.service.RestaurantService;
-import com.tuttime.restaurant.service.ScheduleService;
+import com.tuttime.restaurant.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,11 +24,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/restaurants/{restaurantId}/branches")
+@RequestMapping("/api/v1/branches")
 @Tag(name = "Branches", description = "Operations related to branches, schedules & media")
 public class BranchController {
 
@@ -38,25 +37,9 @@ public class BranchController {
 	private final RestaurantService restaurantService;
 	private final ScheduleService scheduleService;
 	private final MediaService mediaService;
+	private final ZoneService zoneService;
 
 	// --- Branch CRUD ---
-
-	@Operation(summary = "Get all branches", description = "Retrieve paginated list of branches with optional filters")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "List of branches retrieved successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
-	})
-	@GetMapping
-	public ResponseEntity<ApiRes<Page<BranchResponse>>> getAllBranches(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-		int maxPageSize = 100;
-		if (size > maxPageSize) size = maxPageSize;
-		Page<BranchResponse> branches = branchService.findAllBranches(restaurantId, page, size);
-		return ResponseEntity.ok(ApiRes.success(branches));
-	}
 
 	@Operation(summary = "Get a branch by ID", description = "Retrieve detailed information about a branch by its ID")
 	@ApiResponses(value = {
@@ -65,10 +48,9 @@ public class BranchController {
 	})
 	@GetMapping("/{branchId}")
 	public ResponseEntity<ApiRes<BranchResponse>> getBranchById(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch to retrieve", required = true)
 			@PathVariable UUID branchId) {
+
 		BranchResponse branch = branchService.getBranchById(branchId);
 		return ResponseEntity.ok(ApiRes.success(branch));
 	}
@@ -81,13 +63,16 @@ public class BranchController {
 	})
 	@PostMapping
 	public ResponseEntity<ApiRes<BranchResponse>> createBranch(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "Branch creation payload", required = true)
 			@Valid @RequestBody BranchRequest request) {
-		restaurantService.validateRestaurantOwner(restaurantId);
 
-		BranchResponse created = branchService.createBranch(restaurantId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		BranchResponse created = branchService.createBranch(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -100,15 +85,18 @@ public class BranchController {
 	})
 	@PutMapping("/{branchId}")
 	public ResponseEntity<ApiRes<BranchResponse>> updateBranch(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch to update", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "Updated branch details", required = true)
 			@Valid @RequestBody BranchRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		BranchResponse updated = branchService.updateBranch(branchId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		BranchResponse updated = branchService.updateBranch(branchId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -120,13 +108,16 @@ public class BranchController {
 	})
 	@DeleteMapping("/{branchId}")
 	public ResponseEntity<ApiRes<Void>> deleteBranch(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch to delete", required = true)
 			@PathVariable UUID branchId) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		branchService.deleteBranch(branchId);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		branchService.deleteBranch(branchId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -139,10 +130,9 @@ public class BranchController {
 	})
 	@GetMapping("/{branchId}/map")
 	public ResponseEntity<ApiRes<String>> getBranchMapSvg(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId) {
+
 		String svgContent = mediaService.getPrimarySvgMap(EntityType.BRANCH, branchId);
 		return ResponseEntity.ok(ApiRes.success(svgContent));
 	}
@@ -156,15 +146,18 @@ public class BranchController {
 	})
 	@PostMapping("/{branchId}/map")
 	public ResponseEntity<ApiRes<Void>> setBranchMapSvg(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "SVG XML content", required = true)
 			@RequestBody String svgContent) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		mediaService.setOrUpdateSvgMap(EntityType.BRANCH, branchId, svgContent);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		mediaService.setOrUpdateSvgMap(EntityType.BRANCH, branchId, svgContent, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
 
@@ -177,10 +170,9 @@ public class BranchController {
 	})
 	@GetMapping("/{branchId}/schedules")
 	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId) {
+
 		List<ScheduleResponse> schedules = scheduleService.getSchedulesByBranchId(branchId);
 		return ResponseEntity.ok(ApiRes.success(schedules));
 	}
@@ -194,15 +186,18 @@ public class BranchController {
 	})
 	@PostMapping("/{branchId}/schedules")
 	public ResponseEntity<ApiRes<ScheduleResponse>> addSchedule(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "Schedule details to create", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		ScheduleResponse created = scheduleService.createScheduleForBranch(branchId, request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -215,17 +210,20 @@ public class BranchController {
 	})
 	@PutMapping("/{branchId}/schedules/{scheduleId}")
 	public ResponseEntity<ApiRes<ScheduleResponse>> updateSchedule(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the schedule to update", required = true)
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
 			@Valid @RequestBody ScheduleRequest request) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		ScheduleResponse updated = scheduleService.updateBranchSchedule(scheduleId, branchId, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		ScheduleResponse updated = scheduleService.updateBranchSchedule(scheduleId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -237,15 +235,18 @@ public class BranchController {
 	})
 	@DeleteMapping("/{branchId}/schedules/{scheduleId}")
 	public ResponseEntity<ApiRes<Void>> deleteSchedule(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "UUID of the schedule to delete", required = true)
 			@PathVariable UUID scheduleId) {
-		branchService.validateBranchManager(branchId, restaurantId);
 
-		scheduleService.deleteBranchSchedule(scheduleId, branchId);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		scheduleService.deleteBranchSchedule(scheduleId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -258,10 +259,9 @@ public class BranchController {
 	})
 	@GetMapping("/{branchId}/medias")
 	public ResponseEntity<ApiRes<List<MediaResponse>>> getMediaForBranch(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId) {
+
 		List<MediaResponse> medias = mediaService.getMediaByEntity(EntityType.BRANCH, branchId);
 		return ResponseEntity.ok(ApiRes.success(medias));
 	}
@@ -275,8 +275,6 @@ public class BranchController {
 	})
 	@PostMapping("/{branchId}/medias")
 	public ResponseEntity<ApiRes<MediaResponse>> addMediaToBranch(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "Media file to upload", required = true)
@@ -287,7 +285,12 @@ public class BranchController {
 			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
-		branchService.validateBranchManager(branchId, restaurantId);
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
@@ -335,8 +338,22 @@ public class BranchController {
 		request.setIsPrimary(isPrimary);
 		request.setMediaType(mediaType);
 
-		MediaResponse created = mediaService.createMedia(request, file);
+		MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+	}
+
+	@Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Zones retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	@GetMapping("/{branchId}/zones")
+	public ResponseEntity<ApiRes<List<ZoneResponse>>> getZonesByBranch(
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId) {
+
+		List<ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
+		return ResponseEntity.ok(ApiRes.success(zones));
 	}
 
 	/**

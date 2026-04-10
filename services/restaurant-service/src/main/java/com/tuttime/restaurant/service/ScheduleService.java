@@ -10,19 +10,19 @@ public interface ScheduleService {
 
 	List<ScheduleResponse> getSchedulesByRestaurantId(UUID restaurantId);
 
-	ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request);
+	ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	ScheduleResponse updateRestaurantSchedule(UUID scheduleId, UUID restaurantId, ScheduleRequest request);
+	ScheduleResponse updateRestaurantSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	void deleteRestaurantSchedule(UUID scheduleId, UUID restaurantId);
+	void deleteRestaurantSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
 
 
 	List<ScheduleResponse> getSchedulesByBranchId(UUID branchId);
 
-	ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request);
+	ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	ScheduleResponse updateBranchSchedule(UUID scheduleId, UUID branchId, ScheduleRequest request);
+	ScheduleResponse updateBranchSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	void deleteBranchSchedule(UUID scheduleId, UUID branchId);
+	void deleteBranchSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
 
 }

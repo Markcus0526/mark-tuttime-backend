@@ -16,25 +16,8 @@ import java.util.UUID;
 
 @Repository
 public interface MediaRepository extends JpaRepository<Media, UUID> {
-	List<Media> findByEntityTypeAndEntityId(EntityType mediaEntity, UUID entityId);
 
-	List<Media> findByEntityTypeAndEntityIdAndIsPrimaryTrue(EntityType mediaEntity, UUID entityId);
-
-	@Modifying
-	@Transactional
-	@Query("UPDATE Media m SET m.isPrimary = false WHERE m.entityType = :entityType AND m.entityId = :entityId AND m.isPrimary = true")
-	void clearPrimaryForEntity(EntityType entityType, UUID entityId);
-
-	Optional<Media> findFirstByEntityTypeAndEntityIdAndMediaTypeAndIsPrimaryAndIsDeletedFalse(
-			EntityType entityType, UUID entityId, MediaType mediaType, Boolean isPrimary
-	);
-
-	@Query("SELECT m FROM Media m " +
-			"WHERE m.entityType = :entityType " +
-			"AND m.entityId = :entityId " +
-			"AND m.isMap = true " +
-			"AND m.isDeleted = false")
-	Optional<Media> findPrimaryMapByEntity(@Param("entityType") EntityType entityType, @Param("entityId") UUID entityId);
+	Optional<Media> findByMediaIdAndIsDeletedFalse(UUID mediaId);
 
 	// Find all media for an entity, excluding soft-deleted
 	List<Media> findByEntityTypeAndEntityIdAndIsDeletedFalse(EntityType entityType, UUID entityId);

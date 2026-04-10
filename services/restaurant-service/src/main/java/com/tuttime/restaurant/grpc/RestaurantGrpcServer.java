@@ -6,6 +6,7 @@ import com.tuttime.restaurant.entity.Table;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
+import com.tuttime.restaurant.repository.RestaurantStaffRepository;
 import com.tuttime.restaurant.repository.TableRepository;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
@@ -24,7 +25,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServiceImplBase {
 
-	private final RestaurantRepository restaurantRepository;
+	private final RestaurantStaffRepository staffRepository;
 	private final BranchRepository branchRepository;
 	private final TableRepository tableRepository;
 
@@ -39,12 +40,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			UUID branchId = UUID.fromString(request.getBranchId());
 			UUID userId = UUID.fromString(request.getUserId());
 
-			boolean exists = branchRepository.findByBranchIdAndIsDeletedFalse(branchId)
-					.map(branch ->
-							branch.getManagerUserId().equals(userId) ||
-									restaurantRepository.existsByRestaurantIdAndOwnerUserIdAndIsDeletedFalse(
-											branch.getRestaurantId(), userId)
-					).orElse(false);
+			boolean exists = staffRepository.existsByBranchIdAndUserId(branchId, userId);
 
 			responseObserver.onNext(BranchResponse.newBuilder().setExists(exists).build());
 			responseObserver.onCompleted();

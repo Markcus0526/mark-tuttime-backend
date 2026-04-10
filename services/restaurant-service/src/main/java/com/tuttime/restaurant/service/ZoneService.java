@@ -10,13 +10,13 @@ public interface ZoneService {
 
 	List<ZoneResponse> getZonesByBranchId(UUID branchId);
 
-	ZoneResponse getZoneById(UUID branchId, UUID zoneId);
+	ZoneResponse getZoneById(UUID zoneId);
 
-	ZoneResponse createZone(UUID branchId, ZoneRequest request);
+	ZoneResponse createZone(ZoneRequest request, UUID currentUserId, String userRoles);
 
-	ZoneResponse updateZone(UUID branchId, UUID zoneId, ZoneRequest request);
+	ZoneResponse updateZone(UUID zoneId, ZoneRequest request, UUID currentUserId, String userRoles);
 
-	void deleteZone(UUID branchId, UUID zoneId);
+	void deleteZone(UUID zoneId, UUID currentUserId, String userRoles);
 
 	// other zone-related methods if any
 }

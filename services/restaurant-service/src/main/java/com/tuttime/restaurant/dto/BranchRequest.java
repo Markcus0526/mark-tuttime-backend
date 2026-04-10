@@ -15,9 +15,6 @@ public class BranchRequest {
 	@NotNull(message = "Restaurant ID is required")
 	private UUID restaurantId;
 
-	@NotNull(message = "Manager user ID is required")
-	private UUID managerUserId;
-
 	@NotBlank(message = "Address is required")
 	@Size(max = 512, message = "Address must be at most 512 characters")
 	private String address;

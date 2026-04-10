@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import jakarta.persistence.*;
@@ -25,14 +26,14 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Table extends BaseTimeStampEntity {
+public class Table extends BaseDeleteEntity {
 
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "table_id", nullable = false, updatable = false)
 	private UUID tableId;
 
-	@Column(name = "zone_id", nullable = false)
+	@JoinColumn(name = "zone_id")
 	private UUID zoneId;
 
 	@Column(name = "number", nullable = false, length = 50)
@@ -50,26 +51,11 @@ public class Table extends BaseTimeStampEntity {
 	@Column(name = "is_closed", nullable = false)
 	private boolean isClosed = false;
 
-	@Builder.Default
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
-
 	public void setIsClosed(boolean isClosed) {
 		this.isClosed = isClosed;
 	}
 
 	public boolean getIsClosed() {
 		return this.isClosed;
-	}
-
-	public void setIsDeleted(boolean isDeleted) {
-		this.isDeleted = isDeleted;
-	}
-
-	public boolean getIsDeleted() {
-		return this.isDeleted;
 	}
 }

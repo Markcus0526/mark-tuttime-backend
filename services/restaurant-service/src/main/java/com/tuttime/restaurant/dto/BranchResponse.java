@@ -16,7 +16,6 @@ public class BranchResponse {
 
 	private UUID branchId;
 	private UUID restaurantId;
-	private UUID managerUserId;
 	private String address;
 	private String phone;
 	private String timezone;

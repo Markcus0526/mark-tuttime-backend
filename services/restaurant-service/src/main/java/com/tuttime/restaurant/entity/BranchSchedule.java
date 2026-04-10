@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,14 +26,14 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class BranchSchedule extends BaseTimeStampEntity {
+public class BranchSchedule extends BaseDeleteEntity {
 
 	@Id
-	@GeneratedValue
+	@GeneratedValue(strategy = GenerationType.UUID)
 	@Column(name = "schedule_id", nullable = false, updatable = false)
 	private UUID scheduleId;
 
-	@Column(name = "branch_id", nullable = false)
+	@JoinColumn(name = "branch_id", nullable = false)
 	private UUID branchId;
 
 	@Column(name = "day_of_week", nullable = false)
@@ -47,11 +48,4 @@ public class BranchSchedule extends BaseTimeStampEntity {
 	@Builder.Default
 	@Column(name = "is_closed", nullable = false)
 	private boolean isClosed = false;
-
-	@Builder.Default
-	@Column(name = "is_deleted", nullable = false)
-	private boolean isDeleted = false;
-
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
 }

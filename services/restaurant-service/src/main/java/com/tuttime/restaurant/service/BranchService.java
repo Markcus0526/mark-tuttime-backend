@@ -10,13 +10,11 @@ public interface BranchService {
 
 	Page<BranchResponse> findAllBranches(UUID restaurantId, int page, int size);
 
-	BranchResponse createBranch(UUID restaurantId, BranchRequest request);
+	BranchResponse createBranch(BranchRequest request, UUID currentUserId, String userRoles);
 
 	BranchResponse getBranchById(UUID branchId);
 
-	BranchResponse updateBranch(UUID branchId, BranchRequest request);
+	BranchResponse updateBranch(UUID branchId, BranchRequest request, UUID currentUserId, String userRoles);
 
-	void deleteBranch(UUID branchId);
-
-	void validateBranchManager(UUID branchId, UUID restaurantId);
+	void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
 }
