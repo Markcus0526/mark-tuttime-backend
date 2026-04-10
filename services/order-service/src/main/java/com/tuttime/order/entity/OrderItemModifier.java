@@ -1,10 +1,9 @@
 package com.tuttime.order.entity;
 
-import com.tuttime.common.entity.BaseSoftDeleteEntity;
+import com.tuttime.common.entity.BaseLockingEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
@@ -19,7 +18,7 @@ import java.util.UUID;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE order_service.order_item_modifiers SET deleted_at = now() WHERE id = ?")
-public class OrderItemModifier extends BaseSoftDeleteEntity {
+public class OrderItemModifier extends BaseLockingEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "order_item_id")
