@@ -12,7 +12,7 @@ import java.util.UUID;
 @Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-public abstract class BaseSoftDeleteEntity extends BaseTimeStampEntity {
+public abstract class BaseLockingEntity extends BaseTimeStampEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)

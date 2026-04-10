@@ -1,6 +1,7 @@
 package com.tuttime.common.auth.security;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.util.UuidUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,14 +69,7 @@ public class UserContext {
 	}
 
 	public static boolean isValidUUID() {
-		String uuidString = currentUserId.get();
-		if (uuidString == null) return false;
-		try {
-			UUID.fromString(uuidString);
-			return true;
-		} catch (IllegalArgumentException e) {
-			return false;
-		}
+		return UuidUtil.toUuid(currentUserId.get()) != null;
 	}
 
 	public static void clear() {

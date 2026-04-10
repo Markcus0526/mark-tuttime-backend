@@ -11,7 +11,7 @@ public class OrderEvent {
 
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record OrderCreatedEvent(
-			String orderId,
+			UUID orderId,
 			String posSystem,
 			OffsetDateTime timestamp
 	) implements BaseEvent {
