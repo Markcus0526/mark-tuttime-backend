@@ -1,11 +1,10 @@
 package com.tuttime.order.entity;
 
-import com.tuttime.common.entity.BaseSoftDeleteEntity;
+import com.tuttime.common.entity.BaseLockingEntity;
 import com.tuttime.common.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
@@ -22,7 +21,7 @@ import java.util.UUID;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE order_service.orders SET deleted_at = now() WHERE id = ?")
-public class Order extends BaseSoftDeleteEntity {
+public class Order extends BaseLockingEntity {
 
 	@Column(name = "booking_id", nullable = false)
 	private UUID bookingId;
