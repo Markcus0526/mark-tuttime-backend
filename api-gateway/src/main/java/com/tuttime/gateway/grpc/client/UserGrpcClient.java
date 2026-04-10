@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
-public class UserClient {
+public class UserGrpcClient {
 
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userBockingStub;
@@ -24,13 +24,13 @@ public class UserClient {
 	 * Used by Security Filters.
 	 */
 	@CircuitBreaker(name = "userService", fallbackMethod = "validateFallback")
-	public Mono<UserContextResponse> validateToken(String token) {
+	public Mono<UserContextResponse> validateUserToken(String token) {
 		return Mono.create(sink -> {
 			ValidateUserRequest request = ValidateUserRequest.newBuilder()
 					.setJwtToken(token)
 					.build();
 
-			userAsyncStub.validateUser(request, new StreamObserver<UserContextResponse>() {
+			userAsyncStub.validateUserToken(request, new StreamObserver<UserContextResponse>() {
 				@Override
 				public void onNext(UserContextResponse value) {
 					sink.success(value);
