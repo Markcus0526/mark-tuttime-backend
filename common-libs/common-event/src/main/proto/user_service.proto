@@ -11,12 +11,14 @@ option java_outer_classname = "UserServiceProto";
 // User Service gRPC
 service UserService {
   // Synchronous call for Gateway and Services to validate a user
-  rpc validateUser (ValidateUserRequest) returns (UserContextResponse);
+  rpc ValidateUserToken (ValidateUserRequest) returns (UserContextResponse);
 
   // Fetch basic profile info for display in Reviews/Bookings
-  rpc getUserProfile (UserByIdRequest) returns (UserProfileResponse);
+  rpc GetUserProfile (UserByIdRequest) returns (UserProfileResponse);
 
-  rpc getUserById (UserByIdRequest) returns (UserResponse);
+  rpc GetUserById (UserByIdRequest) returns (UserResponse);
+
+  rpc ValidateUserById (UserByIdRequest) returns (UserValidResponse);
 
 }
 

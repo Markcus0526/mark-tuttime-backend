@@ -20,6 +20,7 @@ public class EventProducer {
 	private final KafkaMetrics kafkaMetrics;
 
 	// Topics
+	public static final String TOPIC_USER_PROFILE_UPDATED = "tuttime.user.profile.updated";
 	public static final String TOPIC_USER_SECURITY_UPDATED = "tuttime.user.security.updated";
 
 	public static final String TOPIC_RESTAURANT = "tuttime.restaurant";
@@ -40,8 +41,12 @@ public class EventProducer {
 	public static final String TOPIC_REVIEW_APPROVED = "tuttime.review.approved";
 
 	// User Events Publisher
+	public void sendUserUpdatedEvent(UserEvent.ProfileUpdatedEvent event) {
+		sendEvent(TOPIC_USER_PROFILE_UPDATED, event.userId().toString(), event);
+	}
+
 	public void sendUserSecurityEvent(UserEvent.SecurityEvent event) {
-		sendEvent(TOPIC_USER_SECURITY_UPDATED, event.userId(), event);
+		sendEvent(TOPIC_USER_SECURITY_UPDATED, event.userId().toString(), event);
 	}
 
 	// Booking Events Publisher
@@ -50,7 +55,7 @@ public class EventProducer {
 	}
 
 	public void sendBookingConfirmedEvent(BookingEvent.BookingConfirmedEvent event) {
-		sendEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId(), event);
+		sendEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId().toString(), event);
 	}
 
 
@@ -65,7 +70,7 @@ public class EventProducer {
 
 	// Order Events Publisher
 	public void sendOrderCreatedEvent(OrderEvent.OrderCreatedEvent event) {
-		sendEvent(TOPIC_ORDER_CREATED, event.orderId(), event);
+		sendEvent(TOPIC_ORDER_CREATED, event.orderId().toString(), event);
 	}
 
 	public void sendOrderStatusUpdatedEvent(OrderEvent.OrderStatusEvent event) {
