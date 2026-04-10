@@ -60,12 +60,12 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(request.getPhoneNumber()) &&
-				userRepository.existsByPhoneNumberAndStatusNot(request.getPhoneNumber(), UserStatus.DELETED)) {
+				userRepository.existsByPhoneNumberAndIsDeletedFalse(request.getPhoneNumber())) {
 			throw new ConflictException("Phone number in use");
 		}
 
 		if (StringUtils.hasText(request.getEmail()) &&
-				userRepository.existsByEmailAndStatusNot(request.getEmail(), UserStatus.DELETED)) {
+				userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
 			throw new ConflictException("Email in use");
 		}
 
@@ -80,13 +80,13 @@ public class AuthServiceImpl implements AuthService {
 		Role userRole = roleRepository.findByName(UserRoleKind.USER.name())
 				.orElseThrow(() -> new ResourceNotFoundException("Role " + targetRole + " not found"));
 		UserRole ur = new UserRole();
-		ur.setUserId(user.getId());
+		ur.setUserId(user.getUserId());
 		ur.setRole(userRole);
 		userRoleRepository.save(ur);
 
 		// 2. Create and link AuthMethod to the SAVED user
 		UserAuthMethod authMethod = new UserAuthMethod();
-		authMethod.setUserId(user.getId()); // Now 'user' has an ID!
+		authMethod.setUserId(user.getUserId()); // Now 'user' has an ID!
 		authMethod.setCredential(passwordEncoder.encode(request.getPassword()));
 		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
 		authMethod.setVerified(false);
@@ -137,7 +137,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check auth method and verify password
 		if (StringUtils.hasText(email)) {
-			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
+			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getUserId(), AuthProvider.EMAIL_PASS)
 					.orElseThrow(() -> new SecurityException("Authentication method not found"));
 
 			if (!passwordEncoder.matches(request.getPassword(), authMethod.getCredential())) {
@@ -177,7 +177,7 @@ public class AuthServiceImpl implements AuthService {
 		auth.setRefreshToken(refreshToken);
 		auth.setTokenType("Bearer");
 		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getId());
+		auth.setUserId(user.getUserId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
 		auth.setPhoneNumber(user.getPhoneNumber());
@@ -202,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
 		auth.setRefreshToken(newRefreshToken);
 		auth.setTokenType("Bearer");
 		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getId());
+		auth.setUserId(user.getUserId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
 		auth.setPhoneNumber(user.getPhoneNumber());
@@ -229,12 +229,12 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(phoneNumber) &&
-				!userRepository.existsByPhoneNumberAndStatusNot(phoneNumber, UserStatus.DELETED)) {
+				!userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber)) {
 			throw new ResourceNotFoundException("Phone number not registered");
 		}
 
 		if (StringUtils.hasText(email) &&
-				!userRepository.existsByEmailAndStatusNot(email, UserStatus.DELETED)) {
+				!userRepository.existsByEmailAndIsDeletedFalse(email)) {
 			throw new ResourceNotFoundException("Email not registered");
 		}
 
@@ -281,10 +281,10 @@ public class AuthServiceImpl implements AuthService {
 		// Step 3: Find or create user by phone number
 		User user;
 		if (otpCode.getType() == VerificationType.PHONE_VERIFY) {
-			user = userRepository.findByPhoneNumberAndStatusIsNot(phoneNumber, UserStatus.DELETED)
+			user = userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber)
 					.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		} else {
-			user = userRepository.findByEmailAndStatusIsNot(email, UserStatus.DELETED)
+			user = userRepository.findByEmailAndIsDeletedFalse(email)
 					.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		}
 
@@ -294,10 +294,10 @@ public class AuthServiceImpl implements AuthService {
 
 		// Optional: If you want to ensure the user has an auth method for PHONE_SMS
 		if (otpCode.getType() == VerificationType.EMAIL_VERIFY) {
-			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
+			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getUserId(), AuthProvider.EMAIL_PASS)
 					.orElseGet(() -> {
 						UserAuthMethod newAuthMethod = new UserAuthMethod();
-						newAuthMethod.setUserId(user.getId());
+						newAuthMethod.setUserId(user.getUserId());
 						newAuthMethod.setAuthType(AuthProvider.EMAIL_PASS);
 						newAuthMethod.setVerified(true);
 						return userAuthMethodRepository.save(newAuthMethod);
@@ -314,7 +314,7 @@ public class AuthServiceImpl implements AuthService {
 		auth.setRefreshToken(refreshToken);
 		auth.setTokenType("Bearer");
 		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getId());
+		auth.setUserId(user.getUserId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
 		auth.setPhoneNumber(user.getPhoneNumber());
@@ -330,7 +330,7 @@ public class AuthServiceImpl implements AuthService {
 			throw new ResourceNotFoundException("Email must be provided");
 		}
 
-		Optional<User> userOpt = userRepository.findByEmailAndStatusNot(email, UserStatus.DELETED);
+		Optional<User> userOpt = userRepository.findByEmailAndIsDeletedFalse(email);
 		User user = userOpt.orElseThrow(() -> new IllegalArgumentException("User not found"));
 
 		// Generate code and save
@@ -371,10 +371,10 @@ public class AuthServiceImpl implements AuthService {
 		verificationCodeRepository.save(otpCode);
 
 		// Step 3: Find or create user by phone number
-		User user = userRepository.findByEmailAndStatusIsNot(email, UserStatus.DELETED)
+		User user = userRepository.findByEmailAndIsDeletedFalse(email)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-		updatePasswordForUser(user.getId(), newPassword);
+		updatePasswordForUser(user.getUserId(), newPassword);
 		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);
 	}

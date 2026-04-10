@@ -38,7 +38,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	 * and retrieve the associated User Context (ID, Roles, Status).
 	 */
 	@Override
-	public void validateUser(ValidateUserRequest request, StreamObserver<UserContextResponse> responseObserver) {
+	public void validateUserToken(ValidateUserRequest request, StreamObserver<UserContextResponse> responseObserver) {
 		try {
 			String token = request.getJwtToken();
 
@@ -81,7 +81,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// 6. Build Success Response
 			UserContextResponse.Builder responseBuilder = UserContextResponse.newBuilder()
-					.setUserId(user.getId().toString())
+					.setUserId(user.getUserId().toString())
 					.setEmail(user.getEmail() != null ? user.getEmail() : "")
 					.setStatus(user.getStatus().name());
 
@@ -123,7 +123,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// Building Response based on your exact SQL fields
 			UserProfileResponse.Builder responseBuilder = UserProfileResponse.newBuilder()
-					.setId(user.getId().toString())
+					.setId(user.getUserId().toString())
 					.setEmail(user.getEmail())
 					.setFullName(user.getFullName())
 					.setStatus(user.getStatus().toString())
@@ -192,7 +192,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// Building Response based on your exact SQL fields
 			UserResponse.Builder responseBuilder = UserResponse.newBuilder()
-					.setId(user.getId().toString())
+					.setId(user.getUserId().toString())
 					.setEmail(user.getEmail())
 					.setFullName(user.getFullName())
 					.setStatus(user.getStatus().toString())
@@ -222,6 +222,45 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			// Null-safe mapping for last_login
 			if (user.getLastLogin() != null) {
 				responseBuilder.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
+			}
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid UUID format").asRuntimeException());
+		} catch (StatusRuntimeException e) {
+			responseObserver.onError(e);
+		} catch (Exception e) {
+			responseObserver.onError(Status.INTERNAL.asRuntimeException());
+		}
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public void validateUserById(UserByIdRequest request, StreamObserver<UserValidResponse> responseObserver) {
+		try {
+			UUID userId = UUID.fromString(request.getUserId());
+
+			// Fetching from DB (Ensure Repository handles the UUID correctly)
+			User user = userRepository.findByUserIdAndIsDeletedFalse(userId)
+					.orElseThrow(() -> new StatusRuntimeException(
+							Status.NOT_FOUND.withDescription("User not found or deleted")));
+
+			// Building Response based on your exact SQL fields
+			UserValidResponse.Builder responseBuilder = UserValidResponse.newBuilder()
+					.setIsValid(user.getStatus() == UserStatus.ACTIVE);
+			if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+				String combinedRoles = user.getRoles().stream()
+						.map(UserRole::getRole)
+						.filter(Objects::nonNull) // Ensure Role is not null
+						.map(Role::getName)
+						.filter(Objects::nonNull) // Ensure Role Name is not null
+						.collect(Collectors.joining(","));
+
+				responseBuilder.setRoles(combinedRoles);
+			} else {
+				responseBuilder.setRoles(""); // Protobuf builders hate nulls
 			}
 
 			responseObserver.onNext(responseBuilder.build());

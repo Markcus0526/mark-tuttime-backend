@@ -4,8 +4,10 @@ import com.tuttime.user.entity.User;
 import com.tuttime.user.entity.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,43 +17,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
-	@EntityGraph(attributePaths = {"roles", "roles.role"})
-	Optional<User> findById(UUID id);
+	Optional<User> findByUserIdAndIsDeletedFalse(UUID id);
 
-	Optional<User> findByPhoneNumberAndStatusIsNot(String phoneNumber, UserStatus status);
+	Optional<User> findByPhoneNumberAndIsDeletedFalse(String phoneNumber);
 
-	Optional<User> findByEmail(String email);
-
-	Optional<User> findByEmailAndStatusIsNot(String email, UserStatus status);
-
-	// Standard lookups
-	Optional<User> findByEmailAndStatusNot(String email, UserStatus status);
-
-	Optional<User> findByPhoneNumber(String phoneNumber);
+	Optional<User> findByEmailAndIsDeletedFalse(String email);
 
 	@Query("SELECT u FROM User u WHERE " +
 			"(cast(:phone as string) IS NOT NULL AND u.phoneNumber = :phone) OR " +
 			"(cast(:email as string) IS NOT NULL AND u.email = :email)")
 	Optional<User> findByPhoneNumberOrEmail(@Param("phone") String phone, @Param("email") String email);
 
-	boolean existsByPhoneNumberAndStatusNot(String phoneNumber, UserStatus status);
+	boolean existsByPhoneNumberAndIsDeletedFalse(String phoneNumber);
 
-	boolean existsByEmailAndStatusNot(String phoneNumber, UserStatus status);
-
-	// Standard lookup: only active, non-deleted users
-	@Query("SELECT u FROM User u WHERE u.id = :id AND u.status = :status")
-	Optional<User> findActiveById(UUID id, UserStatus status);
-
-	Page<User> findAllByStatus(UserStatus status, Pageable pageable);
-
-	@Query(value = "SELECT u FROM User u " +
-			"LEFT JOIN FETCH u.roles ur " +
-			"LEFT JOIN FETCH ur.role " +
-			"WHERE (:status IS NULL OR u.status = :status)",
-			countQuery = "SELECT COUNT(u) FROM User u WHERE (:status IS NULL OR u.status = :status)")
-	Page<User> findAllByOptionalStatus(@Param("status") UserStatus status, Pageable pageable);
+	boolean existsByEmailAndIsDeletedFalse(String email);
 
 	@Query(value = "SELECT DISTINCT u FROM User u " +
 			"LEFT JOIN FETCH u.roles ur " + // Changed from userRoles to roles

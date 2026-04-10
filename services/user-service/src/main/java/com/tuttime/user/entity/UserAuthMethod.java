@@ -19,7 +19,7 @@ import java.util.UUID;
 public class UserAuthMethod extends BaseTimeStampEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer id;
+	private Integer methodId;
 
 	@Column(name = "user_id", nullable = false, length = 36)
 	private UUID userId;

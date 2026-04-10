@@ -45,7 +45,7 @@ public class JwtTokenProvider {
 		String[] rolesArray = user.getRoles().stream()
 				.map(role -> role.getRole().getName())
 				.toArray(String[]::new);
-		Map<String, Object> claims = generateTokenClaims(user.getId(), user.getFullName(), rolesArray, id);
+		Map<String, Object> claims = generateTokenClaims(user.getUserId(), user.getFullName(), rolesArray, id);
 
 		return Jwts.builder()
 				.id(id)
@@ -63,7 +63,7 @@ public class JwtTokenProvider {
 		String[] rolesArray = user.getRoles().stream()
 				.map(role -> role.getRole().getName())
 				.toArray(String[]::new);
-		Map<String, Object> claims = generateTokenClaims(user.getId(), user.getFullName(), rolesArray, id);
+		Map<String, Object> claims = generateTokenClaims(user.getUserId(), user.getFullName(), rolesArray, id);
 
 		return Jwts.builder()
 				.id(id)
