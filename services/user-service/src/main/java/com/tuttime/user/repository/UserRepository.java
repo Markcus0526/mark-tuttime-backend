@@ -4,35 +4,32 @@ import com.tuttime.user.entity.User;
 import com.tuttime.user.entity.enums.UserStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
-	Optional<User> findByUserIdAndIsDeletedFalse(UUID id);
+	Optional<User> findByUserIdAndDeletedFalse(UUID id);
 
-	Optional<User> findByPhoneNumberAndIsDeletedFalse(String phoneNumber);
+	Optional<User> findByPhoneNumberAndDeletedFalse(String phoneNumber);
 
-	Optional<User> findByEmailAndIsDeletedFalse(String email);
+	Optional<User> findByEmailAndDeletedFalse(String email);
 
 	@Query("SELECT u FROM User u WHERE " +
 			"(cast(:phone as string) IS NOT NULL AND u.phoneNumber = :phone) OR " +
 			"(cast(:email as string) IS NOT NULL AND u.email = :email)")
 	Optional<User> findByPhoneNumberOrEmail(@Param("phone") String phone, @Param("email") String email);
 
-	boolean existsByPhoneNumberAndIsDeletedFalse(String phoneNumber);
+	boolean existsByPhoneNumberAndDeletedFalse(String phoneNumber);
 
-	boolean existsByEmailAndIsDeletedFalse(String email);
+	boolean existsByEmailAndDeletedFalse(String email);
 
 	@Query(value = "SELECT DISTINCT u FROM User u " +
 			"LEFT JOIN FETCH u.roles ur " + // Changed from userRoles to roles
