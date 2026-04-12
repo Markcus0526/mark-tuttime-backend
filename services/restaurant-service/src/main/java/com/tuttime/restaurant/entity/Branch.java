@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "branches", schema = "restaurant_service", indexes = {
-		@Index(name = "idx_branches_is_deleted", columnList = "is_deleted")
+		@Index(name = "idx_branches_deleted", columnList = "deleted")
 })
 @NoArgsConstructor
 @AllArgsConstructor

@@ -3,7 +3,7 @@
 ### ============================================
 
 @baseUrl = http://localhost:8080
-@path = /api/v1/tables
+@path = /api/v1/dishTables
 @id = 1
 @referenceId = 1
 

@@ -23,9 +23,4 @@ public abstract class BaseLockingEntity extends BaseTimeStampEntity {
 
 	@Column(name = "deleted_at")
 	private OffsetDateTime deletedAt;
-
-	// Helper for soft delete
-	public boolean isDeleted() {
-		return deletedAt != null;
-	}
 }

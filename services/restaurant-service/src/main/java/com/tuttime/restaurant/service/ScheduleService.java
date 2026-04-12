@@ -16,6 +16,7 @@ public interface ScheduleService {
 
 	void deleteRestaurantSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
 
+	void deleteAllByRestaurantId(UUID restaurantId);
 
 	List<ScheduleResponse> getSchedulesByBranchId(UUID branchId);
 
@@ -25,4 +26,5 @@ public interface ScheduleService {
 
 	void deleteBranchSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
 
+	void deleteAllByBranchId(UUID branchId);
 }

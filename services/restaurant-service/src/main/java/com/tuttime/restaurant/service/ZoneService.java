@@ -18,5 +18,5 @@ public interface ZoneService {
 
 	void deleteZone(UUID zoneId, UUID currentUserId, String userRoles);
 
-	// other zone-related methods if any
+	boolean deleteAllByBranchId(UUID branchId);
 }

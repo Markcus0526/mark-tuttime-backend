@@ -9,26 +9,25 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface RestaurantRepository extends JpaRepository<Restaurant, UUID>, JpaSpecificationExecutor<Restaurant> {
 
-	Optional<Restaurant> findByRestaurantIdAndIsDeletedFalse(UUID restaurantId);
+	Optional<Restaurant> findByRestaurantIdAndDeletedFalse(UUID restaurantId);
 
 	@Query(value = "SELECT * FROM restaurants r " +
-			"WHERE r.is_deleted = false AND " +
+			"WHERE r.deleted = false AND " +
 			"ST_DWithin(r.location, ST_MakePoint(:lng, :lat)::geography, :radius) " +
 			"ORDER BY ST_Distance(r.location, ST_MakePoint(:lng, :lat)::geography) ASC",
 			countQuery = "SELECT count(*) FROM restaurants r " +
-					"WHERE r.is_deleted = false AND " +
+					"WHERE r.deleted = false AND " +
 					"ST_DWithin(r.location, ST_MakePoint(:lng, :lat)::geography, :radius)",
 			nativeQuery = true)
-	Page<Restaurant> findByLocationNear(@Param("lat") double latitude,
-	                                    @Param("lng") double longitude,
-	                                    @Param("radius") double radiusMeters,
-	                                    Pageable pageable);
+	Page<Restaurant> findPagesByLocationNear(@Param("lat") double latitude,
+	                                         @Param("lng") double longitude,
+	                                         @Param("radius") double radiusMeters,
+	                                         Pageable pageable);
 
 }

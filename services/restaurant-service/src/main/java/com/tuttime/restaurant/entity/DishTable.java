@@ -1,22 +1,16 @@
 package com.tuttime.restaurant.entity;
 
 import com.tuttime.common.entity.BaseDeleteEntity;
-import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "tables", schema = "restaurant_service", indexes = {
-		@Index(name = "idx_tables_is_deleted", columnList = "is_deleted")
+@Table(name = "tables", schema = "restaurant_service", indexes = {
+		@Index(name = "idx_tables_deleted", columnList = "deleted")
 }, uniqueConstraints = {
 		@UniqueConstraint(name = "unique_zone_table_number", columnNames = {"zone_id", "number"})
 })
@@ -26,7 +20,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Table extends BaseDeleteEntity {
+public class DishTable extends BaseDeleteEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -48,14 +42,6 @@ public class Table extends BaseDeleteEntity {
 	private TableStatus status = TableStatus.ACTIVE;
 
 	@Builder.Default
-	@Column(name = "is_closed", nullable = false)
-	private boolean isClosed = false;
-
-	public void setIsClosed(boolean isClosed) {
-		this.isClosed = isClosed;
-	}
-
-	public boolean getIsClosed() {
-		return this.isClosed;
-	}
+	@Column(name = "closed", nullable = false)
+	private Boolean closed = false;
 }

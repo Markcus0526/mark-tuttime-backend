@@ -19,6 +19,8 @@ public interface MediaService {
 
 	void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles);
 
+	boolean deleteAllByEntityId(EntityType entityType, UUID entityId);
+
 	/**
 	 * Retrieves the primary SVG map content for the given entity type and entity ID.
 	 *

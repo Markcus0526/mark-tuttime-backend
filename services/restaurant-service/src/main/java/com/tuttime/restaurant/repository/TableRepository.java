@@ -1,33 +1,37 @@
 package com.tuttime.restaurant.repository;
 
-import com.tuttime.restaurant.entity.Table;
+import com.tuttime.restaurant.entity.DishTable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface TableRepository extends JpaRepository<Table, UUID> {
+public interface TableRepository extends JpaRepository<DishTable, UUID> {
 
 	// Find all tables in a given zone that are not soft-deleted
-	List<Table> findAllByZoneIdAndIsDeletedFalse(UUID zoneId);
+	List<DishTable> findAllByZoneIdAndDeletedFalse(UUID zoneId);
 
 	// Check if a table with the given number exists in the zone excluding soft-deleted entries
-	boolean existsByZoneIdAndNumberAndIsDeletedFalse(UUID zoneId, String number);
+	boolean existsByZoneIdAndNumberAndDeletedFalse(UUID zoneId, String number);
 
-	List<Table> findByZoneIdAndIsDeletedFalseAndIsClosedFalse(UUID zoneId);
+	List<DishTable> findAllByZoneIdAndDeletedFalseAndClosedFalse(UUID zoneId);
 
 	// Find a specific table by ID and status excluding soft-deleted entries
-	Optional<Table> findByTableIdAndIsDeletedFalse(UUID tableId);
+	Optional<DishTable> findByTableIdAndDeletedFalse(UUID tableId);
 
 	@Query("SELECT t.tableId, t.number, t.seats, z.name " +
-			"FROM Table t JOIN Zone z ON t.zoneId = z.zoneId " +
+			"FROM DishTable t JOIN Zone z ON t.zoneId = z.zoneId " +
 			"WHERE z.branchId = :branchId AND t.seats >= :partySize AND t.status = 'ACTIVE'")
 	List<Object[]> findTablesWithZoneName(@Param("branchId") UUID branchId, @Param("partySize") int partySize);
 
+	@Modifying
+	@Query("UPDATE DishTable t SET t.deleted = true, t.deletedAt = CURRENT_TIMESTAMP " +
+			"WHERE t.zoneId = :zoneId AND t.deleted = false")
+	void deleteAllByZoneId(@Param("zoneId") UUID zoneId);
 }

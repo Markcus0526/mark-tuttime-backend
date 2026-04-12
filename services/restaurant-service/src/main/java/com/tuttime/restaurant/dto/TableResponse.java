@@ -20,7 +20,7 @@ public class TableResponse {
 	private String number;
 	private int seats;
 	private TableStatus status;
-	private boolean isClosed;
+	private boolean closed;
 	private OffsetDateTime createdAt;
 	private OffsetDateTime updatedAt;
 

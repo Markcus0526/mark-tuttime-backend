@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "zones", schema = "restaurant_service", indexes = {
-		@Index(name = "idx_zones_is_deleted", columnList = "is_deleted")
+		@Index(name = "idx_zones_deleted", columnList = "deleted")
 })
 @NoArgsConstructor
 @AllArgsConstructor
@@ -43,7 +43,7 @@ public class Zone extends BaseDeleteEntity {
 	private Integer capacity;
 
 	@Builder.Default
-	@Column(name = "is_closed", nullable = false)
-	private boolean isClosed = false;
+	@Column(name = "closed", nullable = false)
+	private Boolean closed = false;
 
 }

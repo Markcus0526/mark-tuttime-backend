@@ -1,8 +1,8 @@
 package com.tuttime.restaurant.service;
 
-import com.tuttime.restaurant.entity.StaffRequest;
-import com.tuttime.restaurant.entity.StaffResponse;
-import com.tuttime.restaurant.entity.StaffUpdateRequest;
+import com.tuttime.restaurant.dto.StaffRequest;
+import com.tuttime.restaurant.dto.StaffResponse;
+import com.tuttime.restaurant.dto.StaffUpdateRequest;
 
 import java.util.List;
 import java.util.UUID;

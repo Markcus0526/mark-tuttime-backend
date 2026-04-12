@@ -26,4 +26,6 @@ public interface TableService {
 	TableStatus getTableCurrentStatus(UUID tableId);
 
 	void confirmReservation(UUID tableId, UUID reservationId, UUID currentUserId, String userRoles);
+
+	boolean deleteAllByZoneId(UUID zoneId);
 }

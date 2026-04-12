@@ -1,34 +1,21 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
-import com.tuttime.common.auth.security.UserContext;
-import com.tuttime.common.exception.AuthenticationException;
-import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.common.proto.UserByIdRequest;
-import com.tuttime.common.proto.UserResponse;
 import com.tuttime.common.proto.UserServiceGrpc;
-import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.entity.RestaurantStaff;
-import com.tuttime.restaurant.mapper.BranchMapper;
+import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.mapper.RestaurantMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import com.tuttime.restaurant.repository.RestaurantStaffRepository;
-import com.tuttime.restaurant.service.RestaurantService;
-import com.tuttime.restaurant.service.RestaurantStaffService;
+import com.tuttime.restaurant.service.*;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,8 +24,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -54,8 +39,10 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final RestaurantStaffService restaurantStaffService;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
-	private final RestaurantStaffRepository staffRepository;
 	private final RestaurantMapper restaurantMapper;
+	private final BranchService branchService;
+	private final MediaService mediaService;
+	private final ScheduleService scheduleService;
 
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
@@ -70,13 +57,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	public RestaurantResponse getRestaurantById(UUID restaurantId) {
-		UserByIdRequest request = UserByIdRequest.newBuilder()
-				.setUserId(UserContext.getUserId())
-				.build();
-		// Make the gRPC network call
-		UserResponse response = userServiceBlockingStub.getUserById(request);
-
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
 		return restaurantMapper.toResponse(restaurant);
 	}
@@ -113,7 +94,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	@Transactional
 	public RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantRequest request, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -140,7 +121,8 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	@Transactional
 	public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+		// 1. Fetch and verify ownership
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -152,8 +134,15 @@ public class RestaurantServiceImpl implements RestaurantService {
 			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
 
+		// 3. Soft delete related entities (Branches, Staff, Schedules)
+		// Hibernate will handle the updates if you have properly mapped @OneToMany(cascade = CascadeType.ALL)
+		branchService.deleteAllByRestaurantId(restaurant.getRestaurantId());
+		mediaService.deleteAllByEntityId(EntityType.RESTAURANT, restaurant.getRestaurantId());
+		scheduleService.deleteAllByRestaurantId(restaurant.getRestaurantId());
+
+		// 2. Soft delete the Restaurant
 		restaurant.setDeleted(true);
-		restaurant.setDeletedAt(OffsetDateTime.now());
+
 		restaurantRepository.save(restaurant);
 	}
 
@@ -164,21 +153,8 @@ public class RestaurantServiceImpl implements RestaurantService {
 			int page,
 			int size) {
 		Pageable pageable = PageRequest.of(page, size);
-		Page<Restaurant> entities = restaurantRepository.findByLocationNear(latitude, longitude, radiusMeters, pageable);
-		return entities.map(this::mapToResponse);
-	}
-
-	private RestaurantResponse mapToResponse(Restaurant entity) {
-		// map entity fields to DTO fields
-		RestaurantResponse response = new RestaurantResponse();
-		response.setRestaurantId(entity.getRestaurantId());
-		response.setName(entity.getName());
-		response.setDescription(entity.getDescription());
-		response.setAddress(entity.getAddress());
-		response.setPhone(entity.getPhone());
-		response.setRating(entity.getRating());
-		// etc.
-		return response;
+		Page<Restaurant> entities = restaurantRepository.findPagesByLocationNear(latitude, longitude, radiusMeters, pageable);
+		return entities.map(restaurantMapper::toResponse);
 	}
 
 	private Specification<Restaurant> createSpecification(String query, UUID ownerId, Double minRating, Double maxRating) {
@@ -208,7 +184,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 			}
 
 			// 4. Soft-delete filter (Always exclude deleted by default)
-			predicates.add(cb.equal(root.get("isDeleted"), false));
+			predicates.add(cb.equal(root.get("deleted"), false));
 
 			return cb.and(predicates.toArray(new Predicate[0]));
 		};

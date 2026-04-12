@@ -21,7 +21,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -44,7 +43,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 		if (!restaurantRepository.existsById(restaurantId)) {
 			throw new IllegalArgumentException("Restaurant not found: " + restaurantId);
 		}
-		List<RestaurantSchedule> schedules = restaurantScheduleRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId);
+		List<RestaurantSchedule> schedules = restaurantScheduleRepository.findAllByRestaurantIdAndDeletedFalse(restaurantId);
 		return schedules.stream()
 				.map(restaurantScheduleMapper::toResponse)
 				.collect(Collectors.toList());
@@ -53,7 +52,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	@Override
 	@Transactional
 	public ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(restaurantId)
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -75,10 +74,10 @@ public class ScheduleServiceImpl implements ScheduleService {
 	@Override
 	@Transactional
 	public ScheduleResponse updateRestaurantSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles) {
-		RestaurantSchedule schedule = restaurantScheduleRepository.findByScheduleIdAndIsDeletedFalse(scheduleId)
+		RestaurantSchedule schedule = restaurantScheduleRepository.findByScheduleIdAndDeletedFalse(scheduleId)
 				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(schedule.getRestaurantId())
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(schedule.getRestaurantId())
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + schedule.getRestaurantId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -101,7 +100,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 		RestaurantSchedule schedule = restaurantScheduleRepository.findById(scheduleId)
 				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(schedule.getRestaurantId())
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(schedule.getRestaurantId())
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + schedule.getRestaurantId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -114,8 +113,12 @@ public class ScheduleServiceImpl implements ScheduleService {
 		}
 
 		schedule.setDeleted(true);
-		schedule.setDeletedAt(OffsetDateTime.now());
 		restaurantScheduleRepository.save(schedule);
+	}
+
+	@Override
+	public void deleteAllByRestaurantId(UUID restaurantId) {
+		restaurantScheduleRepository.deleteAllByRestaurantId(restaurantId);
 	}
 
 	///////////// Branch /////////////////
@@ -124,7 +127,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 		if (!branchRepository.existsById(branchId)) {
 			throw new IllegalArgumentException("Branch not found: " + branchId);
 		}
-		List<BranchSchedule> schedules = branchScheduleRepository.findByBranchIdAndIsDeletedFalse(branchId);
+		List<BranchSchedule> schedules = branchScheduleRepository.findAllByBranchIdAndDeletedFalse(branchId);
 		return schedules.stream()
 				.map(branchScheduleMapper::toResponse)
 				.collect(Collectors.toList());
@@ -132,7 +135,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	public ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request, UUID currentUserId, String userRoles) {
-		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(branchId)
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + branchId));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -155,10 +158,10 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	public ScheduleResponse updateBranchSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles) {
-		BranchSchedule schedule = branchScheduleRepository.findByScheduleIdAndIsDeletedFalse(scheduleId)
+		BranchSchedule schedule = branchScheduleRepository.findByScheduleIdAndDeletedFalse(scheduleId)
 				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(schedule.getBranchId())
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(schedule.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + schedule.getBranchId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -179,10 +182,10 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	public void deleteBranchSchedule(UUID scheduleId, UUID currentUserId, String userRoles) {
-		BranchSchedule schedule = branchScheduleRepository.findByScheduleIdAndIsDeletedFalse(scheduleId)
+		BranchSchedule schedule = branchScheduleRepository.findByScheduleIdAndDeletedFalse(scheduleId)
 				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 
-		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(schedule.getBranchId())
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(schedule.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + schedule.getBranchId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -197,8 +200,12 @@ public class ScheduleServiceImpl implements ScheduleService {
 		}
 
 		schedule.setDeleted(true);
-		schedule.setDeletedAt(OffsetDateTime.now());
 		branchScheduleRepository.save(schedule);
+	}
+
+	@Override
+	public void deleteAllByBranchId(UUID branchId) {
+		branchScheduleRepository.deleteAllByBranchId(branchId);
 	}
 
 }

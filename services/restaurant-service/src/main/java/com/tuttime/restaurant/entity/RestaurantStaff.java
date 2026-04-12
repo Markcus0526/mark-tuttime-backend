@@ -35,7 +35,7 @@ public class RestaurantStaff extends BaseTimeStampEntity {
 	@Column(name = "role_name", nullable = false)
 	private String roleName; // "MANAGER", "HOSTESS"
 
-	@Column(name = "is_active")
+	@Column(name = "active")
 	@Builder.Default
-	private boolean isActive = true;
+	private Boolean active = true;
 }

@@ -1,7 +1,6 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.RestaurantStaff;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface RestaurantStaffRepository extends JpaRepository<RestaurantStaff, UUID> {
 
-	List<RestaurantStaff> findByRestaurantId(UUID restaurantId);
+	List<RestaurantStaff> findAllByRestaurantId(UUID restaurantId);
 
 	Optional<RestaurantStaff> findByStaffId(UUID staffId);
 

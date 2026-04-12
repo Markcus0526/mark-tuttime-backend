@@ -2,17 +2,12 @@ package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.TableRequest;
-import com.tuttime.restaurant.dto.TableResponse;
-import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Table;
-import com.tuttime.restaurant.entity.Zone;
-import com.tuttime.restaurant.entity.enums.TableStatus;
-import com.tuttime.restaurant.repository.BranchRepository;
-import com.tuttime.restaurant.repository.TableRepository;
-import com.tuttime.restaurant.repository.ZoneRepository;
-import com.tuttime.restaurant.service.RestaurantStaffService;
-import com.tuttime.restaurant.service.TableService;
+import com.tuttime.restaurant.dto.*;
+import com.tuttime.restaurant.entity.*;
+import com.tuttime.restaurant.entity.enums.*;
+import com.tuttime.restaurant.mapper.TableMapper;
+import com.tuttime.restaurant.repository.*;
+import com.tuttime.restaurant.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -32,33 +27,35 @@ public class TableServiceImpl implements TableService {
 	private final BranchRepository branchRepository;
 	private final ZoneRepository zoneRepository;
 	private final TableRepository tableRepository;
+	private final MediaService mediaService;
+	private final TableMapper tableMapper;
 
 	@Override
 	public List<TableResponse> getTablesByZoneId(UUID zoneId) {
 		// Validate zone exists and is active (optional: check hierarchy if needed)
-		Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(zoneId)
+		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
 
-		return tableRepository.findAllByZoneIdAndIsDeletedFalse(zoneId).stream()
-				.map(this::mapToResponse)
+		return tableRepository.findAllByZoneIdAndDeletedFalse(zoneId).stream()
+				.map(tableMapper::toResponse)
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public TableResponse getTableById(UUID tableId) {
-		Table table = tableRepository.findByTableIdAndIsDeletedFalse(tableId)
+		DishTable dishTable = tableRepository.findByTableIdAndDeletedFalse(tableId)
 				.orElseThrow(() -> new ResourceNotFoundException("Table not found in zone"));
 
-		return mapToResponse(table);
+		return tableMapper.toResponse(dishTable);
 	}
 
 	@Override
 	@Transactional
 	public TableResponse createTable(TableRequest request, UUID currentUserId, String userRoles) {
-		Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(request.getZoneId())
+		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(request.getZoneId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + request.getZoneId()));
 
-		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(zone.getBranchId())
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -73,33 +70,33 @@ public class TableServiceImpl implements TableService {
 		}
 
 		// Optional: enforce unique table number within zone
-		boolean exists = tableRepository.existsByZoneIdAndNumberAndIsDeletedFalse(zone.getZoneId(), request.getNumber());
+		boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.getNumber());
 		if (exists) {
 			throw new IllegalArgumentException("Table number already exists in this zone");
 		}
 
-		Table table = new Table();
-		table.setZoneId(zone.getZoneId());
-		table.setNumber(request.getNumber());
-		table.setSeats(request.getSeats());
-		table.setStatus(request.getStatus());
-		table.setIsClosed(request.getIsClosed() != null ? request.getIsClosed() : false);
-		table.setDeleted(false);
+		DishTable dishTable = new DishTable();
+		dishTable.setZoneId(zone.getZoneId());
+		dishTable.setNumber(request.getNumber());
+		dishTable.setSeats(request.getSeats());
+		dishTable.setStatus(request.getStatus());
+		dishTable.setClosed(request.getClosed() != null ? request.getClosed() : false);
+		dishTable.setDeleted(false);
 
-		Table saved = tableRepository.save(table);
-		return mapToResponse(saved);
+		DishTable saved = tableRepository.save(dishTable);
+		return tableMapper.toResponse(saved);
 	}
 
 	@Override
 	@Transactional
 	public TableResponse updateTable(UUID tableId, TableRequest request, UUID currentUserId, String userRoles) {
-		Table table = tableRepository.findByTableIdAndIsDeletedFalse(tableId)
+		DishTable dishTable = tableRepository.findByTableIdAndDeletedFalse(tableId)
 				.orElseThrow(() -> new ResourceNotFoundException("Table not found"));
 
-		Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(table.getZoneId())
-				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + table.getZoneId()));
+		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(dishTable.getZoneId())
+				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + dishTable.getZoneId()));
 
-		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(zone.getBranchId())
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -114,32 +111,32 @@ public class TableServiceImpl implements TableService {
 		}
 
 		// Optional: if number changes, check uniqueness
-		if (!table.getNumber().equals(request.getNumber())) {
-			boolean exists = tableRepository.existsByZoneIdAndNumberAndIsDeletedFalse(zone.getZoneId(), request.getNumber());
+		if (!dishTable.getNumber().equals(request.getNumber())) {
+			boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.getNumber());
 			if (exists) {
 				throw new IllegalArgumentException("Table number already exists in this zone");
 			}
-			table.setNumber(request.getNumber());
+			dishTable.setNumber(request.getNumber());
 		}
 
-		table.setSeats(request.getSeats());
-		table.setStatus(request.getStatus());
-		table.setIsClosed(request.getIsClosed() != null ? request.getIsClosed() : table.getIsClosed());
+		dishTable.setSeats(request.getSeats());
+		dishTable.setStatus(request.getStatus());
+		dishTable.setClosed(request.getClosed() != null ? request.getClosed() : dishTable.getClosed());
 
-		Table updated = tableRepository.save(table);
-		return mapToResponse(updated);
+		DishTable updated = tableRepository.save(dishTable);
+		return tableMapper.toResponse(updated);
 	}
 
 	@Override
 	@Transactional
 	public void deleteTable(UUID tableId, UUID currentUserId, String userRoles) {
-		Table table = tableRepository.findByTableIdAndIsDeletedFalse(tableId)
+		DishTable dishTable = tableRepository.findByTableIdAndDeletedFalse(tableId)
 				.orElseThrow(() -> new ResourceNotFoundException("Table not found"));
 
-		Zone zone = zoneRepository.findByZoneIdAndIsDeletedFalse(table.getZoneId())
-				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + table.getZoneId()));
+		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(dishTable.getZoneId())
+				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + dishTable.getZoneId()));
 
-		Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(zone.getBranchId())
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -154,25 +151,24 @@ public class TableServiceImpl implements TableService {
 		}
 
 		// Soft delete
-		table.setDeleted(true);
-		table.setDeletedAt(OffsetDateTime.now());
-		tableRepository.save(table);
+		dishTable.setDeleted(true);
+		tableRepository.save(dishTable);
 	}
 
 	@Override
 	public List<TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to) {
-		List<Table> tables = tableRepository.findByZoneIdAndIsDeletedFalseAndIsClosedFalse(zoneId);
+		List<DishTable> dishTables = tableRepository.findAllByZoneIdAndDeletedFalseAndClosedFalse(zoneId);
 
-		return tables.stream()
+		return dishTables.stream()
 				.filter(t -> t.getStatus() == TableStatus.ACTIVE)
-				.map(this::mapToResponse)
+				.map(tableMapper::toResponse)
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public TableStatus getTableCurrentStatus(UUID tableId) {
-		return tableRepository.findByTableIdAndIsDeletedFalse(tableId)
-				.map(Table::getStatus) // Extracts status if table exists
+		return tableRepository.findByTableIdAndDeletedFalse(tableId)
+				.map(DishTable::getStatus) // Extracts status if table exists
 				.orElse(TableStatus.CLOSED); // Or throw an exception
 	}
 
@@ -184,16 +180,18 @@ public class TableServiceImpl implements TableService {
 		// bookingServiceClient.confirmReservation(reservationId, tableId);
 	}
 
-	private TableResponse mapToResponse(Table table) {
-		return TableResponse.builder()
-				.tableId(table.getTableId())
-				.zoneId(table.getZoneId())
-				.number(table.getNumber())
-				.seats(table.getSeats())
-				.status(table.getStatus())
-				.isClosed(table.getIsClosed())
-				.createdAt(table.getCreatedAt())
-				.updatedAt(table.getUpdatedAt())
-				.build();
+	@Override
+	public boolean deleteAllByZoneId(UUID zoneId) {
+		List<DishTable> dishTables = tableRepository.findAllByZoneIdAndDeletedFalse(zoneId);
+		if (dishTables.isEmpty()) {
+			return true;
+		}
+
+		for (DishTable dishTable : dishTables) {
+			mediaService.deleteAllByEntityId(EntityType.TABLE, dishTable.getTableId());
+		}
+
+		tableRepository.deleteAllByZoneId(zoneId);
+		return true;
 	}
 }

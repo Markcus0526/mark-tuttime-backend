@@ -19,7 +19,7 @@ public class MediaResponse {
 	private UUID entityId;
 	private String url;
 	private String altText;
-	private boolean isPrimary;
+	private boolean primaryEntity;
 	private String mediaType; // IMAGE, VIDEO
 	private OffsetDateTime createdAt;
 	private OffsetDateTime updatedAt;

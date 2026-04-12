@@ -30,5 +30,6 @@ public class ScheduleRequest {
 	@Schema(type = "string", example = "00:00:00", description = "Time in HH:mm:ss format")
 	private LocalTime closeTime;
 
-	private boolean isClosed;
+	@NotNull
+	private boolean closed;
 }

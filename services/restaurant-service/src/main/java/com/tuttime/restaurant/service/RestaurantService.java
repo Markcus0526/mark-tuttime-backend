@@ -2,15 +2,9 @@ package com.tuttime.restaurant.service;
 
 import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.dto.RestaurantResponse;
-import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.entity.StaffRequest;
-import com.tuttime.restaurant.entity.StaffResponse;
-import com.tuttime.restaurant.entity.StaffUpdateRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface RestaurantService {

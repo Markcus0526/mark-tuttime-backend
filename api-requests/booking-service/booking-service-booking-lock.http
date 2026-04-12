@@ -15,7 +15,7 @@ Content-Type: application/json
 
 {
   "bookingId": "uuid-booking-123",
-  "tableId": "uuid-table-def",
+  "tableId": "uuid-dishTable-def",
   "lockAcquiredAt": "2024-06-20T10:00:00Z",
   "lockExpiresAt": "2024-06-20T10:05:00Z"
 }
