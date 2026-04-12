@@ -243,7 +243,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			UUID userId = UUID.fromString(request.getUserId());
 
 			// Fetching from DB (Ensure Repository handles the UUID correctly)
-			User user = userRepository.findByUserIdAndIsDeletedFalse(userId)
+			User user = userRepository.findByUserIdAndDeletedFalse(userId)
 					.orElseThrow(() -> new StatusRuntimeException(
 							Status.NOT_FOUND.withDescription("User not found or deleted")));
 

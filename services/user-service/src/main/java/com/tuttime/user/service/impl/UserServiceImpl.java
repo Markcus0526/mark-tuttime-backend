@@ -145,14 +145,14 @@ public class UserServiceImpl implements UserService {
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		if (userUpdateRequest.getPhoneNumber() != null && !userUpdateRequest.getPhoneNumber().equals(user.getPhoneNumber())) {
-			userRepository.findByPhoneNumberAndIsDeletedFalse(userUpdateRequest.getPhoneNumber())
+			userRepository.findByPhoneNumberAndDeletedFalse(userUpdateRequest.getPhoneNumber())
 					.ifPresent(u -> {
 						throw new ConflictException("Phone number already in use");
 					});
 			user.setPhoneNumber(userUpdateRequest.getPhoneNumber());
 		}
 		if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().equals(user.getEmail())) {
-			userRepository.findByEmailAndIsDeletedFalse(userUpdateRequest.getEmail())
+			userRepository.findByEmailAndDeletedFalse(userUpdateRequest.getEmail())
 					.ifPresent(u -> {
 						throw new ConflictException("Email already in use");
 					});
@@ -213,7 +213,7 @@ public class UserServiceImpl implements UserService {
 			}
 
 			// Always filter out deleted users (Strict Boolean Check)
-			predicates.add(cb.equal(root.get("isDeleted"), false));
+			predicates.add(cb.equal(root.get("deleted"), false));
 
 			// Add Status Filter
 			if (status != null) {

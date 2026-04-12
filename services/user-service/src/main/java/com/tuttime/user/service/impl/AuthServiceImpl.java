@@ -60,12 +60,12 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(request.getPhoneNumber()) &&
-				userRepository.existsByPhoneNumberAndIsDeletedFalse(request.getPhoneNumber())) {
+				userRepository.existsByPhoneNumberAndDeletedFalse(request.getPhoneNumber())) {
 			throw new ConflictException("Phone number in use");
 		}
 
 		if (StringUtils.hasText(request.getEmail()) &&
-				userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
+				userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
 			throw new ConflictException("Email in use");
 		}
 
@@ -229,12 +229,12 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(phoneNumber) &&
-				!userRepository.existsByPhoneNumberAndIsDeletedFalse(phoneNumber)) {
+				!userRepository.existsByPhoneNumberAndDeletedFalse(phoneNumber)) {
 			throw new ResourceNotFoundException("Phone number not registered");
 		}
 
 		if (StringUtils.hasText(email) &&
-				!userRepository.existsByEmailAndIsDeletedFalse(email)) {
+				!userRepository.existsByEmailAndDeletedFalse(email)) {
 			throw new ResourceNotFoundException("Email not registered");
 		}
 
@@ -281,10 +281,10 @@ public class AuthServiceImpl implements AuthService {
 		// Step 3: Find or create user by phone number
 		User user;
 		if (otpCode.getType() == VerificationType.PHONE_VERIFY) {
-			user = userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber)
+			user = userRepository.findByPhoneNumberAndDeletedFalse(phoneNumber)
 					.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		} else {
-			user = userRepository.findByEmailAndIsDeletedFalse(email)
+			user = userRepository.findByEmailAndDeletedFalse(email)
 					.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		}
 
@@ -330,7 +330,7 @@ public class AuthServiceImpl implements AuthService {
 			throw new ResourceNotFoundException("Email must be provided");
 		}
 
-		Optional<User> userOpt = userRepository.findByEmailAndIsDeletedFalse(email);
+		Optional<User> userOpt = userRepository.findByEmailAndDeletedFalse(email);
 		User user = userOpt.orElseThrow(() -> new IllegalArgumentException("User not found"));
 
 		// Generate code and save
@@ -371,7 +371,7 @@ public class AuthServiceImpl implements AuthService {
 		verificationCodeRepository.save(otpCode);
 
 		// Step 3: Find or create user by phone number
-		User user = userRepository.findByEmailAndIsDeletedFalse(email)
+		User user = userRepository.findByEmailAndDeletedFalse(email)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		updatePasswordForUser(user.getUserId(), newPassword);

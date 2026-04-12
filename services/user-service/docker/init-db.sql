@@ -47,7 +47,7 @@ LANGUAGE plpgsql;
 
 -- === TABLES ===
 
--- Users table
+-- Users dishTable
 CREATE TABLE users
 (
     user_id         UUID PRIMARY KEY     DEFAULT gen_random_uuid(),
@@ -57,7 +57,7 @@ CREATE TABLE users
     profile_picture TEXT,
     status          user_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
     last_login      TIMESTAMPTZ,
-    is_deleted      BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted         BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at      TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -72,7 +72,7 @@ CREATE TABLE roles
     description TEXT
 );
 
--- User Roles Table (Mapping table)
+-- User Roles Table (Mapping dishTable)
 CREATE TABLE user_roles
 (
     user_id     UUID        NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
@@ -128,7 +128,7 @@ CREATE INDEX idx_auth_methods_user_id ON user_auth_methods (user_id);
 CREATE INDEX idx_codes_unused ON verification_codes (target, type) WHERE used = FALSE;
 CREATE INDEX idx_user_locations_gist ON user_locations USING GIST(location);
 
--- === TRIGGERS (Automated updated_at for all relevant tables) ===
+-- === TRIGGERS (Automated updated_at for all relevant dishTables) ===
 CREATE TRIGGER trg_users_upd
     BEFORE UPDATE
     ON users
