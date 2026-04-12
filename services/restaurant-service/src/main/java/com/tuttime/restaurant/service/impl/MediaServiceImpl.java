@@ -27,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +49,7 @@ public class MediaServiceImpl implements MediaService {
 
 	@Override
 	public List<MediaResponse> getMediaByEntity(EntityType entityType, UUID entityId) {
-		List<Media> medias = mediaRepository.findByEntityTypeAndEntityIdAndIsDeletedFalse(entityType, entityId);
+		List<Media> medias = mediaRepository.findAllByEntityTypeAndEntityIdAndDeletedFalse(entityType, entityId);
 		return medias.stream()
 				.map(mediaMapper::toResponse)
 				.collect(Collectors.toList());
@@ -60,7 +59,7 @@ public class MediaServiceImpl implements MediaService {
 	@Transactional
 	public MediaResponse createMedia(MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
 		if (request.getEntityType() == EntityType.RESTAURANT) {
-			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(request.getEntityId())
+			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(request.getEntityId())
 					.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + request.getEntityId()));
 
 			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -72,7 +71,7 @@ public class MediaServiceImpl implements MediaService {
 				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 			}
 		} else if (request.getEntityType() == EntityType.BRANCH) {
-			Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(request.getEntityId())
+			Branch branch = branchRepository.findByBranchIdAndDeletedFalse(request.getEntityId())
 					.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.getEntityId()));
 
 			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -101,7 +100,7 @@ public class MediaServiceImpl implements MediaService {
 		media.setEntityId(request.getEntityId());
 		media.setUrl(storedFileUrl);
 		media.setAltText(request.getAltText());
-		media.setIsPrimary(request.getIsPrimary() != null ? request.getIsPrimary() : false);
+		media.setPrimaryEntity(request.getPrimaryEntity() != null ? request.getPrimaryEntity() : false);
 		media.setMediaType(request.getMediaType() != null ? request.getMediaType() : MediaType.IMAGE);
 		media.setDeleted(false);
 
@@ -112,11 +111,11 @@ public class MediaServiceImpl implements MediaService {
 	@Override
 	@Transactional
 	public MediaResponse updateMedia(UUID mediaId, MediaRequest request, UUID currentUserId, String userRoles) {
-		Media media = mediaRepository.findByMediaIdAndIsDeletedFalse(mediaId)
+		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
 				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
 
 		if (media.getEntityType() == EntityType.RESTAURANT) {
-			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(media.getEntityId())
+			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(media.getEntityId())
 					.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + media.getEntityId()));
 
 			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -128,7 +127,7 @@ public class MediaServiceImpl implements MediaService {
 				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 			}
 		} else if (media.getEntityType() == EntityType.BRANCH) {
-			Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(media.getEntityId())
+			Branch branch = branchRepository.findByBranchIdAndDeletedFalse(media.getEntityId())
 					.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + media.getEntityId()));
 
 			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -153,11 +152,11 @@ public class MediaServiceImpl implements MediaService {
 	@Override
 	@Transactional
 	public void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles) {
-		Media media = mediaRepository.findByMediaIdAndIsDeletedFalse(mediaId)
+		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
 				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
 
 		if (media.getEntityType() == EntityType.RESTAURANT) {
-			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndIsDeletedFalse(media.getEntityId())
+			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(media.getEntityId())
 					.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + media.getEntityId()));
 
 			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -169,7 +168,7 @@ public class MediaServiceImpl implements MediaService {
 				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 			}
 		} else if (media.getEntityType() == EntityType.BRANCH) {
-			Branch branch = branchRepository.findByBranchIdAndIsDeletedFalse(media.getEntityId())
+			Branch branch = branchRepository.findByBranchIdAndDeletedFalse(media.getEntityId())
 					.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + media.getEntityId()));
 
 			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
@@ -186,13 +185,18 @@ public class MediaServiceImpl implements MediaService {
 
 		// Soft delete
 		media.setDeleted(true);
-		media.setDeletedAt(OffsetDateTime.now());
 		mediaRepository.save(media);
 	}
 
 	@Override
+	public boolean deleteAllByEntityId(EntityType entityType, UUID entityId) {
+		mediaRepository.deleteAllByEntityTypeAndEntityId(entityType, entityId);
+		return true;
+	}
+
+	@Override
 	public String getPrimarySvgMap(EntityType entityType, UUID entityId) {
-		Media media = mediaRepository.findFirstByEntityTypeAndEntityIdAndMediaTypeAndIsPrimaryAndIsDeletedFalse(
+		Media media = mediaRepository.findFirstByEntityTypeAndEntityIdAndMediaTypeAndPrimaryEntityAndDeletedFalse(
 				entityType,
 				entityId,
 				MediaType.SVG,
@@ -206,7 +210,7 @@ public class MediaServiceImpl implements MediaService {
 	@Override
 	@Transactional
 	public void setOrUpdateSvgMap(EntityType entityType, UUID entityId, String svgContent, UUID currentUserId, String userRoles) {
-		Optional<Media> existingMapOpt = mediaRepository.findPrimaryMapByEntityAndIsDeletedFalse(entityType, entityId);
+		Optional<Media> existingMapOpt = mediaRepository.findPrimaryMapByEntityAndDeletedFalse(entityType, entityId);
 
 		if (entityType == EntityType.RESTAURANT) {
 
@@ -226,8 +230,8 @@ public class MediaServiceImpl implements MediaService {
 					.entityId(entityId)
 					.mediaType(MediaType.SVG) // SVG media type
 					.svgContent(svgContent)
-					.isMap(true)
-					.isPrimary(true) // Mark as primary map if needed
+					.mapEntity(true)
+					.primaryEntity(true) // Mark as primary map if needed
 					.build();
 		}
 		mediaRepository.save(media);

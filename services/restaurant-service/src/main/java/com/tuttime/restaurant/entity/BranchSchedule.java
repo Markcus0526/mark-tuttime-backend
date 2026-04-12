@@ -18,7 +18,7 @@ import java.util.UUID;
 @jakarta.persistence.Table(name = "branch_schedules", schema = "restaurant_service", indexes = {
 		@Index(name = "idx_branch_schedule_branch_id", columnList = "branch_id"),
 		@Index(name = "idx_branch_schedule_day_of_week", columnList = "day_of_week"),
-		@Index(name = "idx_branch_schedule_is_deleted", columnList = "is_deleted")
+		@Index(name = "idx_branch_schedule_deleted", columnList = "deleted")
 })
 @NoArgsConstructor
 @AllArgsConstructor
@@ -46,6 +46,6 @@ public class BranchSchedule extends BaseDeleteEntity {
 	private LocalTime closeTime;
 
 	@Builder.Default
-	@Column(name = "is_closed", nullable = false)
-	private boolean isClosed = false;
+	@Column(name = "closed", nullable = false)
+	private Boolean closed = false;
 }

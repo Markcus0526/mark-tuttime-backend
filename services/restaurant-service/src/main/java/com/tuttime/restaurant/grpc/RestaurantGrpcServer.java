@@ -1,11 +1,8 @@
 package com.tuttime.restaurant.grpc;
 
 import com.tuttime.common.proto.*;
-import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Table;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.BranchRepository;
-import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.RestaurantStaffRepository;
 import com.tuttime.restaurant.repository.TableRepository;
 import io.grpc.stub.StreamObserver;
@@ -14,10 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -57,7 +51,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		UUID tableId = UUID.fromString(request.getTableId());
 		int partSize = request.getPartySize();
 
-		boolean available = tableRepository.findByTableIdAndIsDeletedFalse(tableId)
+		boolean available = tableRepository.findByTableIdAndDeletedFalse(tableId)
 				.map(table ->
 						table.getStatus() == TableStatus.ACTIVE && table.getSeats() <= partSize
 				).orElse(false);

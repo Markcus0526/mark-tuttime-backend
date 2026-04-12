@@ -29,7 +29,7 @@ public class MediaRequest {
 	@Size(max = 255, message = "Alt text must be at most 255 characters")
 	private String altText;
 
-	private Boolean isPrimary;
+	private Boolean primaryEntity;
 
 	@NotNull(message = "Media type is required")
 	private MediaType mediaType; // Could be validated against Enum in service layer

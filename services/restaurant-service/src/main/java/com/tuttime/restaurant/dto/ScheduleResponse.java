@@ -20,7 +20,7 @@ public class ScheduleResponse {
 	private int dayOfWeek; // 0=Sunday ... 6=Saturday
 	private LocalTime openTime;
 	private LocalTime closeTime;
-	private boolean isClosed;
+	private boolean closed;
 	private OffsetDateTime createdAt;
 	private OffsetDateTime updatedAt;
 

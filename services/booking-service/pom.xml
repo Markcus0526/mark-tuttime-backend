@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>Booking Service</name>
-    <description>TutTime Booking Service - handles reservations, table locks, slots</description>
+    <description>TutTime Booking Service - handles reservations, dishTable locks, slots</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

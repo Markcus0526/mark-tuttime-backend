@@ -35,8 +35,8 @@ public class TableRequest {
 	@NotNull(message = "Table status is required")
 	private TableStatus status;
 
-	@NotNull(message = "isClosed must not be null")
-	private Boolean isClosed;
+	@NotNull(message = "closed must not be null")
+	private Boolean closed;
 
 	// Getters and setters omitted for brevity
 

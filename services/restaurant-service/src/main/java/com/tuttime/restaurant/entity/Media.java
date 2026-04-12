@@ -17,8 +17,8 @@ import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "medias", schema = "restaurant_service", indexes = {
-		@Index(name = "idx_medias_is_deleted", columnList = "is_deleted"),
-		@Index(name = "idx_medias_is_map", columnList = "is_map"),
+		@Index(name = "idx_medias_deleted", columnList = "deleted"),
+		@Index(name = "idx_medias_map_entity", columnList = "map_entity"),
 		@Index(name = "idx_media_lookup", columnList = "entity_type, entity_id")
 })
 @NoArgsConstructor
@@ -48,8 +48,8 @@ public class Media extends BaseDeleteEntity {
 	private String altText;
 
 	@Builder.Default
-	@Column(name = "is_primary")
-	private Boolean isPrimary = false;
+	@Column(name = "primary_entity")
+	private Boolean primaryEntity = false;
 
 	@Builder.Default
 	@Enumerated(EnumType.STRING)
@@ -60,6 +60,6 @@ public class Media extends BaseDeleteEntity {
 	private String svgContent;
 
 	@Builder.Default
-	@Column(name = "is_map")
-	private Boolean isMap = false;
+	@Column(name = "map_entity")
+	private Boolean mapEntity = false;
 }

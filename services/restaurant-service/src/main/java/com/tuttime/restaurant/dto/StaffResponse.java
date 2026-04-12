@@ -1,4 +1,4 @@
-package com.tuttime.restaurant.entity;
+package com.tuttime.restaurant.dto;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -10,6 +10,6 @@ public record StaffResponse(
 		UUID branchId,
 		UUID userId,
 		String roleName,
-		boolean isActive,
+		boolean active,
 		OffsetDateTime createdAt
 ) {}

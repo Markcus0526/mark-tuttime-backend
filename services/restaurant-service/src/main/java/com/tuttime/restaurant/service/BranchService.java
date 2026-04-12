@@ -17,4 +17,6 @@ public interface BranchService {
 	BranchResponse updateBranch(UUID branchId, BranchRequest request, UUID currentUserId, String userRoles);
 
 	void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
+
+	boolean deleteAllByRestaurantId(UUID restaurantId);
 }

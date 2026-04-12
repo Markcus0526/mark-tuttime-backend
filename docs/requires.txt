@@ -1,8 +1,8 @@
 TutTime — a pre-order and smart restaurant booking platform
 
-TutTime is a mobile platform that combines online table reservations, menu pre-orders, and dynamic discounts during off-peak hours, integrated with restaurant POS systems (iiko and R-Keeper).
+TutTime is a mobile platform that combines online dishTable reservations, menu pre-orders, and dynamic discounts during off-peak hours, integrated with restaurant POS systems (iiko and R-Keeper).
 
-We transform a simple "table reservation" into a pre-paid, guaranteed seating with a table set at a specific time.
+We transform a simple "dishTable reservation" into a pre-paid, guaranteed seating with a dishTable set at a specific time.
 
 ⸻
 
@@ -10,10 +10,10 @@ We transform a simple "table reservation" into a pre-paid, guaranteed seating wi
 
 Guest:
 • Selects a restaurant using a map and ratings
-• Sees available tables (or time slots)
+• Sees available dishTables (or time slots)
 • Pre-orders from the menu
 • Pays via the app
-• Arrives at the appointed time – the table is already set
+• Arrives at the appointed time – the dishTable is already set
 • Receives a lower price than in the dining room
 
 Restaurant:
@@ -42,12 +42,12 @@ TutTime is a yield management solution for restaurants, similar to how airlines 
 Restaurant:
 • Sets its own "dead hours"
 • Sets its own discount amount (e.g., -40% from 10:00 to 12:00)
-• Limits the number of tables eligible for the promotion
+• Limits the number of dishTables eligible for the promotion
 • Manages the categories of dishes included in the discount
 
 Guest:
 • Sees actual advantageous hours
-• Receives a guaranteed table
+• Receives a guaranteed dishTable
 • Receives savings
 • Saves time
 
@@ -87,7 +87,7 @@ TutTime = a tool for managing restaurant occupancy and cash flow
 
 Key differences:
 • Pre-order + prepayment
-• Real-time table management
+• Real-time dishTable management
 • Dynamic hourly discounts
 • Direct integration into the kitchen
 • No-show control via Payment
@@ -102,7 +102,7 @@ Even 3-5% penetration yields multi-billion dollar GMV.
 Long-term:
 • Loyalty ecosystem
 • AI-based occupancy forecasting
-• Cross-selling (events, tastings, chef's table)
+• Cross-selling (events, tastings, chef's dishTable)
 • White-label solutions for chains
 
 ⸻
@@ -130,7 +130,7 @@ This:
 • A replicable model in other countries
 • Huge TAM (total market)
 
-TutTime solves a specific market pain point and turns a simple table into a financial asset.
+TutTime solves a specific market pain point and turns a simple dishTable into a financial asset.
 
 ⸻
 [3/17/2026 7:53 AM] Vanya: • Restaurant card (tabs: overview/menu/discounts/reviews)
@@ -146,7 +146,7 @@ TutTime solves a specific market pain point and turns a simple table into a fina
 Restaurant (web)
 • Dashboard
 • Orders (list/card)
-• Seating (calendar + tables/zones)
+• Seating (calendar + dishTables/zones)
 • Dead hours (discount calendar)
 • Menu (categories/dishes/modifiers/stop list)
 • Analytics
@@ -160,7 +160,7 @@ Admin Panel
 • Content/Banners
 
 2.4. Design Rules
-• Main focus: "Choose a time → choose a table → choose food → pay" in 60 seconds.
+• Main focus: "Choose a time → choose a dishTable → choose food → pay" in 60 seconds.
 • Display everywhere: final discount, readiness time, cancellation policy.
 • Components: cards, filter chips, bottom sheet, order status timeline.
 
@@ -178,7 +178,7 @@ Clients
 Backend
 • API Gateway
 • Auth service (authorization)
-• Restaurant service (restaurants/zones/tables)
+• Restaurant service (restaurants/zones/dishTables)
 • Menu service (menus/prices/modifiers)
 • Booking service (reservations/bookings)
 Orders/rules)
@@ -190,7 +190,7 @@ Orders/rules)
 
 Storage
 • PostgreSQL (master data)
-• Redis (table/slot locks, cache)
+• Redis (dishTable/slot locks, cache)
 • S3-compatible (menu/restaurant photos)
 • Message broker (queue) Kafka/RabbitMQ for statuses and integrations
 
@@ -216,11 +216,11 @@ Storage
 3.3. Booking Logic
 
 Option A: Tables available (floor plan / seating)
-• Get a list of tables and their occupancy per slot (e.g., 15-minute increments).
-• Lock the table for 5 minutes in Redis (soft lock).
-• After payment, create a booking + order and confirm the table.
+• Get a list of dishTables and their occupancy per slot (e.g., 15-minute increments).
+• Lock the dishTable for 5 minutes in Redis (soft lock).
+• After payment, create a booking + order and confirm the dishTable.
 
-Option B: No tables available, work with slots
+Option B: No dishTables available, work with slots
 • The restaurant sets capacity by slots/zones. • A reservation deducts 1 "space" from the slot.
 
 Time Rules

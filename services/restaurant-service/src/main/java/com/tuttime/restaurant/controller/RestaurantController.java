@@ -4,7 +4,6 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.entity.*;
 import com.tuttime.restaurant.entity.enums.*;
 import com.tuttime.restaurant.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -288,7 +287,7 @@ public class RestaurantController {
 			@Parameter(description = "Alternative text for media", required = false)
 			@RequestParam(value = "altText", required = false) String altText,
 			@Parameter(description = "Flag indicating if this is the primary media", required = false)
-			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
+			@RequestParam(value = "primaryEntity", required = false, defaultValue = "false") boolean primaryEntity,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
 
@@ -302,7 +301,7 @@ public class RestaurantController {
 		request.setEntityType(EntityType.RESTAURANT);
 		request.setEntityId(restaurantId);
 		request.setAltText(altText);
-		request.setIsPrimary(isPrimary);
+		request.setPrimaryEntity(primaryEntity);
 		request.setMediaType(mediaType);
 
 		MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);

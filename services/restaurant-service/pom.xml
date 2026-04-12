@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>Restaurant Service</name>
-    <description>TutTime Restaurant Service - manages restaurants, branches, zones, tables</description>
+    <description>TutTime Restaurant Service - manages restaurants, branches, zones, dishTables</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

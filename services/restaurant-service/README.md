@@ -1,7 +1,7 @@
 # TutTime Restaurant Service
 
 ## Description
-Manages restaurants, branches, zones, tables, media.
+Manages restaurants, branches, zones, dishTables, media.
 
 ## Running the Service
 ```bash

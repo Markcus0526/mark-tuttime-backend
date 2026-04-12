@@ -31,8 +31,8 @@ public class ZoneRequest {
 	@Min(value = 1, message = "Capacity must be at least 1")
 	private Integer capacity;
 
-	@NotNull(message = "isClosed must not be null")
-	private Boolean isClosed;
+	@NotNull(message = "closed must not be null")
+	private Boolean closed;
 
 	// Getters and setters omitted for brevity
 

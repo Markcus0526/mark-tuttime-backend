@@ -282,7 +282,7 @@ public class BranchController {
 			@Parameter(description = "Alternative text for media", required = false)
 			@RequestParam(value = "altText", required = false) String altText,
 			@Parameter(description = "Flag indicating if this is the primary media", required = false)
-			@RequestParam(value = "isPrimary", required = false, defaultValue = "false") boolean isPrimary,
+			@RequestParam(value = "primaryEntity", required = false, defaultValue = "false") boolean primaryEntity,
 			@Parameter(description = "Type of media", required = false)
 			@RequestParam(value = "mediaType", required = false, defaultValue = "IMAGE") MediaType mediaType) {
 
@@ -335,7 +335,7 @@ public class BranchController {
 		request.setEntityType(EntityType.BRANCH);
 		request.setEntityId(branchId);
 		request.setAltText(altText);
-		request.setIsPrimary(isPrimary);
+		request.setPrimaryEntity(primaryEntity);
 		request.setMediaType(mediaType);
 
 		MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);

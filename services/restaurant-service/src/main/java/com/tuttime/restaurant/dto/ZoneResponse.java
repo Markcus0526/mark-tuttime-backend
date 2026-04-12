@@ -19,7 +19,7 @@ public class ZoneResponse {
 	private String name;
 	private String description;
 	private int capacity;
-	private boolean isClosed;
+	private boolean closed;
 	private OffsetDateTime createdAt;
 	private OffsetDateTime updatedAt;
 
