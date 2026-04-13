@@ -1,11 +1,13 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "modifiers")
@@ -15,7 +17,12 @@ import java.math.BigDecimal;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Modifier extends BaseUuidEntity {
+public class Modifier extends BaseDeleteEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(name = "modifier_id", nullable = false, updatable = false)
+	private UUID modifierId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "modifier_group_id", nullable = false)

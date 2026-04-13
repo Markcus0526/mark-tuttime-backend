@@ -1,14 +1,12 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "modifier_groups")
@@ -18,7 +16,12 @@ import java.util.Set;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class ModifierGroup extends BaseUuidEntity {
+public class ModifierGroup extends BaseDeleteEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(name = "modifier_group_id", nullable = false, updatable = false)
+	private UUID modifierGroupId;
 
 	@Column(nullable = false)
 	private String name;

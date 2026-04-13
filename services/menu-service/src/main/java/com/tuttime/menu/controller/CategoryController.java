@@ -40,21 +40,23 @@ public class CategoryController {
 			@ApiResponse(responseCode = "400", description = "Invalid input data")
 	})
 	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody CategoryDto.CategoryRequest request) {
+
 		categoryService.validateBranchManager(request.branchId());
 
 		CategoryDto.CategoryResponse data = categoryService.createCategory(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping("/{categoryId}")
 	@Operation(summary = "Get category by ID")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
 					content = @Content(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Category not found")
 	})
-	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> getCategoryById(@PathVariable UUID id) {
-		CategoryDto.CategoryResponse data = categoryService.getCategoryById(id);
+	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> getCategoryById(@PathVariable UUID categoryId) {
+
+		CategoryDto.CategoryResponse data = categoryService.getCategoryById(categoryId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -65,6 +67,7 @@ public class CategoryController {
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))))
 	})
 	public ResponseEntity<ApiRes<List<CategoryDto.CategoryResponse>>> getCategoriesByBranch(@PathVariable UUID branchId) {
+
 		List<CategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
@@ -78,11 +81,12 @@ public class CategoryController {
 	})
 	public ResponseEntity<ApiRes<FullMenuDto.FullMenuBranchMenuResponse>> getFullMenu(
 			@Parameter(description = "UUID of the branch") @PathVariable UUID branchId) {
+
 		FullMenuDto.FullMenuBranchMenuResponse data = categoryService.getFullMenuForBranch(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@PutMapping("/{id}")
+	@PutMapping("/{categoryId}")
 	@Operation(summary = "Update an existing category")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Update successful",
@@ -90,24 +94,26 @@ public class CategoryController {
 			@ApiResponse(responseCode = "404", description = "Category not found")
 	})
 	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> updateCategory(
-			@PathVariable UUID id,
+			@PathVariable UUID categoryId,
 			@Valid @RequestBody CategoryDto.CategoryRequest request) {
-		categoryService.validateMenuCategory(id);
 
-		CategoryDto.CategoryResponse data = categoryService.updateCategory(id, request);
+		categoryService.validateMenuCategory(categoryId);
+
+		CategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{categoryId}")
 	@Operation(summary = "Delete a category")
 	@ApiResponses({
 			@ApiResponse(responseCode = "204", description = "Category deleted"),
 			@ApiResponse(responseCode = "404", description = "Category not found")
 	})
-	public ResponseEntity<Void> deleteCategory(@PathVariable UUID id) {
-		categoryService.validateMenuCategory(id);
+	public ResponseEntity<Void> deleteCategory(@PathVariable UUID categoryId) {
 
-		categoryService.deleteCategory(id);
+		categoryService.validateMenuCategory(categoryId);
+
+		categoryService.deleteCategory(categoryId);
 		return ResponseEntity.noContent().build();
 	}
 }

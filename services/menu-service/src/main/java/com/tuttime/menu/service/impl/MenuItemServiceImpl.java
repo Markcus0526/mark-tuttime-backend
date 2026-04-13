@@ -29,7 +29,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 	// Evict the branch menu cache. We find the branchId through the category.
 	@CacheEvict(value = "branch_menus", key = "@menuItemServiceImpl.getBranchIdFromCategory(#request.categoryId())")
 	public MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request) {
-		MenuCategory category = categoryRepository.findById(request.categoryId())
+		MenuCategory category = categoryRepository.findById(request.menuCategoryId())
 				.orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
 		MenuItem item = MenuItem.builder()
@@ -37,7 +37,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 				.name(request.name())
 				.description(request.description())
 				.price(request.price())
-				.isAvailable(request.isAvailable() != null ? request.isAvailable() : true)
+				.available(request.available() != null ? request.available() : true)
 				.build();
 
 		return mapToDetailedResponse(menuItemRepository.save(item));
@@ -53,7 +53,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 		existing.setName(request.name());
 		existing.setDescription(request.description());
 		existing.setPrice(request.price());
-		existing.setIsAvailable(request.isAvailable());
+		existing.setAvailable(request.available());
 
 		return mapToDetailedResponse(menuItemRepository.save(existing));
 	}
@@ -75,9 +75,9 @@ public class MenuItemServiceImpl implements MenuItemService {
 				Sort.by(sortBy).ascending();
 
 		// 2. Fetch sorted list
-		return menuItemRepository.findByCategoryId(categoryId, sort).stream()
+		return menuItemRepository.findByCategory_MenuCategoryId(categoryId, sort).stream()
 				.map(item -> new MenuItemDto.MenuItemResponseSummary(
-						item.getId(), item.getName(), item.getPrice(), item.getIsAvailable(), item.getPriority()
+						item.getMenuItemId(), item.getName(), item.getPrice(), item.getAvailable(), item.getPriority()
 				))
 				.collect(Collectors.toList());
 	}
@@ -109,12 +109,12 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	private MenuItemDto.MenuItemDetailedResponse mapToDetailedResponse(MenuItem item) {
 		return new MenuItemDto.MenuItemDetailedResponse(
-				item.getId(),
-				item.getCategory().getId(),
+				item.getMenuItemId(),
+				item.getCategory().getMenuCategoryId(),
 				item.getName(),
 				item.getDescription(),
 				item.getPrice(),
-				item.getIsAvailable(),
+				item.getAvailable(),
 				List.of() // Modifiers mapped here if needed
 		);
 	}

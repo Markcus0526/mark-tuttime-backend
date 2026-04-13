@@ -11,16 +11,22 @@ public class ModifierGroupDto {
 
 	@Schema(description = "Modifier Group request details")
 	public record ModifierGroupRequest(
-			@NotBlank String name,
+			@NotBlank
+			String name,
+
 			String description,
-			@Min(0) Integer minSelect,
-			@Min(1) Integer maxSelect
+
+			@Min(0)
+			Integer minSelect,
+
+			@Min(1)
+			Integer maxSelect
 	) {
 	}
 
 	@Schema(description = "Modifier Group response details")
 	public record ModifierGroupResponse(
-			UUID id,
+			UUID modifierGroupId,
 			String name,
 			String description,
 			Integer minSelect,

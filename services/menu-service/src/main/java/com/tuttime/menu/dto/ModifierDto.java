@@ -10,15 +10,19 @@ public class ModifierDto {
 
 	@Schema(description = "Modifier request details")
 	public record ModifierRequest(
-			@NotBlank String name,
+
+			@NotBlank
+			String name,
+
 			String description,
+
 			BigDecimal priceAdjustment
 	) {
 	}
 
 	@Schema(description = "Modifier response details")
 	public record ModifierResponse(
-			UUID id,
+			UUID modifierId,
 			String name,
 			String description,
 			BigDecimal priceAdjustment

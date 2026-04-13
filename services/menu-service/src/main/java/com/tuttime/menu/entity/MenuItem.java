@@ -1,5 +1,6 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "menu_items")
@@ -17,10 +19,15 @@ import java.util.Set;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class MenuItem extends BaseUuidEntity {
+public class MenuItem extends BaseDeleteEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(name = "menu_item_id", nullable = false, updatable = false)
+	private UUID menuItemId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "category_id", nullable = false)
+	@JoinColumn(name = "menu_category_id", nullable = false)
 	private MenuCategory category;
 
 	@Column(nullable = false)
@@ -31,9 +38,9 @@ public class MenuItem extends BaseUuidEntity {
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal price;
 
-	@Column(name = "is_available")
+	@Column(name = "available")
 	@Builder.Default
-	private Boolean isAvailable = true;
+	private Boolean available = true;
 
 	@Column(name = "priority")
 	@Builder.Default

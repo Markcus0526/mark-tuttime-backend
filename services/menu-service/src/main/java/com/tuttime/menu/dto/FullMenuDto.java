@@ -15,7 +15,7 @@ public class FullMenuDto {
 
 	// 2. Category Level
 	public record FullMenuCategoryResponse(
-			UUID id,
+			UUID menuCategoryId,
 			String name,
 			String description,
 			List<FullMenuItemResponse> items
@@ -24,18 +24,18 @@ public class FullMenuDto {
 
 	// 3. Item Level
 	public record FullMenuItemResponse(
-			UUID id,
+			UUID menuItemId,
 			String name,
 			String description,
 			BigDecimal price,
-			Boolean isAvailable,
+			Boolean available,
 			List<FullMenuModifierGroupResponse> modifierGroups
 	) {
 	}
 
 	// 4. Modifier Group Level
 	public record FullMenuModifierGroupResponse(
-			UUID id,
+			UUID modifierGroupId,
 			String name,
 			Integer minSelect,
 			Integer maxSelect,
@@ -45,7 +45,7 @@ public class FullMenuDto {
 
 	// 5. Leaf Level: Individual Modifier
 	public record FullMenuModifierResponse(
-			UUID id,
+			UUID modifierId,
 			String name,
 			BigDecimal priceAdjustment
 	) {
