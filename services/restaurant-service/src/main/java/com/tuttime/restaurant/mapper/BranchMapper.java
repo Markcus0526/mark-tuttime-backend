@@ -2,9 +2,7 @@ package com.tuttime.restaurant.mapper;
 
 import com.tuttime.restaurant.dto.BranchRequest;
 import com.tuttime.restaurant.dto.BranchResponse;
-import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

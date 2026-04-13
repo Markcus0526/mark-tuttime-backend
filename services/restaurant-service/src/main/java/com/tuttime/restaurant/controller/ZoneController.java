@@ -6,7 +6,6 @@ import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.dto.ZoneRequest;
 import com.tuttime.restaurant.dto.ZoneResponse;
-import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.TableService;
@@ -118,46 +117,6 @@ public class ZoneController {
 
 		zoneService.deleteZone(zoneId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
-	}
-
-	// --- Zone Map (Media SVG) ---
-
-	@Operation(summary = "Get zone map SVG", description = "Retrieve the inline SVG map for a zone")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Zone map SVG retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Zone or map not found")
-	})
-	@GetMapping("/{zoneId}/map")
-	public ResponseEntity<ApiRes<String>> getZoneMapSvg(
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId) {
-
-		String svgContent = mediaService.getPrimarySvgMap(EntityType.ZONE, zoneId);
-		return ResponseEntity.ok(ApiRes.success(svgContent));
-	}
-
-	@Operation(summary = "Set or update zone map SVG", description = "Upload or update the inline SVG map for a zone")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Zone map SVG set/updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid SVG content"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Zone not found")
-	})
-	@PostMapping("/{zoneId}/map")
-	public ResponseEntity<ApiRes<Void>> setZoneMapSvg(
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId,
-			@Parameter(description = "SVG XML content", required = true)
-			@RequestBody String svgContent) {
-
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
-
-		mediaService.setOrUpdateSvgMap(EntityType.ZONE, zoneId, svgContent, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")

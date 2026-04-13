@@ -1,15 +1,18 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.entity.*;
-import com.tuttime.restaurant.entity.enums.EntityType;
+import com.tuttime.restaurant.dto.ZoneRequest;
+import com.tuttime.restaurant.dto.ZoneResponse;
+import com.tuttime.restaurant.entity.Branch;
+import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.mapper.ZoneMapper;
-import com.tuttime.restaurant.repository.*;
-import com.tuttime.restaurant.service.*;
+import com.tuttime.restaurant.repository.BranchRepository;
+import com.tuttime.restaurant.repository.ZoneRepository;
+import com.tuttime.restaurant.service.MediaService;
+import com.tuttime.restaurant.service.RestaurantStaffService;
+import com.tuttime.restaurant.service.TableService;
+import com.tuttime.restaurant.service.ZoneService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,16 +50,7 @@ public class ZoneServiceImpl implements ZoneService {
 		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(request.getBranchId())
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.getBranchId()));
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validatePermissions(branch.getBranchId(), currentUserId, userRoles);
 
 		Zone zone = zoneMapper.toEntity(request);
 
@@ -71,27 +65,12 @@ public class ZoneServiceImpl implements ZoneService {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
 
-		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
-				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
+		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		zoneMapper.updateEntityFromRequest(request, zone);
 
-		// Update fields from request (add all updatable fields)
-		zone.setName(request.getName());
-		zone.setDescription(request.getDescription());
-		// Add more fields as needed
-
-		Zone updatedZone = zoneRepository.save(zone);
-		return zoneMapper.toResponse(updatedZone);
+		// No need for .save(zone) - Hibernate dirty checking handles it
+		return zoneMapper.toResponse(zone);
 	}
 
 	@Override
@@ -99,19 +78,7 @@ public class ZoneServiceImpl implements ZoneService {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
 
-		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
-				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
-
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
 		zone.setDeleted(true); // Assuming soft delete
 		zoneRepository.save(zone);
@@ -129,7 +96,7 @@ public class ZoneServiceImpl implements ZoneService {
 				return false;
 			}
 
-			mediaService.deleteAllByEntityId(EntityType.ZONE, zone.getZoneId());
+			mediaService.deleteAllByEntityId(zone.getZoneId());
 		}
 		zoneRepository.deleteAllByBranchId(branchId);
 		return true;

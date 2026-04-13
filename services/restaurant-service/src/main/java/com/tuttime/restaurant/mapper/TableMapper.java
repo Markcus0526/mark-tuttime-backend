@@ -5,6 +5,7 @@ import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring",
@@ -15,5 +16,7 @@ public interface TableMapper {
 	DishTable toEntity(TableRequest request);
 
 	TableResponse toResponse(DishTable zone);
+
+	void updateEntityFromRequest(TableRequest request, @MappingTarget DishTable entity);
 }
 

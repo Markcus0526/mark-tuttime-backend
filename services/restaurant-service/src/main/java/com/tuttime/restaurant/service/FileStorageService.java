@@ -35,4 +35,27 @@ public class FileStorageService {
 		// For local dev, just return a local server URL or file path
 		return "/media/" + filename;
 	}
+
+	public void deleteFile(String fileUrl) {
+		if (fileUrl == null || fileUrl.isEmpty()) {
+			return;
+		}
+
+		try {
+			// 1. Extract the filename from the URL (e.g., "/media/uuid_name.jpg" -> "uuid_name.jpg")
+			String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+
+			// 2. Resolve the path relative to your rootLocation
+			Path filePath = this.rootLocation.resolve(filename).normalize().toAbsolutePath();
+
+			// 3. Delete the file if it exists
+			Files.deleteIfExists(filePath);
+
+		} catch (IOException e) {
+			// We log the error but don't necessarily want to crash the app
+			// if a physical file is already missing.
+			System.err.println("Failed to delete file at " + fileUrl + ": " + e.getMessage());
+		}
+	}
+
 }

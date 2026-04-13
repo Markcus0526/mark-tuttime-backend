@@ -1,6 +1,5 @@
 package com.tuttime.restaurant.dto;
 
-import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,9 +14,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MediaRequest {
-
-	@NotNull(message = "Entity type is required")
-	private EntityType entityType; // Could be validated against Enum in service layer
 
 	@NotNull(message = "Entity ID is required")
 	private UUID entityId;

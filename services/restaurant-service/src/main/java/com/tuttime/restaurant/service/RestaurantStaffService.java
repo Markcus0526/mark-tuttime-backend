@@ -16,9 +16,11 @@ public interface RestaurantStaffService {
 
 	void removeStaff(UUID restaurantId, UUID staffId, UUID currentUserId, String userRoles);
 
-	boolean validateAdmin(UUID currentUserId);
+	boolean validateAdminAccess(UUID currentUserId);
 
-	boolean validateRestaurantOwner(UUID restaurantId, UUID currentUserId);
+	void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles);
 
-	boolean validateBranchManager(UUID branchId, UUID currentUserId);
+	void validateBranchAccess(UUID branchId, UUID currentUserId, String userRoles);
+
+	void validatePermissions(UUID entityId, UUID currentUserId, String userRoles);
 }

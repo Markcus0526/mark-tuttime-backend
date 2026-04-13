@@ -1,19 +1,20 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.entity.*;
-import com.tuttime.restaurant.entity.enums.EntityType;
-import com.tuttime.restaurant.mapper.*;
-import com.tuttime.restaurant.repository.*;
+import com.tuttime.restaurant.dto.BranchRequest;
+import com.tuttime.restaurant.dto.BranchResponse;
+import com.tuttime.restaurant.entity.Branch;
+import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.mapper.BranchMapper;
+import com.tuttime.restaurant.repository.BranchRepository;
+import com.tuttime.restaurant.repository.RestaurantRepository;
+import com.tuttime.restaurant.repository.RestaurantStaffRepository;
 import com.tuttime.restaurant.service.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,14 +40,7 @@ public class BranchServiceImpl implements BranchService {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(request.getRestaurantId())
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + request.getRestaurantId()));
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validatePermissions(restaurant.getRestaurantId(), currentUserId, userRoles);
 
 		Branch entity = branchMapper.toEntity(request);
 		entity.setBranchId(UUID.randomUUID());
@@ -82,28 +76,18 @@ public class BranchServiceImpl implements BranchService {
 		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + branchId));
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		// 1. Unified Permission Check
+		restaurantStaffService.validatePermissions(branch.getBranchId(), currentUserId, userRoles);
 
-		branch.setAddress(request.getAddress());
-		branch.setPhone(request.getPhone());
-		branch.setTimezone(request.getTimezone());
-		branch.setRestaurantId(request.getRestaurantId());
+		// 2. Map updates
+		branchMapper.updateEntityFromRequest(request, branch);
 
 		// Manual mapping for the PostGIS Point
 		if (request.getLongitude() != null && request.getLatitude() != null) {
 			branch.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
 		}
 
-		branch = branchRepository.save(branch);
+		// No need for .save(branch) - Hibernate dirty checking handles it
 		return branchMapper.toResponse(branch);
 	}
 
@@ -112,17 +96,10 @@ public class BranchServiceImpl implements BranchService {
 		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + branchId));
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		// 1. Unified Permission Check
+		restaurantStaffService.validatePermissions(branch.getBranchId(), currentUserId, userRoles);
 
+		// 2. Soft delete
 		branch.setDeleted(true);
 		branchRepository.save(branch);
 	}
@@ -138,8 +115,8 @@ public class BranchServiceImpl implements BranchService {
 			if (!zoneService.deleteAllByBranchId(branch.getBranchId())) {
 				return false;
 			}
-			mediaService.deleteAllByEntityId(EntityType.BRANCH, branch.getBranchId());
-			scheduleService.deleteAllByBranchId(branch.getBranchId());
+			mediaService.deleteAllByEntityId(branch.getBranchId());
+			scheduleService.deleteAllByEntityId(branch.getBranchId());
 		}
 		branchRepository.deleteAllByRestaurantId(restaurantId);
 

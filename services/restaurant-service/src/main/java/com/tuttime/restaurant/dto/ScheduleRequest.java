@@ -10,11 +10,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduleRequest {
+
+	@NotNull(message = "Entity ID is required")
+	private UUID entityId;
 
 	@Min(value = 0, message = "dayOfWeek must be between 0 (Sunday) and 6 (Saturday)")
 	@Max(value = 6, message = "dayOfWeek must be between 0 (Sunday) and 6 (Saturday)")

@@ -1,13 +1,10 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.common.proto.UserServiceGrpc;
 import com.tuttime.restaurant.dto.RestaurantRequest;
 import com.tuttime.restaurant.dto.RestaurantResponse;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.mapper.RestaurantMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
@@ -15,12 +12,10 @@ import com.tuttime.restaurant.service.*;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,9 +39,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final MediaService mediaService;
 	private final ScheduleService scheduleService;
 
-	@GrpcClient("user-service")
-	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
-
 	@Override
 	@Transactional(readOnly = true)
 	public Page<RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
@@ -65,10 +57,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	@Transactional
 	public RestaurantResponse createRestaurant(RestaurantRequest request, UUID currentUserId, String userRoles) {
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		if (!isAdmin) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validateAdminAccess(currentUserId);
 
 		// Map request DTO to entity
 		Restaurant restaurant = restaurantMapper.toEntity(request);
@@ -83,7 +72,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 		defaultBranch.setRestaurantId(savedRestaurant.getRestaurantId());
 		defaultBranch.setAddress(savedRestaurant.getAddress());
 		defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
-		defaultBranch.setPhone(null);
+		defaultBranch.setPhone(savedRestaurant.getPhone());
 		defaultBranch.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
 		branchRepository.save(defaultBranch);
 
@@ -97,52 +86,36 @@ public class RestaurantServiceImpl implements RestaurantService {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		// 1. Unified Permission Check
+		restaurantStaffService.validatePermissions(restaurant.getRestaurantId(), currentUserId, userRoles);
 
-		// Map fields (Standard fields like name, address, phone)
+		// 2. Map fields and handle PostGIS Point
 		restaurantMapper.updateEntityFromRequest(request, restaurant);
-
-		// Manual mapping for the PostGIS Point
 		if (request.getLongitude() != null && request.getLatitude() != null) {
 			restaurant.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
 		}
 
-		// No need for .save(restaurant) - Hibernate dirty checking handles it
+		// Hibernate dirty checking updates the DB automatically
 		return restaurantMapper.toResponse(restaurant);
 	}
 
 	@Override
 	@Transactional
 	public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
-		// 1. Fetch and verify ownership
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		// 1. Unified Permission Check
+		restaurantStaffService.validatePermissions(restaurant.getRestaurantId(), currentUserId, userRoles);
 
-		// 3. Soft delete related entities (Branches, Staff, Schedules)
-		// Hibernate will handle the updates if you have properly mapped @OneToMany(cascade = CascadeType.ALL)
-		branchService.deleteAllByRestaurantId(restaurant.getRestaurantId());
-		mediaService.deleteAllByEntityId(EntityType.RESTAURANT, restaurant.getRestaurantId());
-		scheduleService.deleteAllByRestaurantId(restaurant.getRestaurantId());
+		// 2. Soft delete related entities
+		// Consider moving these to a single Batch Update query for better performance
+		branchService.deleteAllByRestaurantId(restaurantId);
+		mediaService.deleteAllByEntityId(restaurantId);
+		scheduleService.deleteAllByEntityId(restaurantId);
 
-		// 2. Soft delete the Restaurant
+		// 3. Soft delete the Restaurant
 		restaurant.setDeleted(true);
-
 		restaurantRepository.save(restaurant);
 	}
 
@@ -189,4 +162,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 			return cb.and(predicates.toArray(new Predicate[0]));
 		};
 	}
+
+
 }
