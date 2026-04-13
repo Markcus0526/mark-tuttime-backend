@@ -5,11 +5,14 @@ import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.proto.StaffUserRequest;
+import com.tuttime.common.proto.StaffUserResponse;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.entity.enums.VerificationType;
+import com.tuttime.user.grpc.client.RestaurantGrpcClient;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.AuthService;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
 	private final EmailService emailService;
 	private final SmsService smsService;
 	private final TokenUtil tokenUtil;
+	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	@Override
 	@Transactional // CRITICAL: Ensure both saves happen in one transaction
@@ -115,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		String phoneNumber = null;
-		String email =  null;
+		String email = null;
 		if (identifier.contains("@"))
 			email = identifier;
 		else
@@ -259,67 +264,68 @@ public class AuthServiceImpl implements AuthService {
 
 	@Transactional
 	public AuthResponse loginWithOtp(OtpVerificationConfirmRequest request) {
-		String phoneNumber = request.getPhoneNumber();
-		String email = request.getEmail();
-		String code = request.getCode();
+		String target = StringUtils.hasText(request.getPhoneNumber()) ? request.getPhoneNumber() : request.getEmail();
 
-		// Validate phone/email presence
-		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
-		}
-		if (!StringUtils.hasText(code)) {
-			throw new MethodArgumentNotValidException("OTP code must be provided");
-		}
-
-		String target = StringUtils.hasText(phoneNumber) ? phoneNumber : email;
-		// Step 1: Verify OTP
-		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, code)
+		// 1. Verify and Burn OTP
+		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, request.getCode())
 				.orElseThrow(() -> new MethodArgumentNotValidException("Invalid or expired OTP code"));
 
-		// Step 2: Mark OTP as used
 		otpCode.setUsed(true);
 		verificationCodeRepository.save(otpCode);
 
-		// Step 3: Find or create user by phone number
-		User user;
-		if (otpCode.getType() == VerificationType.PHONE_VERIFY) {
-			user = userRepository.findByPhoneNumberAndDeletedFalse(phoneNumber)
-					.orElseThrow(() -> new ResourceNotFoundException("User not found"));
-		} else {
-			user = userRepository.findByEmailAndDeletedFalse(email)
-					.orElseThrow(() -> new ResourceNotFoundException("User not found"));
-		}
+		// 2. Find User
+		User user = (otpCode.getType() == VerificationType.PHONE_VERIFY)
+				? userRepository.findByPhoneNumberAndDeletedFalse(request.getPhoneNumber())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"))
+				: userRepository.findByEmailAndDeletedFalse(request.getEmail())
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+		// 3. Update User State
 		user.setStatus(UserStatus.ACTIVE);
 		user.setLastLogin(OffsetDateTime.now());
 		userRepository.save(user);
 
-		// Optional: If you want to ensure the user has an auth method for PHONE_SMS
-		if (otpCode.getType() == VerificationType.EMAIL_VERIFY) {
-			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getUserId(), AuthProvider.EMAIL_PASS)
-					.orElseGet(() -> {
-						UserAuthMethod newAuthMethod = new UserAuthMethod();
-						newAuthMethod.setUserId(user.getUserId());
-						newAuthMethod.setAuthType(AuthProvider.EMAIL_PASS);
-						newAuthMethod.setVerified(true);
-						return userAuthMethodRepository.save(newAuthMethod);
-					});
-			authMethod.setVerified(true);
-		}
-
-		// Step 4: Generate JWT tokens or whatever your AuthResponse requires
-		String accessToken = jwtTokenProvider.generateAccessToken(user);
-		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
-
+		// 4. Build AuthResponse
 		AuthResponse auth = new AuthResponse();
-		auth.setAccessToken(accessToken);
-		auth.setRefreshToken(refreshToken);
+		auth.setAccessToken(jwtTokenProvider.generateAccessToken(user));
+		auth.setRefreshToken(jwtTokenProvider.generateRefreshToken(user));
 		auth.setTokenType("Bearer");
 		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
 		auth.setUserId(user.getUserId());
 		auth.setFullName(user.getFullName());
 		auth.setEmail(user.getEmail());
 		auth.setPhoneNumber(user.getPhoneNumber());
+
+		// 5. Inject Roles & Management Context
+		List<String> roleNames = user.getRoles().stream()
+				.map(UserRole::getRole)
+				.map(Role::getName)
+				.toList();
+		auth.setRoles(roleNames); // Assuming user entity has getRoles()
+
+		if (roleNames.contains(UserRoleKind.OWNER.name())
+				|| roleNames.contains(UserRoleKind.MANAGER.name())
+				|| roleNames.contains(UserRoleKind.HOSTESS.name())) {
+			StaffUserRequest grpcRequest = StaffUserRequest.newBuilder()
+					.setUserId(user.getUserId().toString())
+					.build();
+
+			try {
+				StaffUserResponse grpcResponse = restaurantGrpcClient.getStaffForUser(grpcRequest);
+
+				// Only attach context if IDs were actually found
+				if (!grpcResponse.getRestaurantId().isEmpty()) {
+					AuthResponse.RestaurantStaff staff = new AuthResponse.RestaurantStaff();
+					staff.setRestaurantId(UUID.fromString(grpcResponse.getRestaurantId()));
+					staff.setBranchId(grpcResponse.getBranchId().isEmpty() ? null : UUID.fromString(grpcResponse.getBranchId()));
+					staff.setEntityName(grpcResponse.getEntityName());
+					staff.setActive(grpcResponse.getActive());
+					auth.setStaff(staff);
+				}
+			} catch (Exception e) {
+				log.error("gRPC call failed to fetch management context: {}", e.getMessage());
+			}
+		}
 
 		return auth;
 	}

@@ -1,6 +1,5 @@
 package com.tuttime.user.grpc;
 
-import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.UserStatus;
@@ -14,13 +13,10 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
-import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-import java.util.SequencedSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.tuttime.common.util.DatetimeUtil.convertOffsetDatetimeToProtobuf;
@@ -40,68 +36,52 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	 * and retrieve the associated User Context (ID, Roles, Status).
 	 */
 	@Override
-	public void validateUserToken(ValidateUserRequest request, StreamObserver<UserContextResponse> responseObserver) {
+	@Transactional(readOnly = true) // Crucial for loading roles correctly
+	public void validateUserToken(ValidateTokenRequest request, StreamObserver<ValidateTokenResponse> responseObserver) {
 		try {
 			String token = request.getJwtToken();
 
-			// 1. Validate specifically as an ACCESS TOKEN
+			// 1. JWT Structural & Signature Validation
 			if (!jwtTokenProvider.validateAccessToken(token)) {
-				throw new AuthenticationException("Invalid Access Token");
+				throw Status.UNAUTHENTICATED.withDescription("Invalid Access Token").asRuntimeException();
 			}
 
-			// 2. Parse claims (containing your userId, jti, roles)
 			Claims claims = jwtTokenProvider.getAccessClaims(token);
 			String jti = claims.get("jti", String.class);
 			String userIdStr = claims.get("userId", String.class);
-			// Inside UserGrpcServiceImpl.java
+
+			// 2. Optimized Revocation Check
+			// Consolidate 'tokenBlacklistService' and 'redisTemplate' into one service call
 			if (tokenBlacklistService.isBlacklisted(jti)) {
-				throw new AuthenticationException("Token has been revoked");
+				throw Status.UNAUTHENTICATED.withDescription("Token has been revoked").asRuntimeException();
 			}
 
-			// 3. Redis Check: Is this specific JTI blacklisted (revoked session)?
-			Boolean isRevoked = redisTemplate.hasKey("blacklist:jti:" + jti);
-			if (isRevoked) {
-				throw new AuthenticationException("Session has been revoked/logged out");
-			}
-
-			// 4. Database Check: Fetch current status from the 'users' table
+			// 3. Database Check: Use a projection or fetch-join for roles
 			UUID userId = UUID.fromString(userIdStr);
-			User user = userRepository.findById(userId)
-					.orElseThrow(() -> new StatusRuntimeException(Status.NOT_FOUND
-							.withDescription("User record not found")));
+			User user = userRepository.findByUserIdAndDeletedFalse(userId)
+					.orElseThrow(() -> Status.PERMISSION_DENIED
+							.withDescription("User account is inactive, blocked, or not found")
+							.asRuntimeException());
 
-			// 5. Business Logic: Blocked or Soft-Deleted users cannot pass
-			if (user.getStatus() == UserStatus.BLOCKED) {
-				throw new AuthenticationException("User account is blocked");
-			}
-			if (user.getStatus() == UserStatus.DELETED) {
-				throw new ResourceNotFoundException("User account has been deleted");
-			}
-
-			// 6. Build Success Response
-			UserContextResponse.Builder responseBuilder = UserContextResponse.newBuilder()
+			// 4. Build Response (Protobuf handles empty strings as default)
+			ValidateTokenResponse response = ValidateTokenResponse.newBuilder()
 					.setUserId(user.getUserId().toString())
-					.setEmail(user.getEmail() != null ? user.getEmail() : "")
-					.setStatus(user.getStatus().name());
+					.setEmail(Optional.ofNullable(user.getEmail()).orElse(""))
+					.setStatus(user.getStatus().name())
+					.setRoles(combineUserRoles(user))
+					.build();
 
-			if (user.getRoles() != null) {
-				String combinedRoles = user.getRoles().stream()
-						.map(UserRole::getRole)
-						.map(Role::getName)
-						.collect(Collectors.joining(","));
-
-				responseBuilder.setRoles(combinedRoles);
-			}
-
-			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid UserID format").asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Malformed token claims").asRuntimeException());
 		} catch (StatusRuntimeException e) {
 			responseObserver.onError(e);
 		} catch (Exception e) {
-			responseObserver.onError(Status.INTERNAL.withDescription("Validation error: " + e.getMessage()).asRuntimeException());
+			log.error("Token validation system error: ", e);
+			// Do not leak e.getMessage() to the client for security reasons
+			responseObserver.onError(Status.INTERNAL.withDescription("Authentication service error").asRuntimeException());
 		}
 	}
 
@@ -122,7 +102,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// Building Response based on your exact SQL fields
 			UserProfileResponse.Builder responseBuilder = UserProfileResponse.newBuilder()
-					.setId(user.getUserId().toString())
+					.setUserId(user.getUserId().toString())
 					.setEmail(user.getEmail())
 					.setFullName(user.getFullName())
 					.setStatus(user.getStatus().toString())
@@ -179,98 +159,80 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 	@Override
 	@Transactional(readOnly = true)
-	public void getUserById(UserByIdRequest request, StreamObserver<UserResponse> responseObserver) {
+	public void validateUserById(UserByIdRequest request, StreamObserver<UserValidResponse> responseObserver) {
 		try {
 			UUID userId = UUID.fromString(request.getUserId());
 
-			// Fetching from DB (Ensure Repository handles the UUID correctly)
-			User user = userRepository.findById(userId)
-					.filter(u -> u.getStatus() != UserStatus.DELETED) // PDF logic: Don't return soft-deleted users
-					.orElseThrow(() -> new StatusRuntimeException(
-							Status.NOT_FOUND.withDescription("User not found or deleted")));
+			// Use ifPresentOrElse to handle both "Found" and "Not Found" as successful signals
+			userRepository.findByUserIdAndDeletedFalse(userId).ifPresentOrElse(user -> {
 
-			// Building Response based on your exact SQL fields
-			UserResponse.Builder responseBuilder = UserResponse.newBuilder()
-					.setId(user.getUserId().toString())
-					.setEmail(user.getEmail())
-					.setFullName(user.getFullName())
-					.setStatus(user.getStatus().toString())
-					.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
-					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
-			if (user.getLastLogin() != null) {
-				responseBuilder.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
-			}
-			if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-				String combinedRoles = user.getRoles().stream()
-						.map(UserRole::getRole)
-						.filter(Objects::nonNull) // Ensure Role is not null
-						.map(Role::getName)
-						.filter(Objects::nonNull) // Ensure Role Name is not null
-						.collect(Collectors.joining(","));
+				// User Found: Build response based on status and roles
+				UserValidResponse response = UserValidResponse.newBuilder()
+						.setValid(user.getStatus() == UserStatus.ACTIVE)
+						.setRoles(combineUserRoles(user))
+						.build();
 
-				responseBuilder.setRoles(combinedRoles);
-			} else {
-				responseBuilder.setRoles(""); // Protobuf builders hate nulls
-			}
-			if (!user.getLocations().isEmpty()) {
-				SequencedSet<UserLocation> sequencedLocations = (SequencedSet<UserLocation>) user.getLocations();
-				UserLocation lastLocation = sequencedLocations.getLast();
-				responseBuilder.setLongitude(lastLocation.getLocation().getX());
-				responseBuilder.setLatitude(lastLocation.getLocation().getY());
-			}
-			// Null-safe mapping for last_login
-			if (user.getLastLogin() != null) {
-				responseBuilder.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
-			}
+				responseObserver.onNext(response);
 
-			responseObserver.onNext(responseBuilder.build());
+			}, () -> {
+				// User Not Found: Return valid = false (Protobuf default is false)
+				responseObserver.onNext(UserValidResponse.newBuilder()
+						.setValid(false)
+						.setRoles("")
+						.build());
+			});
+
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid UUID format").asRuntimeException());
-		} catch (StatusRuntimeException e) {
-			responseObserver.onError(e);
+			// Only return an actual gRPC Error for bad input formats
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("Invalid UUID format")
+					.asRuntimeException());
 		} catch (Exception e) {
+			log.error("System error during user validation: ", e);
 			responseObserver.onError(Status.INTERNAL.asRuntimeException());
 		}
 	}
 
 	@Override
-	@Transactional(readOnly = true)
-	public void validateUserById(UserByIdRequest request, StreamObserver<UserValidResponse> responseObserver) {
-		try {
-			UUID userId = UUID.fromString(request.getUserId());
+	public void getUserProfiles(UserByIdsRequest request, StreamObserver<UserProfilesResponse> responseObserver) {
+		// 1. Extract and convert User IDs from Request
+		List<UUID> userIds = request.getUserIdsList().stream()
+				.map(UUID::fromString)
+				.toList();
 
-			// Fetching from DB (Ensure Repository handles the UUID correctly)
-			User user = userRepository.findByUserIdAndDeletedFalse(userId)
-					.orElseThrow(() -> new StatusRuntimeException(
-							Status.NOT_FOUND.withDescription("User not found or deleted")));
+		// 2. Fetch users from Database
+		List<User> users = userRepository.findAllByUserIdInAndDeletedFalse(userIds);
 
-			// Building Response based on your exact SQL fields
-			UserValidResponse.Builder responseBuilder = UserValidResponse.newBuilder()
-					.setIsValid(user.getStatus() == UserStatus.ACTIVE);
-			if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-				String combinedRoles = user.getRoles().stream()
-						.map(UserRole::getRole)
-						.filter(Objects::nonNull) // Ensure Role is not null
-						.map(Role::getName)
-						.filter(Objects::nonNull) // Ensure Role Name is not null
-						.collect(Collectors.joining(","));
+		// 3. Build the Response
+		UserProfilesResponse.Builder responseBuilder = UserProfilesResponse.newBuilder();
 
-				responseBuilder.setRoles(combinedRoles);
-			} else {
-				responseBuilder.setRoles(""); // Protobuf builders hate nulls
-			}
-
-			responseObserver.onNext(responseBuilder.build());
-			responseObserver.onCompleted();
-
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid UUID format").asRuntimeException());
-		} catch (StatusRuntimeException e) {
-			responseObserver.onError(e);
-		} catch (Exception e) {
-			responseObserver.onError(Status.INTERNAL.asRuntimeException());
+		for (User user : users) {
+			UserProfileResponse profile = UserProfileResponse.newBuilder()
+					.setUserId(user.getUserId().toString())
+					.setFullName(user.getFullName() != null ? user.getFullName() : "")
+					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+					.setEmail(user.getEmail() != null ? user.getEmail() : "")
+					.build();
+			responseBuilder.addProfiles(profile);
 		}
+
+		// 4. Send response and close the stream
+		responseObserver.onNext(responseBuilder.build());
+		responseObserver.onCompleted();
+	}
+
+	/**
+	 * Helper to safely join roles into a comma-separated string
+	 */
+	private String combineUserRoles(User user) {
+		if (user.getRoles() == null || user.getRoles().isEmpty()) {
+			return "";
+		}
+		return user.getRoles().stream()
+				.map(userRole -> userRole.getRole().getName())
+				.filter(Objects::nonNull)
+				.collect(Collectors.joining(","));
 	}
 }

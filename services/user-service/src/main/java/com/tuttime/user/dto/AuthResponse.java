@@ -22,6 +22,12 @@ public class AuthResponse {
 	@Schema(description = "User ID")
 	UUID userId;
 
+	@Schema(description = "User roles", example = "['OWNER', 'MANAGER']")
+	java.util.List<String> roles; // Added: Essential for frontend routing
+
+	@Schema(description = "Restaurant/Branch management details", nullable = true)
+	RestaurantStaff staff; // Added: Tells the app which entity they manage
+
 	@Schema(description = "Full name of the user")
 	String fullName;
 
@@ -30,5 +36,13 @@ public class AuthResponse {
 
 	@Schema(description = "User phone number", nullable = true)
 	String phoneNumber;
+
+	@Data
+	public static class RestaurantStaff {
+		private UUID restaurantId;
+		private UUID branchId;     // Null if the user is a Restaurant Owner
+		private String entityName; // e.g., "Mamma Mia Trattoria"
+		private boolean active;
+	}
 }
 

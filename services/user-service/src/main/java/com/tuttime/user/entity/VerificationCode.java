@@ -11,8 +11,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "verification_codes")
-@Getter @Setter @Builder
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class VerificationCode extends BaseTimeStampEntity {
 	@Id
