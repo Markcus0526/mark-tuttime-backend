@@ -1,20 +1,19 @@
 package com.tuttime.restaurant.service;
 
-import com.tuttime.restaurant.dto.BranchRequest;
-import com.tuttime.restaurant.dto.BranchResponse;
+import com.tuttime.restaurant.dto.BranchDto;
 import org.springframework.data.domain.Page;
 
 import java.util.UUID;
 
 public interface BranchService {
 
-	Page<BranchResponse> findAllBranches(UUID restaurantId, int page, int size);
+	Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, int page, int size);
 
-	BranchResponse createBranch(BranchRequest request, UUID currentUserId, String userRoles);
+	BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, UUID currentUserId, String userRoles);
 
-	BranchResponse getBranchById(UUID branchId);
+	BranchDto.BranchResponse getBranchById(UUID branchId);
 
-	BranchResponse updateBranch(UUID branchId, BranchRequest request, UUID currentUserId, String userRoles);
+	BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, UUID currentUserId, String userRoles);
 
 	void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
 

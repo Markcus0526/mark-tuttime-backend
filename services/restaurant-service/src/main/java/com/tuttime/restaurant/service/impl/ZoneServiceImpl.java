@@ -1,8 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.ZoneRequest;
-import com.tuttime.restaurant.dto.ZoneResponse;
+import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.mapper.ZoneMapper;
@@ -33,35 +32,35 @@ public class ZoneServiceImpl implements ZoneService {
 	private final MediaService mediaService;
 
 	@Override
-	public List<ZoneResponse> getZonesByBranchId(UUID branchId) {
+	public List<ZoneDto.ZoneResponse> getZonesByBranchId(UUID branchId) {
 		List<Zone> zones = zoneRepository.findAllByBranchIdAndDeletedFalse(branchId);
 		return zones.stream().map(zoneMapper::toResponse).collect(Collectors.toList());
 	}
 
 	@Override
-	public ZoneResponse getZoneById(UUID zoneId) {
+	public ZoneDto.ZoneResponse getZoneById(UUID zoneId) {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
 		return zoneMapper.toResponse(zone);
 	}
 
 	@Override
-	public ZoneResponse createZone(ZoneRequest request, UUID currentUserId, String userRoles) {
-		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(request.getBranchId())
-				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.getBranchId()));
+	public ZoneDto.ZoneResponse createZone(ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
+		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(request.branchId())
+				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.branchId()));
 
 		restaurantStaffService.validatePermissions(branch.getBranchId(), currentUserId, userRoles);
 
 		Zone zone = zoneMapper.toEntity(request);
 
-		zone.setBranchId(request.getBranchId());
+		zone.setBranchId(request.branchId());
 		zone.setDeleted(false);
 		Zone savedZone = zoneRepository.save(zone);
 		return zoneMapper.toResponse(savedZone);
 	}
 
 	@Override
-	public ZoneResponse updateZone(UUID zoneId, ZoneRequest request, UUID currentUserId, String userRoles) {
+	public ZoneDto.ZoneResponse updateZone(UUID zoneId, ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found with id " + zoneId));
 

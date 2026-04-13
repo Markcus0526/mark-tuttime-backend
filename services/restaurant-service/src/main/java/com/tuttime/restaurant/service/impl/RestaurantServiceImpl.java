@@ -1,8 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.RestaurantRequest;
-import com.tuttime.restaurant.dto.RestaurantResponse;
+import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.RestaurantMapper;
@@ -41,14 +40,14 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Page<RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
+	public Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
 		Specification<Restaurant> spec = createSpecification(query, ownerUserId, minRating, maxRating);
 		return restaurantRepository.findAll(spec, pageable)
 				.map(restaurantMapper::toResponse);
 	}
 
 	@Override
-	public RestaurantResponse getRestaurantById(UUID restaurantId) {
+	public RestaurantDto.RestaurantResponse getRestaurantById(UUID restaurantId) {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
 		return restaurantMapper.toResponse(restaurant);
@@ -56,14 +55,14 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional
-	public RestaurantResponse createRestaurant(RestaurantRequest request, UUID currentUserId, String userRoles) {
+	public RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
 		restaurantStaffService.validateAdminAccess(currentUserId);
 
 		// Map request DTO to entity
 		Restaurant restaurant = restaurantMapper.toEntity(request);
 
 		// Persist restaurant
-		restaurant.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+		restaurant.setLocation(createPoint(request.longitude(), request.latitude()));
 
 		Restaurant savedRestaurant = restaurantRepository.save(restaurant);
 
@@ -73,7 +72,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 		defaultBranch.setAddress(savedRestaurant.getAddress());
 		defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
 		defaultBranch.setPhone(savedRestaurant.getPhone());
-		defaultBranch.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+		defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
 		branchRepository.save(defaultBranch);
 
 		// Return mapped response DTO
@@ -82,7 +81,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional
-	public RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantRequest request, UUID currentUserId, String userRoles) {
+	public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
@@ -91,8 +90,8 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 		// 2. Map fields and handle PostGIS Point
 		restaurantMapper.updateEntityFromRequest(request, restaurant);
-		if (request.getLongitude() != null && request.getLatitude() != null) {
-			restaurant.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+		if (request.longitude() != null && request.latitude() != null) {
+			restaurant.setLocation(createPoint(request.longitude(), request.latitude()));
 		}
 
 		// Hibernate dirty checking updates the DB automatically
@@ -119,7 +118,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 		restaurantRepository.save(restaurant);
 	}
 
-	public Page<RestaurantResponse> findRestaurantsNearLocation(
+	public Page<RestaurantDto.RestaurantResponse> findRestaurantsNearLocation(
 			double latitude,
 			double longitude,
 			double radiusMeters,

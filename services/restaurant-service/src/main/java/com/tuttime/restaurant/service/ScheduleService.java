@@ -1,18 +1,17 @@
 package com.tuttime.restaurant.service;
 
-import com.tuttime.restaurant.dto.ScheduleRequest;
-import com.tuttime.restaurant.dto.ScheduleResponse;
+import com.tuttime.restaurant.dto.ScheduleDto;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface ScheduleService {
 
-	List<ScheduleResponse> getSchedules(UUID entityId);
+	List<ScheduleDto.ScheduleResponse> getSchedules(UUID entityId);
 
-	ScheduleResponse createSchedule(ScheduleRequest request, UUID currentUserId, String userRoles);
+	ScheduleDto.ScheduleResponse createSchedule(ScheduleDto.ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	ScheduleResponse updateSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles);
+	ScheduleDto.ScheduleResponse updateSchedule(UUID scheduleId, ScheduleDto.ScheduleRequest request, UUID currentUserId, String userRoles);
 
 	void deleteSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
 

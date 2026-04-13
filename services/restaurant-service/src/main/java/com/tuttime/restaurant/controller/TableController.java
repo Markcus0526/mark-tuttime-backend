@@ -3,8 +3,7 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.TableRequest;
-import com.tuttime.restaurant.dto.TableResponse;
+import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.TableService;
@@ -36,11 +35,11 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@GetMapping("/{tableId}")
-	public ResponseEntity<ApiRes<TableResponse>> getTableById(
+	public ResponseEntity<ApiRes<TableDto.TableResponse>> getTableById(
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId) {
 
-		TableResponse table = tableService.getTableById(tableId);
+		TableDto.TableResponse table = tableService.getTableById(tableId);
 		return ResponseEntity.ok(ApiRes.success(table));
 	}
 
@@ -52,9 +51,9 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@PostMapping
-	public ResponseEntity<ApiRes<TableResponse>> createTable(
+	public ResponseEntity<ApiRes<TableDto.TableResponse>> createTable(
 			@Parameter(description = "Table creation payload", required = true)
-			@Valid @RequestBody TableRequest request) {
+			@Valid @RequestBody TableDto.TableRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -62,7 +61,7 @@ public class TableController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		TableResponse created = tableService.createTable(request, currentUserId, userRoles);
+		TableDto.TableResponse created = tableService.createTable(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -74,11 +73,11 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@PutMapping("/{tableId}")
-	public ResponseEntity<ApiRes<TableResponse>> updateTable(
+	public ResponseEntity<ApiRes<TableDto.TableResponse>> updateTable(
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId,
 			@Parameter(description = "Updated table details", required = true)
-			@Valid @RequestBody TableRequest request) {
+			@Valid @RequestBody TableDto.TableRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -87,7 +86,7 @@ public class TableController {
 		String userRoles = UserContext.getRoles();
 
 		// Service should confirm the table belongs to the zone, branch, restaurant
-		TableResponse updated = tableService.updateTable(tableId, request, currentUserId, userRoles);
+		TableDto.TableResponse updated = tableService.updateTable(tableId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 

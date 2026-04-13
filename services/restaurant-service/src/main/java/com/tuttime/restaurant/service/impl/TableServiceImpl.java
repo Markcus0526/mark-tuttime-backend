@@ -1,8 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.TableRequest;
-import com.tuttime.restaurant.dto.TableResponse;
+import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.entity.enums.TableStatus;
@@ -35,7 +34,7 @@ public class TableServiceImpl implements TableService {
 	private final TableMapper tableMapper;
 
 	@Override
-	public List<TableResponse> getTablesByZoneId(UUID zoneId) {
+	public List<TableDto.TableResponse> getTablesByZoneId(UUID zoneId) {
 		// Validate zone exists and is active (optional: check hierarchy if needed)
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new ResourceNotFoundException("Zone not found"));
@@ -46,7 +45,7 @@ public class TableServiceImpl implements TableService {
 	}
 
 	@Override
-	public TableResponse getTableById(UUID tableId) {
+	public TableDto.TableResponse getTableById(UUID tableId) {
 		DishTable dishTable = tableRepository.findByTableIdAndDeletedFalse(tableId)
 				.orElseThrow(() -> new ResourceNotFoundException("Table not found in zone"));
 
@@ -55,24 +54,24 @@ public class TableServiceImpl implements TableService {
 
 	@Override
 	@Transactional
-	public TableResponse createTable(TableRequest request, UUID currentUserId, String userRoles) {
-		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(request.getZoneId())
-				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + request.getZoneId()));
+	public TableDto.TableResponse createTable(TableDto.TableRequest request, UUID currentUserId, String userRoles) {
+		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(request.zoneId())
+				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + request.zoneId()));
 
 		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
 		// Optional: enforce unique table number within zone
-		boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.getNumber());
+		boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.number());
 		if (exists) {
 			throw new IllegalArgumentException("Table number already exists in this zone");
 		}
 
 		DishTable dishTable = new DishTable();
 		dishTable.setZoneId(zone.getZoneId());
-		dishTable.setNumber(request.getNumber());
-		dishTable.setSeats(request.getSeats());
-		dishTable.setStatus(request.getStatus());
-		dishTable.setClosed(request.getClosed() != null ? request.getClosed() : false);
+		dishTable.setNumber(request.number());
+		dishTable.setSeats(request.seats());
+		dishTable.setStatus(request.status());
+		dishTable.setClosed(request.closed() != null ? request.closed() : false);
 		dishTable.setDeleted(false);
 
 		DishTable saved = tableRepository.save(dishTable);
@@ -81,7 +80,7 @@ public class TableServiceImpl implements TableService {
 
 	@Override
 	@Transactional
-	public TableResponse updateTable(UUID tableId, TableRequest request, UUID currentUserId, String userRoles) {
+	public TableDto.TableResponse updateTable(UUID tableId, TableDto.TableRequest request, UUID currentUserId, String userRoles) {
 		DishTable dishTable = tableRepository.findByTableIdAndDeletedFalse(tableId)
 				.orElseThrow(() -> new ResourceNotFoundException("Table not found"));
 
@@ -91,12 +90,12 @@ public class TableServiceImpl implements TableService {
 		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
 		// Optional: if number changes, check uniqueness
-		if (!dishTable.getNumber().equals(request.getNumber())) {
-			boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.getNumber());
+		if (!dishTable.getNumber().equals(request.number())) {
+			boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.number());
 			if (exists) {
 				throw new IllegalArgumentException("Table number already exists in this zone");
 			}
-			dishTable.setNumber(request.getNumber());
+			dishTable.setNumber(request.number());
 		}
 
 		tableMapper.updateEntityFromRequest(request, dishTable);
@@ -122,7 +121,7 @@ public class TableServiceImpl implements TableService {
 	}
 
 	@Override
-	public List<TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to) {
+	public List<TableDto.TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to) {
 		List<DishTable> dishTables = tableRepository.findAllByZoneIdAndDeletedFalseAndClosedFalse(zoneId);
 
 		return dishTables.stream()

@@ -3,9 +3,8 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.TableResponse;
-import com.tuttime.restaurant.dto.ZoneRequest;
-import com.tuttime.restaurant.dto.ZoneResponse;
+import com.tuttime.restaurant.dto.TableDto;
+import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.TableService;
@@ -44,11 +43,11 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@GetMapping("/{zoneId}")
-	public ResponseEntity<ApiRes<ZoneResponse>> getZoneById(
+	public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> getZoneById(
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
 
-		ZoneResponse zone = zoneService.getZoneById(zoneId);
+		ZoneDto.ZoneResponse zone = zoneService.getZoneById(zoneId);
 		return ResponseEntity.ok(ApiRes.success(zone));
 	}
 
@@ -60,9 +59,9 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PostMapping
-	public ResponseEntity<ApiRes<ZoneResponse>> createZone(
+	public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> createZone(
 			@Parameter(description = "Zone creation payload", required = true)
-			@Valid @RequestBody ZoneRequest request) {
+			@Valid @RequestBody ZoneDto.ZoneRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -70,7 +69,7 @@ public class ZoneController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		ZoneResponse created = zoneService.createZone(request, currentUserId, userRoles);
+		ZoneDto.ZoneResponse created = zoneService.createZone(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -82,11 +81,11 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@PutMapping("/{zoneId}")
-	public ResponseEntity<ApiRes<ZoneResponse>> updateZone(
+	public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> updateZone(
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId,
 			@Parameter(description = "Updated zone details", required = true)
-			@Valid @RequestBody ZoneRequest request) {
+			@Valid @RequestBody ZoneDto.ZoneRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -94,7 +93,7 @@ public class ZoneController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		ZoneResponse updated = zoneService.updateZone(zoneId, request, currentUserId, userRoles);
+		ZoneDto.ZoneResponse updated = zoneService.updateZone(zoneId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -125,11 +124,11 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@GetMapping("/{zoneId}/tables")
-	public ResponseEntity<ApiRes<List<TableResponse>>> getTablesInZone(
+	public ResponseEntity<ApiRes<List<TableDto.TableResponse>>> getTablesInZone(
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
 
-		List<TableResponse> tables = tableService.getTablesByZoneId(zoneId);
+		List<TableDto.TableResponse> tables = tableService.getTablesByZoneId(zoneId);
 		return ResponseEntity.ok(ApiRes.success(tables));
 	}
 
@@ -137,7 +136,7 @@ public class ZoneController {
 
 	@Operation(summary = "Get available tables in a zone for a time range")
 	@GetMapping("/{zoneId}/available")
-	public ResponseEntity<ApiRes<List<TableResponse>>> getAvailableTables(
+	public ResponseEntity<ApiRes<List<TableDto.TableResponse>>> getAvailableTables(
 			@PathVariable UUID zoneId,
 			@RequestParam
 			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T14:00:00+02:00)", required = true)
@@ -148,7 +147,7 @@ public class ZoneController {
 			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 			OffsetDateTime to) {
 
-		List<TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
+		List<TableDto.TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
 		return ResponseEntity.ok(ApiRes.success(availableTables));
 	}
 }

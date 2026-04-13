@@ -1,8 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.BranchRequest;
-import com.tuttime.restaurant.dto.BranchResponse;
+import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.BranchMapper;
@@ -36,9 +35,9 @@ public class BranchServiceImpl implements BranchService {
 	private final ScheduleService scheduleService;
 
 	@Override
-	public BranchResponse createBranch(BranchRequest request, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(request.getRestaurantId())
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + request.getRestaurantId()));
+	public BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, UUID currentUserId, String userRoles) {
+		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(request.restaurantId())
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + request.restaurantId()));
 
 		restaurantStaffService.validatePermissions(restaurant.getRestaurantId(), currentUserId, userRoles);
 
@@ -51,14 +50,14 @@ public class BranchServiceImpl implements BranchService {
 	}
 
 	@Override
-	public BranchResponse getBranchById(UUID branchId) {
+	public BranchDto.BranchResponse getBranchById(UUID branchId) {
 		Branch entity = branchRepository.findByBranchIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new EntityNotFoundException("Branch not found: " + branchId));
 		return branchMapper.toResponse(entity);
 	}
 
 	@Override
-	public Page<BranchResponse> findAllBranches(UUID restaurantId, int page, int size) {
+	public Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Branch> branchPage;
 
@@ -72,7 +71,7 @@ public class BranchServiceImpl implements BranchService {
 	}
 
 	@Override
-	public BranchResponse updateBranch(UUID branchId, BranchRequest request, UUID currentUserId, String userRoles) {
+	public BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, UUID currentUserId, String userRoles) {
 		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + branchId));
 
@@ -83,8 +82,8 @@ public class BranchServiceImpl implements BranchService {
 		branchMapper.updateEntityFromRequest(request, branch);
 
 		// Manual mapping for the PostGIS Point
-		if (request.getLongitude() != null && request.getLatitude() != null) {
-			branch.setLocation(createPoint(request.getLongitude(), request.getLatitude()));
+		if (request.longitude() != null && request.latitude() != null) {
+			branch.setLocation(createPoint(request.longitude(), request.latitude()));
 		}
 
 		// No need for .save(branch) - Hibernate dirty checking handles it

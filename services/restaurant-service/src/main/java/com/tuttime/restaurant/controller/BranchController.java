@@ -3,9 +3,8 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.BranchRequest;
-import com.tuttime.restaurant.dto.BranchResponse;
-import com.tuttime.restaurant.dto.ZoneResponse;
+import com.tuttime.restaurant.dto.BranchDto;
+import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,11 +40,11 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}")
-	public ResponseEntity<ApiRes<BranchResponse>> getBranchById(
+	public ResponseEntity<ApiRes<BranchDto.BranchResponse>> getBranchById(
 			@Parameter(description = "UUID of the branch to retrieve", required = true)
 			@PathVariable UUID branchId) {
 
-		BranchResponse branch = branchService.getBranchById(branchId);
+		BranchDto.BranchResponse branch = branchService.getBranchById(branchId);
 		return ResponseEntity.ok(ApiRes.success(branch));
 	}
 
@@ -56,9 +55,9 @@ public class BranchController {
 			@ApiResponse(responseCode = "403", description = "Access denied")
 	})
 	@PostMapping
-	public ResponseEntity<ApiRes<BranchResponse>> createBranch(
+	public ResponseEntity<ApiRes<BranchDto.BranchResponse>> createBranch(
 			@Parameter(description = "Branch creation payload", required = true)
-			@Valid @RequestBody BranchRequest request) {
+			@Valid @RequestBody BranchDto.BranchRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -66,7 +65,7 @@ public class BranchController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		BranchResponse created = branchService.createBranch(request, currentUserId, userRoles);
+		BranchDto.BranchResponse created = branchService.createBranch(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -78,11 +77,11 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@PutMapping("/{branchId}")
-	public ResponseEntity<ApiRes<BranchResponse>> updateBranch(
+	public ResponseEntity<ApiRes<BranchDto.BranchResponse>> updateBranch(
 			@Parameter(description = "UUID of the branch to update", required = true)
 			@PathVariable UUID branchId,
 			@Parameter(description = "Updated branch details", required = true)
-			@Valid @RequestBody BranchRequest request) {
+			@Valid @RequestBody BranchDto.BranchRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -90,7 +89,7 @@ public class BranchController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		BranchResponse updated = branchService.updateBranch(branchId, request, currentUserId, userRoles);
+		BranchDto.BranchResponse updated = branchService.updateBranch(branchId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
@@ -121,11 +120,11 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}/zones")
-	public ResponseEntity<ApiRes<List<ZoneResponse>>> getZonesByBranch(
+	public ResponseEntity<ApiRes<List<ZoneDto.ZoneResponse>>> getZonesByBranch(
 			@Parameter(description = "UUID of the branch", required = true)
 			@PathVariable UUID branchId) {
 
-		List<ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
+		List<ZoneDto.ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
 		return ResponseEntity.ok(ApiRes.success(zones));
 	}
 
