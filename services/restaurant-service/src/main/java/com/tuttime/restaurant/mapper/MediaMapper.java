@@ -1,7 +1,6 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.MediaRequest;
-import com.tuttime.restaurant.dto.MediaResponse;
+import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
@@ -13,9 +12,9 @@ import org.mapstruct.ReportingPolicy;
 		unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface MediaMapper {
 
-	MediaResponse toResponse(Media entity);
+	MediaDto.MediaResponse toResponse(Media entity);
 
-	Media toEntity(MediaRequest request);
+	Media toEntity(MediaDto.MediaRequest request);
 
-	void updateEntityFromRequest(MediaRequest request, @MappingTarget Media entity);
+	void updateEntityFromRequest(MediaDto.MediaRequest request, @MappingTarget Media entity);
 }

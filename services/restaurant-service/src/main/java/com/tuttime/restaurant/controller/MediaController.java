@@ -3,8 +3,7 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.MediaRequest;
-import com.tuttime.restaurant.dto.MediaResponse;
+import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.service.MediaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,13 +35,13 @@ public class MediaController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{entityId}/{mediaType}")
-	public ResponseEntity<ApiRes<List<MediaResponse>>> getMediaForRestaurant(
+	public ResponseEntity<ApiRes<List<MediaDto.MediaResponse>>> getMediaForRestaurant(
 			@Parameter(description = "UUID of the entity", required = true)
 			@PathVariable UUID entityId,
 			@Parameter(description = "Type of the entity")
 			@PathVariable MediaType mediaType) {
 
-		List<MediaResponse> medias = mediaService.getMediaByEntity(entityId, mediaType);
+		List<MediaDto.MediaResponse> medias = mediaService.getMediaByEntity(entityId, mediaType);
 		return ResponseEntity.ok(ApiRes.success(medias));
 	}
 
@@ -54,9 +53,9 @@ public class MediaController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ApiRes<MediaResponse>> addMediaToRestaurant(
+	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> addMediaToRestaurant(
 			@Parameter(description = "details to create", required = true)
-			@Valid @RequestBody MediaRequest request,
+			@Valid @RequestBody MediaDto.MediaRequest request,
 			@RequestPart("file") MultipartFile file) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
@@ -65,7 +64,7 @@ public class MediaController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);
+		MediaDto.MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -77,11 +76,11 @@ public class MediaController {
 			@ApiResponse(responseCode = "404", description = "Media not found")
 	})
 	@PutMapping("/{mediaId}")
-	public ResponseEntity<ApiRes<MediaResponse>> updateMedia(
+	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> updateMedia(
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId,
 			@Parameter(description = "Updated media details", required = true)
-			@Valid @RequestBody MediaRequest request,
+			@Valid @RequestBody MediaDto.MediaRequest request,
 			@RequestPart("file") MultipartFile file) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
@@ -90,7 +89,7 @@ public class MediaController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MediaResponse updated = mediaService.updateMedia(mediaId, request, file, currentUserId, userRoles);
+		MediaDto.MediaResponse updated = mediaService.updateMedia(mediaId, request, file, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 

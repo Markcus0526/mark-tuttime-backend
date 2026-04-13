@@ -1,8 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.MediaRequest;
-import com.tuttime.restaurant.dto.MediaResponse;
+import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.mapper.MediaMapper;
@@ -35,7 +34,7 @@ public class MediaServiceImpl implements MediaService {
 	private final FileStorageService fileStorageService;
 
 	@Override
-	public List<MediaResponse> getMediaByEntity(UUID entityId, MediaType mediaType) {
+	public List<MediaDto.MediaResponse> getMediaByEntity(UUID entityId, MediaType mediaType) {
 		// If mediaType is null, the query returns all media for the entity
 		return mediaRepository.findAllByEntityIdAndOptionalMediaType(entityId, mediaType)
 				.stream()
@@ -46,11 +45,11 @@ public class MediaServiceImpl implements MediaService {
 
 	@Override
 // Remove @Transactional from the top level to avoid holding locks during file upload
-	public MediaResponse createMedia(MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
+	public MediaDto.MediaResponse createMedia(MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
 
 		// 1. Validation & Permissions (Read-only)
-		checkMedia(file, request.getMediaType());
-		restaurantStaffService.validatePermissions(request.getEntityId(), currentUserId, userRoles);
+		checkMedia(file, request.mediaType());
+		restaurantStaffService.validatePermissions(request.entityId(), currentUserId, userRoles);
 
 		// 2. File Storage (IO-intensive, keep outside transaction)
 		String storedFileUrl;
@@ -66,7 +65,7 @@ public class MediaServiceImpl implements MediaService {
 
 	// Extracted for cleaner transaction management
 	@Transactional
-	protected MediaResponse saveMediaRecord(MediaRequest request, String fileUrl) {
+	protected MediaDto.MediaResponse saveMediaRecord(MediaDto.MediaRequest request, String fileUrl) {
 		Media media = mediaMapper.toEntity(request); // Use your mapper
 		media.setUrl(fileUrl);
 		media.setDeleted(false);
@@ -84,7 +83,7 @@ public class MediaServiceImpl implements MediaService {
 	}
 
 	@Override
-	public MediaResponse updateMedia(UUID mediaId, MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
+	public MediaDto.MediaResponse updateMedia(UUID mediaId, MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
 		// 1. Fetch and Validate
 		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
 				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
@@ -96,7 +95,7 @@ public class MediaServiceImpl implements MediaService {
 
 		// 2. Handle File Update
 		if (file != null && !file.isEmpty()) {
-			checkMedia(file, request.getMediaType());
+			checkMedia(file, request.mediaType());
 			try {
 				newFileUrl = fileStorageService.storeFile(file);
 			} catch (IOException e) {
@@ -105,7 +104,7 @@ public class MediaServiceImpl implements MediaService {
 		}
 
 		// 3. Update DB Record (Atomic Transaction)
-		MediaResponse response = performUpdate(media, request, newFileUrl);
+		MediaDto.MediaResponse response = performUpdate(media, request, newFileUrl);
 
 		// 4. Cleanup: Delete old file if it was replaced
 		if (!newFileUrl.equals(oldFileUrl)) {
@@ -121,13 +120,13 @@ public class MediaServiceImpl implements MediaService {
 	}
 
 	@Transactional
-	protected MediaResponse performUpdate(Media media, MediaRequest request, String fileUrl) {
+	protected MediaDto.MediaResponse performUpdate(Media media, MediaDto.MediaRequest request, String fileUrl) {
 		// Sync request data to entity
 		mediaMapper.updateEntityFromRequest(request, media);
 		media.setUrl(fileUrl);
 
 		// Handle primary entity logic
-		if (Boolean.TRUE.equals(request.getPrimaryEntity())) {
+		if (Boolean.TRUE.equals(request.primaryEntity())) {
 			mediaRepository.updatePrimaryEntityByEntityTypeAndEntityIdAndDeletedFalse(media.getEntityId(), false);
 		}
 

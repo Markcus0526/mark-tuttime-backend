@@ -3,8 +3,7 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.ScheduleRequest;
-import com.tuttime.restaurant.dto.ScheduleResponse;
+import com.tuttime.restaurant.dto.ScheduleDto;
 import com.tuttime.restaurant.service.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,11 +35,11 @@ public class ScheduleController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{entityId}")
-	public ResponseEntity<ApiRes<List<ScheduleResponse>>> getSchedules(
+	public ResponseEntity<ApiRes<List<ScheduleDto.ScheduleResponse>>> getSchedules(
 			@Parameter(description = "UUID of the restaurant or branch", required = true)
 			@PathVariable UUID entityId) {
 
-		List<ScheduleResponse> schedules = scheduleService.getSchedules(entityId);
+		List<ScheduleDto.ScheduleResponse> schedules = scheduleService.getSchedules(entityId);
 		return ResponseEntity.ok(ApiRes.success(schedules));
 	}
 
@@ -52,9 +51,9 @@ public class ScheduleController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@PostMapping
-	public ResponseEntity<ApiRes<ScheduleResponse>> addSchedule(
+	public ResponseEntity<ApiRes<ScheduleDto.ScheduleResponse>> addSchedule(
 			@Parameter(description = "Schedule details to create", required = true)
-			@Valid @RequestBody ScheduleRequest request) {
+			@Valid @RequestBody ScheduleDto.ScheduleRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -62,7 +61,7 @@ public class ScheduleController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		ScheduleResponse created = scheduleService.createSchedule(request, currentUserId, userRoles);
+		ScheduleDto.ScheduleResponse created = scheduleService.createSchedule(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
@@ -74,11 +73,11 @@ public class ScheduleController {
 			@ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
 	})
 	@PutMapping("/{scheduleId}")
-	public ResponseEntity<ApiRes<ScheduleResponse>> updateSchedule(
+	public ResponseEntity<ApiRes<ScheduleDto.ScheduleResponse>> updateSchedule(
 			@Parameter(description = "UUID of the schedule to update", required = true)
 			@PathVariable UUID scheduleId,
 			@Parameter(description = "Updated schedule details", required = true)
-			@Valid @RequestBody ScheduleRequest request) {
+			@Valid @RequestBody ScheduleDto.ScheduleRequest request) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
@@ -86,7 +85,7 @@ public class ScheduleController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, request, currentUserId, userRoles);
+		ScheduleDto.ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 

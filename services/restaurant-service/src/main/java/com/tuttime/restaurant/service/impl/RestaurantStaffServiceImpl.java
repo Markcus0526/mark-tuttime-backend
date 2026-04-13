@@ -3,9 +3,7 @@ package com.tuttime.restaurant.service.impl;
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.UserValidResponse;
-import com.tuttime.restaurant.dto.StaffRequest;
-import com.tuttime.restaurant.dto.StaffResponse;
-import com.tuttime.restaurant.dto.StaffUpdateRequest;
+import com.tuttime.restaurant.dto.StaffDto;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.RestaurantStaff;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
@@ -35,7 +33,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 	private final UserGrpcClient userGrpClient;
 
 	@Override
-	public StaffResponse assignStaff(UUID restaurantId, StaffRequest request, UUID currentUserId, String userRoles) {
+	public StaffDto.StaffResponse assignStaff(UUID restaurantId, StaffDto.StaffRequest request, UUID currentUserId, String userRoles) {
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
 		boolean isManager = false;
@@ -73,7 +71,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
+	public List<StaffDto.StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 
@@ -92,7 +90,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 	}
 
 	@Override
-	public StaffResponse updateStaff(UUID restaurantId, UUID staffId, StaffUpdateRequest request, UUID currentUserId, String userRoles) {
+	public StaffDto.StaffResponse updateStaff(UUID restaurantId, UUID staffId, StaffDto.StaffUpdateRequest request, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 

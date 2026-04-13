@@ -1,8 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.ScheduleRequest;
-import com.tuttime.restaurant.dto.ScheduleResponse;
+import com.tuttime.restaurant.dto.ScheduleDto;
 import com.tuttime.restaurant.entity.Schedule;
 import com.tuttime.restaurant.mapper.ScheduleMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
@@ -29,7 +28,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	private final ScheduleMapper scheduleMapper;
 
 	@Override
-	public List<ScheduleResponse> getSchedules(UUID entityId) {
+	public List<ScheduleDto.ScheduleResponse> getSchedules(UUID entityId) {
 		return scheduleRepository.findAllByEntityId(entityId)
 				.stream()
 				.map(scheduleMapper::toResponse)
@@ -38,9 +37,9 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	@Transactional
-	public ScheduleResponse createSchedule(ScheduleRequest request, UUID currentUserId, String userRoles) {
+	public ScheduleDto.ScheduleResponse createSchedule(ScheduleDto.ScheduleRequest request, UUID currentUserId, String userRoles) {
 		// 1. Validation & Permissions (Read-only)
-		restaurantStaffService.validatePermissions(request.getEntityId(), currentUserId, userRoles);
+		restaurantStaffService.validatePermissions(request.entityId(), currentUserId, userRoles);
 
 		// 3. Database Save (Atomic transaction)
 		Schedule schedule = scheduleMapper.toEntity(request);
@@ -50,7 +49,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 	@Override
 	@Transactional
-	public ScheduleResponse updateSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles) {
+	public ScheduleDto.ScheduleResponse updateSchedule(UUID scheduleId, ScheduleDto.ScheduleRequest request, UUID currentUserId, String userRoles) {
 		Schedule schedule = scheduleRepository.findByScheduleIdAndDeletedFalse(scheduleId)
 				.orElseThrow(() -> new ResourceNotFoundException("Schedule not found: " + scheduleId));
 

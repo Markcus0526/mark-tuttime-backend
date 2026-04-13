@@ -1,7 +1,6 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.RestaurantRequest;
-import com.tuttime.restaurant.dto.RestaurantResponse;
+import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
@@ -16,10 +15,10 @@ public interface RestaurantMapper {
 
 	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
 	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
-	RestaurantResponse toResponse(Restaurant entity);
+	RestaurantDto.RestaurantResponse toResponse(Restaurant entity);
 
-	Restaurant toEntity(RestaurantRequest request);
+	Restaurant toEntity(RestaurantDto.RestaurantRequest request);
 
 	@Mapping(target = "location", ignore = true)
-	void updateEntityFromRequest(RestaurantRequest request, @MappingTarget Restaurant entity);
+	void updateEntityFromRequest(RestaurantDto.RestaurantRequest request, @MappingTarget Restaurant entity);
 }

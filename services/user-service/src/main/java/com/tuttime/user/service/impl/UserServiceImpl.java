@@ -222,7 +222,7 @@ public class UserServiceImpl implements UserService {
 
 			// Add Role Filter (joining roles table)
 			if (roleName != null && !roleName.isBlank()) {
-				predicates.add(cb.equal(root.join("roles").get("name"), roleName.toUpperCase()));
+				predicates.add(cb.equal(root.join("roles").join("role").get("name"), roleName.toUpperCase()));
 			}
 
 			return cb.and(predicates.toArray(new Predicate[0]));
