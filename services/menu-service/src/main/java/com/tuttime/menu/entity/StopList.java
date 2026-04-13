@@ -1,5 +1,6 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,7 +19,12 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class StopList extends BaseUuidEntity {
+public class StopList extends BaseTimeStampEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(name = "stop_list_id", nullable = false, updatable = false)
+	private UUID stopListId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "menu_item_id", nullable = false)

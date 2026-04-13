@@ -33,7 +33,7 @@ public class StopListServiceImpl implements StopListService {
 				.orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
 
 		// 2. Check if already on stop list for this branch to avoid duplicates
-		stopListRepository.findByMenuItemIdAndBranchId(request.menuItemId(), request.branchId())
+		stopListRepository.findByMenuItem_MenuItemIdAndBranchId(request.menuItemId(), request.branchId())
 				.ifPresent(s -> {
 					throw new ConflictException("Item already on stop list");
 				});
@@ -78,8 +78,8 @@ public class StopListServiceImpl implements StopListService {
 
 	private StopListDto.StopListResponse mapToResponse(StopList s) {
 		return new StopListDto.StopListResponse(
-				s.getId(),
-				s.getMenuItem().getId(),
+				s.getStopListId(),
+				s.getMenuItem().getMenuItemId(),
 				s.getMenuItem().getName(), // Crucial for Frontend UI
 				s.getBranchId(),
 				s.getStartDate(),

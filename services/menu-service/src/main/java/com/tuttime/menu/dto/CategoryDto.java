@@ -12,6 +12,7 @@ public class CategoryDto {
 	// Request payload for creating/updating a category
 	@Schema(description = "Category request details")
 	public record CategoryRequest(
+
 			@NotNull(message = "Branch ID is required")
 			UUID branchId,
 
@@ -27,7 +28,8 @@ public class CategoryDto {
 	// Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
 	@Schema(description = "Category response details")
 	public record CategoryResponse(
-			UUID id,
+
+			UUID menuCategoryId,
 
 			UUID branchId,
 

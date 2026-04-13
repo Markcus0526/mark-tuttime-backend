@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface DiscountRepository extends JpaRepository<Discount, UUID> {
-	List<Discount> findByReferenceIdAndIsActiveTrue(UUID referenceId);
+	List<Discount> findByReferenceIdAndActiveTrue(UUID referenceId);
 }

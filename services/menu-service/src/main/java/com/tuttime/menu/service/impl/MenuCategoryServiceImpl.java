@@ -1,7 +1,7 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.auth.security.UserContext;
-import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.menu.dto.CategoryDto;
 import com.tuttime.menu.dto.FullMenuDto;
@@ -12,7 +12,6 @@ import com.tuttime.menu.mapper.FullMenuMapper;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.service.MenuCategoryService;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;

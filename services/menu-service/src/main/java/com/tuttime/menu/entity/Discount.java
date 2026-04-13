@@ -1,8 +1,8 @@
 package com.tuttime.menu.entity;
 
-import com.tuttime.common.entity.BaseUuidEntity;
-import com.tuttime.menu.enums.AppliesTo;
-import com.tuttime.menu.enums.DiscountType;
+import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.menu.entity.enums.AppliesTo;
+import com.tuttime.menu.entity.enums.DiscountType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
@@ -21,7 +21,12 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Discount extends BaseUuidEntity {
+public class Discount extends BaseTimeStampEntity {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(name = "discount_id", nullable = false, updatable = false)
+	private UUID discountId;
 
 	@Column(nullable = false)
 	private String name;
@@ -48,7 +53,7 @@ public class Discount extends BaseUuidEntity {
 	@Column(name = "end_date")
 	private OffsetDateTime endDate;
 
-	@Column(name = "is_active")
+	@Column(name = "active")
 	@Builder.Default
-	private Boolean isActive = true;
+	private Boolean active = true;
 }

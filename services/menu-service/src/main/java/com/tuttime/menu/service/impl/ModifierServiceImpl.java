@@ -116,7 +116,7 @@ public class ModifierServiceImpl implements ModifierService {
 
 	private ModifierGroupDto.ModifierGroupResponse mapToGroupResponse(ModifierGroup group) {
 		return new ModifierGroupDto.ModifierGroupResponse(
-				group.getId(),
+				group.getModifierGroupId(),
 				group.getName(),
 				group.getDescription(),
 				group.getMinSelect(),
@@ -129,7 +129,7 @@ public class ModifierServiceImpl implements ModifierService {
 
 	private ModifierDto.ModifierResponse mapToModifierResponse(Modifier m) {
 		return new ModifierDto.ModifierResponse(
-				m.getId(),
+				m.getModifierId(),
 				m.getName(),
 				m.getDescription(),
 				m.getPriceAdjustment()

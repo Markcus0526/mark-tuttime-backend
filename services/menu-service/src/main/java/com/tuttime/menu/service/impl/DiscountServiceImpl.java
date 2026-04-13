@@ -43,7 +43,7 @@ public class DiscountServiceImpl implements DiscountService {
 		existing.setReferenceId(request.referenceId());
 		existing.setStartDate(request.startDate());
 		existing.setEndDate(request.endDate());
-		existing.setIsActive(request.isActive() != null ? request.isActive() : existing.getIsActive());
+		existing.setActive(request.active() != null ? request.active() : existing.getActive());
 
 		return discountMapper.toResponse(discountRepository.save(existing));
 	}
@@ -63,7 +63,7 @@ public class DiscountServiceImpl implements DiscountService {
 
 		// Logic: Find all discounts for this ID that are marked active
 		// and where 'now' is between start and end dates (handling null dates as "always")
-		return discountRepository.findByReferenceIdAndIsActiveTrue(referenceId)
+		return discountRepository.findByReferenceIdAndActiveTrue(referenceId)
 				.stream()
 				.filter(d -> (d.getStartDate() == null || d.getStartDate().isBefore(now)))
 				.filter(d -> (d.getEndDate() == null || d.getEndDate().isAfter(now)))

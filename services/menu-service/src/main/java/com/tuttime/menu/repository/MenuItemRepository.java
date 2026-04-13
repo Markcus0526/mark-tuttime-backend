@@ -17,7 +17,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 	/**
 	 * Finds all items belonging to a specific category.
 	 */
-	List<MenuItem> findByCategoryId(UUID categoryId);
+	List<MenuItem> findByCategory_MenuCategoryId(UUID categoryId, Sort sort);
 
 	/**
 	 * Efficiently fetches a single menu item with all its modifier groups
@@ -26,16 +26,13 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 	@Query("SELECT mi FROM MenuItem mi " +
 			"LEFT JOIN FETCH mi.modifierGroups mg " +
 			"LEFT JOIN FETCH mg.modifiers " +
-			"WHERE mi.id = :id")
-	Optional<MenuItem> findByIdWithModifiers(@Param("id") UUID id);
+			"WHERE mi.menuItemId = :menuItemId")
+	Optional<MenuItem> findByIdWithModifiers(@Param("menuItemId") UUID menuItemId);
 
 	/**
 	 * Finds all available items for a specific category.
 	 */
-	List<MenuItem> findByCategoryIdAndIsAvailableTrue(UUID categoryId);
+	List<MenuItem> findByCategory_MenuCategoryIdAndAvailableTrue(UUID categoryId);
 
-	// Accepts Sort (e.g., Sort.by("price").ascending())
-	List<MenuItem> findByCategoryId(UUID categoryId, Sort sort);
-
-	List<MenuItem> findByCategoryIdOrderByPriorityAsc(UUID categoryId);
+	List<MenuItem> findByCategory_MenuCategoryIdOrderByPriorityAsc(UUID categoryId);
 }

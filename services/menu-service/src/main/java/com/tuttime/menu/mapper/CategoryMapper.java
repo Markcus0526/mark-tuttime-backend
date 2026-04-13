@@ -32,17 +32,17 @@ public interface CategoryMapper {
 		if (entity.getItems() != null) {
 			itemSummaries = entity.getItems().stream()
 					.map(item -> new MenuItemDto.MenuItemResponseSummary(
-							item.getId(),
+							item.getMenuItemId(),
 							item.getName(),
 							item.getPrice(),
-							item.getIsAvailable(),
+							item.getAvailable(),
 							item.getPriority()
 					))
 					.collect(Collectors.toList());
 		}
 
 		return new CategoryDto.CategoryResponse(
-				entity.getId(),
+				entity.getMenuCategoryId(),
 				entity.getBranchId(),
 				entity.getName(),
 				entity.getDescription(),

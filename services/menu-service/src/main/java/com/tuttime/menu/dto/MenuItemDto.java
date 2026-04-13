@@ -13,8 +13,9 @@ public class MenuItemDto {
 
 	@Schema(description = "Menu Item request details")
 	public record MenuItemRequest(
+
 			@Schema(description = "The category this dish belongs to", example = "550e8400-e29b-41d4-a716-446655440000")
-			@NotNull UUID categoryId,
+			@NotNull UUID menuCategoryId,
 
 			@Schema(description = "Dish name displayed to customer", example = "Bacon Double Cheeseburger")
 			@NotBlank String name,
@@ -26,29 +27,29 @@ public class MenuItemDto {
 			@NotNull @DecimalMin("0.00") BigDecimal price,
 
 			@Schema(description = "If false, prevents customer selection", example = "true")
-			Boolean isAvailable
+			Boolean available
 	) {
 	}
 
 	// Detailed response with all groups and modifiers (for item selection in Flutter)
 	@Schema(description = "Menu Item response details")
 	public record MenuItemDetailedResponse(
-			UUID id,
-			UUID categoryId,
+			UUID menuItemId,
+			UUID menuCategoryId,
 			String name,
 			String description,
 			BigDecimal price,
-			Boolean isAvailable,
+			Boolean available,
 			List<ModifierGroupDto.ModifierGroupResponse> modifierGroups
 	) {
 	}
 
 	// Compact summary response (for basic list rendering)
 	public record MenuItemResponseSummary(
-			UUID id,
+			UUID menuItemId,
 			String name,
 			BigDecimal price,
-			Boolean isAvailable,
+			Boolean available,
 			Integer priority
 	) {
 	}

@@ -74,10 +74,10 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 			// 2. Access the MenuItemCategory relationships
 			for (MenuItem menuItem : category.getItems()) {
 				// Skip if the item is not available
-				if (!menuItem.getIsAvailable()) continue;
+				if (!menuItem.getAvailable()) continue;
 
 				MenuItemDetail.Builder itemBuilder = MenuItemDetail.newBuilder()
-						.setMenuItemId(menuItem.getId().toString())
+						.setMenuItemId(menuItem.getMenuItemId().toString())
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
 						.setBasePrice(menuItem.getPrice().doubleValue())
