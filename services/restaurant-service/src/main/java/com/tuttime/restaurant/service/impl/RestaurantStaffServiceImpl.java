@@ -6,11 +6,14 @@ import com.tuttime.common.proto.UserValidResponse;
 import com.tuttime.restaurant.dto.StaffRequest;
 import com.tuttime.restaurant.dto.StaffResponse;
 import com.tuttime.restaurant.dto.StaffUpdateRequest;
-import com.tuttime.restaurant.entity.*;
+import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.entity.RestaurantStaff;
+import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.mapper.RestaurantStaffMapper;
-import com.tuttime.restaurant.repository.*;
-import com.tuttime.restaurant.service.*;
-import com.tuttime.restaurant.grpc.client.*;
+import com.tuttime.restaurant.repository.BranchRepository;
+import com.tuttime.restaurant.repository.RestaurantRepository;
+import com.tuttime.restaurant.repository.RestaurantStaffRepository;
+import com.tuttime.restaurant.service.RestaurantStaffService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -132,7 +135,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 	}
 
 	@Override
-	public boolean validateAdmin(UUID currentUserId) {
+	public boolean validateAdminAccess(UUID currentUserId) {
 		if (currentUserId == null) return false;
 
 		UserValidResponse response = userGrpClient.validateUserById(currentUserId);
@@ -142,31 +145,80 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 		return true;
 	}
 
+	/**
+	 * Shared helper to validate if a user can manage a specific restaurant
+	 */
 	@Override
-	public boolean validateRestaurantOwner(UUID restaurantId, UUID currentUserId) {
-		if (restaurantId == null || currentUserId == null) return false;
+	public void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles) {
+		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
 
-		restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+		if (!validateRestaurantOwner(restaurantId, currentUserId)) {
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		}
+	}
+
+	/**
+	 * Shared helper to validate if a user can manage a specific branch
+	 */
+	@Override
+	public void validateBranchAccess(UUID branchId, UUID currentUserId, String userRoles) {
+		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
+
+		// Check if entity is a Branch
+		var branch = branchRepository.findByBranchIdAndDeletedFalse(branchId)
+				.orElseThrow(() -> new AccessDeniedException("Entity not found or access denied."));
+		boolean isOwner = validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
+		if (isOwner) return;
+
+		boolean isManager = validateBranchManager(branchId, currentUserId);
+		if (!isManager) {
+			throw new AccessDeniedException("You do not have permission to manage this branch.");
+		}
+	}
+
+	@Override
+	public void validatePermissions(UUID entityId, UUID currentUserId, String userRoles) {
+		// Early exit for Admins
+		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
+
+		// Check if entity is a Restaurant
+		var restaurantOpt = restaurantRepository.findByRestaurantIdAndDeletedFalse(entityId);
+		if (restaurantOpt.isPresent()) {
+			if (!validateRestaurantOwner(entityId, currentUserId)) {
+				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+			}
+			return;
+		}
+
+		// Check if entity is a Branch
+		var branch = branchRepository.findByBranchIdAndDeletedFalse(entityId)
+				.orElseThrow(() -> new AccessDeniedException("Entity not found or access denied."));
+
+		boolean isOwner = validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
+		boolean isManager = isOwner || validateBranchManager(branch.getBranchId(), currentUserId);
+
+		if (!isManager) {
+			throw new AccessDeniedException("You do not have permission to manage this branch.");
+		}
+	}
+
+	private boolean validateRestaurantOwner(UUID restaurantId, UUID currentUserId) {
+		if (restaurantId == null || currentUserId == null) return false;
 
 		UserValidResponse response = userGrpClient.validateUserById(currentUserId);
 		if (!response.getIsValid() || !response.getRoles().contains(UserRoleKind.OWNER.name()))
-			throw new ResourceNotFoundException("Current User not found: " + currentUserId);
+			return false;
 
 		return staffRepository.existsByRestaurantIdAndUserIdAndRoleName(
 				restaurantId, currentUserId, UserRoleKind.OWNER.name());
 	}
 
-	@Override
-	public boolean validateBranchManager(UUID branchId, UUID currentUserId) {
+	private boolean validateBranchManager(UUID branchId, UUID currentUserId) {
 		if (branchId == null || currentUserId == null) return false;
-
-		branchRepository.findByBranchIdAndDeletedFalse(branchId)
-				.orElseThrow(() -> new ResourceNotFoundException("Current Branch not found: " + branchId));
 
 		UserValidResponse response = userGrpClient.validateUserById(currentUserId);
 		if (!response.getIsValid() || !response.getRoles().contains(UserRoleKind.MANAGER.name()))
-			throw new ResourceNotFoundException("Current User not found: " + currentUserId);
+			return false;
 
 		return staffRepository.existsByBranchIdAndUserIdAndRoleName(
 				branchId, currentUserId, UserRoleKind.MANAGER.name());

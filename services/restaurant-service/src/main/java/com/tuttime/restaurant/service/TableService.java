@@ -4,7 +4,6 @@ import com.tuttime.restaurant.dto.TableRequest;
 import com.tuttime.restaurant.dto.TableResponse;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -24,8 +23,6 @@ public interface TableService {
 	List<TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to);
 
 	TableStatus getTableCurrentStatus(UUID tableId);
-
-	void confirmReservation(UUID tableId, UUID reservationId, UUID currentUserId, String userRoles);
 
 	boolean deleteAllByZoneId(UUID zoneId);
 }

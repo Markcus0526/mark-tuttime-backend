@@ -2,7 +2,7 @@ package com.tuttime.restaurant.mapper;
 
 import com.tuttime.restaurant.dto.StaffRequest;
 import com.tuttime.restaurant.dto.StaffResponse;
-import com.tuttime.restaurant.entity.*;
+import com.tuttime.restaurant.entity.RestaurantStaff;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

@@ -15,7 +15,6 @@ import java.util.UUID;
 public class MediaResponse {
 
 	private UUID mediaId;
-	private String entityType; // RESTAURANT, BRANCH, ZONE, TABLE
 	private UUID entityId;
 	private String url;
 	private String altText;

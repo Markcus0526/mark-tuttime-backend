@@ -15,14 +15,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -124,21 +120,5 @@ public class TableController {
 
 		TableStatus status = tableService.getTableCurrentStatus(tableId);
 		return ResponseEntity.ok(ApiRes.success(status));
-	}
-
-	@Operation(summary = "Confirm or link a reservation to a table")
-	@PostMapping("/{tableId}/reservations/{reservationId}/confirm")
-	public ResponseEntity<ApiRes<Void>> confirmReservation(
-			@PathVariable UUID tableId,
-			@PathVariable UUID reservationId) {
-
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
-
-		tableService.confirmReservation(tableId, reservationId, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(null));
 	}
 }

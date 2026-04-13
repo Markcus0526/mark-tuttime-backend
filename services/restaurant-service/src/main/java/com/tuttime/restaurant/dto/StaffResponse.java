@@ -12,4 +12,5 @@ public record StaffResponse(
 		String roleName,
 		boolean active,
 		OffsetDateTime createdAt
-) {}
+) {
+}

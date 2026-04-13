@@ -1,7 +1,6 @@
 package com.tuttime.restaurant.grpc.client;
 
 import com.tuttime.common.proto.UserByIdRequest;
-import com.tuttime.common.proto.UserProfileResponse;
 import com.tuttime.common.proto.UserServiceGrpc;
 import com.tuttime.common.proto.UserValidResponse;
 import io.grpc.StatusRuntimeException;

@@ -8,23 +8,14 @@ import java.util.UUID;
 
 public interface ScheduleService {
 
-	List<ScheduleResponse> getSchedulesByRestaurantId(UUID restaurantId);
+	List<ScheduleResponse> getSchedules(UUID entityId);
 
-	ScheduleResponse createScheduleForRestaurant(UUID restaurantId, ScheduleRequest request, UUID currentUserId, String userRoles);
+	ScheduleResponse createSchedule(ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	ScheduleResponse updateRestaurantSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles);
+	ScheduleResponse updateSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles);
 
-	void deleteRestaurantSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
+	void deleteSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
 
-	void deleteAllByRestaurantId(UUID restaurantId);
+	void deleteAllByEntityId(UUID entityId);
 
-	List<ScheduleResponse> getSchedulesByBranchId(UUID branchId);
-
-	ScheduleResponse createScheduleForBranch(UUID branchId, ScheduleRequest request, UUID currentUserId, String userRoles);
-
-	ScheduleResponse updateBranchSchedule(UUID scheduleId, ScheduleRequest request, UUID currentUserId, String userRoles);
-
-	void deleteBranchSchedule(UUID scheduleId, UUID currentUserId, String userRoles);
-
-	void deleteAllByBranchId(UUID branchId);
 }

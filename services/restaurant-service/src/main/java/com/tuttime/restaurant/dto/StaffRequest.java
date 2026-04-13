@@ -17,4 +17,5 @@ public record StaffRequest(
 
 		@NotNull
 		boolean active
-) {}
+) {
+}

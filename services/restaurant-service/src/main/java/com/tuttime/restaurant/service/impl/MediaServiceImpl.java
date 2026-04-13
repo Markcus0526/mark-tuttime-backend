@@ -1,37 +1,26 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.dto.MediaRequest;
 import com.tuttime.restaurant.dto.MediaResponse;
-import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Media;
-import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.entity.enums.EntityType;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.mapper.MediaMapper;
-import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.MediaRepository;
-import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.service.FileStorageService;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.RestaurantStaffService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -40,113 +29,109 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class MediaServiceImpl implements MediaService {
 
-	private final RestaurantStaffService restaurantStaffService;
-	private final RestaurantRepository restaurantRepository;
-	private final BranchRepository branchRepository;
 	private final MediaRepository mediaRepository;
 	private final MediaMapper mediaMapper;
+	private RestaurantStaffService restaurantStaffService;
 	private final FileStorageService fileStorageService;
 
 	@Override
-	public List<MediaResponse> getMediaByEntity(EntityType entityType, UUID entityId) {
-		List<Media> medias = mediaRepository.findAllByEntityTypeAndEntityIdAndDeletedFalse(entityType, entityId);
-		return medias.stream()
+	public List<MediaResponse> getMediaByEntity(UUID entityId, MediaType mediaType) {
+		// If mediaType is null, the query returns all media for the entity
+		return mediaRepository.findAllByEntityIdAndOptionalMediaType(entityId, mediaType)
+				.stream()
 				.map(mediaMapper::toResponse)
-				.collect(Collectors.toList());
+				.toList(); // Simplified for Java 16+
 	}
 
+
 	@Override
-	@Transactional
+// Remove @Transactional from the top level to avoid holding locks during file upload
 	public MediaResponse createMedia(MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
-		if (request.getEntityType() == EntityType.RESTAURANT) {
-			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(request.getEntityId())
-					.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + request.getEntityId()));
 
-			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-			boolean isOwner = false;
-			if (!isAdmin) {
-				isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
-			}
-			if (!isAdmin && !isOwner) {
-				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-			}
-		} else if (request.getEntityType() == EntityType.BRANCH) {
-			Branch branch = branchRepository.findByBranchIdAndDeletedFalse(request.getEntityId())
-					.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + request.getEntityId()));
-
-			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-			boolean isOwner = false;
-			boolean isManager = false;
-			if (!isAdmin) {
-				isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-				if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-			}
-			if (!isAdmin && !isOwner && !isManager) {
-				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-			}
-		}
-
+		// 1. Validation & Permissions (Read-only)
 		checkMedia(file, request.getMediaType());
+		restaurantStaffService.validatePermissions(request.getEntityId(), currentUserId, userRoles);
 
+		// 2. File Storage (IO-intensive, keep outside transaction)
 		String storedFileUrl;
 		try {
 			storedFileUrl = fileStorageService.storeFile(file);
 		} catch (IOException e) {
-			throw new RuntimeException("Failed to store file", e);
+			throw new RuntimeException("Failed to store file: " + e.getMessage(), e);
 		}
 
-		Media media = new Media();
-		media.setEntityType(request.getEntityType());
-		media.setEntityId(request.getEntityId());
-		media.setUrl(storedFileUrl);
-		media.setAltText(request.getAltText());
-		media.setPrimaryEntity(request.getPrimaryEntity() != null ? request.getPrimaryEntity() : false);
-		media.setMediaType(request.getMediaType() != null ? request.getMediaType() : MediaType.IMAGE);
+		// 3. Database Save (Atomic transaction)
+		return saveMediaRecord(request, storedFileUrl);
+	}
+
+	// Extracted for cleaner transaction management
+	@Transactional
+	protected MediaResponse saveMediaRecord(MediaRequest request, String fileUrl) {
+		Media media = mediaMapper.toEntity(request); // Use your mapper
+		media.setUrl(fileUrl);
 		media.setDeleted(false);
 
-		Media saved = mediaRepository.save(media);
-		return mediaMapper.toResponse(saved);
+		// Set defaults if not handled by mapper/database
+		if (media.getPrimaryEntity() == null) media.setPrimaryEntity(false);
+		if (media.getMediaType() == null) media.setMediaType(MediaType.IMAGE);
+
+		// Handle primary toggle if necessary
+		if (Boolean.TRUE.equals(media.getPrimaryEntity())) {
+			mediaRepository.updatePrimaryEntityByEntityTypeAndEntityIdAndDeletedFalse(media.getEntityId(), false);
+		}
+
+		return mediaMapper.toResponse(mediaRepository.save(media));
 	}
 
 	@Override
-	@Transactional
-	public MediaResponse updateMedia(UUID mediaId, MediaRequest request, UUID currentUserId, String userRoles) {
+	public MediaResponse updateMedia(UUID mediaId, MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
+		// 1. Fetch and Validate
 		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
 				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
 
-		if (media.getEntityType() == EntityType.RESTAURANT) {
-			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(media.getEntityId())
-					.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + media.getEntityId()));
+		restaurantStaffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
 
-			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-			boolean isOwner = false;
-			if (!isAdmin) {
-				isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
-			}
-			if (!isAdmin && !isOwner) {
-				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-			}
-		} else if (media.getEntityType() == EntityType.BRANCH) {
-			Branch branch = branchRepository.findByBranchIdAndDeletedFalse(media.getEntityId())
-					.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + media.getEntityId()));
+		String oldFileUrl = media.getUrl();
+		String newFileUrl = oldFileUrl;
 
-			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-			boolean isOwner = false;
-			boolean isManager = false;
-			if (!isAdmin) {
-				isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-				if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-			}
-			if (!isAdmin && !isOwner && !isManager) {
-				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
+		// 2. Handle File Update
+		if (file != null && !file.isEmpty()) {
+			checkMedia(file, request.getMediaType());
+			try {
+				newFileUrl = fileStorageService.storeFile(file);
+			} catch (IOException e) {
+				throw new RuntimeException("Failed to upload new file", e);
 			}
 		}
 
-		mediaMapper.updateEntityFromRequest(request, media);
-		media.setUpdatedAt(Instant.now().atOffset(ZoneOffset.UTC));
+		// 3. Update DB Record (Atomic Transaction)
+		MediaResponse response = performUpdate(media, request, newFileUrl);
 
-		Media updated = mediaRepository.save(media);
-		return mediaMapper.toResponse(updated);
+		// 4. Cleanup: Delete old file if it was replaced
+		if (!newFileUrl.equals(oldFileUrl)) {
+			try {
+				fileStorageService.deleteFile(oldFileUrl);
+			} catch (Exception e) {
+				// Log warning but don't fail the request since DB update succeeded
+				log.warn("Failed to delete orphaned file: {}", oldFileUrl);
+			}
+		}
+
+		return response;
+	}
+
+	@Transactional
+	protected MediaResponse performUpdate(Media media, MediaRequest request, String fileUrl) {
+		// Sync request data to entity
+		mediaMapper.updateEntityFromRequest(request, media);
+		media.setUrl(fileUrl);
+
+		// Handle primary entity logic
+		if (Boolean.TRUE.equals(request.getPrimaryEntity())) {
+			mediaRepository.updatePrimaryEntityByEntityTypeAndEntityIdAndDeletedFalse(media.getEntityId(), false);
+		}
+
+		return mediaMapper.toResponse(mediaRepository.save(media));
 	}
 
 	@Override
@@ -155,87 +140,56 @@ public class MediaServiceImpl implements MediaService {
 		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
 				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
 
-		if (media.getEntityType() == EntityType.RESTAURANT) {
-			Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(media.getEntityId())
-					.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + media.getEntityId()));
+		// 1. Centralized permission check
+		restaurantStaffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
 
-			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-			boolean isOwner = false;
-			if (!isAdmin) {
-				isOwner = restaurantStaffService.validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
-			}
-			if (!isAdmin && !isOwner) {
-				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-			}
-		} else if (media.getEntityType() == EntityType.BRANCH) {
-			Branch branch = branchRepository.findByBranchIdAndDeletedFalse(media.getEntityId())
-					.orElseThrow(() -> new ResourceNotFoundException("Branch not found: " + media.getEntityId()));
-
-			boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-			boolean isOwner = false;
-			boolean isManager = false;
-			if (!isAdmin) {
-				isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-				if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-			}
-			if (!isAdmin && !isOwner && !isManager) {
-				throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-			}
-		}
-
-		// Soft delete
+		// 2. Soft delete
 		media.setDeleted(true);
 		mediaRepository.save(media);
+
+		// Optional: If you want to delete the actual file from storage,
+		// call fileStorageService.deleteFile(media.getUrl()) here.
 	}
 
 	@Override
-	public boolean deleteAllByEntityId(EntityType entityType, UUID entityId) {
-		mediaRepository.deleteAllByEntityTypeAndEntityId(entityType, entityId);
-		return true;
+	public void deleteAllByEntityId(UUID entityId) {
+		mediaRepository.deleteAllByEntityId(entityId);
 	}
 
 	@Override
-	public String getPrimarySvgMap(EntityType entityType, UUID entityId) {
-		Media media = mediaRepository.findFirstByEntityTypeAndEntityIdAndMediaTypeAndPrimaryEntityAndDeletedFalse(
-				entityType,
+	public String getMapCanvas(UUID entityId) {
+		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(
 				entityId,
-				MediaType.SVG,
-				true
-		).orElseThrow(() -> new IllegalArgumentException("Primary SVG map not found for entity: " + entityType + ", id: " + entityId));
+				MediaType.CANVAS
+		).orElseThrow(() -> new IllegalArgumentException("Primary SVG map not found for entity: " + entityId));
 
 		return media.getSvgContent();
 	}
 
-	// TODO
 	@Override
 	@Transactional
-	public void setOrUpdateSvgMap(EntityType entityType, UUID entityId, String svgContent, UUID currentUserId, String userRoles) {
-		Optional<Media> existingMapOpt = mediaRepository.findPrimaryMapByEntityAndDeletedFalse(entityType, entityId);
+	public void setOrUpdateMapCanvas(UUID entityId, String svgContent, UUID currentUserId, String userRoles) {
+		// 1. Centralized Permission Check (Reuse existing logic)
+		restaurantStaffService.validatePermissions(entityId, currentUserId, userRoles);
 
-		if (entityType == EntityType.RESTAURANT) {
+		// 2. Fetch existing primary map or create a new instance
+		Media media = mediaRepository.findPrimaryMapByEntityAndDeletedFalse(entityId)
+				.orElseGet(() -> {
+					Media newMedia = new Media();
+					newMedia.setEntityId(entityId);
+					newMedia.setMediaType(MediaType.CANVAS);
+					newMedia.setMapEntity(true);
+					newMedia.setDeleted(false);
+					return newMedia;
+				});
 
-		} else {
+		// 3. Update the content
+		media.setSvgContent(svgContent);
 
-		}
-
-		Media media;
-		Instant now = Instant.now();
-		if (existingMapOpt.isPresent()) {
-			media = existingMapOpt.get();
-			media.setSvgContent(svgContent);
-			media.setUpdatedAt(now.atOffset(ZoneOffset.UTC));
-		} else {
-			media = Media.builder()
-					.entityType(entityType)
-					.entityId(entityId)
-					.mediaType(MediaType.SVG) // SVG media type
-					.svgContent(svgContent)
-					.mapEntity(true)
-					.primaryEntity(true) // Mark as primary map if needed
-					.build();
-		}
+		// 4. Save (Hibernate handles Update vs Insert automatically)
 		mediaRepository.save(media);
 	}
+
 
 	private void checkMedia(MultipartFile file, MediaType mediaType) {
 		// Validate file size (e.g., max 5MB)
@@ -257,7 +211,7 @@ public class MediaServiceImpl implements MediaService {
 		List<String> allowedMimeTypes = switch (mediaType) {
 			case MediaType.IMAGE -> List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
 			case MediaType.VIDEO -> List.of("video/mp4", "video/webm", "video/ogg");
-			case MediaType.SVG -> List.of("image/svg+xml");
+			case MediaType.CANVAS -> List.of("image/canvas+xml");
 			default -> throw new IllegalArgumentException("Unsupported media type");
 		};
 
@@ -266,7 +220,7 @@ public class MediaServiceImpl implements MediaService {
 		}
 
 		// Optional: further validate SVG content if mediaType == SVG
-		if (mediaType == MediaType.SVG) {
+		if (mediaType == MediaType.CANVAS) {
 			try {
 				String svgContent = new String(file.getBytes(), StandardCharsets.UTF_8);
 				if (!isValidSvg(svgContent)) {

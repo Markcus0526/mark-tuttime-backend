@@ -1,15 +1,19 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.restaurant.dto.*;
-import com.tuttime.restaurant.entity.*;
-import com.tuttime.restaurant.entity.enums.*;
+import com.tuttime.restaurant.dto.TableRequest;
+import com.tuttime.restaurant.dto.TableResponse;
+import com.tuttime.restaurant.entity.DishTable;
+import com.tuttime.restaurant.entity.Zone;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.mapper.TableMapper;
-import com.tuttime.restaurant.repository.*;
-import com.tuttime.restaurant.service.*;
+import com.tuttime.restaurant.repository.BranchRepository;
+import com.tuttime.restaurant.repository.TableRepository;
+import com.tuttime.restaurant.repository.ZoneRepository;
+import com.tuttime.restaurant.service.MediaService;
+import com.tuttime.restaurant.service.RestaurantStaffService;
+import com.tuttime.restaurant.service.TableService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,19 +59,7 @@ public class TableServiceImpl implements TableService {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(request.getZoneId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + request.getZoneId()));
 
-		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
-				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
-
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
 		// Optional: enforce unique table number within zone
 		boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.getNumber());
@@ -96,19 +88,7 @@ public class TableServiceImpl implements TableService {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(dishTable.getZoneId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + dishTable.getZoneId()));
 
-		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
-				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
-
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
 		// Optional: if number changes, check uniqueness
 		if (!dishTable.getNumber().equals(request.getNumber())) {
@@ -119,12 +99,10 @@ public class TableServiceImpl implements TableService {
 			dishTable.setNumber(request.getNumber());
 		}
 
-		dishTable.setSeats(request.getSeats());
-		dishTable.setStatus(request.getStatus());
-		dishTable.setClosed(request.getClosed() != null ? request.getClosed() : dishTable.getClosed());
+		tableMapper.updateEntityFromRequest(request, dishTable);
 
-		DishTable updated = tableRepository.save(dishTable);
-		return tableMapper.toResponse(updated);
+		// No need for .save(dishTable) - Hibernate dirty checking handles it
+		return tableMapper.toResponse(dishTable);
 	}
 
 	@Override
@@ -136,19 +114,7 @@ public class TableServiceImpl implements TableService {
 		Zone zone = zoneRepository.findByZoneIdAndDeletedFalse(dishTable.getZoneId())
 				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Zone not found: " + dishTable.getZoneId()));
 
-		Branch branch = branchRepository.findByBranchIdAndDeletedFalse(zone.getBranchId())
-				.orElseThrow(() -> new com.tuttime.common.exception.ResourceNotFoundException("Branch not found: " + zone.getBranchId()));
-
-		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
-		boolean isOwner = false;
-		boolean isManager = false;
-		if (!isAdmin) {
-			isOwner = restaurantStaffService.validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-			if (!isOwner) isManager = restaurantStaffService.validateBranchManager(branch.getBranchId(), currentUserId);
-		}
-		if (!isAdmin && !isOwner && !isManager) {
-			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
-		}
+		restaurantStaffService.validatePermissions(zone.getBranchId(), currentUserId, userRoles);
 
 		// Soft delete
 		dishTable.setDeleted(true);
@@ -173,14 +139,6 @@ public class TableServiceImpl implements TableService {
 	}
 
 	@Override
-	public void confirmReservation(UUID tableId, UUID reservationId, UUID currentUserId, String userRoles) {
-		// This might be optional, e.g., store linkage or update local cache/state
-		// Possibly call Booking Service to confirm or just log it locally
-		// For example:
-		// bookingServiceClient.confirmReservation(reservationId, tableId);
-	}
-
-	@Override
 	public boolean deleteAllByZoneId(UUID zoneId) {
 		List<DishTable> dishTables = tableRepository.findAllByZoneIdAndDeletedFalse(zoneId);
 		if (dishTables.isEmpty()) {
@@ -188,7 +146,7 @@ public class TableServiceImpl implements TableService {
 		}
 
 		for (DishTable dishTable : dishTables) {
-			mediaService.deleteAllByEntityId(EntityType.TABLE, dishTable.getTableId());
+			mediaService.deleteAllByEntityId(dishTable.getTableId());
 		}
 
 		tableRepository.deleteAllByZoneId(zoneId);

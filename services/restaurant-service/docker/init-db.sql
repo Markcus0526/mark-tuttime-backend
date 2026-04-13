@@ -20,12 +20,8 @@ DO
 $$
 BEGIN
     IF
-NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'media_entity_type') THEN
-CREATE TYPE media_entity_type AS ENUM ('RESTAURANT', 'BRANCH', 'ZONE', 'TABLE');
-END IF;
-    IF
 NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'media_type_enum') THEN
-CREATE TYPE media_type_enum AS ENUM ('IMAGE', 'VIDEO', 'SVG');
+CREATE TYPE media_type_enum AS ENUM ('IMAGE', 'VIDEO', 'CANVAS');
 END IF;
     IF
 NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'table_status_enum') THEN
@@ -148,7 +144,6 @@ ON TABLE tables IS 'Individual dining tables linked to zones';
 CREATE TABLE medias
 (
     media_id       UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
-    entity_type    media_entity_type NOT NULL,
     entity_id      UUID              NOT NULL,
     url            VARCHAR(1024),
     alt_text       VARCHAR(255),
@@ -165,11 +160,11 @@ CREATE TABLE medias
 COMMENT
 ON TABLE medias IS 'Stores images, videos, and inline SVGs for floor plans';
 
--- 7. RESTAURANT_SCHEDULES
-CREATE TABLE restaurant_schedules
+-- 7. SCHEDULES
+CREATE TABLE schedules
 (
     schedule_id   UUID PRIMARY KEY  DEFAULT uuid_generate_v4(),
-    restaurant_id UUID     NOT NULL REFERENCES restaurants (restaurant_id) ON DELETE CASCADE,
+    entity_id UUID     NOT NULL,
     day_of_week   SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
     open_time     TIME WITHOUT TIME ZONE NOT NULL,
     close_time    TIME WITHOUT TIME ZONE NOT NULL,
@@ -181,30 +176,11 @@ CREATE TABLE restaurant_schedules
 );
 
 COMMENT
-ON TABLE restaurant_schedules IS 'General operating hours for the entire restaurant business';
-
--- 8. BRANCH_SCHEDULES
-CREATE TABLE branch_schedules
-(
-    schedule_id UUID PRIMARY KEY  DEFAULT uuid_generate_v4(),
-    branch_id   UUID     NOT NULL REFERENCES branches (branch_id) ON DELETE CASCADE,
-    day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
-    open_time   TIME WITHOUT TIME ZONE NOT NULL,
-    close_time  TIME WITHOUT TIME ZONE NOT NULL,
-    closed      BOOLEAN           DEFAULT FALSE NOT NULL,
-    deleted     BOOLEAN  NOT NULL DEFAULT FALSE,
-    deleted_at  TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP
-);
-
-COMMENT
-ON TABLE branch_schedules IS 'Specific operating hours per physical branch';
+ON TABLE schedules IS 'General operating hours for the entire restaurant or branch business';
 
 -- === INDEXES ===
 CREATE INDEX idx_staffs_user_id ON restaurant_staffs (user_id);
 CREATE INDEX idx_restaurants_geo ON restaurants USING GIST(location);
-CREATE INDEX idx_medias_lookup ON medias (entity_type, entity_id);
 
 -- === TRIGGERS ===
 CREATE TRIGGER trg_restaurants_upd
@@ -231,11 +207,7 @@ CREATE TRIGGER trg_medias_upd
     BEFORE UPDATE
     ON medias
     FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
-CREATE TRIGGER trg_res_schedules_upd
+CREATE TRIGGER trg_schedules_upd
     BEFORE UPDATE
-    ON restaurant_schedules
-    FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
-CREATE TRIGGER trg_br_schedules_upd
-    BEFORE UPDATE
-    ON branch_schedules
+    ON schedules
     FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
