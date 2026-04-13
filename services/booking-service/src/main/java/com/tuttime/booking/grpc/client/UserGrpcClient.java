@@ -15,20 +15,4 @@ public class UserGrpcClient {
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
-
-	/**
-	 * Fetches full profile details based on your SQL schema.
-	 * Used for Booking confirmation details.
-	 */
-	public UserProfileResponse getProfile(String userId) {
-		try {
-			UserByIdRequest request = UserByIdRequest.newBuilder()
-					.setUserId(userId)
-					.build();
-			return userServiceBlockingStub.getUserProfile(request);
-		} catch (StatusRuntimeException e) {
-			log.error("Failed to fetch profile for user {}: {}", userId, e.getStatus());
-			return null;
-		}
-	}
 }

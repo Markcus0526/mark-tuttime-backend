@@ -4,6 +4,8 @@ public sealed interface BaseEvent permits
 		UserEvent.ProfileUpdatedEvent,
 		UserEvent.SecurityEvent,
 
+		RestaurantEvent.StaffUpdatedEvent,
+
 		MenuEvent.MenuUpdatedEvent,
 
 		BookingEvent.BookingConfirmedEvent,

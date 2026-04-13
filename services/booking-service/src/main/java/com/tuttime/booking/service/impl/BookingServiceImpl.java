@@ -19,10 +19,10 @@ import com.tuttime.common.proto.MenuItemDetail;
 import com.tuttime.common.proto.TableInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.websocket.AuthenticationException;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -204,7 +204,7 @@ public class BookingServiceImpl implements BookingService {
 
 		// 1. Security Check: Ensure the user owns the booking
 		if (!booking.getUserId().equals(userId)) {
-			throw new AccessDeniedException("You are not authorized to cancel this booking");
+			throw new AuthenticationException("You are not authorized to cancel this booking");
 		}
 
 		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED

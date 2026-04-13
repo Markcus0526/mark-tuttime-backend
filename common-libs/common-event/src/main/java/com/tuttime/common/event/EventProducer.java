@@ -23,7 +23,7 @@ public class EventProducer {
 	public static final String TOPIC_USER_PROFILE_UPDATED = "tuttime.user.profile.updated";
 	public static final String TOPIC_USER_SECURITY_UPDATED = "tuttime.user.security.updated";
 
-	public static final String TOPIC_RESTAURANT = "tuttime.restaurant";
+	public static final String TOPIC_RESTAURANT_STAFF_UPDATED = "tuttime.restaurant.staff.updated";
 
 	public static final String TOPIC_MENU_UPDATED = "tuttime.menu.updated";
 
@@ -47,6 +47,11 @@ public class EventProducer {
 
 	public void sendUserSecurityEvent(UserEvent.SecurityEvent event) {
 		sendEvent(TOPIC_USER_SECURITY_UPDATED, event.userId().toString(), event);
+	}
+
+	// Restaurant Events Publisher
+	public void sendRestaurantStaffUpdatedEvent(RestaurantEvent.StaffUpdatedEvent event) {
+		sendEvent(TOPIC_RESTAURANT_STAFF_UPDATED, event.staffId().toString(), event);
 	}
 
 	// Booking Events Publisher
