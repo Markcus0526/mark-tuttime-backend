@@ -67,10 +67,13 @@ CREATE TABLE branches
 (
     branch_id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     restaurant_id UUID         NOT NULL REFERENCES restaurants (restaurant_id) ON DELETE CASCADE,
+    name          VARCHAR(255) NOT NULL,
+    description   TEXT,
     address       VARCHAR(512) NOT NULL,
     phone         VARCHAR(20),
     timezone      VARCHAR(50)  NOT NULL,
     location      GEOGRAPHY(POINT, 4326),
+    rating        NUMERIC(2, 1)         DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
     deleted       BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at    TIMESTAMPTZ,
     created_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,

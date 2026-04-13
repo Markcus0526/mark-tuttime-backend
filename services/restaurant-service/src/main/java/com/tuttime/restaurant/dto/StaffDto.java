@@ -30,6 +30,9 @@ public class StaffDto {
 			UUID restaurantId,
 			UUID branchId,
 			UUID userId,
+			String fullName,
+			String phoneNumber,
+			String email,
 			String roleName,
 			boolean active,
 			OffsetDateTime createdAt

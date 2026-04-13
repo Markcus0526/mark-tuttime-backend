@@ -17,23 +17,23 @@ public class TableDto {
 	@Schema(description = "Table request details")
 	public record TableRequest(
 
-		@NotNull(message = "Zone ID must not be null")
-		UUID zoneId,
+			@NotNull(message = "Zone ID must not be null")
+			UUID zoneId,
 
-		@NotBlank(message = "Table number must not be blank")
-		@Size(max = 50, message = "Table number must be at most 50 characters")
-		String number,
+			@NotBlank(message = "Table number must not be blank")
+			@Size(max = 50, message = "Table number must be at most 50 characters")
+			String number,
 
-		@NotNull(message = "Seats must not be null")
-		@Min(value = 1, message = "Seats must be at least 1")
-		Integer seats,
+			@NotNull(message = "Seats must not be null")
+			@Min(value = 1, message = "Seats must be at least 1")
+			Integer seats,
 
-		@Enumerated(EnumType.STRING)
-		@NotNull(message = "Table status is required")
-		TableStatus status,
+			@Enumerated(EnumType.STRING)
+			@NotNull(message = "Table status is required")
+			TableStatus status,
 
-		@NotNull(message = "closed must not be null")
-		Boolean closed
+			@NotNull(message = "closed must not be null")
+			Boolean closed
 	) {
 	}
 
@@ -41,14 +41,14 @@ public class TableDto {
 	@Schema(description = "Table request details")
 	public record TableResponse(
 
-		UUID tableId,
-		UUID zoneId,
-		String number,
-		int seats,
-		TableStatus status,
-		boolean closed,
-		OffsetDateTime createdAt,
-		OffsetDateTime updatedAt
+			UUID tableId,
+			UUID zoneId,
+			String number,
+			int seats,
+			TableStatus status,
+			boolean closed,
+			OffsetDateTime createdAt,
+			OffsetDateTime updatedAt
 	) {
 	}
 }
