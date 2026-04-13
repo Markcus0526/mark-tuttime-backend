@@ -12,6 +12,7 @@ import com.tuttime.menu.mapper.FullMenuMapper;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.service.MenuCategoryService;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -95,7 +96,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Override
 	public void validateBranchManager(UUID branchId) {
 		if (UserContext.getUserId() == null)
-			throw new BusinessException("You do not manage this specific restaurant or branch");
+			throw new AuthenticationException("You do not manage this specific restaurant or branch");
 
 		UUID currentUserId = UUID.fromString(UserContext.getUserId());
 
@@ -107,14 +108,14 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Override
 	public void validateMenuCategory(UUID id) {
 		if (UserContext.getUserId() == null)
-			throw new BusinessException("You do not manage this specific restaurant or branch");
+			throw new AuthenticationException("You do not manage this specific restaurant or branch");
 
 		if (UserContext.isRoleAdmin()) return;
 
 		boolean exists = categoryRepository.existsById(id);
 
 		if (!exists) {
-			throw new BusinessException("You do not manage this specific restaurant");
+			throw new AuthenticationException("You do not manage this specific restaurant");
 		}
 	}
 

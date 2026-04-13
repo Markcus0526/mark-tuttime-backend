@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.entity.User;
 import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.repository.UserRepository;
@@ -27,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		// Optional: Implement if needed for form login
-		throw new UsernameNotFoundException("Load by username not supported");
+		throw new ResourceNotFoundException("Load by username not supported");
 	}
 
 }

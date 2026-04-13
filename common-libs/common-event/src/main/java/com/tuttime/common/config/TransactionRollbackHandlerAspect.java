@@ -1,5 +1,6 @@
 package com.tuttime.common.config;
 
+import com.tuttime.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -54,7 +55,7 @@ public class TransactionRollbackHandlerAspect {
 
 				// Re-throw as TransactionSystemException with more context
 				// The calling code should handle this appropriately
-				throw new TransactionSystemException(
+				throw new BusinessException(
 						"Transaction failed due to rollback-only status. " +
 								"This usually indicates a nested transaction failure was caught and not properly handled. " +
 								"Method: " + methodName, e);
@@ -103,7 +104,7 @@ public class TransactionRollbackHandlerAspect {
 				}
 
 				// Re-throw as TransactionSystemException with more context
-				throw new TransactionSystemException(
+				throw new BusinessException(
 						"Transaction failed due to rollback-only status. " +
 								"This usually indicates a nested transaction failure was caught and not properly handled. " +
 								"Method: " + methodName, e);

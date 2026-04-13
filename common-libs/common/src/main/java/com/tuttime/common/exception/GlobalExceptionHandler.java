@@ -1,549 +1,122 @@
 package com.tuttime.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.nio.file.AccessDeniedException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Global Exception Handler: handles exceptions globally and returns consistent error responses with correlation ID and error codes.
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
 	private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
 
-	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
-			ResourceNotFoundException ex, HttpServletRequest request) {
+	/**
+	 * 1. Helper: The "Single Source of Truth" for creating responses.
+	 */
+	private ResponseEntity<ErrorResponse> createErrorResponse(
+			HttpStatus status, String errorCode, String message,
+			HttpServletRequest request, Map<String, Object> details) {
 
 		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		// Resource not found is a controlled exception - no stack trace needed
-		log.error("Resource not found: correlationId={}, message={}, path={}",
-				correlationId, ex.getMessage(), path);
 
 		ErrorResponse error = ErrorResponse.builder()
 				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.NOT_FOUND.value())
-				.error("Resource Not Found")
-				.errorCode(ErrorCodes.RESOURCE_NOT_FOUND)
-				.message(ex.getMessage())
-				.path(path)
+				.status(status.value())
+				.error(status.getReasonPhrase())
+				.errorCode(errorCode)
+				.message(message)
+				.path(request.getRequestURI())
 				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
+				.traceId(MDC.get("traceId")) // Works with Micrometer/Sleuth
+				.details(details)
 				.build();
 
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.NOT_FOUND)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(BusinessException.class)
-	public ResponseEntity<ErrorResponse> handleBusinessException(
-			BusinessException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		String messageKey = ex.getMessageKey();
-		if (messageKey == null) {
-			messageKey = generateMessageKey(ex.getMessage());
-		}
-
-		// For BusinessException, log without stack trace (it's a controlled exception)
-		// Business exceptions are expected and don't need stack traces
-		log.error("Business exception: correlationId={}, messageKey={}, message={}, path={}",
-				correlationId, messageKey, ex.getMessage(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.BAD_REQUEST.value())
-				.error("Business Rule Violation")
-				.errorCode(ErrorCodes.BUSINESS_RULE_VIOLATION)
-				.messageKey(messageKey)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.headers(headers)
+		return ResponseEntity.status(status)
+				.header(CORRELATION_ID_HEADER, correlationId)
 				.body(error);
 	}
 
 	/**
-	 * Generates a message key from error message (fallback for backward compatibility).
+	 * 2. Business Logic Conflict (Your ConflictException fix)
 	 */
-	private String generateMessageKey(String message) {
-		if (message == null || message.trim().isEmpty()) {
-			return CommonMessageKeys.UNKNOWN_ERROR;
-		}
-
-		// Convert message to key format: uppercase, replace spaces/special chars with underscores
-		String key = message.toUpperCase()
-				.replaceAll("[^A-Z0-9]", "_")
-				.replaceAll("_{2,}", "_")
-				.replaceAll("^_|_$", "");
-
-		// If key is empty or too short, return unknown
-		if (key.isEmpty() || key.length() < 3) {
-			return CommonMessageKeys.UNKNOWN_ERROR;
-		}
-
-		return key;
-	}
-
-	@ExceptionHandler(ValidationException.class)
-	public ResponseEntity<ErrorResponse> handleValidationException(
-			ValidationException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		// Validation exceptions are controlled - no stack trace needed
-		log.error("Validation exception: correlationId={}, message={}, path={}",
-				correlationId, ex.getMessage(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.BAD_REQUEST.value())
-				.error("Validation Failed")
-				.errorCode(ErrorCodes.VALIDATION_FAILED)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ErrorResponse> handleValidationExceptions(
-			MethodArgumentNotValidException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		Map<String, Object> details = new HashMap<>();
-		ex.getBindingResult().getAllErrors().forEach((error) -> {
-			String fieldName = ((FieldError) error).getField();
-			String errorMessage = error.getDefaultMessage();
-			details.put(fieldName, errorMessage);
-		});
-
-		// Validation failures are controlled - no stack trace needed
-		log.error("Validation failed: correlationId={}, fields={}, path={}",
-				correlationId, details.keySet(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.BAD_REQUEST.value())
-				.error("Validation Failed")
-				.errorCode(ErrorCodes.VALIDATION_FAILED)
-				.message("Request validation failed")
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.details(details)
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(AuthenticationException.class)
-	public ResponseEntity<ErrorResponse> handleAuthenticationException(
-			AuthenticationException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		// Authentication failures are controlled - no stack trace needed
-		log.error("Authentication failed: correlationId={}, message={}, path={}",
-				correlationId, ex.getMessage(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.UNAUTHORIZED.value())
-				.error("Unauthorized")
-				.errorCode(ErrorCodes.UNAUTHORIZED)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(AuthorizationException.class)
-	public ResponseEntity<ErrorResponse> handleAuthorizationException(
-			AuthorizationException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		// Authorization failures are controlled - no stack trace needed
-		log.error("Authorization failed: correlationId={}, message={}, path={}",
-				correlationId, ex.getMessage(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.FORBIDDEN.value())
-				.error("Forbidden")
-				.errorCode(ErrorCodes.FORBIDDEN)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.FORBIDDEN)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(RateLimitExceededException.class)
-	public ResponseEntity<ErrorResponse> handleRateLimitExceededException(
-			RateLimitExceededException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		log.warn("Rate limit exceeded: correlationId={}, message={}, retryAfter={}, path={}",
-				correlationId, ex.getMessage(), ex.getRetryAfterSeconds(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.TOO_MANY_REQUESTS.value())
-				.error("Too Many Requests")
-				.errorCode(ErrorCodes.TOO_MANY_REQUESTS)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		headers.add("Retry-After", String.valueOf(ex.getRetryAfterSeconds()));
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(ServiceUnavailableException.class)
-	public ResponseEntity<ErrorResponse> handleServiceUnavailableException(
-			ServiceUnavailableException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		// Service unavailable - include shortened stack trace (first 3 lines)
-		String stackTraceSummary = StackTraceUtil.getStackTraceSummary(ex, 3);
-		log.error("Service unavailable: correlationId={}, serviceName={}, message={}, path={}{}",
-				correlationId, ex.getServiceName(), ex.getMessage(), path,
-				stackTraceSummary.isEmpty() ? "" : ", stackTrace=" + stackTraceSummary);
-
-		Map<String, Object> details = new HashMap<>();
-		details.put("serviceName", ex.getServiceName());
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.SERVICE_UNAVAILABLE.value())
-				.error("Service Unavailable")
-				.errorCode(ErrorCodes.SERVICE_UNAVAILABLE)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.details(details)
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
-			HttpMessageNotReadableException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		String message = ex.getMessage();
-		String userFriendlyMessage = "Invalid request body format. Please ensure the request is valid JSON and Content-Type is application/json.";
-
-		if (message != null) {
-			if (message.contains("I/O error while reading input message")) {
-				userFriendlyMessage = "Failed to read request body. Please check that the request is complete and properly formatted.";
-			} else if (message.contains("JSON parse error") || message.contains("Unexpected character")) {
-				userFriendlyMessage = "Invalid JSON format. Please check your request body syntax.";
-			} else if (message.contains("Required request body is missing")) {
-				userFriendlyMessage = "Request body is required but was not provided.";
-			}
-		}
-
-		log.warn("Invalid request body: correlationId={}, message={}, path={}",
-				correlationId, message, path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.BAD_REQUEST.value())
-				.error("Bad Request")
-				.errorCode(ErrorCodes.VALIDATION_FAILED)
-				.message(userFriendlyMessage)
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(IllegalArgumentException.class)
-	public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-			IllegalArgumentException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		log.warn("Illegal argument: correlationId={}, message={}, path={}",
-				correlationId, ex.getMessage(), path);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.BAD_REQUEST.value())
-				.error("Bad Request")
-				.errorCode(ErrorCodes.BUSINESS_RULE_VIOLATION)
-				.message(ex.getMessage())
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(RuntimeException.class)
-	public ResponseEntity<ErrorResponse> handleRuntimeException(
-			RuntimeException ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		String message = ex.getMessage();
-		if (message == null || message.isEmpty()) {
-			message = "An unexpected error occurred: " + ex.getClass().getSimpleName();
-		}
-
-		// For runtime exceptions, include shortened stack trace (first 5 lines)
-		String stackTraceSummary = StackTraceUtil.getStackTraceSummary(ex, 5);
-		log.error("Runtime exception: correlationId={}, message={}, path={}, stackTrace={}",
-				correlationId, message, path, stackTraceSummary);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-				.error("Internal Server Error")
-				.errorCode(ErrorCodes.INTERNAL_SERVER_ERROR)
-				.message(message)
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.headers(headers)
-				.body(error);
-	}
-
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleGenericException(
-			Exception ex, HttpServletRequest request) {
-
-		String correlationId = getCorrelationId(request);
-		String path = request.getRequestURI();
-
-		String message = ex.getMessage();
-		if (message == null || message.isEmpty()) {
-			message = "An unexpected error occurred: " + ex.getClass().getSimpleName();
-		}
-
-		// For unexpected errors, include shortened stack trace (first 5 lines)
-		String stackTraceSummary = StackTraceUtil.getStackTraceSummary(ex, 5);
-		log.error("Unexpected error: correlationId={}, message={}, path={}, stackTrace={}",
-				correlationId, message, path, stackTraceSummary);
-
-		ErrorResponse error = ErrorResponse.builder()
-				.timestamp(OffsetDateTime.now(ZoneOffset.UTC))
-				.status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-				.error("Internal Server Error")
-				.errorCode(ErrorCodes.INTERNAL_SERVER_ERROR)
-				.message(message)
-				.path(path)
-				.correlationId(correlationId)
-				.traceId(MDC.get("traceId"))
-				.build();
-
-		HttpHeaders headers = new HttpHeaders();
-		if (correlationId != null) {
-			headers.add(CORRELATION_ID_HEADER, correlationId);
-		}
-
-		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.headers(headers)
-				.body(error);
-	}
-
-	/// new added
-	@ExceptionHandler(BadCredentialsException.class)
-	public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
-		return errorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password");
-	}
-
-	@ExceptionHandler(SecurityException.class)
-	public ResponseEntity<Map<String, String>> handleSecurityException(SecurityException ex) {
-		return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
-	}
-
-	@ExceptionHandler(AccessDeniedException.class)
-	public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
-		return errorResponse(HttpStatus.FORBIDDEN, "Access denied");
-	}
-
-	@ExceptionHandler(ConstraintViolationException.class)
-	public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
-		Map<String, String> errors = new HashMap<>();
-		ex.getConstraintViolations().forEach(violation -> {
-			String path = violation.getPropertyPath().toString();
-			errors.put(path.substring(path.lastIndexOf('.') + 1), violation.getMessage());
-		});
-		return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
-	}
-
 	@ExceptionHandler(ConflictException.class)
-	public ResponseEntity<?> handleConflict(ConflictException ex) {
-		return errorResponse(HttpStatus.CONFLICT, ex.getMessage());
+	public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
+		log.warn("Business Conflict [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.CONFLICT,
+				ErrorCodes.BUSINESS_RULE_VIOLATION,
+				ex.getMessage(),
+				request,
+				null);
 	}
 
-	@ExceptionHandler(BadRequestException.class)
-	public ResponseEntity<?> handleBadRequest(BadRequestException ex) {
-		return errorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-	}
-
-	@ExceptionHandler(EntityNotFoundException.class)
-	public ResponseEntity<?> handleEntityNotFound(EntityNotFoundException ex) {
-		return errorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-	}
-
-	@ExceptionHandler(OptimisticLockingFailureException.class)
-	public ResponseEntity<?> handleConflict(OptimisticLockingFailureException ex) {
-		return errorResponse(HttpStatus.CONFLICT, "The service was updated by someone else. Please refresh and try again.");
-	}
-
-	private ResponseEntity<Map<String, String>> errorResponse(HttpStatus status, String message) {
-		Map<String, String> error = new HashMap<>();
-		error.put("error", message);
-		return new ResponseEntity<>(error, new HttpHeaders(), status);
-	}
-	
 	/**
-	 * Extracts correlation ID from request header or MDC context.
+	 * 3. Validation Errors (DTO @Valid)
 	 */
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+		log.error("Validation failed [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.BAD_REQUEST,
+				ErrorCodes.VALIDATION_FAILED,
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	/**
+	 * 4. Resource Not Found
+	 */
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+		log.error("Not Found [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.NOT_FOUND,
+				ErrorCodes.RESOURCE_NOT_FOUND,
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	/**
+	 * 5. Security / Unauthorized (Catching generic Security exceptions)
+	 */
+	@ExceptionHandler({AuthenticationException.class})
+	public ResponseEntity<ErrorResponse> handleSecurity(Exception ex, HttpServletRequest request) {
+		log.error("Security violation [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.UNAUTHORIZED,
+				ErrorCodes.UNAUTHORIZED,
+				"Access denied",
+				request,
+				null);
+	}
+
+	/**
+	 * 6. The Catch-All (Avoids leaking raw stack traces to users)
+	 */
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> handleGlobal(Exception ex, HttpServletRequest request) {
+		log.error("UNEXPECTED ERROR [{}]: ", getCorrelationId(request), ex); // Log full stack trace for devs
+		return createErrorResponse(
+				HttpStatus.INTERNAL_SERVER_ERROR,
+				"INTERNAL_SERVER_ERROR",
+				ex.getMessage(),
+				request,
+				null);
+	}
+
 	private String getCorrelationId(HttpServletRequest request) {
-		if (request != null) {
-			String correlationId = request.getHeader(CORRELATION_ID_HEADER);
-			if (correlationId != null && !correlationId.isEmpty()) {
-				return correlationId;
-			}
-		}
-		return MDC.get("correlationId");
+		String id = request.getHeader(CORRELATION_ID_HEADER);
+		return (id != null) ? id : MDC.get("correlationId"); // Fallback to MDC
 	}
 }
-

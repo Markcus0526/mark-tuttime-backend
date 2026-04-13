@@ -24,7 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
-@Tag(name = "Categories", description = "Endpoints for managing top-level menu groupings and bulk menu fetches")
+@Tag(name = "Menu Categories", description = "Endpoints for managing top-level menu groupings and bulk menu fetches")
 public class CategoryController {
 
 	private final MenuCategoryService categoryService;
@@ -58,7 +58,7 @@ public class CategoryController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping("/branch/{branchId}")
+	@GetMapping("/branches/{branchId}")
 	@Operation(summary = "Get categories by branch")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
@@ -69,7 +69,7 @@ public class CategoryController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping("/branch/{branchId}/full-menu")
+	@GetMapping("/branches/{branchId}/full-menu")
 	@Operation(summary = "Master Endpoint: Fetch complete branch menu")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Full menu tree retrieved",

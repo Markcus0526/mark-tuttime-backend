@@ -3,6 +3,7 @@ package com.tuttime.order.service.impl;
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.OrderEvent;
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.order.dto.OrderRequest;
 import com.tuttime.order.dto.OrderResponse;
@@ -98,7 +99,7 @@ public class OrderServiceImpl implements OrderService {
 
 		// 2. Business Rule: Cannot modify order if already being prepared
 		if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.ACCEPTED) {
-			throw new IllegalStateException("Order content cannot be modified once preparation has started.");
+			throw new ConflictException("Order content cannot be modified once preparation has started.");
 		}
 
 		// 3. Clear existing items (JPA orphanRemoval will delete them from DB)
@@ -176,7 +177,7 @@ public class OrderServiceImpl implements OrderService {
 
 		// Business Rule: Cannot cancel if food is already being served
 		if (order.getStatus() == OrderStatus.SERVED || order.getStatus() == OrderStatus.COMPLETED) {
-			throw new IllegalStateException("Order cannot be canceled in its current state.");
+			throw new ConflictException("Order cannot be canceled in its current state.");
 		}
 
 		OrderStatus oldStatus = order.getStatus();
@@ -199,7 +200,7 @@ public class OrderServiceImpl implements OrderService {
 
 		// Business Rule check
 		if (order.getStatus() != OrderStatus.CREATED) {
-			throw new IllegalStateException("Cannot remove items after order is accepted");
+			throw new ConflictException("Cannot remove items after order is accepted");
 		}
 
 		// Find and remove the specific item
@@ -223,11 +224,11 @@ public class OrderServiceImpl implements OrderService {
 
 		// 2. Validate State
 		if (order.getStatus() != OrderStatus.CREATED) {
-			throw new IllegalStateException("Order is in " + order.getStatus() + " state and cannot be paid.");
+			throw new ConflictException("Order is in " + order.getStatus() + " state and cannot be paid.");
 		}
 
 		if (order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-			throw new IllegalStateException("Cannot checkout an empty or zero-amount order.");
+			throw new ConflictException("Cannot checkout an empty or zero-amount order.");
 		}
 
 		// 3. Logic: Integrate with Payment Service here (e.g., via Stripe/Braintree)

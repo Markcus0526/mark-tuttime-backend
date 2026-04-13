@@ -1,5 +1,7 @@
 package com.tuttime.common.exception;
 
+import lombok.Getter;
+
 /**
  * Business exception for handling business rule violations.
  *
@@ -15,7 +17,14 @@ package com.tuttime.common.exception;
  * throw new BusinessException("Phone number is required", "PHONE_NUMBER_REQUIRED");
  * </pre>
  */
+@Getter
 public class BusinessException extends RuntimeException {
+	/**
+	 * -- GETTER --
+	 *  Gets the message key for internationalization.
+	 *
+	 * @return Message key (e.g., "PHONE_NUMBER_REQUIRED") or null if not provided
+	 */
 	private final String messageKey;
 
 	/**
@@ -63,12 +72,4 @@ public class BusinessException extends RuntimeException {
 		this.messageKey = messageKey;
 	}
 
-	/**
-	 * Gets the message key for internationalization.
-	 *
-	 * @return Message key (e.g., "PHONE_NUMBER_REQUIRED") or null if not provided
-	 */
-	public String getMessageKey() {
-		return messageKey;
-	}
 }

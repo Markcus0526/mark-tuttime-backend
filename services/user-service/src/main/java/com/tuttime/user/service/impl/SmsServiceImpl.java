@@ -1,5 +1,7 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.user.config.SmsProperties;
 import com.tuttime.user.service.SmsService;
 import com.twilio.Twilio;
@@ -57,7 +59,7 @@ public class SmsServiceImpl implements SmsService {
 			case "log" -> log.info("[SMS LOG] To: {}, Message: {}", toPhoneNumber, message);
 			default -> {
 				log.error("No valid SMS provider configured. SMS not sent.");
-				throw new IllegalStateException("No valid SMS provider configured.");
+				throw new MethodArgumentNotValidException("No valid SMS provider configured.");
 			}
 		}
 	}
@@ -72,7 +74,7 @@ public class SmsServiceImpl implements SmsService {
 			log.info("Sent SMS via Twilio to {}", toPhoneNumber);
 		} catch (Exception e) {
 			log.error("Failed to send SMS via Twilio", e);
-			throw new RuntimeException("Failed to send SMS via Twilio", e);
+			throw new BusinessException("Failed to send SMS via Twilio", e);
 		}
 	}
 
@@ -100,11 +102,11 @@ public class SmsServiceImpl implements SmsService {
 				log.info("Sent SMS via GreenSMS to {}", toPhoneNumber);
 			} else {
 				log.error("Failed to send SMS via GreenSMS. Status: {}, Response: {}", response.statusCode(), response.body());
-				throw new RuntimeException("Failed to send SMS via GreenSMS");
+				throw new BusinessException("Failed to send SMS via GreenSMS");
 			}
 		} catch (Exception e) {
 			log.error("Exception while sending SMS via GreenSMS", e);
-			throw new RuntimeException("Failed to send SMS via GreenSMS", e);
+			throw new BusinessException("Failed to send SMS via GreenSMS", e);
 		}
 	}
 }

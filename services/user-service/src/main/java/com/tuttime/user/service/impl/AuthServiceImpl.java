@@ -1,7 +1,9 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ConflictException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.dto.*;
 import com.tuttime.user.entity.*;
@@ -51,11 +53,11 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new ResourceNotFoundException("Either phone number or email must be provided");
+			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
 		}
 
 		if (!StringUtils.hasText(phoneNumber) && StringUtils.hasText(email) && !StringUtils.hasText(password)) {
-			throw new ResourceNotFoundException("Password must be provided");
+			throw new MethodArgumentNotValidException("Password must be provided");
 		}
 
 		// Check if user already exists by phone or email
@@ -109,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
 		String password = request.getPassword();
 
 		if (!StringUtils.hasText(identifier)) {
-			throw new ResourceNotFoundException("Either phone number or email must be provided");
+			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
 		}
 
 		String phoneNumber = null;
@@ -120,19 +122,19 @@ public class AuthServiceImpl implements AuthService {
 			phoneNumber = identifier;
 
 		if (!StringUtils.hasText(phoneNumber) && StringUtils.hasText(email) && !StringUtils.hasText(password)) {
-			throw new ResourceNotFoundException("Password must be provided");
+			throw new MethodArgumentNotValidException("Password must be provided");
 		}
 
 		Optional<User> userOpt = userRepository.findByPhoneNumberOrEmail(phoneNumber, email);
 		if (userOpt.isEmpty()) {
-			throw new ResourceNotFoundException("Either phone number or email not registered");
+			throw new MethodArgumentNotValidException("Either phone number or email not registered");
 		}
 
 		User user = userOpt.get();
 
 		// Check user status
 		if (!user.getStatus().equals(UserStatus.ACTIVE)) {
-			throw new SecurityException("User account is not active");
+			throw new AuthenticationException("User account is not active");
 		}
 
 		// Check auth method and verify password
@@ -141,12 +143,12 @@ public class AuthServiceImpl implements AuthService {
 					.orElseThrow(() -> new SecurityException("Authentication method not found"));
 
 			if (!passwordEncoder.matches(request.getPassword(), authMethod.getCredential())) {
-				throw new SecurityException("Invalid credentials");
+				throw new AuthenticationException("Invalid credentials");
 			}
 
 			// Check verification
 			if (!authMethod.isVerified()) {
-				throw new SecurityException("User not verified");
+				throw new AuthenticationException("User not verified");
 			}
 		}
 
@@ -188,7 +190,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public AuthResponse refreshJwtToken(String refreshToken) {
 		if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-			throw new SecurityException("Invalid refresh token");
+			throw new AuthenticationException("Invalid refresh token");
 		}
 		UUID userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken);
 		User user = userRepository.findById(userId)
@@ -224,7 +226,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new IllegalArgumentException("Either phone number or email must be provided");
+			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
 		}
 
 		// Check if user already exists by phone or email
@@ -263,16 +265,16 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new IllegalArgumentException("Either phone number or email must be provided");
+			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
 		}
 		if (!StringUtils.hasText(code)) {
-			throw new IllegalArgumentException("OTP code must be provided");
+			throw new MethodArgumentNotValidException("OTP code must be provided");
 		}
 
 		String target = StringUtils.hasText(phoneNumber) ? phoneNumber : email;
 		// Step 1: Verify OTP
 		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, code)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid or expired OTP code"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Invalid or expired OTP code"));
 
 		// Step 2: Mark OTP as used
 		otpCode.setUsed(true);
@@ -353,13 +355,13 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(email)) {
-			throw new IllegalArgumentException("Email must be provided");
+			throw new MethodArgumentNotValidException("Email must be provided");
 		}
 		if (!StringUtils.hasText(newPassword)) {
-			throw new IllegalArgumentException("Password must be provided");
+			throw new MethodArgumentNotValidException("Password must be provided");
 		}
 		if (!StringUtils.hasText(code)) {
-			throw new IllegalArgumentException("OTP code must be provided");
+			throw new MethodArgumentNotValidException("OTP code must be provided");
 		}
 
 		// Step 1: Verify OTP

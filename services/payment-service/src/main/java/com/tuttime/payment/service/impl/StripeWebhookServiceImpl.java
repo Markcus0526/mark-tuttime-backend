@@ -6,6 +6,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PaymentEvent;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
@@ -44,7 +45,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 			event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
 		} catch (SignatureVerificationException e) {
 			log.error("Stripe signature verification failed: {}", e.getMessage());
-			throw new IllegalArgumentException("Invalid signature");
+			throw new MethodArgumentNotValidException("Invalid signature");
 		}
 
 		// 2. IDEMPOTENCY CHECK (Exactly-once processing)

@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.user.config.EmailProperties;
 import com.tuttime.user.service.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,7 @@ public class EmailServiceImpl implements EmailService {
 			log.info("Sent email to {}", toEmail);
 		} catch (Exception e) {
 			log.error("Failed to send email to {}", toEmail, e);
-			throw new RuntimeException("Failed to send email", e);
+			throw new BusinessException("Failed to send email", e);
 		}
 	}
 

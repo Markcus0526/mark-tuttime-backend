@@ -14,7 +14,7 @@ public interface RestaurantStaffService {
 
 	void removeStaff(UUID restaurantId, UUID staffId, UUID currentUserId, String userRoles);
 
-	boolean validateAdminAccess(UUID currentUserId);
+	void validateAdminAccess(UUID currentUserId);
 
 	void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles);
 

@@ -1,5 +1,6 @@
 package com.tuttime.gateway.config;
 
+import com.tuttime.common.exception.BusinessException;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
@@ -151,11 +152,11 @@ public class RateLimitingConfig {
 			if (useSentinel) {
 				log.error("Please ensure Redis Sentinel is running and accessible. Master: {}, Nodes: {}",
 						sentinelMaster, sentinelNodes);
-				throw new RuntimeException("Failed to connect to Redis Sentinel for rate limiting. Please check Redis Sentinel configuration and ensure it is running.", e);
+				throw new BusinessException("Failed to connect to Redis Sentinel for rate limiting. Please check Redis Sentinel configuration and ensure it is running.", e);
 			} else {
 				log.error("Please ensure Redis is running and accessible. Host: {}, Port: {}",
 						redisHost, redisPort);
-				throw new RuntimeException("Failed to connect to Redis for rate limiting. Please check Redis configuration and ensure it is running.", e);
+				throw new BusinessException("Failed to connect to Redis for rate limiting. Please check Redis configuration and ensure it is running.", e);
 			}
 		}
 	}
