@@ -33,7 +33,7 @@ public class RestaurantGrpcClient {
 
 		AvailableTableResponse response = restaurantServiceBlockingStub.checkAvailableTableForBooking(request);
 
-		if (!response.getIsAvailable()) {
+		if (!response.getAvailable()) {
 			throw new ConflictException("You do not reserve this specific booking");
 		}
 	}

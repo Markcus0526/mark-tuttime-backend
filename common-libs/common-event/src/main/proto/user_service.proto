@@ -11,19 +11,19 @@ option java_outer_classname = "UserServiceProto";
 // User Service gRPC
 service UserService {
   // Synchronous call for Gateway and Services to validate a user
-  rpc ValidateUserToken (ValidateUserRequest) returns (UserContextResponse);
+  rpc ValidateUserToken (ValidateTokenRequest) returns (ValidateTokenResponse);
 
   // Fetch basic profile info for display in Reviews/Bookings
   rpc GetUserProfile (UserByIdRequest) returns (UserProfileResponse);
 
-  rpc GetUserById (UserByIdRequest) returns (UserResponse);
-
   rpc ValidateUserById (UserByIdRequest) returns (UserValidResponse);
+
+  rpc GetUserProfiles (UserByIdsRequest) returns (UserProfilesResponse);
 
 }
 
 // REQUESTS
-message ValidateUserRequest {
+message ValidateTokenRequest {
   string jwt_token = 1;
 }
 
@@ -31,7 +31,7 @@ message UserByIdRequest {
   string user_id = 1;
 }
 
-message UserContextResponse {
+message ValidateTokenResponse {
   string user_id = 1;
   string email = 2;
   string roles = 3;
@@ -39,7 +39,7 @@ message UserContextResponse {
 }
 
 message UserProfileResponse {
-  string id = 1;
+  string user_id = 1;
   string phone_number = 2;
   string email = 3;
   string full_name = 4;
@@ -57,25 +57,15 @@ message UserProfileResponse {
   google.protobuf.Timestamp updated_at = 23;
 }
 
-message UserResponse {
-  string id = 1;
-  string phone_number = 2;
-  string email = 3;
-  string full_name = 4;
-  string status = 5;
-  string roles = 6;
-
-  // Relationships
-  double latitude = 11;           // Latitude for location-based features
-  double longitude = 12;          // Longitude for location-based features
-
-  google.protobuf.Timestamp last_login = 21;
-  google.protobuf.Timestamp created_at = 22;
-  google.protobuf.Timestamp updated_at = 23;
-
-}
-
 message UserValidResponse {
   string roles = 1;
-  bool is_valid = 2;
+  bool valid = 2;
+}
+
+message UserByIdsRequest {
+  repeated string userIds = 1;
+}
+
+message UserProfilesResponse {
+  repeated UserProfileResponse profiles = 1;
 }

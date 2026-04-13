@@ -10,15 +10,13 @@ option java_outer_classname = "RestaurantServiceProto";
 // Restaurant Service gRPC
 service RestaurantService {
 
-  rpc validateBranch (BranchRequest) returns (BranchResponse);
+  rpc ValidateBranch (BranchRequest) returns (BranchResponse);
 
-  rpc checkAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
+  rpc CheckAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
 
   rpc getTablesForBooking (SlotAvailabilityRequest) returns (TableListResponse);
 
-  rpc VerifyOwnerAndGetRestaurantIdForUser (OwnerVerificationRequest) returns (OwnerVerificationResponse);
-
-  rpc GetStaffByRestaurantForUser (StaffRequest) returns (StaffListResponse);
+  rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
 
 }
 
@@ -42,7 +40,7 @@ message AvailableTableRequest {
 }
 
 message AvailableTableResponse {
-  bool is_available = 1;
+  bool available = 1;
   int32 seats = 2;
 }
 
@@ -64,31 +62,17 @@ message TableInfo {
   string zone_name = 3;
   int32 min_capacity = 4;
   int32 max_capacity = 5;
-  bool is_active = 6;
+  bool active = 6;
 }
 
-message OwnerVerificationRequest {
+message StaffUserRequest {
   string user_id = 1;
 }
 
-message OwnerVerificationResponse {
-  bool is_owner = 1;
-  string restaurant_id = 2;
-}
-
-message StaffRequest {
+message StaffUserResponse {
   string restaurant_id = 1;
-  optional string branch_id = 2; // Optional: if filtering for a specific branch
-}
-
-message StaffListResponse {
-  repeated StaffMember users = 1;
-}
-
-message StaffMember {
-  string user_id = 1;
-  string name = 2;
-  string email = 3;
-  string role = 4; // e.g., "MANAGER", "WAITER", "CHEF"
-  optional string branch_name = 5;
+  string branch_id = 2; // Optional, can be empty string
+  string entity_name = 3;
+  string role_name = 4;
+  bool active = 5;
 }
