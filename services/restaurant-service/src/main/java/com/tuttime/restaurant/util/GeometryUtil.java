@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.util;
 
 import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -53,12 +54,12 @@ public class GeometryUtil {
 	 */
 	public static void validateLatitude(BigDecimal latitude) {
 		if (latitude == null) {
-			throw new BusinessException("Latitude is required");
+			throw new MethodArgumentNotValidException("Latitude is required");
 		}
 
 		if (latitude.compareTo(BigDecimal.valueOf(-90)) < 0 ||
 				latitude.compareTo(BigDecimal.valueOf(90)) > 0) {
-			throw new BusinessException(
+			throw new MethodArgumentNotValidException(
 					"Latitude must be between -90 and 90");
 		}
 	}
@@ -71,12 +72,12 @@ public class GeometryUtil {
 	 */
 	public static void validateLongitude(BigDecimal longitude) {
 		if (longitude == null) {
-			throw new BusinessException("Longitude is required");
+			throw new MethodArgumentNotValidException("Longitude is required");
 		}
 
 		if (longitude.compareTo(BigDecimal.valueOf(-180)) < 0 ||
 				longitude.compareTo(BigDecimal.valueOf(180)) > 0) {
-			throw new BusinessException(
+			throw new MethodArgumentNotValidException(
 					"Longitude must be between -180 and 180");
 		}
 	}
@@ -89,7 +90,7 @@ public class GeometryUtil {
 	 */
 	public static void validateAccuracy(Integer accuracy) {
 		if (accuracy != null && (accuracy < 1 || accuracy > 10000)) {
-			throw new BusinessException(
+			throw new MethodArgumentNotValidException(
 					"Location accuracy must be between 1 and 10000 meters");
 		}
 	}

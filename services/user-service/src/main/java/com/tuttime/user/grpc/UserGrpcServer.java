@@ -1,5 +1,6 @@
 package com.tuttime.user.grpc;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.UserStatus;
@@ -13,6 +14,7 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +46,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// 1. Validate specifically as an ACCESS TOKEN
 			if (!jwtTokenProvider.validateAccessToken(token)) {
-				throw new StatusRuntimeException(Status.UNAUTHENTICATED.withDescription("Invalid Access Token"));
+				throw new AuthenticationException("Invalid Access Token");
 			}
 
 			// 2. Parse claims (containing your userId, jti, roles)
@@ -53,14 +55,13 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			String userIdStr = claims.get("userId", String.class);
 			// Inside UserGrpcServiceImpl.java
 			if (tokenBlacklistService.isBlacklisted(jti)) {
-				throw new StatusRuntimeException(Status.UNAUTHENTICATED.withDescription("Token has been revoked"));
+				throw new AuthenticationException("Token has been revoked");
 			}
 
 			// 3. Redis Check: Is this specific JTI blacklisted (revoked session)?
 			Boolean isRevoked = redisTemplate.hasKey("blacklist:jti:" + jti);
 			if (isRevoked) {
-				throw new StatusRuntimeException(Status.UNAUTHENTICATED
-						.withDescription("Session has been revoked/logged out"));
+				throw new AuthenticationException("Session has been revoked/logged out");
 			}
 
 			// 4. Database Check: Fetch current status from the 'users' table
@@ -71,12 +72,10 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// 5. Business Logic: Blocked or Soft-Deleted users cannot pass
 			if (user.getStatus() == UserStatus.BLOCKED) {
-				throw new StatusRuntimeException(Status.PERMISSION_DENIED
-						.withDescription("User account is blocked"));
+				throw new AuthenticationException("User account is blocked");
 			}
 			if (user.getStatus() == UserStatus.DELETED) {
-				throw new StatusRuntimeException(Status.NOT_FOUND
-						.withDescription("User account has been deleted"));
+				throw new ResourceNotFoundException("User account has been deleted");
 			}
 
 			// 6. Build Success Response

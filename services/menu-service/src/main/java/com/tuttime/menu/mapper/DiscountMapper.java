@@ -2,35 +2,15 @@ package com.tuttime.menu.mapper;
 
 import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.entity.Discount;
+import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 import org.springframework.stereotype.Component;
 
-@Component
-public class DiscountMapper {
+@Mapper(componentModel = "spring",
+		unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface DiscountMapper {
 
-	public Discount toEntity(DiscountDto.DiscountRequest request) {
-		return Discount.builder()
-				.name(request.name())
-				.discountType(request.discountType())
-				.amount(request.amount())
-				.appliesTo(request.appliesTo())
-				.referenceId(request.referenceId())
-				.startDate(request.startDate())
-				.endDate(request.endDate())
-				.isActive(request.isActive() != null ? request.isActive() : true)
-				.build();
-	}
+	Discount toEntity(DiscountDto.DiscountRequest request);
 
-	public DiscountDto.DiscountResponse toResponse(Discount o) {
-		return new DiscountDto.DiscountResponse(
-				o.getId(),
-				o.getName(),
-				o.getDiscountType(),
-				o.getAmount(),
-				o.getAppliesTo(),
-				o.getReferenceId(),
-				o.getStartDate(),
-				o.getEndDate(),
-				o.getIsActive()
-		);
-	}
+	DiscountDto.DiscountResponse toResponse(Discount entity);
 }

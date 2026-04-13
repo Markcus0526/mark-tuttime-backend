@@ -12,6 +12,7 @@ import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.booking.service.BookingService;
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.MenuItemDetail;
@@ -142,7 +143,7 @@ public class BookingServiceImpl implements BookingService {
 
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			throw new RuntimeException("System interrupted during booking process.");
+			throw new BusinessException("System interrupted during booking process.");
 		} finally {
 			if (lock.isHeldByCurrentThread()) {
 				lock.unlock();
@@ -208,7 +209,7 @@ public class BookingServiceImpl implements BookingService {
 
 		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED
 		if (booking.getStatus() == BookingStatus.COMPLETED || booking.getStatus() == BookingStatus.CANCELED) {
-			throw new IllegalStateException("Booking cannot be cancelled in its current state");
+			throw new ResourceNotFoundException("Booking cannot be cancelled in its current state");
 		}
 
 		BookingStatus oldStatus = booking.getStatus();

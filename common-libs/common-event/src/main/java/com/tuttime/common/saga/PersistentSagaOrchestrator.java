@@ -2,6 +2,7 @@ package com.tuttime.common.saga;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.saga.entity.SagaInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,7 +72,7 @@ public abstract class PersistentSagaOrchestrator<T extends SagaInstance, S exten
 			log.error("Saga failed, compensating executed steps: {}", sagaId, e);
 			updateSagaStatus(sagaInstance, SagaInstance.SagaStatus.FAILED, e.getMessage());
 			compensate(sagaInstance, executedSteps);
-			throw new SagaException("Saga execution failed: " + sagaId, e);
+			throw new BusinessException("Saga execution failed: " + sagaId, e);
 		}
 	}
 

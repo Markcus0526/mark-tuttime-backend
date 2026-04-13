@@ -1,5 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
@@ -56,7 +58,7 @@ public class MediaServiceImpl implements MediaService {
 		try {
 			storedFileUrl = fileStorageService.storeFile(file);
 		} catch (IOException e) {
-			throw new RuntimeException("Failed to store file: " + e.getMessage(), e);
+			throw new BusinessException("Failed to store file: " + e.getMessage(), e);
 		}
 
 		// 3. Database Save (Atomic transaction)
@@ -99,7 +101,7 @@ public class MediaServiceImpl implements MediaService {
 			try {
 				newFileUrl = fileStorageService.storeFile(file);
 			} catch (IOException e) {
-				throw new RuntimeException("Failed to upload new file", e);
+				throw new BusinessException("Failed to upload new file", e);
 			}
 		}
 
@@ -194,7 +196,7 @@ public class MediaServiceImpl implements MediaService {
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
 		if (file.getSize() > maxFileSize) {
-			throw new IllegalArgumentException("File size exceeds the maximum allowed limit of 5 MB");
+			throw new MethodArgumentNotValidException("File size exceeds the maximum allowed limit of 5 MB");
 		}
 
 		// Validate file type using Apache Tika
@@ -203,7 +205,7 @@ public class MediaServiceImpl implements MediaService {
 		try {
 			detectedType = tika.detect(file.getInputStream());
 		} catch (IOException e) {
-			throw new IllegalArgumentException("Could not detect file type");
+			throw new MethodArgumentNotValidException("Could not detect file type");
 		}
 
 		// Allowed MIME types based on mediaType parameter
@@ -211,11 +213,11 @@ public class MediaServiceImpl implements MediaService {
 			case MediaType.IMAGE -> List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
 			case MediaType.VIDEO -> List.of("video/mp4", "video/webm", "video/ogg");
 			case MediaType.CANVAS -> List.of("image/canvas+xml");
-			default -> throw new IllegalArgumentException("Unsupported media type");
+			default -> throw new MethodArgumentNotValidException("Unsupported media type");
 		};
 
 		if (!allowedMimeTypes.contains(detectedType)) {
-			throw new IllegalArgumentException("Invalid file type: " + detectedType);
+			throw new MethodArgumentNotValidException("Invalid file type: " + detectedType);
 		}
 
 		// Optional: further validate SVG content if mediaType == SVG
@@ -223,10 +225,10 @@ public class MediaServiceImpl implements MediaService {
 			try {
 				String svgContent = new String(file.getBytes(), StandardCharsets.UTF_8);
 				if (!isValidSvg(svgContent)) {
-					throw new IllegalArgumentException("Invalid or unsafe SVG content");
+					throw new MethodArgumentNotValidException("Invalid or unsafe Canvas content");
 				}
 			} catch (IOException e) {
-				throw new IllegalArgumentException("Failed to read SVG content");
+				throw new MethodArgumentNotValidException("Failed to read Canvas content");
 			}
 		}
 	}

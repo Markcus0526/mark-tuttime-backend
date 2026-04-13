@@ -12,9 +12,14 @@ public class CategoryDto {
 	// Request payload for creating/updating a category
 	@Schema(description = "Category request details")
 	public record CategoryRequest(
-			@NotNull(message = "Branch ID is required") UUID branchId,
-			@NotBlank(message = "Category name cannot be empty") String name,
+			@NotNull(message = "Branch ID is required")
+			UUID branchId,
+
+			@NotBlank(message = "Category name cannot be empty")
+			String name,
+
 			String description,
+
 			Integer priority
 	) {
 	}
@@ -23,9 +28,13 @@ public class CategoryDto {
 	@Schema(description = "Category response details")
 	public record CategoryResponse(
 			UUID id,
+
 			UUID branchId,
+
 			String name,
+
 			String description,
+
 			List<MenuItemDto.MenuItemResponseSummary> items
 	) {
 	}

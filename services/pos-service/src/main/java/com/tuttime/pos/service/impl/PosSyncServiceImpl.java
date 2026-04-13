@@ -1,5 +1,6 @@
 package com.tuttime.pos.service.impl;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.pos.dto.*;
 import com.tuttime.pos.entity.PosLog;
 import com.tuttime.pos.entity.PosSyncQueue;
@@ -40,7 +41,7 @@ public class PosSyncServiceImpl implements PosSyncService {
 		// Fetch all logs for this entity (Order or Booking)
 		List<PosLog> logs = logRepository.findAllByEntityIdOrderByCreatedAtDesc(entityId);
 		if (logs.isEmpty()) {
-			throw new EntityNotFoundException("No sync history found for entity: " + entityId);
+			throw new ResourceNotFoundException("No sync history found for entity: " + entityId);
 		}
 		return posMapper.toResponse(entityId, logs);
 	}

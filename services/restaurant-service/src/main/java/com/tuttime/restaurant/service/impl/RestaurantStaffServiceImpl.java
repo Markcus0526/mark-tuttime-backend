@@ -1,9 +1,11 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.UserValidResponse;
 import com.tuttime.restaurant.dto.StaffDto;
+import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.RestaurantStaff;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
@@ -14,9 +16,11 @@ import com.tuttime.restaurant.repository.RestaurantStaffRepository;
 import com.tuttime.restaurant.service.RestaurantStaffService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,35 +40,21 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 	public StaffDto.StaffResponse assignStaff(UUID restaurantId, StaffDto.StaffRequest request, UUID currentUserId, String userRoles) {
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
-		boolean isManager = false;
 		if (!isAdmin) {
 			isOwner = validateRestaurantOwner(restaurantId, currentUserId);
 		}
-		if (!isAdmin && !isOwner && !isManager) {
+		if (!isAdmin && !isOwner) {
 			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
-//		if (isManager && (request.roleName().equals(UserRoleKind.ADMIN.name())
-//				|| request.roleName().equals(UserRoleKind.OWNER.name())
-//				|| request.roleName().equals(UserRoleKind.MANAGER.name()))) {
-//			throw new AccessDeniedException("Only the Branch Manager can appoint Branch Managers.");
-//		}
 
 		// 2. Prevent duplicate assignments
 		if (staffRepository.existsByRestaurantIdAndUserId(restaurantId, request.userId())) {
-			throw new IllegalStateException("User is already assigned to this restaurant");
+			throw new ConflictException("User is already assigned to this restaurant");
 		}
 
-		RestaurantStaff staff = new RestaurantStaff();
+		RestaurantStaff staff = staffMapper.toEntity(request);
 		staff.setRestaurantId(restaurantId);
-		staff.setUserId(request.userId());
 		staff.setRoleName(request.roleName().toUpperCase());
-
-		// 3. Link to Branch if specified (Hierarchy: Manager -> Branch)
-//		if (isManager) {
-//			Branch branch = branchRepository.findAllByBranchIdAndDeletedFalse(request.branchId())
-//					.orElseThrow(() -> new EntityNotFoundException("Branch not found"));
-//			staff.setBranchId(branch.getBranchId());
-//		}
 
 		return staffMapper.toResponse(staffRepository.save(staff));
 	}
@@ -77,7 +67,6 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
-		boolean isManager = false;
 		if (!isAdmin) {
 			isOwner = validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
 		}
@@ -106,8 +95,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 		}
 
-		staff.setRoleName(request.roleName().toUpperCase());
-		if (request.active() != null) staff.setActive(request.active());
+		staffMapper.updateEntityFromRequest(request, staff);
 
 		return staffMapper.toResponse(staffRepository.save(staff));
 	}
@@ -133,14 +121,13 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 	}
 
 	@Override
-	public boolean validateAdminAccess(UUID currentUserId) {
-		if (currentUserId == null) return false;
+	public void validateAdminAccess(UUID currentUserId) {
+		if (currentUserId == null)
+			throw new AccessDeniedException("You do not have permission to manage this restaurant.");
 
 		UserValidResponse response = userGrpClient.validateUserById(currentUserId);
 		if (!response.getIsValid() || !response.getRoles().contains(UserRoleKind.ADMIN.name()))
 			throw new ResourceNotFoundException("Current User not found: " + currentUserId);
-
-		return true;
 	}
 
 	/**

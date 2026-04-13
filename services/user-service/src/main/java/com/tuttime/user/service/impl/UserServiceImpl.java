@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.user.dto.*;
@@ -338,6 +339,6 @@ public class UserServiceImpl implements UserService {
 		// Example with JTS:
 		// GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
 		// return gf.createPoint(new Coordinate(longitude, latitude));
-		throw new UnsupportedOperationException("Implement geography point creation based on your PostGIS setup");
+		throw new BusinessException("Implement geography point creation based on your PostGIS setup");
 	}
 }

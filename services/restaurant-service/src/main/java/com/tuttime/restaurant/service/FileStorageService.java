@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.service;
 
+import com.tuttime.common.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,7 +17,7 @@ public class FileStorageService {
 
 	public String storeFile(MultipartFile file) throws IOException {
 		if (file.isEmpty()) {
-			throw new IOException("Failed to store empty file");
+			throw new BusinessException("Failed to store empty file");
 		}
 
 		// Create directory if not exists

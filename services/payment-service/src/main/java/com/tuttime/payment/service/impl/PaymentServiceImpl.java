@@ -6,6 +6,7 @@ import com.stripe.param.RefundCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PaymentEvent;
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.Refund;
@@ -79,7 +80,7 @@ public class PaymentServiceImpl implements PaymentService {
 
 			return session.getUrl();
 		} catch (StripeException e) {
-			throw new RuntimeException("Stripe error", e);
+			throw new BusinessException("Stripe error", e);
 		}
 	}
 
@@ -112,7 +113,7 @@ public class PaymentServiceImpl implements PaymentService {
 			);
 			eventProducer.sendPaymentRefundEvent(event);
 		} catch (StripeException e) {
-			throw new RuntimeException("Stripe Refund Error", e);
+			throw new BusinessException("Stripe Refund Error", e);
 		}
 	}
 

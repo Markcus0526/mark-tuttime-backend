@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.entity.DishTable;
@@ -63,7 +64,7 @@ public class TableServiceImpl implements TableService {
 		// Optional: enforce unique table number within zone
 		boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.number());
 		if (exists) {
-			throw new IllegalArgumentException("Table number already exists in this zone");
+			throw new ConflictException("Table number already exists in this zone");
 		}
 
 		DishTable dishTable = new DishTable();
@@ -93,7 +94,7 @@ public class TableServiceImpl implements TableService {
 		if (!dishTable.getNumber().equals(request.number())) {
 			boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getZoneId(), request.number());
 			if (exists) {
-				throw new IllegalArgumentException("Table number already exists in this zone");
+				throw new ConflictException("Table number already exists in this zone");
 			}
 			dishTable.setNumber(request.number());
 		}

@@ -1,5 +1,6 @@
 package com.tuttime.common.saga;
 
+import com.tuttime.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +39,7 @@ public class SagaOrchestrator {
 		} catch (Exception e) {
 			log.error("Saga failed, compensating executed steps", e);
 			compensate(executedSteps);
-			throw new SagaException("Saga execution failed", e);
+			throw new BusinessException("Saga execution failed", e);
 		}
 	}
 

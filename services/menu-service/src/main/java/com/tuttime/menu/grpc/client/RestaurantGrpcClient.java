@@ -1,6 +1,7 @@
 package com.tuttime.menu.grpc.client;
 
 import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.BranchRequest;
 import com.tuttime.common.proto.BranchResponse;
@@ -30,7 +31,7 @@ public class RestaurantGrpcClient {
 		BranchResponse response = restaurantServiceBlockingStub.validateBranch(request);
 
 		if (!response.getExists()) {
-			throw new BusinessException("You do not manage this specific menu");
+			throw new ConflictException("You do not manage this specific menu");
 		}
 	}
 }

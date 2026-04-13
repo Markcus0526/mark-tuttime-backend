@@ -1,5 +1,6 @@
 package com.tuttime.pos.service;
 
+import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.mapper.PosProtoMapper;
 import com.tuttime.common.proto.OrderDetailsResponse;
 import com.tuttime.pos.grpc.client.OrderGrpcClient;
@@ -34,7 +35,7 @@ public class PosIntegrationService {
 
 		} catch (Exception e) {
 			log.error("Failed to push order {} to POS: {}", orderId, e.getMessage());
-			throw new RuntimeException("POS Synchronization failed", e);
+			throw new BusinessException("POS Synchronization failed", e);
 		}
 	}
 }
