@@ -15,6 +15,8 @@ public interface RestaurantStaffRepository extends JpaRepository<RestaurantStaff
 
 	Optional<RestaurantStaff> findByStaffId(UUID staffId);
 
+	Optional<RestaurantStaff> findByUserId(UUID userId);
+
 	boolean existsByRestaurantIdAndUserId(UUID restaurantId, UUID userId);
 
 	boolean existsByBranchIdAndUserId(UUID branchId, UUID userId);

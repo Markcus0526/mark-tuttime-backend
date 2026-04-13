@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
 		}
 
 		String phoneNumber = null;
-		String email =  null;
+		String email = null;
 		if (identifier.contains("@"))
 			email = identifier;
 		else

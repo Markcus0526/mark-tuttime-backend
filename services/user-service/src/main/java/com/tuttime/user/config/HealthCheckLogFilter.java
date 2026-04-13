@@ -4,7 +4,9 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 
-/** Logback filter to exclude health check logs from Graylog (reduces noise). */
+/**
+ * Logback filter to exclude health check logs from Graylog (reduces noise).
+ */
 public class HealthCheckLogFilter extends Filter<ILoggingEvent> {
 
 	@Override

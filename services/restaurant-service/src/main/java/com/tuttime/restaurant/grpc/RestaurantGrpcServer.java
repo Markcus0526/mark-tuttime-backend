@@ -3,6 +3,7 @@ package com.tuttime.restaurant.grpc;
 import com.tuttime.common.proto.*;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.BranchRepository;
+import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.RestaurantStaffRepository;
 import com.tuttime.restaurant.repository.TableRepository;
 import io.grpc.stub.StreamObserver;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServiceImplBase {
 
 	private final RestaurantStaffRepository staffRepository;
+	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
 	private final TableRepository tableRepository;
 
@@ -56,7 +58,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 						table.getStatus() == TableStatus.ACTIVE && table.getSeats() <= partSize
 				).orElse(false);
 
-		responseObserver.onNext(AvailableTableResponse.newBuilder().setIsAvailable(available).build());
+		responseObserver.onNext(AvailableTableResponse.newBuilder().setAvailable(available).build());
 		responseObserver.onCompleted();
 	}
 
@@ -83,6 +85,34 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 
 		// 3. Send back to the Booking Service
 		responseObserver.onNext(responseBuilder.build());
+		responseObserver.onCompleted();
+	}
+
+	@Override
+	public void getStaffForUser(StaffUserRequest request, StreamObserver<StaffUserResponse> responseObserver) {
+		UUID userId = UUID.fromString(request.getUserId());
+
+		staffRepository.findByUserId(userId).ifPresentOrElse(staff -> {
+			StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder()
+					.setRestaurantId(staff.getRestaurantId().toString());
+
+			if (staff.getBranchId() != null) {
+				// Case 1: Fetch Branch Name
+				responseBuilder.setBranchId(staff.getBranchId().toString());
+				branchRepository.findByBranchIdAndDeletedFalse(staff.getBranchId())
+						.ifPresent(branch -> responseBuilder.setEntityName(branch.getName()));
+			} else {
+				// Case 2: Fetch Restaurant Name
+				restaurantRepository.findByRestaurantIdAndDeletedFalse(staff.getRestaurantId())
+						.ifPresent(restaurant -> responseBuilder.setEntityName(restaurant.getName()));
+			}
+
+			responseObserver.onNext(responseBuilder.build());
+		}, () -> {
+			// Case 3: No staff record found - return empty response or error
+			responseObserver.onNext(StaffUserResponse.newBuilder().build());
+		});
+
 		responseObserver.onCompleted();
 	}
 }

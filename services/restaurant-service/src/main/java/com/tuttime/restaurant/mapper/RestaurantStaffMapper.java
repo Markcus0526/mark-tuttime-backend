@@ -1,8 +1,6 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.dto.StaffDto;
-import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.RestaurantStaff;
 import com.tuttime.restaurant.util.DateMapper;
 import org.mapstruct.Mapper;

@@ -36,8 +36,9 @@ public class UserEventProducer {
 
 	/**
 	 * Broadcasts a JTI revocation (Logout/Password change).
-	 * @param userId The affected user
-	 * @param jti The unique JWT ID to blacklist
+	 *
+	 * @param userId    The affected user
+	 * @param jti       The unique JWT ID to blacklist
 	 * @param ttlMillis How much longer the token was valid for
 	 */
 	public void sendTokenRevoked(UUID userId, String jti, long ttlMillis) {

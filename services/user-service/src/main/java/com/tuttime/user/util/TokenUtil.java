@@ -1,9 +1,6 @@
 package com.tuttime.user.util;
 
-import com.tuttime.user.entity.User;
 import org.springframework.stereotype.Component;
-
-import java.util.UUID;
 
 @Component
 public class TokenUtil {

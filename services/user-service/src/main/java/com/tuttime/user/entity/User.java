@@ -1,12 +1,9 @@
 package com.tuttime.user.entity;
 
 import com.tuttime.common.entity.BaseDeleteEntity;
-import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
@@ -18,8 +15,11 @@ import java.util.UUID;
 @Table(name = "users", indexes = {
 		@Index(name = "idx_users_phone_email", columnList = "phone_number, email")
 })
-@Getter @Setter @Builder
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class User extends BaseDeleteEntity {
 

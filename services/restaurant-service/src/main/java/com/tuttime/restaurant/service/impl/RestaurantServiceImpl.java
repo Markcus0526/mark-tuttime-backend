@@ -69,9 +69,12 @@ public class RestaurantServiceImpl implements RestaurantService {
 		// Create default branch linked to restaurant
 		Branch defaultBranch = new Branch();
 		defaultBranch.setRestaurantId(savedRestaurant.getRestaurantId());
+		defaultBranch.setName(savedRestaurant.getName());
+		defaultBranch.setDescription(savedRestaurant.getDescription());
 		defaultBranch.setAddress(savedRestaurant.getAddress());
 		defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
 		defaultBranch.setPhone(savedRestaurant.getPhone());
+		defaultBranch.setRating(savedRestaurant.getRating());
 		defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
 		branchRepository.save(defaultBranch);
 
