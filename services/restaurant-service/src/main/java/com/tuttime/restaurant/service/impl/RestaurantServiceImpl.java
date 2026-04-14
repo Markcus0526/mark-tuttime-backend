@@ -49,7 +49,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	public RestaurantDto.RestaurantResponse getRestaurantById(UUID restaurantId) {
 		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new IllegalArgumentException("Restaurant not found: " + restaurantId));
+				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
 		return restaurantMapper.toResponse(restaurant);
 	}
 

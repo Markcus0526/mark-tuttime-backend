@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,15 +23,11 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/branches")
-@Tag(name = "Branches", description = "Operations related to branches, schedules & media")
+@RequestMapping("/api/v1/restaurant-branches")
+@Tag(name = "2.Restaurant Branches", description = "Operations related to branches, schedules & media")
 public class BranchController {
 
 	private final BranchService branchService;
-	private final RestaurantService restaurantService;
-	private final ScheduleService scheduleService;
-	private final MediaService mediaService;
-	private final ZoneService zoneService;
 
 	// --- Branch CRUD ---
 
@@ -114,18 +111,22 @@ public class BranchController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")
+	@Operation(summary = "Get all branches", description = "Retrieve paginated list of branches with optional filters")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Zones retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
+			@ApiResponse(responseCode = "200", description = "List of branches retrieved successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
 	})
-	@GetMapping("/{branchId}/zones")
-	public ResponseEntity<ApiRes<List<ZoneDto.ZoneResponse>>> getZonesByBranch(
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId) {
+	@GetMapping("/restaurants/{restaurantId}")
+	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> getAllBranches(
+			@Parameter(description = "UUID of the restaurant", required = true)
+			@PathVariable UUID restaurantId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
 
-		List<ZoneDto.ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
-		return ResponseEntity.ok(ApiRes.success(zones));
+		int maxPageSize = 100;
+		if (size > maxPageSize) size = maxPageSize;
+		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, page, size);
+		return ResponseEntity.ok(ApiRes.success(branches));
 	}
 
 	/**

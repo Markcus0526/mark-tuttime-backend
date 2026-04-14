@@ -14,19 +14,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/tables")
-@Tag(name = "Tables", description = "Operations related to tables within zones of branches")
+@RequestMapping("/api/v1/restauarnt-tables")
+@Tag(name = "4.Restaurant Branch Tables", description = "Operations related to tables within zones of branches")
 public class TableController {
 
-	private final BranchService branchService;
 	private final TableService tableService;
 
 	@Operation(summary = "Get a table by ID", description = "Retrieve details of a specific table")
@@ -109,7 +111,7 @@ public class TableController {
 
 		// Service should verify hierarchical ownership before deletion
 		tableService.deleteTable(tableId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Get reservation status of a table")
@@ -119,5 +121,36 @@ public class TableController {
 
 		TableStatus status = tableService.getTableCurrentStatus(tableId);
 		return ResponseEntity.ok(ApiRes.success(status));
+	}
+
+	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Tables retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Zone not found")
+	})
+	@GetMapping("/zones/{zoneId}")
+	public ResponseEntity<ApiRes<List<TableDto.TableResponse>>> getTablesInZone(
+			@Parameter(description = "UUID of the zone", required = true)
+			@PathVariable UUID zoneId) {
+
+		List<TableDto.TableResponse> tables = tableService.getTablesByZoneId(zoneId);
+		return ResponseEntity.ok(ApiRes.success(tables));
+	}
+
+	@Operation(summary = "Get available tables in a zone for a time range")
+	@GetMapping("/zones/{zoneId}/available")
+	public ResponseEntity<ApiRes<List<TableDto.TableResponse>>> getAvailableTables(
+			@PathVariable UUID zoneId,
+			@RequestParam
+			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T14:00:00+02:00)", required = true)
+			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+			OffsetDateTime from,
+			@RequestParam
+			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T16:00:00+02:00)", required = true)
+			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+			OffsetDateTime to) {
+
+		List<TableDto.TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
+		return ResponseEntity.ok(ApiRes.success(availableTables));
 	}
 }

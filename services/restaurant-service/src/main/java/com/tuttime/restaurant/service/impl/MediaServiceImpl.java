@@ -162,7 +162,7 @@ public class MediaServiceImpl implements MediaService {
 		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(
 				entityId,
 				MediaType.CANVAS
-		).orElseThrow(() -> new IllegalArgumentException("Primary SVG map not found for entity: " + entityId));
+		).orElseThrow(() -> new ResourceNotFoundException("Primary SVG map not found for entity: " + entityId));
 
 		return media.getSvgContent();
 	}

@@ -23,8 +23,8 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/restaurants/medias")
-@Tag(name = "Medias", description = "Operations related to media of restaurants, branches, zones, tables")
+@RequestMapping("/api/v1/restaurant-medias")
+@Tag(name = "6.Restaurant Medias", description = "Operations related to media of restaurants, branches, zones, tables")
 public class MediaController {
 
 	private final MediaService mediaService;
