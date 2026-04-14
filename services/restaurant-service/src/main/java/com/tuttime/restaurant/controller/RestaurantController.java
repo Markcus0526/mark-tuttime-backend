@@ -28,13 +28,10 @@ import java.util.UUID;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/restaurants")
-@Tag(name = "Restaurants", description = "Operations related to restaurants, branches, zones, tables, schedules & media")
+@Tag(name = "1.Restaurants", description = "Operations related to restaurants, branches, zones, tables, schedules & media")
 public class RestaurantController {
 
 	private final RestaurantService restaurantService;
-	private final ScheduleService scheduleService;
-	private final MediaService mediaService;
-	private final BranchService branchService;
 	private final RestaurantStaffService staffService;
 
 	// --- Restaurant CRUD ---
@@ -147,24 +144,6 @@ public class RestaurantController {
 
 		restaurantService.deleteRestaurant(restaurantId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
-	}
-
-	@Operation(summary = "Get all branches", description = "Retrieve paginated list of branches with optional filters")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "List of branches retrieved successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
-	})
-	@GetMapping("/{restaurantId}/branches")
-	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> getAllBranches(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-
-		int maxPageSize = 100;
-		if (size > maxPageSize) size = maxPageSize;
-		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, page, size);
-		return ResponseEntity.ok(ApiRes.success(branches));
 	}
 
 	// --- Restaurant Search by near ---

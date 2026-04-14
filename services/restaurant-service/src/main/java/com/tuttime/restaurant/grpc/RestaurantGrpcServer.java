@@ -1,7 +1,9 @@
 package com.tuttime.restaurant.grpc;
 
+import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.proto.*;
 import com.tuttime.restaurant.entity.enums.TableStatus;
+import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.RestaurantStaffRepository;
@@ -24,6 +26,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
 	private final TableRepository tableRepository;
+	private final UserGrpcClient userGrpClient;
 
 	@PostConstruct
 	public void init() {
@@ -31,19 +34,41 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void validateBranch(BranchRequest request, StreamObserver<BranchResponse> responseObserver) {
+	public void validateBranchPermission(BranchPermissionRequest request, StreamObserver<BranchPermissionResponse> responseObserver) {
+		boolean finalValid = false;
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());
-			UUID userId = UUID.fromString(request.getUserId());
+			UUID currentUserId = UUID.fromString(request.getUserId());
+			String userRoles = request.getUserRoles();
 
-			boolean exists = staffRepository.existsByBranchIdAndUserId(branchId, userId);
+			// 1. Validate User Identity first
+			UserValidResponse response = userGrpClient.validateUserById(
+					UserByIdRequest.newBuilder().setUserId(currentUserId.toString()).build());
 
-			responseObserver.onNext(BranchResponse.newBuilder().setExists(exists).build());
-			responseObserver.onCompleted();
+			if (response.getValid()) {
+				// 2. Privilege Escalation: Admins are always valid
+				if (userRoles.contains(UserRoleKind.ADMIN.name())) {
+					finalValid = true;
+				} else {
+					if (userRoles.contains(UserRoleKind.OWNER.name())) {
+						var branchOpt = branchRepository.findByBranchIdAndDeletedFalse(branchId);
+						if (branchOpt.isPresent()) {
+							finalValid = staffRepository.existsByRestaurantIdAndUserIdAndRoleName(
+									branchOpt.get().getRestaurantId(), currentUserId, UserRoleKind.OWNER.name());
+						}
+					}
+
+					if (!finalValid && userRoles.contains(UserRoleKind.MANAGER.name())) {
+						finalValid = staffRepository.existsByBranchIdAndUserIdAndRoleName(
+								branchId, currentUserId, UserRoleKind.MANAGER.name());
+					}
+				}
+			}
 		} catch (Exception e) {
-			log.error("Validation failed for branch: {}", request.getBranchId(), e);
-
-			responseObserver.onNext(BranchResponse.newBuilder().setExists(false).build());
+			log.error("Validation failed for entity: {}", request.getBranchId(), e);
+			// finalValid remains false
+		} finally {
+			responseObserver.onNext(BranchPermissionResponse.newBuilder().setValid(finalValid).build());
 			responseObserver.onCompleted();
 		}
 	}

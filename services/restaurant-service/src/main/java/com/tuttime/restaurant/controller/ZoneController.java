@@ -27,14 +27,11 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/zones")
-@Tag(name = "Zones", description = "Operations related to zones within branches of restaurants")
+@RequestMapping("/api/v1/restaurant-zones")
+@Tag(name = "3.Restaurant Zones", description = "Operations related to zones within branches of restaurants")
 public class ZoneController {
 
-	private final BranchService branchService;
 	private final ZoneService zoneService;
-	private final MediaService mediaService;
-	private final TableService tableService;
 	// --- Zone CRUD ---
 
 	@Operation(summary = "Get zone by ID", description = "Retrieve detailed information about a zone")
@@ -118,36 +115,18 @@ public class ZoneController {
 		return ResponseEntity.noContent().build();
 	}
 
-	@Operation(summary = "Get all tables in a zone", description = "Retrieve list of tables within a specific zone")
+	@Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Tables retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Zone not found")
+			@ApiResponse(responseCode = "200", description = "Zones retrieved successfully"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
-	@GetMapping("/{zoneId}/tables")
-	public ResponseEntity<ApiRes<List<TableDto.TableResponse>>> getTablesInZone(
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId) {
+	@GetMapping("/branches/{branchId}")
+	public ResponseEntity<ApiRes<List<ZoneDto.ZoneResponse>>> getZonesByBranch(
+			@Parameter(description = "UUID of the branch", required = true)
+			@PathVariable UUID branchId) {
 
-		List<TableDto.TableResponse> tables = tableService.getTablesByZoneId(zoneId);
-		return ResponseEntity.ok(ApiRes.success(tables));
+		List<ZoneDto.ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
+		return ResponseEntity.ok(ApiRes.success(zones));
 	}
 
-	// Reservation
-
-	@Operation(summary = "Get available tables in a zone for a time range")
-	@GetMapping("/{zoneId}/available")
-	public ResponseEntity<ApiRes<List<TableDto.TableResponse>>> getAvailableTables(
-			@PathVariable UUID zoneId,
-			@RequestParam
-			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T14:00:00+02:00)", required = true)
-			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-			OffsetDateTime from,
-			@RequestParam
-			@Parameter(description = "ISO 8601 format (e.g. 2026-04-07T16:00:00+02:00)", required = true)
-			@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-			OffsetDateTime to) {
-
-		List<TableDto.TableResponse> availableTables = tableService.findAvailableTables(zoneId, from, to);
-		return ResponseEntity.ok(ApiRes.success(availableTables));
-	}
 }

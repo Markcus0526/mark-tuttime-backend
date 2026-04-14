@@ -32,9 +32,11 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(
 								"/api/v1/restaurants/**",
-								"/api/v1/branches/**",
-								"/api/v1/zones/**",
-								"/api/v1/tables/**").permitAll() // Add /v1
+								"/api/v1/restaurant-branches/**",
+								"/api/v1/restaurant-zones/**",
+								"/api/v1/restaurant-tables/**",
+								"/api/v1/restaurant-schedules/**",
+								"/api/v1/restaurant-medias/**").permitAll() // Add /v1
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 				)
 				.addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
