@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,12 +20,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Media extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "media_id", nullable = false, updatable = false)
-	private UUID mediaId;
+public class Media extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "entity_id", nullable = false)
 	private UUID entityId;

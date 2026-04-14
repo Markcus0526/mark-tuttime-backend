@@ -23,15 +23,15 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	List<DishTable> findAllByZoneIdAndDeletedFalseAndClosedFalse(UUID zoneId);
 
 	// Find a specific table by ID and status excluding soft-deleted entries
-	Optional<DishTable> findByTableIdAndDeletedFalse(UUID tableId);
+	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
-	@Query("SELECT t.tableId, t.number, t.seats, z.name " +
-			"FROM DishTable t JOIN Zone z ON t.zoneId = z.zoneId " +
-			"WHERE z.branchId = :branchId AND t.seats >= :partySize AND t.status = 'ACTIVE'")
+	@Query("SELECT t.id, t.number, t.seats, z.name " +
+			"FROM DishTable t JOIN Zone z ON t.zone.id = z.id " +
+			"WHERE z.branch.id = :branchId AND t.seats >= :partySize AND t.status = 'ACTIVE'")
 	List<Object[]> findTablesWithZoneName(@Param("branchId") UUID branchId, @Param("partySize") int partySize);
 
 	@Modifying
 	@Query("UPDATE DishTable t SET t.deleted = true, t.deletedAt = CURRENT_TIMESTAMP " +
-			"WHERE t.zoneId = :zoneId AND t.deleted = false")
+			"WHERE t.zone.id = :zoneId AND t.deleted = false")
 	void deleteAllByZoneId(@Param("zoneId") UUID zoneId);
 }

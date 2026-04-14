@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -20,12 +20,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Schedule extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "schedule_id", nullable = false, updatable = false)
-	private UUID scheduleId;
+public class Schedule extends BaseUuidAnDeleteEntity {
 
 	@JoinColumn(name = "entity_id", nullable = false)
 	private UUID entityId;

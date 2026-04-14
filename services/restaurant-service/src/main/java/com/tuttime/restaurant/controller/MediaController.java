@@ -8,6 +8,8 @@ import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.service.MediaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,15 +33,18 @@ public class MediaController {
 
 	@Operation(summary = "Get medias", description = "Retrieve all media items associated with a restaurant, branch, zone, table ...")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Media retrieved successfully"),
+			@ApiResponse(responseCode = "200", description = "Media retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = MediaDto.MediaResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
-	@GetMapping("/{entityId}/{mediaType}")
+	@GetMapping({
+			"/{entityId}/{mediaType}", // Matches both
+			"/{entityId}"              // Matches when mediaType is missing
+	})
 	public ResponseEntity<ApiRes<List<MediaDto.MediaResponse>>> getMediaForRestaurant(
-			@Parameter(description = "UUID of the entity", required = true)
+			@Parameter(description = "UUID of the entity")
 			@PathVariable UUID entityId,
 			@Parameter(description = "Type of the entity")
-			@PathVariable MediaType mediaType) {
+			@PathVariable(required = false) MediaType mediaType) {
 
 		List<MediaDto.MediaResponse> medias = mediaService.getMediaByEntity(entityId, mediaType);
 		return ResponseEntity.ok(ApiRes.success(medias));
@@ -47,18 +52,25 @@ public class MediaController {
 
 	@Operation(summary = "Add media, ", description = "Upload a new media item (image/video/svg) for a restaurant, branch, zone, table ...")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Media added successfully"),
+			@ApiResponse(responseCode = "201", description = "Media added successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = MediaDto.MediaResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid media data"),
 			@ApiResponse(responseCode = "403", description = "Access denied"),
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
-	@PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PostMapping(
+			value = "",
+			consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+	)
 	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> addMediaToRestaurant(
-			@Parameter(description = "details to create", required = true)
-			@Valid @RequestBody MediaDto.MediaRequest request,
+			@Parameter(
+					description = "Media metadata in JSON format",
+					required = true,
+					content = @Content(mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+			)
+			@RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
 			@RequestPart("file") MultipartFile file) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
@@ -70,20 +82,27 @@ public class MediaController {
 
 	@Operation(summary = "Update media", description = "Update details of a media item")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Media updated successfully"),
+			@ApiResponse(responseCode = "200", description = "Media updated successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = MediaDto.MediaResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid media data"),
 			@ApiResponse(responseCode = "403", description = "Access denied"),
 			@ApiResponse(responseCode = "404", description = "Media not found")
 	})
-	@PutMapping("/{mediaId}")
+	@PutMapping(
+			value = "/{mediaId}",
+			consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+	)
 	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> updateMedia(
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId,
-			@Parameter(description = "Updated media details", required = true)
-			@Valid @RequestBody MediaDto.MediaRequest request,
+			@Parameter(
+					description = "Media metadata in JSON format",
+					required = true,
+					content = @Content(mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+			)
+			@RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
 			@RequestPart("file") MultipartFile file) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
@@ -104,14 +123,14 @@ public class MediaController {
 			@Parameter(description = "UUID of the media to delete", required = true)
 			@PathVariable UUID mediaId) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
 		mediaService.deleteMedia(mediaId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	// --- Map SVG (Restaurant & Branch) ---
@@ -145,7 +164,7 @@ public class MediaController {
 			@RequestBody String svgContent) {
 
 		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific media"));
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
 		}
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();

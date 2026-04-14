@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
@@ -30,7 +30,7 @@ import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
 @Transactional(readOnly = true)
 public class RestaurantServiceImpl implements RestaurantService {
 
-	private final RestaurantStaffService restaurantStaffService;
+	private final StaffService staffService;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
 	private final RestaurantMapper restaurantMapper;
@@ -39,7 +39,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final ScheduleService scheduleService;
 
 	@Override
-	@Transactional(readOnly = true)
 	public Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
 		Specification<Restaurant> spec = createSpecification(query, ownerUserId, minRating, maxRating);
 		return restaurantRepository.findAll(spec, pageable)
@@ -48,15 +47,15 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	public RestaurantDto.RestaurantResponse getRestaurantById(UUID restaurantId) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
 		return restaurantMapper.toResponse(restaurant);
 	}
 
 	@Override
 	@Transactional
 	public RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
-		restaurantStaffService.validateAdminAccess(currentUserId);
+		staffService.validateAdminAccess(currentUserId);
 
 		// Map request DTO to entity
 		Restaurant restaurant = restaurantMapper.toEntity(request);
@@ -68,7 +67,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 		// Create default branch linked to restaurant
 		Branch defaultBranch = new Branch();
-		defaultBranch.setRestaurantId(savedRestaurant.getRestaurantId());
+		defaultBranch.setRestaurant(savedRestaurant);
 		defaultBranch.setName(savedRestaurant.getName());
 		defaultBranch.setDescription(savedRestaurant.getDescription());
 		defaultBranch.setAddress(savedRestaurant.getAddress());
@@ -85,11 +84,11 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	@Transactional
 	public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
 
 		// 1. Unified Permission Check
-		restaurantStaffService.validatePermissions(restaurant.getRestaurantId(), currentUserId, userRoles);
+		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
 		// 2. Map fields and handle PostGIS Point
 		restaurantMapper.updateEntityFromRequest(request, restaurant);
@@ -104,11 +103,11 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	@Transactional
 	public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
 
 		// 1. Unified Permission Check
-		restaurantStaffService.validatePermissions(restaurant.getRestaurantId(), currentUserId, userRoles);
+		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
 		// 2. Soft delete related entities
 		// Consider moving these to a single Batch Update query for better performance

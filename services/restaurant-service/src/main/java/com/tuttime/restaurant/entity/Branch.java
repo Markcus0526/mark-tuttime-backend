@@ -1,13 +1,12 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "branches", schema = "restaurant_service", indexes = {
@@ -19,15 +18,11 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Branch extends BaseDeleteEntity {
+public class Branch extends BaseUuidAnDeleteEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "branch_id", nullable = false, updatable = false)
-	private UUID branchId;
-
-	@JoinColumn(name = "restaurant_id")
-	private UUID restaurantId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "restaurant_id", nullable = false)
+	private Restaurant restaurant;
 
 	@Column(name = "name", nullable = false, length = 255)
 	private String name;

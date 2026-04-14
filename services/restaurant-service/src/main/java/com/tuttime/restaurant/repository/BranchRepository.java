@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +15,7 @@ import java.util.UUID;
 
 public interface BranchRepository extends JpaRepository<Branch, UUID> {
 
-	Optional<Branch> findByBranchIdAndDeletedFalse(UUID branchId);
+	Optional<Branch> findByIdAndDeletedFalse(UUID branchId);
 
 	Page<Branch> findPagesByRestaurantIdAndDeletedFalse(UUID restaurantId, Pageable pageable);
 
@@ -22,9 +23,10 @@ public interface BranchRepository extends JpaRepository<Branch, UUID> {
 
 	List<Branch> findAllByRestaurantIdAndDeletedFalse(UUID restaurantId);
 
-	@Modifying
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Transactional
 	@Query("UPDATE Branch b SET b.deleted = true, b.deletedAt = CURRENT_TIMESTAMP " +
-			"WHERE b.restaurantId = :restaurantId AND b.deleted = false")
+			"WHERE b.restaurant.id = :restaurantId AND b.deleted = false")
 	void deleteAllByRestaurantId(@Param("restaurantId") UUID restaurantId);
 
 }

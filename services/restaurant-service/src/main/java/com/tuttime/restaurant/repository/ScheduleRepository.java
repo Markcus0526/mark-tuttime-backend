@@ -14,7 +14,7 @@ import java.util.UUID;
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, UUID> {
 
-	Optional<Schedule> findByScheduleIdAndDeletedFalse(UUID scheduleId);
+	Optional<Schedule> findByIdAndDeletedFalse(UUID scheduleId);
 
 	List<Schedule> findAllByEntityIdAndDeletedFalse(UUID restaurantId);
 

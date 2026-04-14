@@ -15,7 +15,7 @@ import java.util.UUID;
 @Repository
 public interface RestaurantRepository extends JpaRepository<Restaurant, UUID>, JpaSpecificationExecutor<Restaurant> {
 
-	Optional<Restaurant> findByRestaurantIdAndDeletedFalse(UUID restaurantId);
+	Optional<Restaurant> findByIdAndDeletedFalse(UUID restaurantId);
 
 	@Query(value = "SELECT * FROM restaurants r " +
 			"WHERE r.deleted = false AND " +

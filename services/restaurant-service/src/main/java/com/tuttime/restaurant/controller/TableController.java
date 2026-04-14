@@ -5,7 +5,6 @@ import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.entity.enums.TableStatus;
-import com.tuttime.restaurant.service.BranchService;
 import com.tuttime.restaurant.service.TableService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,7 +24,7 @@ import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/restauarnt-tables")
+@RequestMapping("/api/v1/restaurant-tables")
 @Tag(name = "4.Restaurant Branch Tables", description = "Operations related to tables within zones of branches")
 public class TableController {
 

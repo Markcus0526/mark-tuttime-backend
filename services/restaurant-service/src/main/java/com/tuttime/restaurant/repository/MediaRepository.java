@@ -15,7 +15,7 @@ import java.util.UUID;
 @Repository
 public interface MediaRepository extends JpaRepository<Media, UUID> {
 
-	Optional<Media> findByMediaIdAndDeletedFalse(UUID mediaId);
+	Optional<Media> findByIdAndDeletedFalse(UUID mediaId);
 
 	// Find all media for an entity, excluding soft-deleted
 	List<Media> findAllByEntityIdAndDeletedFalse(UUID entityId);
@@ -25,24 +25,24 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
 
 	// Custom query to find primary map by entity (used in setOrUpdateSvgMap)
 	@Query("SELECT m FROM Media m " +
-			"WHERE m.entityId = :entityId AND m.primaryEntity = true AND m.mapEntity = true AND m.deleted = false")
+			"WHERE m.id = :entityId AND m.primaryEntity = true AND m.mapEntity = true AND m.deleted = false")
 	Optional<Media> findPrimaryMapByEntityAndDeletedFalse(
 			@Param("entityId") UUID entityId);
 
 	@Modifying
 	@Query("UPDATE Media m SET m.primaryEntity = :primaryEntity, m.updatedAt = CURRENT_TIMESTAMP " +
-			"WHERE m.entityId = :entityId AND m.deleted = false")
+			"WHERE m.id = :entityId AND m.deleted = false")
 	void updatePrimaryEntityByEntityTypeAndEntityIdAndDeletedFalse(
 			@Param("entityId") UUID entityId,
 			@Param("primaryEntity") boolean primaryEntity);
 
 	@Modifying
 	@Query("UPDATE Media m SET m.deleted = true, m.deletedAt = CURRENT_TIMESTAMP " +
-			"WHERE m.entityId = :entityId AND m.deleted = false")
+			"WHERE m.id = :entityId AND m.deleted = false")
 	void deleteAllByEntityId(@Param("entityId") UUID entityId);
 
 	@Query("SELECT m FROM Media m WHERE m.entityId = :entityId " +
-			"AND (:mediaType IS NULL OR m.mediaType = :mediaType) " +
+			"AND (cast(:mediaType as string) IS NULL OR m.mediaType = :mediaType) " +
 			"AND m.deleted = false")
 	List<Media> findAllByEntityIdAndOptionalMediaType(
 			@Param("entityId") UUID entityId,

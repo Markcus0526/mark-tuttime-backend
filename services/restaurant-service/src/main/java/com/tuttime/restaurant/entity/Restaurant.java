@@ -1,13 +1,15 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
-import jakarta.persistence.*;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.PrePersist;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "restaurants")
@@ -17,12 +19,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Restaurant extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "restaurant_id", nullable = false, updatable = false)
-	private UUID restaurantId;
+public class Restaurant extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "name", nullable = false, length = 255)
 	private String name;

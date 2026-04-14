@@ -69,4 +69,11 @@ public class OpenApiConfig {
 			return operation;
 		};
 	}
+
+//	@Bean
+//	public MappingJackson2HttpMessageConverter octetStreamJsonConverter() {
+//		MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+//		converter.setSupportedMediaTypes(List.of(new MediaType("application", "octet-stream")));
+//		return converter;
+//	}
 }

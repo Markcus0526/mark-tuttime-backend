@@ -1,12 +1,10 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.UUID;
 
 @Entity
 @Table(name = "tables", schema = "restaurant_service", indexes = {
@@ -20,15 +18,11 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class DishTable extends BaseDeleteEntity {
+public class DishTable extends BaseUuidAnDeleteEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "table_id", nullable = false, updatable = false)
-	private UUID tableId;
-
-	@JoinColumn(name = "zone_id")
-	private UUID zoneId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "zone_id", nullable = false)
+	private Zone zone;
 
 	@Column(name = "number", nullable = false, length = 50)
 	private String number;
