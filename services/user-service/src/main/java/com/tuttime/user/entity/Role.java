@@ -10,14 +10,14 @@ import java.util.Set;
 @Table(name = "roles")
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Role {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer roleId;
+	private Integer id;
 
 	@Column(name = "name", length = 50, unique = true, nullable = false)
 	private String name;

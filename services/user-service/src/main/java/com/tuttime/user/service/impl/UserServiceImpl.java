@@ -2,8 +2,8 @@ package com.tuttime.user.service.impl;
 
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.user.dto.*;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.entity.enums.UserStatus;
@@ -16,7 +16,6 @@ import com.tuttime.user.service.SmsService;
 import com.tuttime.user.service.UserService;
 import com.tuttime.user.util.TokenUtil;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
@@ -24,19 +23,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
 	private final EmailService emailService;
@@ -53,15 +52,16 @@ public class UserServiceImpl implements UserService {
 	private final TokenUtil tokenUtil;
 
 	@Override
-	public UserResponse createUser(UserCreateRequest request) {
-		String identifier = request.getEmailOrPhone();
-		String roleName = request.getRoleName();
+	@Transactional
+	public UserDto.UserResponse createUser(UserDto.UserCreateRequest request) {
+		String identifier = request.emailOrPhone();
+		String roleName = request.roleName();
 
 		if (!StringUtils.hasText(identifier)) {
-			throw new ResourceNotFoundException("Either phone number or email must be provided");
+			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
 		}
 		if (!StringUtils.hasText(roleName)) {
-			throw new ResourceNotFoundException("Role must be provided");
+			throw new MethodArgumentNotValidException("Role must be provided");
 		}
 
 		String phoneNumber = null;
@@ -84,17 +84,18 @@ public class UserServiceImpl implements UserService {
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
 		user = userRepository.saveAndFlush(user);
 
-		Role userRole = roleRepository.findByName(roleName)
-				.orElseThrow(() -> new ResourceNotFoundException("Role " + roleName + " not found"));
-		UserRole ur = new UserRole();
-		ur.setUserId(user.getUserId());
-		ur.setRole(userRole);
-		userRoleRepository.save(ur);
+		Role role = roleRepository.findByName(roleName)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Role " + roleName + " not found"));
+		UserRole userRole = UserRole.builder()
+				.user(user)
+				.role(role)
+				.build();
+		user.getRoles().add(userRole);
 
 		// 2. Create and link AuthMethod to the SAVED user
 		String password = tokenUtil.generateRandomPassword();
 		UserAuthMethod authMethod = new UserAuthMethod();
-		authMethod.setUserId(user.getUserId()); // Now 'user' has an ID!
+		authMethod.setUser(user); // Now 'user' has an ID!
 		authMethod.setCredential(passwordEncoder.encode(password));
 		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
 		authMethod.setVerified(false);
@@ -121,73 +122,55 @@ public class UserServiceImpl implements UserService {
 			emailService.sendVerificationPasswordEmail(email, code, password);
 		}
 
-		return UserResponse.builder()
-				.userId(user.getUserId())
-				.fullName(user.getFullName())
-				.email(email)
-				.phoneNumber(phoneNumber)
-				.status(user.getStatus().name())
-				.roles(ur.getRole().getName())
-				.profilePicture(user.getProfilePicture())
-				.lastLogin(user.getLastLogin())
-				.build();
-	}
-
-	@Override
-	public UserResponse getUserById(UUID id) {
-		User user = userRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 		return userMapper.toResponse(user);
 	}
 
 	@Override
-	public UserResponse updateUser(UUID id, UserUpdateRequest userUpdateRequest) {
+	public UserDto.UserResponse getUserById(UUID id) {
 		User user = userRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+		return userMapper.toResponse(user);
+	}
 
-		if (userUpdateRequest.getPhoneNumber() != null && !userUpdateRequest.getPhoneNumber().equals(user.getPhoneNumber())) {
-			userRepository.findByPhoneNumberAndDeletedFalse(userUpdateRequest.getPhoneNumber())
+	@Override
+	@Transactional
+	public UserDto.UserResponse updateUser(UUID id, UserDto.UserUpdateRequest userUpdateRequest) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+
+		if (userUpdateRequest.phoneNumber() != null && !userUpdateRequest.phoneNumber().equals(user.getPhoneNumber())) {
+			userRepository.findByPhoneNumberAndDeletedFalse(userUpdateRequest.phoneNumber())
 					.ifPresent(u -> {
 						throw new ConflictException("Phone number already in use");
 					});
-			user.setPhoneNumber(userUpdateRequest.getPhoneNumber());
+			user.setPhoneNumber(userUpdateRequest.phoneNumber());
 		}
-		if (userUpdateRequest.getEmail() != null && !userUpdateRequest.getEmail().equals(user.getEmail())) {
-			userRepository.findByEmailAndDeletedFalse(userUpdateRequest.getEmail())
+		if (userUpdateRequest.email() != null && !userUpdateRequest.email().equals(user.getEmail())) {
+			userRepository.findByEmailAndDeletedFalse(userUpdateRequest.email())
 					.ifPresent(u -> {
 						throw new ConflictException("Email already in use");
 					});
-			user.setEmail(userUpdateRequest.getEmail());
+			user.setEmail(userUpdateRequest.email());
 		}
-		if (userUpdateRequest.getFullName() != null) {
-			user.setFullName(userUpdateRequest.getFullName());
+		if (userUpdateRequest.fullName() != null) {
+			user.setFullName(userUpdateRequest.fullName());
 		}
-		if (userUpdateRequest.getProfilePicture() != null) {
-			user.setProfilePicture(userUpdateRequest.getProfilePicture());
+		if (userUpdateRequest.profilePicture() != null) {
+			user.setProfilePicture(userUpdateRequest.profilePicture());
 		}
 		user = userRepository.save(user);
 
 		userEventProducer.sendUserUpdated(user);
 
-		return UserResponse.builder()
-				.userId(user.getUserId())
-				.fullName(user.getFullName())
-				.email(user.getEmail())
-				.phoneNumber(user.getPhoneNumber())
-				.status(user.getStatus().name())
-				.roles(user.getRoles().stream()
-						.map(ur -> ur.getRole().getName())
-						.collect(Collectors.joining(", ")))
-				.profilePicture(user.getProfilePicture())
-				.lastLogin(user.getLastLogin())
-				.build();
+		return userMapper.toResponse(user);
 	}
 
 	@Override
+	@Transactional
 	public void deleteUser(UUID userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
-		user.setStatus(UserStatus.DELETED);
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+		user.setDeleted(true);
 		userRepository.save(user);
 
 		// 2. Broadcast to Kafka
@@ -198,7 +181,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Page<UserResponse> findUsers(String query, UserStatus status, String roleName, Pageable pageable) {
+	public Page<UserDto.UserResponse> findUsers(String query, UserStatus status, String roleName, Pageable pageable) {
 		// Build the dynamic WHERE clause
 		Specification<User> spec = (root, criteriaQuery, cb) -> {
 			List<Predicate> predicates = new ArrayList<>();
@@ -233,56 +216,60 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional
 	public void assignRoleToUser(UUID userId, String roleName) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 		Role role = roleRepository.findByName(roleName)
-				.orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Role not found"));
 
-		boolean exists = userRoleRepository.existsByUserIdAndRole(user.getUserId(), role);
+		boolean exists = userRoleRepository.existsByUserIdAndRole(user.getId(), role);
 		if (exists) {
 			throw new ConflictException("User already has this role");
 		}
 
-		UserRole userRole = new UserRole();
-		userRole.setUserId(user.getUserId());
-		userRole.setRole(role);
+		UserRole userRole = UserRole.builder()
+				.user(user)
+				.role(role)
+				.build();
 		userRoleRepository.save(userRole);
 	}
 
 	@Override
+	@Transactional
 	public void removeRoleFromUser(UUID userId, String roleName) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 		Role role = roleRepository.findByName(roleName)
-				.orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Role not found"));
 
-		UserRole userRole = userRoleRepository.findByUserIdAndRole(user.getUserId(), role)
-				.orElseThrow(() -> new ResourceNotFoundException("User role not found"));
+		UserRole userRole = userRoleRepository.findByUserIdAndRole(user.getId(), role)
+				.orElseThrow(() -> new MethodArgumentNotValidException("User role not found"));
 
 		userRoleRepository.delete(userRole);
 	}
 
 	@Override
-	public void addAuthMethod(UUID userId, AuthMethodCreateRequest authMethodCreateRequest) {
+	@Transactional
+	public void addAuthMethod(UUID userId, UserDto.AuthMethodCreateRequest authMethodCreateRequest) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
-		authMethodRepository.findByUserIdAndAuthType(user.getUserId(), authMethodCreateRequest.getAuthType())
+		authMethodRepository.findByUserIdAndAuthType(user.getId(), authMethodCreateRequest.authType())
 				.ifPresent(am -> {
 					throw new ConflictException("Authentication method already exists for this user");
 				});
 
 		UserAuthMethod authMethod = new UserAuthMethod();
-		authMethod.setUserId(user.getUserId());
-		authMethod.setAuthType(authMethodCreateRequest.getAuthType());
+		authMethod.setUser(user);
+		authMethod.setAuthType(authMethodCreateRequest.authType());
 
 		// For EMAIL_PASS, hash the password before storing
-		if (authMethodCreateRequest.getAuthType() == AuthProvider.EMAIL_PASS) {
-			authMethod.setCredential(passwordEncoder.encode(authMethodCreateRequest.getCredential()));
+		if (authMethodCreateRequest.authType() == AuthProvider.EMAIL_PASS) {
+			authMethod.setCredential(passwordEncoder.encode(authMethodCreateRequest.credential()));
 		} else {
 			// For OAuth (GOOGLE, APPLE), store OAuth ID directly
-			authMethod.setCredential(authMethodCreateRequest.getCredential());
+			authMethod.setCredential(authMethodCreateRequest.credential());
 		}
 
 		authMethod.setVerified(false);
@@ -292,23 +279,24 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserLocation(UUID userId, UserLocationRequest userLocationRequest) {
+	@Transactional
+	public void updateUserLocation(UUID userId, UserDto.UserLocationRequest request) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
 		UserLocation location = new UserLocation();
-		location.setUserId(user.getUserId());
-		location.setLocation(createGeographyPoint(userLocationRequest.getLatitude(), userLocationRequest.getLongitude()));
-		location.setAccuracyMeters(userLocationRequest.getAccuracyMeters().floatValue());
-		location.setRecordedAt(userLocationRequest.getRecordedAt() != null ? userLocationRequest.getRecordedAt() : OffsetDateTime.now());
+		location.setUser(user);
+		location.setLocation(createGeographyPoint(request.latitude(), request.longitude()));
+		location.setAccuracyMeters(request.accuracyMeters().floatValue());
+		location.setRecordedAt(request.recordedAt() != null ? request.recordedAt() : OffsetDateTime.now());
 
 		userLocationRepository.save(location);
 	}
 
 	@Transactional
-	public UserResponse blockUser(UUID userId) {
+	public UserDto.UserResponse blockUser(UUID userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
 		user.setStatus(UserStatus.BLOCKED);
 		userRepository.save(user);
@@ -320,9 +308,9 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Transactional
-	public UserResponse unblockUser(UUID userId) {
+	public UserDto.UserResponse unblockUser(UUID userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
 		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);

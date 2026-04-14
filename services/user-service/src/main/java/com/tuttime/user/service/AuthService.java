@@ -1,6 +1,6 @@
 package com.tuttime.user.service;
 
-import com.tuttime.user.dto.*;
+import com.tuttime.user.dto.AuthDto;
 
 /**
  * Service interface for handling user authentication, registration,
@@ -15,7 +15,7 @@ public interface AuthService {
 	 * @param request Registration request DTO containing user info
 	 * @throws IllegalArgumentException if validation fails or user exists
 	 */
-	void registerUser(RegisterRequest request);
+	void registerUser(AuthDto.RegisterRequest request);
 
 	/**
 	 * Authenticates user by email/phone and password.
@@ -24,7 +24,7 @@ public interface AuthService {
 	 * @param request Login request DTO with emailOrPhone and password
 	 * @throws SecurityException if authentication fails or user not verified
 	 */
-	void loginUser(LoginRequest request);
+	void loginUser(AuthDto.LoginRequest request);
 
 	/**
 	 * Authenticates user via OAuth provider token.
@@ -34,7 +34,7 @@ public interface AuthService {
 	 * @return AuthResponseDto containing JWT tokens and user info
 	 * @throws SecurityException if OAuth token is invalid
 	 */
-	AuthResponse authenticateOAuthUser(OAuthLoginRequest request);
+	AuthDto.AuthResponse authenticateOAuthUser(AuthDto.OAuthLoginRequest request);
 
 	/**
 	 * Refreshes JWT access token using a valid refresh token.
@@ -43,7 +43,7 @@ public interface AuthService {
 	 * @return AuthResponseDto with new access and refresh tokens
 	 * @throws SecurityException if refresh token is invalid or expired
 	 */
-	AuthResponse refreshJwtToken(String refreshToken);
+	AuthDto.AuthResponse refreshJwtToken(String refreshToken);
 
 	/**
 	 * Logs out a user by invalidating the provided refresh token.
@@ -57,14 +57,14 @@ public interface AuthService {
 	 *
 	 * @param request to verify
 	 */
-	void sendOtpVerificationCode(OtpVerificationRequest request);
+	void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request);
 
 	/**
 	 * Initiates password reset by sending an email or SMS code depending on user contact.
 	 *
-	 * @param PasswordResetRequest request
+	 * @param AuthDto.PasswordResetRequest request
 	 */
-	void initiatePasswordReset(PasswordResetRequest request);
+	void initiatePasswordReset(AuthDto.PasswordResetRequest request);
 
 	/**
 	 * Resets the user's password using a token (email) or code (phone).
@@ -72,7 +72,7 @@ public interface AuthService {
 	 * @param request Password reset confirmation DTO containing token/code and new password
 	 * @throws IllegalArgumentException if token/code is invalid or expired
 	 */
-	void resetPassword(PasswordResetConfirmRequest request);
+	void resetPassword(AuthDto.PasswordResetConfirmRequest request);
 
-	AuthResponse loginWithOtp(OtpVerificationConfirmRequest request);
+	AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request);
 }

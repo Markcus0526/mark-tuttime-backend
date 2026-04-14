@@ -3,7 +3,7 @@ package com.tuttime.user.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.user.dto.*;
+import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,7 +30,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@Tag(name = "User Management (for Admin)", description = "Operations for managing users, roles, authentication, and verification")
+@Tag(name = "User Management", description = "Operations for managing users, roles, authentication, and verification")
 public class UserController {
 
 	private final UserService userService;
@@ -39,21 +39,21 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "201", description = "User created successfully",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserResponse.class))),
+							schema = @Schema(implementation = UserDto.UserResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
 			@ApiResponse(responseCode = "409", description = "User with phone or email already exists", content = @Content)
 	})
 	@PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserResponse>> createUser(
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> createUser(
 			@Parameter(description = "User details to create", required = true)
-			@Valid @RequestBody UserCreateRequest request) {
+			@Valid @RequestBody UserDto.UserCreateRequest request) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		UserResponse createdUser = userService.createUser(request);
+		UserDto.UserResponse createdUser = userService.createUser(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(createdUser));
 	}
 
@@ -61,13 +61,13 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User found",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserResponse.class))),
+							schema = @Schema(implementation = UserDto.UserResponse.class))),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
-	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserResponse>> getUserById(
+	@GetMapping(value = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> getUserById(
 			@Parameter(description = "UUID of the user to retrieve", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id) {
+			@PathVariable UUID userId) {
 
 		// Allow Admin, Owner, and Manager to search/list users
 		if (!UserContext.isValidUUID() ||
@@ -75,7 +75,7 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Access denied"));
 		}
 
-		UserResponse user = userService.getUserById(id);
+		UserDto.UserResponse user = userService.getUserById(userId);
 		return ResponseEntity.ok(ApiRes.success(user));
 	}
 
@@ -83,23 +83,23 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User updated successfully",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserResponse.class))),
+							schema = @Schema(implementation = UserDto.UserResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid update data", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
-	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserResponse>> updateUser(
+	@PatchMapping(value = "/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> updateUser(
 			@Parameter(description = "UUID of the user to update", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id,
+			@PathVariable UUID userId,
 			@Parameter(description = "Fields to update", required = true)
-			@Valid @RequestBody UserUpdateRequest request) {
+			@Valid @RequestBody UserDto.UserUpdateRequest request) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		UserResponse updatedUser = userService.updateUser(id, request);
+		UserDto.UserResponse updatedUser = userService.updateUser(userId, request);
 		return ResponseEntity.ok(ApiRes.success(updatedUser));
 	}
 
@@ -108,28 +108,28 @@ public class UserController {
 			@ApiResponse(responseCode = "204", description = "User soft deleted successfully"),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{userId}")
 	public ResponseEntity<ApiRes<Void>> deleteUser(
 			@Parameter(description = "UUID of the user to soft delete", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id) {
+			@PathVariable UUID userId) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		userService.deleteUser(id);
-		return ResponseEntity.noContent().build();
+		userService.deleteUser(userId);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "List users", description = "Lists users with optional inclusion of soft deleted users, pagination, and sorting")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "List of users",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserResponse.class)))
+							schema = @Schema(implementation = UserDto.UserResponse.class)))
 	})
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<Page<UserResponse>>> listAndSearchUsers(
+	public ResponseEntity<ApiRes<Page<UserDto.UserResponse>>> listAndSearchUsers(
 			@Parameter(description = "Keyword to search (name, email, or phone)")
 			@RequestParam(required = false) String query,
 
@@ -146,7 +146,7 @@ public class UserController {
 			@RequestParam(defaultValue = "20") int size,
 
 			@Parameter(description = "Sort by field", required = false)
-			@RequestParam(defaultValue = "userId") String sort,
+			@RequestParam(defaultValue = "id") String sort,
 
 			@Parameter(description = "Sort direction: asc or desc", required = false)
 			@RequestParam(defaultValue = "asc") String direction) {
@@ -161,7 +161,7 @@ public class UserController {
 		Pageable pageable = PageRequest.of(page, size, sortOrder);
 
 		// Call service with the optional query
-		Page<UserResponse> users = userService.findUsers(query, status, roleName, pageable);
+		Page<UserDto.UserResponse> users = userService.findUsers(query, status, roleName, pageable);
 		return ResponseEntity.ok(ApiRes.success(users));
 	}
 
@@ -170,19 +170,19 @@ public class UserController {
 			@ApiResponse(responseCode = "201", description = "Role assigned successfully"),
 			@ApiResponse(responseCode = "404", description = "User or role not found", content = @Content)
 	})
-	@PostMapping(value = "/{id}/roles", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/{userId}/roles", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ApiRes<Void>> assignRoleToUser(
 			@Parameter(description = "UUID of user", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id,
+			@PathVariable UUID userId,
 			@Parameter(description = "Role to assign", required = true)
-			@RequestBody RoleAssignRequest request) {
+			@RequestBody UserDto.RoleAssignRequest request) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		userService.assignRoleToUser(id, request.getRoleName());
+		userService.assignRoleToUser(userId, request.roleName());
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
@@ -191,10 +191,10 @@ public class UserController {
 			@ApiResponse(responseCode = "204", description = "Role removed successfully"),
 			@ApiResponse(responseCode = "404", description = "User or role not found", content = @Content)
 	})
-	@DeleteMapping("/{id}/roles/{roleName}")
+	@DeleteMapping("/{userId}/roles/{roleName}")
 	public ResponseEntity<ApiRes<Void>> removeRoleFromUser(
 			@Parameter(description = "UUID of user", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id,
+			@PathVariable UUID userId,
 			@Parameter(description = "Role name to remove", required = true, in = ParameterIn.PATH)
 			@PathVariable String roleName) {
 
@@ -203,8 +203,8 @@ public class UserController {
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		userService.removeRoleFromUser(id, roleName);
-		return ResponseEntity.noContent().build();
+		userService.removeRoleFromUser(userId, roleName);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Add authentication method", description = "Adds an authentication method (password or OAuth) for user")
@@ -213,19 +213,19 @@ public class UserController {
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content),
 			@ApiResponse(responseCode = "409", description = "Auth method already exists", content = @Content)
 	})
-	@PostMapping(value = "/{id}/auth-methods", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/{userId}/auth-methods", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ApiRes<Void>> addAuthMethod(
 			@Parameter(description = "UUID of user", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id,
+			@PathVariable UUID userId,
 			@Parameter(description = "Authentication method details", required = true)
-			@Valid @RequestBody AuthMethodCreateRequest request) {
+			@Valid @RequestBody UserDto.AuthMethodCreateRequest request) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		userService.addAuthMethod(id, request);
+		userService.addAuthMethod(userId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
@@ -234,14 +234,14 @@ public class UserController {
 			@ApiResponse(responseCode = "201", description = "User location updated successfully"),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
-	@PostMapping(value = "/{id}/location", consumes = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/{userId}/location", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ApiRes<Void>> updateUserLocation(
 			@Parameter(description = "UUID of user", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id,
+			@PathVariable UUID userId,
 			@Parameter(description = "User location data", required = true)
-			@Valid @RequestBody UserLocationRequest userLocationRequest) {
+			@Valid @RequestBody UserDto.UserLocationRequest userLocationRequest) {
 
-		userService.updateUserLocation(id, userLocationRequest);
+		userService.updateUserLocation(userId, userLocationRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
 
@@ -249,21 +249,21 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User blocked successfully",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserResponse.class))),
+							schema = @Schema(implementation = UserDto.UserResponse.class))),
 			@ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
-	@PatchMapping(value = "/{id}/block", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserResponse>> blockUser(
+	@PatchMapping(value = "/{userId}/block", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> blockUser(
 			@Parameter(description = "UUID of the user to block", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id) {
+			@PathVariable UUID userId) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		UserResponse blockedUser = userService.blockUser(id);
+		UserDto.UserResponse blockedUser = userService.blockUser(userId);
 		return ResponseEntity.ok(ApiRes.success(blockedUser));
 	}
 
@@ -271,34 +271,34 @@ public class UserController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User unblocked successfully",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserResponse.class))),
+							schema = @Schema(implementation = UserDto.UserResponse.class))),
 			@ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
-	@PatchMapping(value = "/{id}/unblock", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserResponse>> unblockUser(
+	@PatchMapping(value = "/{userId}/unblock", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> unblockUser(
 			@Parameter(description = "UUID of the user to unblock", required = true, in = ParameterIn.PATH)
-			@PathVariable UUID id) {
+			@PathVariable UUID userId) {
 
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiRes.error("You do not manage this specific user"));
 		}
 
-		UserResponse unblockedUser = userService.unblockUser(id);
+		UserDto.UserResponse unblockedUser = userService.unblockUser(userId);
 		return ResponseEntity.ok(ApiRes.success(unblockedUser));
 	}
 
 	@Operation(summary = "Update my profile", description = "Allows the logged-in user to update their name, profile picture, etc.")
 	@PatchMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserResponse>> updateProfile(@RequestBody @Valid UserUpdateRequest request) {
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> updateProfile(@RequestBody @Valid UserDto.UserUpdateRequest request) {
 
 		if (!UserContext.isValidUUID()) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiRes.error("Authentication required"));
 		}
 
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		UserResponse updatedUser = userService.updateUser(currentUserId, request);
+		UserDto.UserResponse updatedUser = userService.updateUser(currentUserId, request);
 
 		return ResponseEntity.ok(ApiRes.success(updatedUser));
 	}

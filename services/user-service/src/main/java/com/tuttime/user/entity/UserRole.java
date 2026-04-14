@@ -5,34 +5,28 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.UUID;
-
 @Entity
-@Table(name = "user_roles",
-		indexes = {
-				@Index(name = "idx_user_roles_user_id", columnList = "user_id"),
-				@Index(name = "idx_user_roles_role_id", columnList = "role_id")
-		})
+@Table(name = "user_roles")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-@IdClass(UserRoleId.class)
 @EntityListeners(AuditingEntityListener.class)
 public class UserRole extends BaseTimeStampEntity {
 
-	@Id
-	@Column(name = "user_id", nullable = false, length = 36)
-	private UUID userId;
+	@EmbeddedId
+	@Builder.Default
+	private UserRoleId id = new UserRoleId();
 
-	@Id
-	@Column(name = "role_id", nullable = false)
-	private Integer roleId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@MapsId("userId")
+	@JoinColumn(name = "user_id")
+	private User user;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@MapsId("roleId")
-	@JoinColumn(name = "role_id", nullable = false)
+	@JoinColumn(name = "role_id")
 	private Role role;
 }
 
