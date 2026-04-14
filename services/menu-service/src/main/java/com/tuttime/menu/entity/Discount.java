@@ -1,6 +1,8 @@
 package com.tuttime.menu.entity;
 
 import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
+import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.menu.entity.enums.AppliesTo;
 import com.tuttime.menu.entity.enums.DiscountType;
 import jakarta.persistence.*;
@@ -21,12 +23,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Discount extends BaseTimeStampEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "discount_id", nullable = false, updatable = false)
-	private UUID discountId;
+public class Discount extends BaseUuidEntity {
 
 	@Column(nullable = false)
 	private String name;

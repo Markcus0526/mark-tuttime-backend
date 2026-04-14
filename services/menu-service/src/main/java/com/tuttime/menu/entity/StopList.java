@@ -19,12 +19,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class StopList extends BaseTimeStampEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "stop_list_id", nullable = false, updatable = false)
-	private UUID stopListId;
+public class StopList extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "menu_item_id", nullable = false)

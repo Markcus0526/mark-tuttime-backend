@@ -1,6 +1,8 @@
 package com.tuttime.menu.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.service.MenuCategoryService;
 import com.tuttime.menu.service.MenuItemService;
@@ -22,9 +24,9 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/menus/{categoryId}/menu-items")
+@RequestMapping("/api/v1/menu-items")
 @RequiredArgsConstructor
-@Tag(name = "Menu Items", description = "Endpoints for administering specific dishes and their prices")
+@Tag(name = "2.Menu Items", description = "Endpoints for administering specific dishes and their prices")
 public class MenuItemController {
 
 	private final MenuCategoryService categoryService;
@@ -41,15 +43,19 @@ public class MenuItemController {
 			@ApiResponse(responseCode = "400", description = "Invalid request payload")
 	})
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> createMenuItem(
-			@Valid @PathVariable UUID categoryId,
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
-		categoryService.validateMenuCategory(categoryId);
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
 		MenuItemDto.MenuItemDetailedResponse data = menuItemService.createMenuItem(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping("/{itemId}")
 	@Operation(summary = "Get a menu item by ID", description = "Fetches complete object properties including relational modifier groups.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
@@ -57,28 +63,12 @@ public class MenuItemController {
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> getMenuItemById(
-			@Valid @PathVariable UUID categoryId,
-			@PathVariable UUID id) {
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.getMenuItemById(id);
+			@PathVariable UUID itemId) {
+		MenuItemDto.MenuItemDetailedResponse data = menuItemService.getMenuItemById(itemId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping
-	@Operation(summary = "Get sorted items in a category")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "List of items retrieved",
-					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponseSummary.class))))
-	})
-	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponseSummary>>> getItemsByCategory(
-			@Valid @PathVariable UUID categoryId,
-			@Parameter(description = "Field to sort by (e.g., name, price, priority)") @RequestParam(defaultValue = "name") String sortBy,
-			@Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "asc") String direction) {
-
-		List<MenuItemDto.MenuItemResponseSummary> data = menuItemService.getItemsByCategory(categoryId, sortBy, direction);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
-
-	@PutMapping("/{id}")
+	@PutMapping("/{itemId}")
 	@Operation(summary = "Update an item's parameters")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Update successful",
@@ -86,27 +76,52 @@ public class MenuItemController {
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> updateMenuItem(
-			@Valid @PathVariable UUID categoryId,
-			@PathVariable UUID id,
+			@PathVariable UUID itemId,
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
-		categoryService.validateMenuCategory(categoryId);
 
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.updateMenuItem(id, request);
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		MenuItemDto.MenuItemDetailedResponse data = menuItemService.updateMenuItem(itemId, request);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{itemId}")
 	@Operation(summary = "Purge an item from the menu")
 	@ApiResponses({
 			@ApiResponse(responseCode = "204", description = "Item successfully deleted"),
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
-	public ResponseEntity<Void> deleteMenuItem(
-			@Valid @PathVariable UUID categoryId,
-			@PathVariable UUID id) {
-		categoryService.validateMenuCategory(categoryId);
+	public ResponseEntity<ApiRes<Void>> deleteMenuItem(
+			@PathVariable UUID itemId) {
 
-		menuItemService.deleteMenuItem(id);
-		return ResponseEntity.noContent().build();
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		menuItemService.deleteMenuItem(itemId);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT)
+				.body(ApiRes.success(null));
 	}
+
+	@GetMapping("/categorys/{categoryId}")
+	@Operation(summary = "Get sorted items in a category")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "List of items retrieved",
+					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponseSummary.class))))
+	})
+	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponseSummary>>> getItemsByCategory(
+			@PathVariable UUID categoryId,
+			@Parameter(description = "Field to sort by (e.g., name, price, priority)") @RequestParam(defaultValue = "name") String sortBy,
+			@Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "asc") String direction) {
+
+		List<MenuItemDto.MenuItemResponseSummary> data = menuItemService.getItemsByCategory(categoryId, sortBy, direction);
+		return ResponseEntity.ok(ApiRes.success(data));
+	}
+
 }

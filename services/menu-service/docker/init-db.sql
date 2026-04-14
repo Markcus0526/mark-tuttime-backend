@@ -14,11 +14,12 @@ EXTENSION IF NOT EXISTS "pgcrypto";
 -- Create Enums
 CREATE TYPE discount_type_enum AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT');
 CREATE TYPE applies_to_enum AS ENUM ('CATEGORY', 'ITEM', 'ORDER');
+CREATE TYPE media_type_enum AS ENUM ('IMAGE', 'VIDEO');
 
 -- 1. Categories
 CREATE TABLE menu_categories
 (
-    menu_category_id UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
     branch_id        UUID         NOT NULL,
     name             VARCHAR(255) NOT NULL,
     description      TEXT NULL,
@@ -32,8 +33,8 @@ CREATE TABLE menu_categories
 -- 2. Items
 CREATE TABLE menu_items
 (
-    menu_item_id     UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
-    menu_category_id UUID           NOT NULL REFERENCES menu_categories (menu_category_id) ON DELETE CASCADE,
+    id     UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
+    menu_category_id UUID           NOT NULL REFERENCES menu_categories (id) ON DELETE CASCADE,
     name             VARCHAR(255)   NOT NULL,
     description      TEXT NULL,
     price            DECIMAL(10, 2) NOT NULL,
@@ -48,7 +49,7 @@ CREATE TABLE menu_items
 -- 3. NEW: Modifier Groups (e.g., "Choose your sauce", "Add toppings")
 CREATE TABLE modifier_groups
 (
-    modifier_group_id UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
     name              VARCHAR(255) NOT NULL,
     description       TEXT NULL,
     min_select        INT          NOT NULL DEFAULT 0, -- 1 for mandatory single choice
@@ -62,8 +63,8 @@ CREATE TABLE modifier_groups
 -- 4. Modifiers (The actual choices like "Bacon", "Mayo")
 CREATE TABLE modifiers
 (
-    modifier_id       UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
-    modifier_group_id UUID           NOT NULL REFERENCES modifier_groups (modifier_group_id) ON DELETE CASCADE,
+    id       UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
+    modifier_group_id UUID           NOT NULL REFERENCES modifier_groups (id) ON DELETE CASCADE,
     name              VARCHAR(255)   NOT NULL,
     description       TEXT NULL,
     price_adjustment  DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -76,9 +77,9 @@ CREATE TABLE modifiers
 -- 5. Mapping (Item <-> Modifier Group)
 CREATE TABLE menu_item_modifier_groups
 (
-    menu_item_modifier_group_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    menu_item_id                UUID NOT NULL REFERENCES menu_items (menu_item_id) ON DELETE CASCADE,
-    modifier_group_id           UUID NOT NULL REFERENCES modifier_groups (modifier_group_id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    menu_item_id                UUID NOT NULL REFERENCES menu_items (id) ON DELETE CASCADE,
+    modifier_group_id           UUID NOT NULL REFERENCES modifier_groups (id) ON DELETE CASCADE,
     priority                    INT  NOT NULL    DEFAULT 0, -- For ordering display in the app
     created_at                  TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
     updated_at                  TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
@@ -88,8 +89,8 @@ CREATE TABLE menu_item_modifier_groups
 -- 6. Stop Lists
 CREATE TABLE stop_lists
 (
-    stop_list_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    menu_item_id UUID NOT NULL REFERENCES menu_items (menu_item_id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    menu_item_id UUID NOT NULL REFERENCES menu_items (id) ON DELETE CASCADE,
     branch_id    UUID NOT NULL,
     start_date   DATE NOT NULL,
     end_date     DATE NULL,
@@ -101,7 +102,7 @@ CREATE TABLE stop_lists
 -- 7. Discounts
 CREATE TABLE discounts
 (
-    discount_id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name          VARCHAR(255)       NOT NULL,
     discount_type discount_type_enum NOT NULL,
     amount        DECIMAL(10, 2)     NOT NULL,
@@ -112,6 +113,21 @@ CREATE TABLE discounts
     active        BOOLEAN          DEFAULT TRUE,
     created_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. Medias
+CREATE TABLE medias
+(
+    id       UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
+    entity_id      UUID              NOT NULL,
+    url            VARCHAR(1024),
+    alt_text       VARCHAR(255),
+    primary_entity BOOLEAN                    DEFAULT FALSE,
+    media_type     media_type_enum            DEFAULT 'IMAGE',
+    deleted        BOOLEAN           NOT NULL DEFAULT FALSE,
+    deleted_at     TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indices

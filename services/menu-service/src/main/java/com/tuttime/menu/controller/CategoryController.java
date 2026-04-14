@@ -1,9 +1,13 @@
 package com.tuttime.menu.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.menu.dto.CategoryDto;
 import com.tuttime.menu.dto.FullMenuDto;
+import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.service.MenuCategoryService;
+import com.tuttime.menu.service.MenuItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -24,7 +28,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
-@Tag(name = "Menu Categories", description = "Endpoints for managing top-level menu groupings and bulk menu fetches")
+@Tag(name = "1.Menu Categories", description = "Endpoints for managing top-level menu groupings and bulk menu fetches")
 public class CategoryController {
 
 	private final MenuCategoryService categoryService;
@@ -41,9 +45,13 @@ public class CategoryController {
 	})
 	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody CategoryDto.CategoryRequest request) {
 
-		categoryService.validateBranchManager(request.branchId());
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
-		CategoryDto.CategoryResponse data = categoryService.createCategory(request);
+		CategoryDto.CategoryResponse data = categoryService.createCategory(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
@@ -58,6 +66,45 @@ public class CategoryController {
 
 		CategoryDto.CategoryResponse data = categoryService.getCategoryById(categoryId);
 		return ResponseEntity.ok(ApiRes.success(data));
+	}
+
+	@PutMapping("/{categoryId}")
+	@Operation(summary = "Update an existing category")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Update successful",
+					content = @Content(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))),
+			@ApiResponse(responseCode = "404", description = "Category not found")
+	})
+	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> updateCategory(
+			@PathVariable UUID categoryId,
+			@Valid @RequestBody CategoryDto.CategoryRequest request) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		CategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(data));
+	}
+
+	@DeleteMapping("/{categoryId}")
+	@Operation(summary = "Delete a category")
+	@ApiResponses({
+			@ApiResponse(responseCode = "204", description = "Category deleted"),
+			@ApiResponse(responseCode = "404", description = "Category not found")
+	})
+	public ResponseEntity<ApiRes<Void>> deleteCategory(@PathVariable UUID categoryId) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		categoryService.deleteCategory(categoryId, currentUserId, userRoles);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@GetMapping("/branches/{branchId}")
@@ -84,36 +131,5 @@ public class CategoryController {
 
 		FullMenuDto.FullMenuBranchMenuResponse data = categoryService.getFullMenuForBranch(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
-	}
-
-	@PutMapping("/{categoryId}")
-	@Operation(summary = "Update an existing category")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Update successful",
-					content = @Content(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))),
-			@ApiResponse(responseCode = "404", description = "Category not found")
-	})
-	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> updateCategory(
-			@PathVariable UUID categoryId,
-			@Valid @RequestBody CategoryDto.CategoryRequest request) {
-
-		categoryService.validateMenuCategory(categoryId);
-
-		CategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
-
-	@DeleteMapping("/{categoryId}")
-	@Operation(summary = "Delete a category")
-	@ApiResponses({
-			@ApiResponse(responseCode = "204", description = "Category deleted"),
-			@ApiResponse(responseCode = "404", description = "Category not found")
-	})
-	public ResponseEntity<Void> deleteCategory(@PathVariable UUID categoryId) {
-
-		categoryService.validateMenuCategory(categoryId);
-
-		categoryService.deleteCategory(categoryId);
-		return ResponseEntity.noContent().build();
 	}
 }

@@ -77,7 +77,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 				if (!menuItem.getAvailable()) continue;
 
 				MenuItemDetail.Builder itemBuilder = MenuItemDetail.newBuilder()
-						.setMenuItemId(menuItem.getMenuItemId().toString())
+						.setMenuItemId(menuItem.getId().toString())
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
 						.setBasePrice(menuItem.getPrice().doubleValue())

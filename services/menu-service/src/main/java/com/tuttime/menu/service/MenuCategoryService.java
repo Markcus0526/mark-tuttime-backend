@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MenuCategoryService {
-	CategoryDto.CategoryResponse createCategory(CategoryDto.CategoryRequest request);
+	CategoryDto.CategoryResponse createCategory(CategoryDto.CategoryRequest request, UUID currentUserId, String userRoles);
 
-	CategoryDto.CategoryResponse updateCategory(UUID id, CategoryDto.CategoryRequest request);
+	CategoryDto.CategoryResponse updateCategory(UUID id, CategoryDto.CategoryRequest request, UUID currentUserId, String userRoles);
 
 	CategoryDto.CategoryResponse getCategoryById(UUID id);
 
@@ -17,9 +17,7 @@ public interface MenuCategoryService {
 
 	FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId); // Master Endpoint
 
-	void deleteCategory(UUID id);
-
-	void validateBranchManager(UUID branchId);
+	void deleteCategory(UUID id, UUID currentUserId, String userRoles);
 
 	void validateMenuCategory(UUID id);
 }

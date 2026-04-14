@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/menus/stoplists")
+@RequestMapping("/api/v1/menu-stoplists")
 @RequiredArgsConstructor
-@Tag(name = "Stop Lists", description = "Controls instantaneous out-of-stock actions per branch")
+@Tag(name = "5.Stop Lists", description = "Controls instantaneous out-of-stock actions per branch")
 public class StopListController {
 
 	private final StopListService stopListService;
@@ -58,8 +58,8 @@ public class StopListController {
 			@ApiResponse(responseCode = "204", description = "Item restored to active status"),
 			@ApiResponse(responseCode = "404", description = "Stop list entry not found")
 	})
-	public ResponseEntity<Void> removeFromStopList(@PathVariable UUID id) {
+	public ResponseEntity<ApiRes<Void>> removeFromStopList(@PathVariable UUID id) {
 		stopListService.removeFromStopList(id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 }
