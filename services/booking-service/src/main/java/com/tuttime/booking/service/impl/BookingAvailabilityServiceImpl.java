@@ -7,18 +7,21 @@ import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingAvailabilityServiceImpl implements BookingAvailabilityService {
 
 	private final RedissonClient redissonClient;
 	private final BookingRepository bookingRepository;
 
 	@Override
+	@Transactional
 	public boolean reserveTable(BookingRequest request) {
 		// 1. Create a distributed lock key for this specific table and time slot
 		String lockKey = "lock:table:" + request.tableId() + ":" + request.bookingDatetime();

@@ -1,6 +1,7 @@
 package com.tuttime.review.service.impl;
 
 import com.tuttime.common.event.ReviewEvent;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.review.dto.RatingStatsResponse;
 import com.tuttime.review.dto.ReviewRequest;
 import com.tuttime.review.dto.ReviewResponse;
@@ -26,9 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
 public class ReviewServiceImpl implements ReviewService {
 
 	private final ReviewRepository reviewRepository;
@@ -57,7 +59,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional
 	public void approveReview(UUID reviewId, UUID moderatorId, String reason) {
 		Review review = reviewRepository.findById(reviewId)
-				.orElseThrow(() -> new RuntimeException("Review not found with ID: " + reviewId));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Review not found with ID: " + reviewId));
 
 		review.setStatus(ReviewStatus.APPROVED);
 
@@ -88,7 +90,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional
 	public void rejectReview(UUID reviewId, UUID moderatorId, String reason) {
 		Review review = reviewRepository.findById(reviewId)
-				.orElseThrow(() -> new RuntimeException("Review not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Review not found"));
 
 		review.setStatus(ReviewStatus.REJECTED);
 
@@ -101,7 +103,6 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public RatingStatsResponse getRestaurantStats(UUID restaurantId) {
 		RatingAggregate aggregate = aggregateRepository.findById(restaurantId)
 				.orElse(new RatingAggregate());
@@ -117,7 +118,8 @@ public class ReviewServiceImpl implements ReviewService {
 	 * Internal logic to sync the 'rating_aggregates' table.
 	 * Uses the JSONB distribution logic from your SQL schema.
 	 */
-	private void updateRestaurantAggregate(UUID restaurantId) {
+	@Transactional
+	protected void updateRestaurantAggregate(UUID restaurantId) {
 		List<Review> approved = reviewRepository.findByRestaurantIdAndStatus(restaurantId, ReviewStatus.APPROVED);
 
 		if (approved.isEmpty()) return;

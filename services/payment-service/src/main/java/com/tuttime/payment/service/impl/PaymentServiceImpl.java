@@ -7,6 +7,7 @@ import com.stripe.param.checkout.SessionCreateParams;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.Refund;
@@ -14,11 +15,11 @@ import com.tuttime.payment.entity.enums.PaymentStatus;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
 import com.tuttime.payment.service.PaymentService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -26,6 +27,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
@@ -88,7 +90,7 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public void processRefund(UUID bookingId, BigDecimal amount, String reason) {
 		Payment payment = paymentRepository.findByBookingId(bookingId)
-				.orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Payment not found"));
 
 		try {
 			// Create the params using our builder

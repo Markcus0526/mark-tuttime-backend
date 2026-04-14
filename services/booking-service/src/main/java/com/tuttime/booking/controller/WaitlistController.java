@@ -60,6 +60,6 @@ public class WaitlistController {
 	@ApiResponse(responseCode = "204", description = "Successfully left the queue")
 	public ResponseEntity<Void> leaveWaitlist(@PathVariable UUID id) {
 		waitlistService.leaveWaitlist(id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 }

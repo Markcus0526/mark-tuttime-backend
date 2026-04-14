@@ -1,5 +1,6 @@
 package com.tuttime.pos.service.impl;
 
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.pos.dto.*;
 import com.tuttime.pos.entity.PosLog;
@@ -24,9 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
 public class PosSyncServiceImpl implements PosSyncService {
 
 	private final PosLogRepository logRepository;
@@ -36,12 +38,11 @@ public class PosSyncServiceImpl implements PosSyncService {
 	private final PosMapper posMapper;
 
 	@Override
-	@Transactional(readOnly = true)
 	public PosSyncLogResponse getSyncLogs(UUID entityId) {
 		// Fetch all logs for this entity (Order or Booking)
 		List<PosLog> logs = logRepository.findAllByEntityIdOrderByCreatedAtDesc(entityId);
 		if (logs.isEmpty()) {
-			throw new ResourceNotFoundException("No sync history found for entity: " + entityId);
+			throw new MethodArgumentNotValidException("No sync history found for entity: " + entityId);
 		}
 		return posMapper.toResponse(entityId, logs);
 	}
@@ -68,7 +69,7 @@ public class PosSyncServiceImpl implements PosSyncService {
 
 		// 1. Get POS Config based on the request (dynamic lookup)
 		PosSystemConfig config = configRepository.findByPosSystem(request.posSystem())
-				.orElseThrow(() -> new RuntimeException("POS System not configured: " + request.posSystem()));
+				.orElseThrow(() -> new MethodArgumentNotValidException("POS System not configured: " + request.posSystem()));
 
 		// 2. Create Audit Log Entry
 		PosLog logEntry = PosLog.builder()
@@ -111,7 +112,7 @@ public class PosSyncServiceImpl implements PosSyncService {
 	public void markSuccess(int logId, Map<String, String> metadata) {
 		// 1. Fetch the existing log record
 		SyncLog log = syncLogRepository.findById(logId)
-				.orElseThrow(() -> new RuntimeException("Log not found for ID: " + logId));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Log not found for ID: " + logId));
 
 		// 2. Update fields
 		log.setStatus("SUCCESS");
@@ -126,7 +127,7 @@ public class PosSyncServiceImpl implements PosSyncService {
 	public void markFailed(int logId, String errorMessage, Map<String, String> additionalDetails) {
 		// 1. Fetch the existing log record
 		SyncLog log = syncLogRepository.findById(logId)
-				.orElseThrow(() -> new RuntimeException("Log not found for ID: " + logId));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Log not found for ID: " + logId));
 
 		// 2. Set status to FAILED (or SOFT_FAILURE)
 		log.setStatus("FAILED");
@@ -145,7 +146,7 @@ public class PosSyncServiceImpl implements PosSyncService {
 		// 1. Find the log associated with this order
 		// Note: You might need a custom finder if orderId is not the Primary Key
 		SyncLog log = syncLogRepository.findByOrderId(orderId)
-				.orElseThrow(() -> new RuntimeException("Sync log not found for order: " + orderId));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Sync log not found for order: " + orderId));
 
 		// 2. Update to a terminal failure state
 		log.setStatus("HARD_FAILURE");
