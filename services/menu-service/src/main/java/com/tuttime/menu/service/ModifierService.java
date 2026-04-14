@@ -1,25 +1,27 @@
 package com.tuttime.menu.service;
 
 import com.tuttime.menu.dto.ModifierDto;
-import com.tuttime.menu.dto.ModifierGroupDto;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ModifierService {
-	// Group Logic
-	ModifierGroupDto.ModifierGroupResponse createGroup(ModifierGroupDto.ModifierGroupRequest request);
+	// Group Operations
+	ModifierDto.ModifierGroupResponse createGroup(ModifierDto.ModifierGroupRequest request, UUID currentUserId, String userRoles);
 
-	ModifierGroupDto.ModifierGroupResponse getGroupById(UUID id);
+	ModifierDto.ModifierGroupResponse getGroupById(UUID groupId);
 
-	void updateGroup(UUID id, ModifierGroupDto.ModifierGroupRequest request);
+	List<ModifierDto.ModifierGroupResponse> getAllGroups();
 
-	void deleteGroup(UUID id);
+	ModifierDto.ModifierGroupResponse updateGroup(UUID groupId, ModifierDto.ModifierGroupRequest request, UUID currentUserId, String userRoles);
 
-	// Modifier Logic
-	ModifierDto.ModifierResponse addModifierToGroup(UUID groupId, ModifierDto.ModifierRequest request);
+	void deleteGroup(UUID groupId, UUID currentUserId, String userRoles);
 
-	void deleteModifier(UUID modifierId);
+	// Modifier Operations
+	ModifierDto.ModifierResponse addModifier(UUID groupId, ModifierDto.ModifierRequest request, UUID currentUserId, String userRoles);
 
-	// Linking Logic (Item <-> Group)
-	void assignGroupToItem(UUID itemId, UUID groupId);
+	ModifierDto.ModifierResponse updateModifier(UUID modifierId, ModifierDto.ModifierRequest request, UUID currentUserId, String userRoles);
+
+	void deleteModifier(UUID modifierId, UUID currentUserId, String userRoles);
+
 }

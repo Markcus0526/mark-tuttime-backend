@@ -1,6 +1,8 @@
 package com.tuttime.menu.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.service.DiscountService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,19 +38,27 @@ public class DiscountController {
 			@ApiResponse(responseCode = "400", description = "Invalid request payload")
 	})
 	public ResponseEntity<ApiRes<DiscountDto.DiscountResponse>> createDiscount(@Valid @RequestBody DiscountDto.DiscountRequest request) {
-		DiscountDto.DiscountResponse data = discountService.createDiscount(request);
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		DiscountDto.DiscountResponse data = discountService.createDiscount(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping("/{discountId}")
 	@Operation(summary = "Query exact discount parameters")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
 					content = @Content(schema = @Schema(implementation = DiscountDto.DiscountResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Discount not found")
 	})
-	public ResponseEntity<ApiRes<DiscountDto.DiscountResponse>> getDiscountById(@PathVariable UUID id) {
-		DiscountDto.DiscountResponse data = discountService.getDiscountById(id);
+	public ResponseEntity<ApiRes<DiscountDto.DiscountResponse>> getDiscountById(@PathVariable UUID discountId) {
+
+		DiscountDto.DiscountResponse data = discountService.getDiscountById(discountId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -60,18 +70,26 @@ public class DiscountController {
 	})
 	public ResponseEntity<ApiRes<List<DiscountDto.DiscountResponse>>> getActiveDiscounts(
 			@Parameter(description = "UUID of the Category or Item") @RequestParam("referenceId") UUID referenceId) {
+
 		List<DiscountDto.DiscountResponse> data = discountService.getActiveDiscountsForReference(referenceId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{discountId}")
 	@Operation(summary = "Cancel a promotion")
 	@ApiResponses({
 			@ApiResponse(responseCode = "204", description = "Discount permanently dropped"),
 			@ApiResponse(responseCode = "404", description = "Discount not found")
 	})
-	public ResponseEntity<ApiRes<Void>> deleteDiscount(@PathVariable UUID id) {
-		discountService.deleteDiscount(id);
+	public ResponseEntity<ApiRes<Void>> deleteDiscount(@PathVariable UUID discountId) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		discountService.deleteDiscount(discountId, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 }

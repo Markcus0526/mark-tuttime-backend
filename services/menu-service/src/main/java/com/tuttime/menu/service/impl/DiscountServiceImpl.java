@@ -26,7 +26,7 @@ public class DiscountServiceImpl implements DiscountService {
 
 	@Override
 	@Transactional
-	public DiscountDto.DiscountResponse createDiscount(DiscountDto.DiscountRequest request) {
+	public DiscountDto.DiscountResponse createDiscount(DiscountDto.DiscountRequest request, UUID currentUserId, String userRoles) {
 		Discount discount = discountMapper.toEntity(request);
 		Discount saved = discountRepository.save(discount);
 		return discountMapper.toResponse(saved);
@@ -34,7 +34,7 @@ public class DiscountServiceImpl implements DiscountService {
 
 	@Override
 	@Transactional
-	public DiscountDto.DiscountResponse updateDiscount(UUID id, DiscountDto.DiscountRequest request) {
+	public DiscountDto.DiscountResponse updateDiscount(UUID id, DiscountDto.DiscountRequest request, UUID currentUserId, String userRoles) {
 		Discount existing = discountRepository.findById(id)
 				.orElseThrow(() -> new MethodArgumentNotValidException("Discount not found with id: " + id));
 
@@ -73,7 +73,7 @@ public class DiscountServiceImpl implements DiscountService {
 
 	@Override
 	@Transactional
-	public void deleteDiscount(UUID id) {
+	public void deleteDiscount(UUID id, UUID currentUserId, String userRoles) {
 		if (!discountRepository.existsById(id)) {
 			throw new MethodArgumentNotValidException("Discount not found with id: " + id);
 		}

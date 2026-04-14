@@ -1,9 +1,7 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.menu.dto.ModifierDto;
-import com.tuttime.menu.dto.ModifierGroupDto;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.Modifier;
 import com.tuttime.menu.entity.ModifierGroup;
@@ -16,6 +14,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,7 +31,7 @@ public class ModifierServiceImpl implements ModifierService {
 
 	@Override
 	@Transactional
-	public ModifierGroupDto.ModifierGroupResponse createGroup(ModifierGroupDto.ModifierGroupRequest request) {
+	public ModifierDto.ModifierGroupResponse createGroup(ModifierDto.ModifierGroupRequest request, UUID currentUserId, String userRoles) {
 		ModifierGroup group = ModifierGroup.builder()
 				.name(request.name())
 				.description(request.description())
@@ -43,29 +42,34 @@ public class ModifierServiceImpl implements ModifierService {
 	}
 
 	@Override
-	public ModifierGroupDto.ModifierGroupResponse getGroupById(UUID id) {
+	public ModifierDto.ModifierGroupResponse getGroupById(UUID id) {
 		return groupRepository.findById(id)
 				.map(this::mapToGroupResponse)
 				.orElseThrow(() -> new MethodArgumentNotValidException("Modifier group not found"));
 	}
 
 	@Override
+	public List<ModifierDto.ModifierGroupResponse> getAllGroups() {
+		return List.of();
+	}
+
+	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", allEntries = true)
-	public void updateGroup(UUID id, ModifierGroupDto.ModifierGroupRequest request) {
+	public ModifierDto.ModifierGroupResponse updateGroup(UUID id, ModifierDto.ModifierGroupRequest request, UUID currentUserId, String userRoles) {
 		ModifierGroup group = groupRepository.findById(id)
 				.orElseThrow(() -> new MethodArgumentNotValidException("Group not found"));
 		group.setName(request.name());
 		group.setDescription(request.description());
 		group.setMinSelect(request.minSelect());
 		group.setMaxSelect(request.maxSelect());
-		groupRepository.save(group);
+		return mapToGroupResponse(groupRepository.save(group));
 	}
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", allEntries = true)
-	public void deleteGroup(UUID id) {
+	public void deleteGroup(UUID id, UUID currentUserId, String userRoles) {
 		if (!groupRepository.existsById(id)) throw new MethodArgumentNotValidException("Group not found");
 		groupRepository.deleteById(id);
 	}
@@ -75,7 +79,7 @@ public class ModifierServiceImpl implements ModifierService {
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", allEntries = true)
-	public ModifierDto.ModifierResponse addModifierToGroup(UUID groupId, ModifierDto.ModifierRequest request) {
+	public ModifierDto.ModifierResponse addModifier(UUID groupId, ModifierDto.ModifierRequest request, UUID currentUserId, String userRoles) {
 		ModifierGroup group = groupRepository.findById(groupId)
 				.orElseThrow(() -> new MethodArgumentNotValidException("Group not found"));
 
@@ -90,33 +94,22 @@ public class ModifierServiceImpl implements ModifierService {
 	}
 
 	@Override
-	@Transactional
-	@CacheEvict(value = "branch_menus", allEntries = true)
-	public void deleteModifier(UUID modifierId) {
-		if (!modifierRepository.existsById(modifierId)) throw new MethodArgumentNotValidException("Modifier not found");
-		modifierRepository.deleteById(modifierId);
+	public ModifierDto.ModifierResponse updateModifier(UUID modifierId, ModifierDto.ModifierRequest request, UUID currentUserId, String userRoles) {
+		return null;
 	}
-
-	// --- Linking Logic (The Many-to-Many Bridge) ---
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", allEntries = true)
-	public void assignGroupToItem(UUID itemId, UUID groupId) {
-		MenuItem item = menuItemRepository.findById(itemId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Menu Item not found"));
-		ModifierGroup group = groupRepository.findById(groupId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Modifier Group not found"));
-
-		// Since MenuItem has a Set<ModifierGroup>, we just add it
-		item.getModifierGroups().add(group);
-		menuItemRepository.save(item);
+	public void deleteModifier(UUID modifierId, UUID currentUserId, String userRoles) {
+		if (!modifierRepository.existsById(modifierId)) throw new MethodArgumentNotValidException("Modifier not found");
+		modifierRepository.deleteById(modifierId);
 	}
 
 	// --- Private Mappers (Manual for Records) ---
 
-	private ModifierGroupDto.ModifierGroupResponse mapToGroupResponse(ModifierGroup group) {
-		return new ModifierGroupDto.ModifierGroupResponse(
+	private ModifierDto.ModifierGroupResponse mapToGroupResponse(ModifierGroup group) {
+		return new ModifierDto.ModifierGroupResponse(
 				group.getId(),
 				group.getName(),
 				group.getDescription(),

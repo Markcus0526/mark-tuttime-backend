@@ -34,12 +34,12 @@ public class MenuItemDto {
 	@Schema(description = "Menu Item response details")
 	public record MenuItemDetailedResponse(
 			UUID menuItemId,
-			UUID menuCategoryId,
+			UUID categoryId,
 			String name,
 			String description,
 			BigDecimal price,
 			Boolean available,
-			List<ModifierGroupDto.ModifierGroupResponse> modifierGroups
+			List<ModifierDto.ModifierGroupResponse> modifierGroups
 	) {}
 
 	// Compact summary response (for basic list rendering)

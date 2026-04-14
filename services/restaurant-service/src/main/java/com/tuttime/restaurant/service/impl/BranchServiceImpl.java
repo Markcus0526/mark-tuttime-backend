@@ -84,11 +84,6 @@ public class BranchServiceImpl implements BranchService {
 		// 2. Map updates
 		branchMapper.updateEntityFromRequest(request, branch);
 
-		// Manual mapping for the PostGIS Point
-		if (request.longitude() != null && request.latitude() != null) {
-			branch.setLocation(createPoint(request.longitude(), request.latitude()));
-		}
-
 		// No need for .save(branch) - Hibernate dirty checking handles it
 		return branchMapper.toResponse(branch);
 	}

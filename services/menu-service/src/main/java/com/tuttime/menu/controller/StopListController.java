@@ -1,6 +1,8 @@
 package com.tuttime.menu.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.menu.dto.StopListDto;
 import com.tuttime.menu.service.StopListService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +38,14 @@ public class StopListController {
 			@ApiResponse(responseCode = "400", description = "Invalid request or item already stopped")
 	})
 	public ResponseEntity<ApiRes<StopListDto.StopListResponse>> addToStopList(@Valid @RequestBody StopListDto.StopListRequest request) {
-		StopListDto.StopListResponse data = stopListService.addToStopList(request);
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		StopListDto.StopListResponse data = stopListService.addToStopList(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
@@ -48,18 +57,26 @@ public class StopListController {
 	})
 	public ResponseEntity<ApiRes<List<StopListDto.StopListResponse>>> getStopListByBranch(
 			@Parameter(description = "UUID of the branch") @PathVariable UUID branchId) {
+
 		List<StopListDto.StopListResponse> data = stopListService.getStopListByBranch(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{stopId}")
 	@Operation(summary = "Restore item stock status", description = "Removes the item from the stop list, making it available for orders again.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "204", description = "Item restored to active status"),
 			@ApiResponse(responseCode = "404", description = "Stop list entry not found")
 	})
-	public ResponseEntity<ApiRes<Void>> removeFromStopList(@PathVariable UUID id) {
-		stopListService.removeFromStopList(id);
+	public ResponseEntity<ApiRes<Void>> removeFromStopList(@PathVariable UUID stopId) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		stopListService.removeFromStopList(stopId, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 }

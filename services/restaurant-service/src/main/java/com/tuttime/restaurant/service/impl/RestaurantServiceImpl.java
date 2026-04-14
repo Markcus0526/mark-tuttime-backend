@@ -92,9 +92,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 		// 2. Map fields and handle PostGIS Point
 		restaurantMapper.updateEntityFromRequest(request, restaurant);
-		if (request.longitude() != null && request.latitude() != null) {
-			restaurant.setLocation(createPoint(request.longitude(), request.latitude()));
-		}
 
 		// Hibernate dirty checking updates the DB automatically
 		return restaurantMapper.toResponse(restaurant);
