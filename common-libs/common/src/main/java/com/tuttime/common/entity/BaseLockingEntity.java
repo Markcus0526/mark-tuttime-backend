@@ -8,10 +8,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
+@Getter @Setter
 public abstract class BaseLockingEntity extends BaseTimeStampEntity {
 
 	@Id
@@ -21,6 +20,16 @@ public abstract class BaseLockingEntity extends BaseTimeStampEntity {
 	@Version // <--- THE MAGIC LINE for Optimistic Locking
 	private Long version;
 
-	@Column(name = "deleted_at")
-	private OffsetDateTime deletedAt;
+	@Transient
+	private boolean isNew = true;
+
+	@PrePersist
+	@PostLoad
+	void markNotNew() {
+		this.isNew = false;
+	}
+
+	public boolean isNew() {
+		return isNew || id == null;
+	}
 }

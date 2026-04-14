@@ -1,5 +1,7 @@
 package com.tuttime.common.util;
 
+import com.tuttime.common.exception.ResourceNotFoundException;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,7 +17,7 @@ public class UuidUtil {
 		}
 		try {
 			return UUID.fromString(uuidStr.trim());
-		} catch (IllegalArgumentException e) {
+		} catch (ResourceNotFoundException e) {
 			// Log error if necessary
 			return null;
 		}
