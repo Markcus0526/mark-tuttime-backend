@@ -10,7 +10,7 @@ option java_outer_classname = "RestaurantServiceProto";
 // Restaurant Service gRPC
 service RestaurantService {
 
-  rpc ValidateBranch (BranchRequest) returns (BranchResponse);
+  rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
 
   rpc CheckAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
 
@@ -20,13 +20,14 @@ service RestaurantService {
 
 }
 
-message BranchRequest {
-  string branch_id = 1; // Branch UUID
+message BranchPermissionRequest {
+  string branch_id = 1; // Branch or Restaurant UUID
   string user_id = 2; // User UUID
+  string user_roles = 3;
 }
 
-message BranchResponse {
-  bool exists = 1;
+message BranchPermissionResponse {
+  bool valid = 1;
 }
 
 message AvailableTableRequest {

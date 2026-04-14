@@ -13,10 +13,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 
-@Getter
-@Setter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
+@Getter @Setter
 public abstract class BaseDeleteEntity extends BaseTimeStampEntity {
 	@Column(name = "deleted")
 	private boolean deleted = false;

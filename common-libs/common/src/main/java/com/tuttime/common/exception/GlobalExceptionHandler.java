@@ -6,6 +6,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -96,7 +97,18 @@ public class GlobalExceptionHandler {
 		return createErrorResponse(
 				HttpStatus.UNAUTHORIZED,
 				ErrorCodes.UNAUTHORIZED,
-				"Access denied",
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleJsonParseError(HttpMessageNotReadableException ex, HttpServletRequest request) {
+		log.error("JSON parse error on path [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.NOT_FOUND,
+				ErrorCodes.RESOURCE_NOT_FOUND,
+				ex.getMessage(),
 				request,
 				null);
 	}
@@ -109,7 +121,7 @@ public class GlobalExceptionHandler {
 		log.error("UNEXPECTED ERROR [{}]: ", getCorrelationId(request), ex); // Log full stack trace for devs
 		return createErrorResponse(
 				HttpStatus.INTERNAL_SERVER_ERROR,
-				"INTERNAL_SERVER_ERROR",
+				ex.getMessage(),
 				ex.getMessage(),
 				request,
 				null);

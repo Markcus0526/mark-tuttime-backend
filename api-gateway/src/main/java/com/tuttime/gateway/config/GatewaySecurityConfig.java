@@ -3,6 +3,7 @@ package com.tuttime.gateway.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -34,6 +35,8 @@ public class GatewaySecurityConfig {
 
 				.authorizeExchange(exchanges -> exchanges
 						// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
+						.pathMatchers(HttpMethod.GET, "/media/**").permitAll()
+
 						.pathMatchers(
 								"/api/v1/**",
 

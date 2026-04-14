@@ -71,6 +71,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 			String path = request.getURI().getPath();
 			String method = request.getMethod().name();
 
+			// Inside your custom Gateway Filter
+			if (exchange.getRequest().getURI().getPath().startsWith("/media/")) {
+				return chain.filter(exchange);
+			}
+
 			log.debug("JWT Filter: Checking path: {}, method: {}", path, method);
 
 			// Skip authentication for OPTIONS requests (CORS preflight)

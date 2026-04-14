@@ -102,12 +102,12 @@ spring:
                 fallbackUri: forward:/fallback/restaurant-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/branches/**
+        # Endpoints include: /api/v1/restaurant-branches/**
         - id: restaurant-service-branch
           order: 22
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
           predicates:
-            - Path=/api/v1/branches/**
+            - Path=/api/v1/restaurant-branches/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
@@ -116,12 +116,12 @@ spring:
                 fallbackUri: forward:/fallback/restaurant-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/zones/**
+        # Endpoints include: /api/v1/restaurant-zones/**
         - id: restaurant-service-zone
           order: 23
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
           predicates:
-            - Path=/api/v1/zones/**
+            - Path=/api/v1/restaurant-zones/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
@@ -130,18 +130,57 @@ spring:
                 fallbackUri: forward:/fallback/restaurant-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/tables/**
+        # Endpoints include: /api/v1/restaurant-tables/**
         - id: restaurant-service-table
           order: 24
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
           predicates:
-            - Path=/api/v1/tables/**
+            - Path=/api/v1/restaurant-tables/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/restaurant-schedules/**
+        - id: restaurant-service-schedule
+          order: 25
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          predicates:
+            - Path=/api/v1/restaurant-schedules/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/restaurant-medias/**
+        - id: restaurant-service-media
+          order: 26
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          predicates:
+            - Path=/api/v1/restaurant-medias/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /media/**
+        - id: restaurant-service-media-files
+          order: 27
+          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          predicates:
+            - Path=/media/**
+          filters:
+            - name: CircuitBreaker # GOOD
+            # - JwtAuthentication # REMOVE THIS IF IT IS HERE
 
         ################# Menu Service Routes #######################
 
@@ -160,12 +199,12 @@ spring:
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menus/modifiers/**
-        - id: menu-service-modifier
+        # Endpoints include: /api/v1/menu-items/**
+        - id: menu-service-item
           order: 32
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
-            - Path=/api/v1/menus/modifiers/**
+            - Path=/api/v1/menus-items/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
@@ -174,12 +213,12 @@ spring:
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menus/discounts/**
-        - id: menu-service-discount
+        # Endpoints include: /api/v1/menu-modifiers/**
+        - id: menu-service-modifier
           order: 33
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
-            - Path=/api/v1/menus/discounts/**
+            - Path=/api/v1/menu-modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
@@ -188,12 +227,40 @@ spring:
                 fallbackUri: forward:/fallback/menu-service
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menus/stoplists/**
-        - id: menu-service-stoplist
+        # Endpoints include: /api/v1/menu-discounts/**
+        - id: menu-service-discount
           order: 34
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
-            - Path=/api/v1/menus/stoplists/**
+            - Path=/api/v1/menu-discounts/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/menu-stoplists/**
+        - id: menu-service-stoplist
+          order: 35
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          predicates:
+            - Path=/api/v1/menu-stoplists/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/menu-medias/**
+        - id: menu-service-stoplist
+          order: 36
+          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          predicates:
+            - Path=/api/v1/menu-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
