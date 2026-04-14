@@ -1,6 +1,7 @@
 package com.tuttime.menu.entity;
 
 import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,23 +20,19 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class MenuItem extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "menu_item_id", nullable = false, updatable = false)
-	private UUID menuItemId;
+public class MenuItem extends BaseUuidAnDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "menu_category_id", nullable = false)
 	private MenuCategory category;
 
-	@Column(nullable = false)
+	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "description")
 	private String description;
 
-	@Column(nullable = false, precision = 10, scale = 2)
+	@Column(name = "price", nullable = false, precision = 10, scale = 2)
 	private BigDecimal price;
 
 	@Column(name = "available")

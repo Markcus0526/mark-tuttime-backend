@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/menus/modifiers")
+@RequestMapping("/api/v1/menu-modifiers")
 @RequiredArgsConstructor
-@Tag(name = "Modifier Groups", description = "Manage customization rules (e.g., 'Select Meat Temp')")
+@Tag(name = "3.Menu Modifier", description = "Manage customization rules (e.g., 'Select Meat Temp')")
 public class ModifierGroupController {
 
 	private final ModifierService modifierService;
@@ -71,9 +71,9 @@ public class ModifierGroupController {
 			@ApiResponse(responseCode = "204", description = "Group deleted"),
 			@ApiResponse(responseCode = "404", description = "Group not found")
 	})
-	public ResponseEntity<Void> deleteGroup(@PathVariable UUID groupId) {
+	public ResponseEntity<ApiRes<Void>> deleteGroup(@PathVariable UUID groupId) {
 		modifierService.deleteGroup(groupId);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@DeleteMapping("/{groupId}/modifiers/{id}")
@@ -82,8 +82,8 @@ public class ModifierGroupController {
 			@ApiResponse(responseCode = "204", description = "Modifier deleted"),
 			@ApiResponse(responseCode = "404", description = "Modifier not found")
 	})
-	public ResponseEntity<Void> deleteModifier(@PathVariable UUID id) {
+	public ResponseEntity<ApiRes<Void>> deleteModifier(@PathVariable UUID id) {
 		modifierService.deleteModifier(id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 }

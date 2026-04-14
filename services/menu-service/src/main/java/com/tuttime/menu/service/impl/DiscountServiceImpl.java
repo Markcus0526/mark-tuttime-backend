@@ -1,5 +1,6 @@
 package com.tuttime.menu.service.impl;
 
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.entity.Discount;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class DiscountServiceImpl implements DiscountService {
 
 	private final DiscountRepository discountRepository;
@@ -34,7 +36,7 @@ public class DiscountServiceImpl implements DiscountService {
 	@Transactional
 	public DiscountDto.DiscountResponse updateDiscount(UUID id, DiscountDto.DiscountRequest request) {
 		Discount existing = discountRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Discount not found with id: " + id));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Discount not found with id: " + id));
 
 		existing.setName(request.name());
 		existing.setDiscountType(request.discountType());
@@ -49,15 +51,13 @@ public class DiscountServiceImpl implements DiscountService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public DiscountDto.DiscountResponse getDiscountById(UUID id) {
 		return discountRepository.findById(id)
 				.map(discountMapper::toResponse)
-				.orElseThrow(() -> new ResourceNotFoundException("Discount not found with id: " + id));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Discount not found with id: " + id));
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID referenceId) {
 		OffsetDateTime now = OffsetDateTime.now();
 
@@ -75,7 +75,7 @@ public class DiscountServiceImpl implements DiscountService {
 	@Transactional
 	public void deleteDiscount(UUID id) {
 		if (!discountRepository.existsById(id)) {
-			throw new ResourceNotFoundException("Discount not found with id: " + id);
+			throw new MethodArgumentNotValidException("Discount not found with id: " + id);
 		}
 		discountRepository.deleteById(id);
 	}

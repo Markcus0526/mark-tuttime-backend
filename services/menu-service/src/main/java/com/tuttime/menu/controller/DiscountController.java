@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/menus/discounts")
+@RequestMapping("/api/v1/menu-discounts")
 @RequiredArgsConstructor
-@Tag(name = "Discounts", description = "Coordinates price cuts and active campaigns")
+@Tag(name = "4.Discounts", description = "Coordinates price cuts and active campaigns")
 public class DiscountController {
 
 	private final DiscountService discountService;
@@ -70,8 +70,8 @@ public class DiscountController {
 			@ApiResponse(responseCode = "204", description = "Discount permanently dropped"),
 			@ApiResponse(responseCode = "404", description = "Discount not found")
 	})
-	public ResponseEntity<Void> deleteDiscount(@PathVariable UUID id) {
+	public ResponseEntity<ApiRes<Void>> deleteDiscount(@PathVariable UUID id) {
 		discountService.deleteDiscount(id);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 }

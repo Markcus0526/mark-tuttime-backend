@@ -17,8 +17,7 @@ public class ModifierDto {
 			String description,
 
 			BigDecimal priceAdjustment
-	) {
-	}
+	) {}
 
 	@Schema(description = "Modifier response details")
 	public record ModifierResponse(
@@ -26,6 +25,5 @@ public class ModifierDto {
 			String name,
 			String description,
 			BigDecimal priceAdjustment
-	) {
-	}
+	) {}
 }

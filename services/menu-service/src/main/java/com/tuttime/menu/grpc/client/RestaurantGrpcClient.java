@@ -2,9 +2,10 @@ package com.tuttime.menu.grpc.client;
 
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
-import com.tuttime.common.proto.BranchRequest;
-import com.tuttime.common.proto.BranchResponse;
+import com.tuttime.common.proto.BranchPermissionRequest;
+import com.tuttime.common.proto.BranchPermissionResponse;
 import com.tuttime.common.proto.RestaurantServiceGrpc;
 import com.tuttime.common.proto.UserServiceGrpc;
 import lombok.RequiredArgsConstructor;
@@ -22,16 +23,17 @@ public class RestaurantGrpcClient {
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
-	public void checkBranchExists(UUID userId, UUID branchId) {
-		BranchRequest request = BranchRequest.newBuilder()
-				.setUserId(userId.toString())
+	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
+		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
 				.setBranchId(branchId.toString())
+				.setUserId(userId.toString())
+				.setUserRoles(userRoles)
 				.build();
 
-		BranchResponse response = restaurantServiceBlockingStub.validateBranch(request);
+		BranchPermissionResponse response = restaurantServiceBlockingStub.validateBranchPermission(request);
 
-		if (!response.getExists()) {
-			throw new ConflictException("You do not manage this specific menu");
+		if (!response.getValid()) {
+			throw new MethodArgumentNotValidException("You do not manage this specific menu");
 		}
 	}
 }

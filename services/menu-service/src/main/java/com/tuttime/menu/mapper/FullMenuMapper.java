@@ -34,9 +34,10 @@ public interface FullMenuMapper {
 				.collect(Collectors.toList());
 
 		return new FullMenuDto.FullMenuCategoryResponse(
-				category.getMenuCategoryId(),
+				category.getId(),
 				category.getName(),
 				category.getDescription(),
+				category.getPriority(),
 				itemDtos
 		);
 	}
@@ -47,7 +48,7 @@ public interface FullMenuMapper {
 				.collect(Collectors.toList());
 
 		return new FullMenuDto.FullMenuItemResponse(
-				item.getMenuItemId(),
+				item.getId(),
 				item.getName(),
 				item.getDescription(),
 				item.getPrice(),
@@ -62,7 +63,7 @@ public interface FullMenuMapper {
 				.collect(Collectors.toList());
 
 		return new FullMenuDto.FullMenuModifierGroupResponse(
-				group.getModifierGroupId(),
+				group.getId(),
 				group.getName(),
 				group.getMinSelect(),
 				group.getMaxSelect(),
@@ -72,7 +73,7 @@ public interface FullMenuMapper {
 
 	default FullMenuDto.FullMenuModifierResponse toModifierResponse(Modifier modifier) {
 		return new FullMenuDto.FullMenuModifierResponse(
-				modifier.getModifierId(),
+				modifier.getId(),
 				modifier.getName(),
 				modifier.getPriceAdjustment()
 		);

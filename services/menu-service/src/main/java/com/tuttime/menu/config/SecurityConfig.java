@@ -30,7 +30,13 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/v1/menus/**").permitAll() // Add /v1
+						.requestMatchers(
+								"/api/v1/menus/**",
+								"/api/v1/menu-items/**",
+								"/api/v1/menu-modifiers/**",
+								"/api/v1/menu-discounts/**",
+								"/api/v1/menu-stoplists/**",
+								"/api/v1/menu-medias/**").permitAll() // Add /v1
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 				)
 				.addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);

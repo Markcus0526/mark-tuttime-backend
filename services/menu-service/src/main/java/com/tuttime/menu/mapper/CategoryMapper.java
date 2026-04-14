@@ -4,6 +4,7 @@ import com.tuttime.menu.dto.CategoryDto;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.entity.MenuCategory;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ public interface CategoryMapper {
 	/**
 	 * Use the 'default' keyword to allow a method body in an interface.
 	 */
+	@Mapping(source = "id", target = "categoryId")
 	default CategoryDto.CategoryResponse toResponse(MenuCategory entity) {
 		if (entity == null) return null;
 
@@ -32,7 +34,7 @@ public interface CategoryMapper {
 		if (entity.getItems() != null) {
 			itemSummaries = entity.getItems().stream()
 					.map(item -> new MenuItemDto.MenuItemResponseSummary(
-							item.getMenuItemId(),
+							item.getId(),
 							item.getName(),
 							item.getPrice(),
 							item.getAvailable(),
@@ -42,10 +44,11 @@ public interface CategoryMapper {
 		}
 
 		return new CategoryDto.CategoryResponse(
-				entity.getMenuCategoryId(),
+				entity.getId(),
 				entity.getBranchId(),
 				entity.getName(),
 				entity.getDescription(),
+				entity.getPriority(),
 				itemSummaries
 		);
 	}

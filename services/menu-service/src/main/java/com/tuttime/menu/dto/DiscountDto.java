@@ -35,8 +35,7 @@ public class DiscountDto {
 			OffsetDateTime endDate,
 
 			Boolean active
-	) {
-	}
+	) {}
 
 	@Schema(description = "Discount response details")
 	public record DiscountResponse(
@@ -49,6 +48,5 @@ public class DiscountDto {
 			OffsetDateTime startDate,
 			OffsetDateTime endDate,
 			Boolean active
-	) {
-	}
+	) {}
 }

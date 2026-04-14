@@ -1,6 +1,7 @@
 package com.tuttime.menu.entity;
 
 import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,19 +17,15 @@ import java.util.*;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class MenuCategory extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "menu_category_id", nullable = false, updatable = false)
-	private UUID menuCategoryId;
+public class MenuCategory extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId; // Connected to external Branch Service
 
-	@Column(nullable = false)
+	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "description")
 	private String description;
 
 	@OneToMany(mappedBy = "category", fetch = FetchType.EAGER)

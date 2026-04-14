@@ -1,6 +1,7 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.ConflictException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.menu.dto.StopListDto;
 import com.tuttime.menu.entity.MenuItem;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StopListServiceImpl implements StopListService {
 
 	private final StopListRepository stopListRepository;
@@ -30,10 +32,10 @@ public class StopListServiceImpl implements StopListService {
 	public StopListDto.StopListResponse addToStopList(StopListDto.StopListRequest request) {
 		// 1. Verify item exists
 		MenuItem menuItem = menuItemRepository.findById(request.menuItemId())
-				.orElseThrow(() -> new ResourceNotFoundException("Menu item not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Menu item not found"));
 
 		// 2. Check if already on stop list for this branch to avoid duplicates
-		stopListRepository.findByMenuItem_MenuItemIdAndBranchId(request.menuItemId(), request.branchId())
+		stopListRepository.findByMenuItemIdAndBranchId(request.menuItemId(), request.branchId())
 				.ifPresent(s -> {
 					throw new ConflictException("Item already on stop list");
 				});
@@ -52,7 +54,6 @@ public class StopListServiceImpl implements StopListService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<StopListDto.StopListResponse> getStopListByBranch(UUID branchId) {
 		return stopListRepository.findByBranchId(branchId).stream()
 				.map(this::mapToResponse)
@@ -63,7 +64,7 @@ public class StopListServiceImpl implements StopListService {
 	@Transactional
 	public void removeFromStopList(UUID id) {
 		StopList stopList = stopListRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Stop list entry not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Stop list entry not found"));
 
 		// Evict cache before deleting
 		evictCache(stopList.getBranchId());
@@ -78,8 +79,8 @@ public class StopListServiceImpl implements StopListService {
 
 	private StopListDto.StopListResponse mapToResponse(StopList s) {
 		return new StopListDto.StopListResponse(
-				s.getStopListId(),
-				s.getMenuItem().getMenuItemId(),
+				s.getId(),
+				s.getMenuItem().getId(),
 				s.getMenuItem().getName(), // Crucial for Frontend UI
 				s.getBranchId(),
 				s.getStartDate(),

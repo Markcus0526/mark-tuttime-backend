@@ -1,6 +1,7 @@
 package com.tuttime.menu.entity;
 
 import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,20 +18,16 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Modifier extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "modifier_id", nullable = false, updatable = false)
-	private UUID modifierId;
+public class Modifier extends BaseUuidAnDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "modifier_group_id", nullable = false)
 	private ModifierGroup group;
 
-	@Column(nullable = false)
+	@Column(name = "name", nullable = false)
 	private String name;
 
+	@Column(name = "description")
 	private String description;
 
 	@Column(name = "price_adjustment", nullable = false, precision = 10, scale = 2)

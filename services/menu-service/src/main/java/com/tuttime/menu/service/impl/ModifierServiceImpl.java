@@ -1,5 +1,6 @@
 package com.tuttime.menu.service.impl;
 
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.menu.dto.ModifierDto;
 import com.tuttime.menu.dto.ModifierGroupDto;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ModifierServiceImpl implements ModifierService {
 
 	private final ModifierGroupRepository groupRepository;
@@ -41,11 +43,10 @@ public class ModifierServiceImpl implements ModifierService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public ModifierGroupDto.ModifierGroupResponse getGroupById(UUID id) {
 		return groupRepository.findById(id)
 				.map(this::mapToGroupResponse)
-				.orElseThrow(() -> new ResourceNotFoundException("Modifier group not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Modifier group not found"));
 	}
 
 	@Override
@@ -53,7 +54,7 @@ public class ModifierServiceImpl implements ModifierService {
 	@CacheEvict(value = "branch_menus", allEntries = true)
 	public void updateGroup(UUID id, ModifierGroupDto.ModifierGroupRequest request) {
 		ModifierGroup group = groupRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Group not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Group not found"));
 		group.setName(request.name());
 		group.setDescription(request.description());
 		group.setMinSelect(request.minSelect());
@@ -65,7 +66,7 @@ public class ModifierServiceImpl implements ModifierService {
 	@Transactional
 	@CacheEvict(value = "branch_menus", allEntries = true)
 	public void deleteGroup(UUID id) {
-		if (!groupRepository.existsById(id)) throw new ResourceNotFoundException("Group not found");
+		if (!groupRepository.existsById(id)) throw new MethodArgumentNotValidException("Group not found");
 		groupRepository.deleteById(id);
 	}
 
@@ -76,7 +77,7 @@ public class ModifierServiceImpl implements ModifierService {
 	@CacheEvict(value = "branch_menus", allEntries = true)
 	public ModifierDto.ModifierResponse addModifierToGroup(UUID groupId, ModifierDto.ModifierRequest request) {
 		ModifierGroup group = groupRepository.findById(groupId)
-				.orElseThrow(() -> new ResourceNotFoundException("Group not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Group not found"));
 
 		Modifier modifier = Modifier.builder()
 				.group(group)
@@ -92,7 +93,7 @@ public class ModifierServiceImpl implements ModifierService {
 	@Transactional
 	@CacheEvict(value = "branch_menus", allEntries = true)
 	public void deleteModifier(UUID modifierId) {
-		if (!modifierRepository.existsById(modifierId)) throw new ResourceNotFoundException("Modifier not found");
+		if (!modifierRepository.existsById(modifierId)) throw new MethodArgumentNotValidException("Modifier not found");
 		modifierRepository.deleteById(modifierId);
 	}
 
@@ -103,9 +104,9 @@ public class ModifierServiceImpl implements ModifierService {
 	@CacheEvict(value = "branch_menus", allEntries = true)
 	public void assignGroupToItem(UUID itemId, UUID groupId) {
 		MenuItem item = menuItemRepository.findById(itemId)
-				.orElseThrow(() -> new ResourceNotFoundException("Menu Item not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Menu Item not found"));
 		ModifierGroup group = groupRepository.findById(groupId)
-				.orElseThrow(() -> new ResourceNotFoundException("Modifier Group not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Modifier Group not found"));
 
 		// Since MenuItem has a Set<ModifierGroup>, we just add it
 		item.getModifierGroups().add(group);
@@ -116,7 +117,7 @@ public class ModifierServiceImpl implements ModifierService {
 
 	private ModifierGroupDto.ModifierGroupResponse mapToGroupResponse(ModifierGroup group) {
 		return new ModifierGroupDto.ModifierGroupResponse(
-				group.getModifierGroupId(),
+				group.getId(),
 				group.getName(),
 				group.getDescription(),
 				group.getMinSelect(),
@@ -129,7 +130,7 @@ public class ModifierServiceImpl implements ModifierService {
 
 	private ModifierDto.ModifierResponse mapToModifierResponse(Modifier m) {
 		return new ModifierDto.ModifierResponse(
-				m.getModifierId(),
+				m.getId(),
 				m.getName(),
 				m.getDescription(),
 				m.getPriceAdjustment()

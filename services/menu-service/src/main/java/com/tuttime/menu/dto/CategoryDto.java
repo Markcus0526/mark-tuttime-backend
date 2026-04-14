@@ -22,22 +22,16 @@ public class CategoryDto {
 			String description,
 
 			Integer priority
-	) {
-	}
+	) {}
 
 	// Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
 	@Schema(description = "Category response details")
 	public record CategoryResponse(
-
-			UUID menuCategoryId,
-
+			UUID categoryId,
 			UUID branchId,
-
 			String name,
-
 			String description,
-
+			Integer priority,
 			List<MenuItemDto.MenuItemResponseSummary> items
-	) {
-	}
+	) {}
 }
