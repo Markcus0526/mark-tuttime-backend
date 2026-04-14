@@ -2,17 +2,16 @@ package com.tuttime.user.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.AuthenticationException;
-import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.common.proto.StaffUserRequest;
 import com.tuttime.common.proto.StaffUserResponse;
-import com.tuttime.user.dto.*;
+import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.entity.enums.UserStatus;
 import com.tuttime.user.entity.enums.VerificationType;
 import com.tuttime.user.grpc.client.RestaurantGrpcClient;
+import com.tuttime.user.mapper.AuthMapper;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.AuthService;
@@ -34,7 +33,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService {
 
 	private final UserRepository userRepository;
@@ -46,15 +45,16 @@ public class AuthServiceImpl implements AuthService {
 	private final JwtTokenProvider jwtTokenProvider;
 	private final EmailService emailService;
 	private final SmsService smsService;
+	private final AuthMapper authMapper;
 	private final TokenUtil tokenUtil;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	@Override
 	@Transactional // CRITICAL: Ensure both saves happen in one transaction
-	public void registerUser(RegisterRequest request) {
-		String phoneNumber = request.getPhoneNumber();
-		String email = request.getEmail();
-		String password = request.getPassword();
+	public void registerUser(AuthDto.RegisterRequest request) {
+		String phoneNumber = request.phoneNumber();
+		String email = request.email();
+		String password = request.password();
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
@@ -66,14 +66,14 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		// Check if user already exists by phone or email
-		if (StringUtils.hasText(request.getPhoneNumber()) &&
-				userRepository.existsByPhoneNumberAndDeletedFalse(request.getPhoneNumber())) {
-			throw new ConflictException("Phone number in use");
+		if (StringUtils.hasText(request.phoneNumber()) &&
+				userRepository.existsByPhoneNumberAndDeletedFalse(request.phoneNumber())) {
+			throw new MethodArgumentNotValidException("Phone number in use");
 		}
 
-		if (StringUtils.hasText(request.getEmail()) &&
-				userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
-			throw new ConflictException("Email in use");
+		if (StringUtils.hasText(request.email()) &&
+				userRepository.existsByEmailAndDeletedFalse(request.email())) {
+			throw new MethodArgumentNotValidException("Email in use");
 		}
 
 		// 1. Create and populate User first
@@ -84,17 +84,18 @@ public class AuthServiceImpl implements AuthService {
 		user = userRepository.saveAndFlush(user);
 
 		String targetRole = UserRoleKind.USER.name();
-		Role userRole = roleRepository.findByName(UserRoleKind.USER.name())
-				.orElseThrow(() -> new ResourceNotFoundException("Role " + targetRole + " not found"));
-		UserRole ur = new UserRole();
-		ur.setUserId(user.getUserId());
-		ur.setRole(userRole);
-		userRoleRepository.save(ur);
+		Role role = roleRepository.findByName(UserRoleKind.USER.name())
+				.orElseThrow(() -> new MethodArgumentNotValidException("Role " + targetRole + " not found"));
+		UserRole userRole = UserRole.builder()
+				.user(user)
+				.role(role)
+				.build();
+		userRoleRepository.save(userRole);
 
 		// 2. Create and link AuthMethod to the SAVED user
 		UserAuthMethod authMethod = new UserAuthMethod();
-		authMethod.setUserId(user.getUserId()); // Now 'user' has an ID!
-		authMethod.setCredential(passwordEncoder.encode(request.getPassword()));
+		authMethod.setUser(user); // Now 'user' has an ID!
+		authMethod.setCredential(passwordEncoder.encode(request.password()));
 		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
 		authMethod.setVerified(false);
 
@@ -104,16 +105,14 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 
 		// Send verification (email or phone)
-		OtpVerificationRequest optRequest = new OtpVerificationRequest();
-		optRequest.setPhoneNumber(phoneNumber);
-		optRequest.setEmail(email);
+		AuthDto.OtpVerificationRequest optRequest = new AuthDto.OtpVerificationRequest(phoneNumber, email);
 		sendOtpVerificationCode(optRequest);
 	}
 
 	@Override
-	public void loginUser(LoginRequest request) {
-		String identifier = request.getEmailOrPhone();
-		String password = request.getPassword();
+	public void loginUser(AuthDto.LoginRequest request) {
+		String identifier = request.emailOrPhone();
+		String password = request.password();
 
 		if (!StringUtils.hasText(identifier)) {
 			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
@@ -144,10 +143,10 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check auth method and verify password
 		if (StringUtils.hasText(email)) {
-			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getUserId(), AuthProvider.EMAIL_PASS)
-					.orElseThrow(() -> new SecurityException("Authentication method not found"));
+			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
+					.orElseThrow(() -> new AuthenticationException("Authentication method not found"));
 
-			if (!passwordEncoder.matches(request.getPassword(), authMethod.getCredential())) {
+			if (!passwordEncoder.matches(request.password(), authMethod.getCredential())) {
 				throw new AuthenticationException("Invalid credentials");
 			}
 
@@ -158,18 +157,16 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		// Send verification (email or phone)
-		OtpVerificationRequest optRequest = new OtpVerificationRequest();
-		optRequest.setPhoneNumber(phoneNumber);
-		optRequest.setEmail(email);
+		AuthDto.OtpVerificationRequest optRequest = new AuthDto.OtpVerificationRequest(phoneNumber, email);
 		sendOtpVerificationCode(optRequest);
 	}
 
 	@Override
-	public AuthResponse authenticateOAuthUser(OAuthLoginRequest request) {
+	public AuthDto.AuthResponse authenticateOAuthUser(AuthDto.OAuthLoginRequest request) {
 		// Validate provider and token (pseudo-code)
-		boolean valid = validateOAuthToken(request.getProvider(), request.getOauthToken());
+		boolean valid = validateOAuthToken(request.provider(), request.oauthToken());
 		if (!valid) {
-			throw new SecurityException("Invalid OAuth token");
+			throw new AuthenticationException("Invalid OAuth token");
 		}
 
 		// Retrieve or create user based on OAuth ID (implementation depends on your OAuth linkage)
@@ -179,42 +176,32 @@ public class AuthServiceImpl implements AuthService {
 		String accessToken = jwtTokenProvider.generateAccessToken(user);
 		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-		AuthResponse auth = new AuthResponse();
-		auth.setAccessToken(accessToken);
-		auth.setRefreshToken(refreshToken);
-		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getUserId());
-		auth.setFullName(user.getFullName());
-		auth.setEmail(user.getEmail());
-		auth.setPhoneNumber(user.getPhoneNumber());
-
-		return auth;
+		return authMapper.toAuthResponse(
+				user,
+				accessToken,
+				refreshToken,
+				jwtTokenProvider.getAccessTokenExpirySeconds(),
+				null);
 	}
 
 	@Override
-	public AuthResponse refreshJwtToken(String refreshToken) {
+	public AuthDto.AuthResponse refreshJwtToken(String refreshToken) {
 		if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
 			throw new AuthenticationException("Invalid refresh token");
 		}
 		UUID userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken);
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new SecurityException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
 		String newAccessToken = jwtTokenProvider.generateAccessToken(user);
 		String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-		AuthResponse auth = new AuthResponse();
-		auth.setAccessToken(newAccessToken);
-		auth.setRefreshToken(newRefreshToken);
-		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getUserId());
-		auth.setFullName(user.getFullName());
-		auth.setEmail(user.getEmail());
-		auth.setPhoneNumber(user.getPhoneNumber());
-
-		return auth;
+		return authMapper.toAuthResponse(
+				user,
+				newAccessToken,
+				newRefreshToken,
+				jwtTokenProvider.getAccessTokenExpirySeconds(),
+				null);
 	}
 
 	@Override
@@ -225,9 +212,10 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public void sendOtpVerificationCode(OtpVerificationRequest request) {
-		String phoneNumber = request.getPhoneNumber();
-		String email = request.getEmail();
+	@Transactional
+	public void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request) {
+		String phoneNumber = request.phoneNumber();
+		String email = request.email();
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
@@ -237,12 +225,12 @@ public class AuthServiceImpl implements AuthService {
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(phoneNumber) &&
 				!userRepository.existsByPhoneNumberAndDeletedFalse(phoneNumber)) {
-			throw new ResourceNotFoundException("Phone number not registered");
+			throw new MethodArgumentNotValidException("Phone number not registered");
 		}
 
 		if (StringUtils.hasText(email) &&
 				!userRepository.existsByEmailAndDeletedFalse(email)) {
-			throw new ResourceNotFoundException("Email not registered");
+			throw new MethodArgumentNotValidException("Email not registered");
 		}
 
 		// Generate code and save
@@ -263,11 +251,11 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Transactional
-	public AuthResponse loginWithOtp(OtpVerificationConfirmRequest request) {
-		String target = StringUtils.hasText(request.getPhoneNumber()) ? request.getPhoneNumber() : request.getEmail();
+	public AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request) {
+		String target = StringUtils.hasText(request.phoneNumber()) ? request.phoneNumber() : request.email();
 
 		// 1. Verify and Burn OTP
-		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, request.getCode())
+		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, request.code())
 				.orElseThrow(() -> new MethodArgumentNotValidException("Invalid or expired OTP code"));
 
 		otpCode.setUsed(true);
@@ -275,71 +263,64 @@ public class AuthServiceImpl implements AuthService {
 
 		// 2. Find User
 		User user = (otpCode.getType() == VerificationType.PHONE_VERIFY)
-				? userRepository.findByPhoneNumberAndDeletedFalse(request.getPhoneNumber())
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"))
-				: userRepository.findByEmailAndDeletedFalse(request.getEmail())
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				? userRepository.findByPhoneNumberAndDeletedFalse(target)
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"))
+				: userRepository.findByEmailAndDeletedFalse(target)
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
 		// 3. Update User State
 		user.setStatus(UserStatus.ACTIVE);
 		user.setLastLogin(OffsetDateTime.now());
 		userRepository.save(user);
 
-		// 4. Build AuthResponse
-		AuthResponse auth = new AuthResponse();
-		auth.setAccessToken(jwtTokenProvider.generateAccessToken(user));
-		auth.setRefreshToken(jwtTokenProvider.generateRefreshToken(user));
-		auth.setTokenType("Bearer");
-		auth.setExpiresIn(jwtTokenProvider.getAccessTokenExpirySeconds());
-		auth.setUserId(user.getUserId());
-		auth.setFullName(user.getFullName());
-		auth.setEmail(user.getEmail());
-		auth.setPhoneNumber(user.getPhoneNumber());
-
-		// 5. Inject Roles & Management Context
+		// 4. Fetch Management Context (gRPC) if applicable
+		AuthDto.AuthResponse.RestaurantStaff staffContext = null;
 		List<String> roleNames = user.getRoles().stream()
-				.map(UserRole::getRole)
-				.map(Role::getName)
+				.map(ur -> ur.getRole().getName())
 				.toList();
-		auth.setRoles(roleNames); // Assuming user entity has getRoles()
 
-		if (roleNames.contains(UserRoleKind.OWNER.name())
-				|| roleNames.contains(UserRoleKind.MANAGER.name())
-				|| roleNames.contains(UserRoleKind.HOSTESS.name())) {
-			StaffUserRequest grpcRequest = StaffUserRequest.newBuilder()
-					.setUserId(user.getUserId().toString())
-					.build();
-
+		if (roleNames.stream().anyMatch(role -> List.of("OWNER", "MANAGER", "HOSTESS").contains(role))) {
 			try {
-				StaffUserResponse grpcResponse = restaurantGrpcClient.getStaffForUser(grpcRequest);
+				StaffUserResponse grpcResponse = restaurantGrpcClient.getStaffForUser(
+						StaffUserRequest.newBuilder().setUserId(user.getId().toString()).build()
+				);
 
-				// Only attach context if IDs were actually found
 				if (!grpcResponse.getRestaurantId().isEmpty()) {
-					AuthResponse.RestaurantStaff staff = new AuthResponse.RestaurantStaff();
-					staff.setRestaurantId(UUID.fromString(grpcResponse.getRestaurantId()));
-					staff.setBranchId(grpcResponse.getBranchId().isEmpty() ? null : UUID.fromString(grpcResponse.getBranchId()));
-					staff.setEntityName(grpcResponse.getEntityName());
-					staff.setActive(grpcResponse.getActive());
-					auth.setStaff(staff);
+					// Since RestaurantStaff is a Record, use the constructor
+					staffContext = new AuthDto.AuthResponse.RestaurantStaff(
+							UUID.fromString(grpcResponse.getRestaurantId()),
+							grpcResponse.getBranchId().isEmpty() ? null : UUID.fromString(grpcResponse.getBranchId()),
+							grpcResponse.getEntityName(),
+							grpcResponse.getActive()
+					);
 				}
 			} catch (Exception e) {
 				log.error("gRPC call failed to fetch management context: {}", e.getMessage());
 			}
 		}
 
-		return auth;
+		// 5. Use the Mapper (Updated to handle staff parameter)
+		return authMapper.toAuthResponse(
+				user,
+				jwtTokenProvider.generateAccessToken(user),
+				jwtTokenProvider.generateRefreshToken(user),
+				jwtTokenProvider.getAccessTokenExpirySeconds(),
+				staffContext // Pass the context into the mapper
+		);
 	}
 
+
 	@Override
-	public void initiatePasswordReset(PasswordResetRequest request) {
-		String email = request.getEmail();
+	@Transactional
+	public void initiatePasswordReset(AuthDto.PasswordResetRequest request) {
+		String email = request.email();
 
 		if (!StringUtils.hasText(email)) {
-			throw new ResourceNotFoundException("Email must be provided");
+			throw new MethodArgumentNotValidException("Email must be provided");
 		}
 
 		Optional<User> userOpt = userRepository.findByEmailAndDeletedFalse(email);
-		User user = userOpt.orElseThrow(() -> new IllegalArgumentException("User not found"));
+		User user = userOpt.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
 		// Generate code and save
 		String code = tokenUtil.generateRandomCode();
@@ -354,10 +335,11 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public void resetPassword(PasswordResetConfirmRequest request) {
-		String email = request.getEmail();
-		String newPassword = request.getNewPassword();
-		String code = request.getCode();
+	@Transactional
+	public void resetPassword(AuthDto.PasswordResetConfirmRequest request) {
+		String email = request.email();
+		String newPassword = request.newPassword();
+		String code = request.code();
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(email)) {
@@ -372,7 +354,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Step 1: Verify OTP
 		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(email, code)
-				.orElseThrow(() -> new IllegalArgumentException("Invalid or expired OTP code"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Invalid or expired OTP code"));
 
 		// Step 2: Mark OTP as used
 		otpCode.setUsed(true);
@@ -380,16 +362,16 @@ public class AuthServiceImpl implements AuthService {
 
 		// Step 3: Find or create user by phone number
 		User user = userRepository.findByEmailAndDeletedFalse(email)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
 
-		updatePasswordForUser(user.getUserId(), newPassword);
+		updatePasswordForUser(user.getId(), newPassword);
 		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);
 	}
 
 	private void updatePasswordForUser(UUID userId, String newPassword) {
 		UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(userId, AuthProvider.EMAIL_PASS)
-				.orElseThrow(() -> new IllegalArgumentException("Authentication method not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Authentication method not found"));
 		authMethod.setCredential(passwordEncoder.encode(newPassword));
 		authMethod.setVerified(true);
 		userAuthMethodRepository.save(authMethod);
@@ -402,7 +384,7 @@ public class AuthServiceImpl implements AuthService {
 		return true;
 	}
 
-	private User findOrCreateUserByOAuth(OAuthLoginRequest request) {
+	private User findOrCreateUserByOAuth(AuthDto.OAuthLoginRequest request) {
 		// Find or create user based on OAuth provider data
 		return new User(); // stub
 	}

@@ -58,11 +58,11 @@ public class UserEventProducer {
 	public void sendUserUpdated(User user) {
 		// We reuse the "USER_BLOCKED" type logic at the Gateway
 		// because a deleted user should never be allowed to authenticate again.
-		UserEvent.ProfileUpdatedEvent event = new UserEvent.ProfileUpdatedEvent(user.getUserId(),
+		UserEvent.ProfileUpdatedEvent event = new UserEvent.ProfileUpdatedEvent(user.getId(),
 				user.getFullName(),
 				user.getProfilePicture(),
 				user.getUpdatedAt());
 		eventProducer.sendUserUpdatedEvent(event);
-		log.info("Broadcasted USER_DELETED event for user: {}", user.getUserId());
+		log.info("Broadcasted USER_DELETED event for user: {}", user.getId());
 	}
 }

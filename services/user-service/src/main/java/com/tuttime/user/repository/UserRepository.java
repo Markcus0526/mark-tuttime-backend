@@ -18,7 +18,7 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
-	Optional<User> findByUserIdAndDeletedFalse(UUID id);
+	Optional<User> findByIdAndDeletedFalse(UUID id);
 
 	Optional<User> findByPhoneNumberAndDeletedFalse(String phoneNumber);
 
@@ -49,7 +49,7 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 			Pageable pageable
 	);
 
-	List<User> findAllByUserIdInAndDeletedFalse(Collection<UUID> userIds);
+	List<User> findAllByIdInAndDeletedFalse(Collection<UUID> userIds);
 }
 
 

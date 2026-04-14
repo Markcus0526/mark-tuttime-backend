@@ -1,15 +1,16 @@
 package com.tuttime.user.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.user.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users", indexes = {
@@ -21,12 +22,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class User extends BaseDeleteEntity {
-
-	@Id
-	@GeneratedValue(generator = "UUID")
-	@Column(name = "user_id", updatable = false, nullable = false, length = 36)
-	private UUID userId;
+public class User extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "phone_number", length = 20, unique = true)
 	private String phoneNumber;
@@ -41,29 +37,30 @@ public class User extends BaseDeleteEntity {
 	private String profilePicture;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false)
+	@JdbcType(PostgreSQLEnumJdbcType.class)
+	@Column(columnDefinition = "user_status")
 	@Builder.Default
-	private UserStatus status = UserStatus.ACTIVE;
+	private UserStatus status = UserStatus.PENDING_VERIFICATION;
 
 	@Column(name = "last_login")
 	private OffsetDateTime lastLogin;
 
 	// Relationships
-	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
 	@Builder.Default
 	private Set<UserRole> roles = new HashSet<>();
 
-	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private Set<UserAuthMethod> authMethods = new HashSet<>();
 
-	@OneToMany(mappedBy = "userId", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private Set<UserLocation> locations = new HashSet<>();
 
 	// Helper method to keep bi-directional relationship in sync
 	public void addAuthMethod(UserAuthMethod method) {
 		this.authMethods.add(method);
-		method.setUserId(this.getUserId());
+		method.setUser(this);
 	}
 }

@@ -1,7 +1,7 @@
 package com.tuttime.user.controller;
 
 import com.tuttime.common.dto.ApiRes;
-import com.tuttime.user.dto.*;
+import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,22 +37,23 @@ public class AuthController {
 	@PostMapping("/register")
 	public ResponseEntity<ApiRes<Void>> register(
 			@Parameter(description = "Registration request with email or phone", required = true)
-			@Valid @RequestBody RegisterRequest request) {
+			@Valid @RequestBody AuthDto.RegisterRequest request) {
+
 		authService.registerUser(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success("New user registered successfully", null));
 	}
 
 	@Operation(summary = "Login user with email or phone and password.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Login successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "Login successful", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
 			@ApiResponse(responseCode = "401", description = "Invalid credentials or account not verified", content = @Content)
 	})
 	@PostMapping("/login")
 	public ResponseEntity<ApiRes<Void>> login(
 			@Parameter(description = "Login request containing email or phone and password", required = true)
-			@Valid @RequestBody LoginRequest request) {
+			@Valid @RequestBody AuthDto.LoginRequest request) {
 		authService.loginUser(request);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Logout user by invalidating refresh token.")
@@ -63,34 +64,34 @@ public class AuthController {
 	@PostMapping("/logout")
 	public ResponseEntity<ApiRes<Void>> logout(
 			@Parameter(description = "Logout request with refresh token", required = true)
-			@Valid @RequestBody LogoutRequest request) {
-		authService.logoutUser(request.getRefreshToken());
-		return ResponseEntity.noContent().build();
+			@Valid @RequestBody AuthDto.LogoutRequest request) {
+		authService.logoutUser(request.refreshToken());
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Login user via OAuth providers (Google, Apple, etc.)")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "OAuth login successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "OAuth login successful", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
 			@ApiResponse(responseCode = "401", description = "Invalid OAuth token", content = @Content)
 	})
 	@PostMapping("/oauth-login")
-	public ResponseEntity<ApiRes<AuthResponse>> oauthLogin(
+	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> oauthLogin(
 			@Parameter(description = "OAuth login request with provider and token", required = true)
-			@Valid @RequestBody OAuthLoginRequest request) {
-		AuthResponse response = authService.authenticateOAuthUser(request);
+			@Valid @RequestBody AuthDto.OAuthLoginRequest request) {
+		AuthDto.AuthResponse response = authService.authenticateOAuthUser(request);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
 	@Operation(summary = "Refresh JWT access token using refresh token.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Token refreshed successfully", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "Token refreshed successfully", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
 			@ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content)
 	})
 	@PostMapping("/refresh-token")
-	public ResponseEntity<ApiRes<AuthResponse>> refreshToken(
+	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> refreshToken(
 			@Parameter(description = "Token refresh request with refresh token", required = true)
-			@Valid @RequestBody TokenRefreshRequest request) {
-		AuthResponse response = authService.refreshJwtToken(request.getRefreshToken());
+			@Valid @RequestBody AuthDto.TokenRefreshRequest request) {
+		AuthDto.AuthResponse response = authService.refreshJwtToken(request.refreshToken());
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
@@ -102,9 +103,9 @@ public class AuthController {
 	@PostMapping("/password-reset/request")
 	public ResponseEntity<ApiRes<Void>> requestPasswordReset(
 			@Parameter(description = "Request with email or phone to initiate password reset", required = true)
-			@Valid @RequestBody PasswordResetRequest request) {
+			@Valid @RequestBody AuthDto.PasswordResetRequest request) {
 		authService.initiatePasswordReset(request);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Confirm password reset using token (email) or code (phone).")
@@ -115,9 +116,9 @@ public class AuthController {
 	@PostMapping("/password-reset/confirm")
 	public ResponseEntity<ApiRes<Void>> confirmPasswordReset(
 			@Parameter(description = "Password reset confirmation request", required = true)
-			@Valid @RequestBody PasswordResetConfirmRequest request) {
+			@Valid @RequestBody AuthDto.PasswordResetConfirmRequest request) {
 		authService.resetPassword(request);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Request OTP login code via SMS for phone number.")
@@ -128,21 +129,21 @@ public class AuthController {
 	@PostMapping("/otp/request")
 	public ResponseEntity<ApiRes<Void>> requestOtpLogin(
 			@Parameter(description = "Phone number to receive OTP code", required = true)
-			@Valid @RequestBody OtpVerificationRequest request) {
+			@Valid @RequestBody AuthDto.OtpVerificationRequest request) {
 		authService.sendOtpVerificationCode(request);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Verify OTP code and login with phone number.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "OTP verified and login successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "OTP verified and login successful", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid or expired OTP code", content = @Content)
 	})
 	@PostMapping("/otp/verify")
-	public ResponseEntity<ApiRes<AuthResponse>> verifyOtpLogin(
+	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> verifyOtpLogin(
 			@Parameter(description = "Phone number or email and OTP code for login", required = true)
-			@Valid @RequestBody OtpVerificationConfirmRequest request) {
-		AuthResponse response = authService.loginWithOtp(request);
+			@Valid @RequestBody AuthDto.OtpVerificationConfirmRequest request) {
+		AuthDto.AuthResponse response = authService.loginWithOtp(request);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 }

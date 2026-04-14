@@ -1,5 +1,6 @@
 package com.tuttime.user.grpc;
 
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.proto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.UserStatus;
@@ -58,14 +59,14 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// 3. Database Check: Use a projection or fetch-join for roles
 			UUID userId = UUID.fromString(userIdStr);
-			User user = userRepository.findByUserIdAndDeletedFalse(userId)
+			User user = userRepository.findByIdAndDeletedFalse(userId)
 					.orElseThrow(() -> Status.PERMISSION_DENIED
 							.withDescription("User account is inactive, blocked, or not found")
 							.asRuntimeException());
 
 			// 4. Build Response (Protobuf handles empty strings as default)
 			ValidateTokenResponse response = ValidateTokenResponse.newBuilder()
-					.setUserId(user.getUserId().toString())
+					.setUserId(user.getId().toString())
 					.setEmail(Optional.ofNullable(user.getEmail()).orElse(""))
 					.setStatus(user.getStatus().name())
 					.setRoles(combineUserRoles(user))
@@ -95,14 +96,12 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			UUID userId = UUID.fromString(request.getUserId());
 
 			// Fetching from DB (Ensure Repository handles the UUID correctly)
-			User user = userRepository.findById(userId)
-					.filter(u -> u.getStatus() != UserStatus.DELETED) // PDF logic: Don't return soft-deleted users
-					.orElseThrow(() -> new StatusRuntimeException(
-							Status.NOT_FOUND.withDescription("User not found or deleted")));
+			User user = userRepository.findByIdAndDeletedFalse(userId)
+					.orElseThrow(() -> new MethodArgumentNotValidException("User not found or deleted"));
 
 			// Building Response based on your exact SQL fields
 			UserProfileResponse.Builder responseBuilder = UserProfileResponse.newBuilder()
-					.setUserId(user.getUserId().toString())
+					.setUserId(user.getId().toString())
 					.setEmail(user.getEmail())
 					.setFullName(user.getFullName())
 					.setStatus(user.getStatus().toString())
@@ -164,7 +163,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			UUID userId = UUID.fromString(request.getUserId());
 
 			// Use ifPresentOrElse to handle both "Found" and "Not Found" as successful signals
-			userRepository.findByUserIdAndDeletedFalse(userId).ifPresentOrElse(user -> {
+			userRepository.findByIdAndDeletedFalse(userId).ifPresentOrElse(user -> {
 
 				// User Found: Build response based on status and roles
 				UserValidResponse response = UserValidResponse.newBuilder()
@@ -203,14 +202,14 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 				.toList();
 
 		// 2. Fetch users from Database
-		List<User> users = userRepository.findAllByUserIdInAndDeletedFalse(userIds);
+		List<User> users = userRepository.findAllByIdInAndDeletedFalse(userIds);
 
 		// 3. Build the Response
 		UserProfilesResponse.Builder responseBuilder = UserProfilesResponse.newBuilder();
 
 		for (User user : users) {
 			UserProfileResponse profile = UserProfileResponse.newBuilder()
-					.setUserId(user.getUserId().toString())
+					.setUserId(user.getId().toString())
 					.setFullName(user.getFullName() != null ? user.getFullName() : "")
 					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
 					.setEmail(user.getEmail() != null ? user.getEmail() : "")

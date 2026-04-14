@@ -2,7 +2,6 @@ package com.tuttime.user.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.event.RestaurantEvent;
-import com.tuttime.common.event.UserEvent;
 import com.tuttime.user.entity.UserRole;
 import com.tuttime.user.repository.RoleRepository;
 import com.tuttime.user.repository.UserRepository;
@@ -10,7 +9,6 @@ import com.tuttime.user.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,27 +42,27 @@ public class RestaurantEventConsumer {
 			event = objectMapper.readValue(eventString, RestaurantEvent.StaffUpdatedEvent.class);
 			// 2. Safe User Lookup
 			RestaurantEvent.StaffUpdatedEvent finalEvent = event;
-			userRepository.findByUserIdAndDeletedFalse(event.userId()).ifPresentOrElse(user -> {
+			userRepository.findByIdAndDeletedFalse(event.userId()).ifPresentOrElse(user -> {
 
 				// Fetch current role once
-				Optional<UserRole> userRoleOpt = userRoleRepository.findByUserId(user.getUserId());
+				Optional<UserRole> userRoleOpt = userRoleRepository.findByUserId(user.getId());
 
 				if (finalEvent.active()) {
 					// 3. SAFE Role Fetching (No .get())
 					roleRepository.findByName(finalEvent.roleName()).ifPresentOrElse(role -> {
 						UserRole userRole = userRoleOpt.orElseGet(() -> {
 							UserRole newRole = new UserRole();
-							newRole.setUserId(user.getUserId());
+							newRole.setUser(user);
 							return newRole;
 						});
 						userRole.setRole(role);
 						userRoleRepository.save(userRole);
-						log.info("Updated User {} to Role {}", user.getUserId(), finalEvent.roleName());
+						log.info("Updated User {} to Role {}", user.getId(), finalEvent.roleName());
 					}, () -> log.error("CRITICAL: Role '{}' not found in database", finalEvent.roleName()));
 				} else {
 					// 4. Safe Deletion
 					userRoleOpt.ifPresent(userRoleRepository::delete);
-					log.info("Removed roles for User {}", user.getUserId());
+					log.info("Removed roles for User {}", user.getId());
 				}
 
 			}, () -> log.warn("User {} not found or deleted, skipping update", finalEvent.userId()));

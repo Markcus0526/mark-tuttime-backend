@@ -1,6 +1,6 @@
 package com.tuttime.user.entity;
 
-import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,7 +8,6 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "user_locations")
@@ -18,13 +17,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class UserLocation extends BaseTimeStampEntity {
-	@Id
-	@Column(columnDefinition = "uuid", updatable = false, nullable = false)
-	private UUID locationId;
+public class UserLocation extends BaseUuidEntity {
 
-	@JoinColumn(name = "user_id", nullable = false)
-	private UUID userId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
+	private User user;
 
 	@Column(columnDefinition = "geography(Point,4326)", nullable = false)
 	private Point location;
