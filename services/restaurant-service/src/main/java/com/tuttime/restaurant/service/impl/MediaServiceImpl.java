@@ -2,7 +2,6 @@ package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.enums.MediaType;
@@ -10,7 +9,7 @@ import com.tuttime.restaurant.mapper.MediaMapper;
 import com.tuttime.restaurant.repository.MediaRepository;
 import com.tuttime.restaurant.service.FileStorageService;
 import com.tuttime.restaurant.service.MediaService;
-import com.tuttime.restaurant.service.RestaurantStaffService;
+import com.tuttime.restaurant.service.StaffService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -32,7 +31,7 @@ public class MediaServiceImpl implements MediaService {
 
 	private final MediaRepository mediaRepository;
 	private final MediaMapper mediaMapper;
-	private RestaurantStaffService restaurantStaffService;
+	private final StaffService staffService;
 	private final FileStorageService fileStorageService;
 
 	@Override
@@ -46,14 +45,17 @@ public class MediaServiceImpl implements MediaService {
 
 
 	@Override
-// Remove @Transactional from the top level to avoid holding locks during file upload
+	@Transactional
 	public MediaDto.MediaResponse createMedia(MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
 
-		// 1. Validation & Permissions (Read-only)
+		// 1. Validation
 		checkMedia(file, request.mediaType());
-		restaurantStaffService.validatePermissions(request.entityId(), currentUserId, userRoles);
 
-		// 2. File Storage (IO-intensive, keep outside transaction)
+		// This was line 54: If staffService is still null,
+		// verify StaffServiceImpl has @Service and is in a scanned package.
+		staffService.validatePermissions(request.entityId(), currentUserId, userRoles);
+
+		// 2. File Storage
 		String storedFileUrl;
 		try {
 			storedFileUrl = fileStorageService.storeFile(file);
@@ -61,22 +63,11 @@ public class MediaServiceImpl implements MediaService {
 			throw new BusinessException("Failed to store file: " + e.getMessage(), e);
 		}
 
-		// 3. Database Save (Atomic transaction)
-		return saveMediaRecord(request, storedFileUrl);
-	}
-
-	// Extracted for cleaner transaction management
-	@Transactional
-	protected MediaDto.MediaResponse saveMediaRecord(MediaDto.MediaRequest request, String fileUrl) {
-		Media media = mediaMapper.toEntity(request); // Use your mapper
-		media.setUrl(fileUrl);
+		// 3. Database Save
+		Media media = mediaMapper.toEntity(request);
+		media.setUrl(storedFileUrl);
 		media.setDeleted(false);
 
-		// Set defaults if not handled by mapper/database
-		if (media.getPrimaryEntity() == null) media.setPrimaryEntity(false);
-		if (media.getMediaType() == null) media.setMediaType(MediaType.IMAGE);
-
-		// Handle primary toggle if necessary
 		if (Boolean.TRUE.equals(media.getPrimaryEntity())) {
 			mediaRepository.updatePrimaryEntityByEntityTypeAndEntityIdAndDeletedFalse(media.getEntityId(), false);
 		}
@@ -85,12 +76,13 @@ public class MediaServiceImpl implements MediaService {
 	}
 
 	@Override
+	@Transactional
 	public MediaDto.MediaResponse updateMedia(UUID mediaId, MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
 		// 1. Fetch and Validate
-		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
-				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
+		Media media = mediaRepository.findByIdAndDeletedFalse(mediaId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Media not found: " + mediaId));
 
-		restaurantStaffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
+		staffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
 
 		String oldFileUrl = media.getUrl();
 		String newFileUrl = oldFileUrl;
@@ -138,11 +130,11 @@ public class MediaServiceImpl implements MediaService {
 	@Override
 	@Transactional
 	public void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles) {
-		Media media = mediaRepository.findByMediaIdAndDeletedFalse(mediaId)
-				.orElseThrow(() -> new ResourceNotFoundException("Media not found: " + mediaId));
+		Media media = mediaRepository.findByIdAndDeletedFalse(mediaId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Media not found: " + mediaId));
 
 		// 1. Centralized permission check
-		restaurantStaffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
+		staffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
 
 		// 2. Soft delete
 		media.setDeleted(true);
@@ -153,6 +145,7 @@ public class MediaServiceImpl implements MediaService {
 	}
 
 	@Override
+	@Transactional
 	public void deleteAllByEntityId(UUID entityId) {
 		mediaRepository.deleteAllByEntityId(entityId);
 	}
@@ -162,7 +155,7 @@ public class MediaServiceImpl implements MediaService {
 		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(
 				entityId,
 				MediaType.CANVAS
-		).orElseThrow(() -> new ResourceNotFoundException("Primary SVG map not found for entity: " + entityId));
+		).orElseThrow(() -> new MethodArgumentNotValidException("Primary SVG map not found for entity: " + entityId));
 
 		return media.getSvgContent();
 	}
@@ -171,7 +164,7 @@ public class MediaServiceImpl implements MediaService {
 	@Transactional
 	public void setOrUpdateMapCanvas(UUID entityId, String svgContent, UUID currentUserId, String userRoles) {
 		// 1. Centralized Permission Check (Reuse existing logic)
-		restaurantStaffService.validatePermissions(entityId, currentUserId, userRoles);
+		staffService.validatePermissions(entityId, currentUserId, userRoles);
 
 		// 2. Fetch existing primary map or create a new instance
 		Media media = mediaRepository.findPrimaryMapByEntityAndDeletedFalse(entityId)

@@ -5,7 +5,7 @@ import com.tuttime.restaurant.dto.StaffDto;
 import java.util.List;
 import java.util.UUID;
 
-public interface RestaurantStaffService {
+public interface StaffService {
 	StaffDto.StaffResponse assignStaff(UUID restaurantId, StaffDto.StaffRequest request, UUID currentUserId, String userRoles);
 
 	List<StaffDto.StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles);

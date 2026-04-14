@@ -3,23 +3,25 @@ package com.tuttime.restaurant.service.impl;
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.proto.*;
 import com.tuttime.restaurant.dto.StaffDto;
+import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
-import com.tuttime.restaurant.entity.RestaurantStaff;
+import com.tuttime.restaurant.entity.Staff;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.kafka.RestaurantEventProducer;
-import com.tuttime.restaurant.mapper.RestaurantStaffMapper;
+import com.tuttime.restaurant.mapper.StaffMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import com.tuttime.restaurant.repository.RestaurantStaffRepository;
-import com.tuttime.restaurant.service.RestaurantStaffService;
-import jakarta.persistence.EntityNotFoundException;
+import com.tuttime.restaurant.repository.StaffRepository;
+import com.tuttime.restaurant.service.StaffService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,14 +31,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 @Slf4j
-public class RestaurantStaffServiceImpl implements RestaurantStaffService {
+public class StaffServiceImpl implements StaffService {
 
 	private final RestaurantRepository restaurantRepository;
-	private final RestaurantStaffRepository staffRepository;
+	private final StaffRepository staffRepository;
 	private final BranchRepository branchRepository;
-	private final RestaurantStaffMapper staffMapper;
+	private final StaffMapper staffMapper;
 	private final UserGrpcClient userGrpClient;
 	private final RestaurantEventProducer restaurantEventProducer;
 
@@ -56,26 +58,38 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 			throw new ConflictException("User is already assigned to this restaurant");
 		}
 
-		RestaurantStaff staff = staffMapper.toEntity(request);
-		staff.setRestaurantId(restaurantId);
+		Restaurant restaurant = restaurantRepository.findById(restaurantId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found"));
+
+		Staff staff = staffMapper.toEntity(request);
+		staff.setRestaurant(restaurant);
+		if (request.branchId() != null) {
+			Branch branch = branchRepository.findById(request.branchId())
+					.orElseThrow(() -> new MethodArgumentNotValidException("Branch not found"));
+			staff.setBranch(branch);
+		}
 		staff.setRoleName(request.roleName().toUpperCase());
 
-		RestaurantStaff savedStaff = staffRepository.save(staff);
+		Staff savedStaff = staffRepository.save(staff);
 
 		// send staff updated event
-		restaurantEventProducer.sendStaffUpdated(savedStaff);
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				restaurantEventProducer.sendStaffUpdated(savedStaff);
+			}
+		});
 
 		return staffMapper.toResponse(savedStaff);
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<StaffDto.StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
 		// 1. Permission Check
 		validateRestaurantAccess(restaurantId, currentUserId, userRoles);
 
 		// 2. Fetch staff mappings
-		List<RestaurantStaff> staffs = staffRepository.findAllByRestaurantId(restaurantId);
+		List<Staff> staffs = staffRepository.findAllByRestaurantId(restaurantId);
 		if (staffs.isEmpty()) return List.of();
 
 		// 3. Collect User IDs and fetch profiles via gRPC
@@ -90,10 +104,12 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 		return staffs.stream().map(staff -> {
 			UserProfileResponse profile = profileMap.get(staff.getUserId().toString());
 
+			UUID branchId = (staff.getBranch() != null) ? staff.getBranch().getId() : null;
+
 			return new StaffDto.StaffResponse(
-					staff.getStaffId(),
-					staff.getRestaurantId(),
-					staff.getBranchId(),
+					staff.getId(),
+					staff.getRestaurant().getId(),
+					branchId,
 					staff.getUserId(),
 					profile != null ? profile.getFullName() : "Unknown",
 					profile != null ? profile.getPhoneNumber() : null,
@@ -106,43 +122,50 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 	}
 
 	@Override
+	@Transactional
 	public StaffDto.StaffResponse updateStaff(UUID restaurantId, UUID staffId, StaffDto.StaffUpdateRequest request, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
 
-		RestaurantStaff staff = staffRepository.findByStaffId(staffId)
-				.orElseThrow(() -> new EntityNotFoundException("Staff record not found"));
+		Staff staff = staffRepository.findById(staffId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Staff record not found"));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
 		if (!isAdmin) {
-			isOwner = validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
+			isOwner = validateRestaurantOwner(restaurant.getId(), currentUserId);
 		}
 		if (!isAdmin && !isOwner) {
 			throw new AuthenticationException("You do not have permission to manage this restaurant.");
 		}
 
 		staffMapper.updateEntityFromRequest(request, staff);
-		RestaurantStaff savedStaff = staffRepository.save(staff);
+		Staff savedStaff = staffRepository.save(staff);
 
 		// send staff updated event
-		restaurantEventProducer.sendStaffUpdated(savedStaff);
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				restaurantEventProducer.sendStaffUpdated(savedStaff);
+			}
+		});
 
 		return staffMapper.toResponse(savedStaff);
 	}
 
 	@Override
+	@Transactional
 	public void removeStaff(UUID restaurantId, UUID staffId, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByRestaurantIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new ResourceNotFoundException("Restaurant not found: " + restaurantId));
+		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
 
-		RestaurantStaff staff = staffRepository.findByStaffId(staffId)
-				.orElseThrow(() -> new ResourceNotFoundException("Staff not found: " + staffId));
+		Staff staff = staffRepository.findById(staffId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Staff not found: " + staffId));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
 		if (!isAdmin) {
-			isOwner = validateRestaurantOwner(restaurant.getRestaurantId(), currentUserId);
+			isOwner = validateRestaurantOwner(restaurant.getId(), currentUserId);
 		}
 		if (!isAdmin && !isOwner) {
 			throw new AuthenticationException("You do not have permission to manage this restaurant.");
@@ -150,7 +173,13 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 
 		// send staff updated event
 		staff.setActive(false);
-		restaurantEventProducer.sendStaffUpdated(staff);
+
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				restaurantEventProducer.sendStaffUpdated(staff);
+			}
+		});
 
 		staffRepository.delete(staff);
 	}
@@ -166,7 +195,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 
 		UserValidResponse response = userGrpClient.validateUserById(request);
 		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.ADMIN.name()))
-			throw new ResourceNotFoundException("Current User not found: " + currentUserId);
+			throw new MethodArgumentNotValidException("Current User not found: " + currentUserId);
 	}
 
 	/**
@@ -189,9 +218,9 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
 
 		// Check if entity is a Branch
-		var branch = branchRepository.findByBranchIdAndDeletedFalse(branchId)
-				.orElseThrow(() -> new AuthenticationException("Entity not found or access denied."));
-		boolean isOwner = validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
+		var branch = branchRepository.findByIdAndDeletedFalse(branchId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Entity not found or access denied."));
+		boolean isOwner = validateRestaurantOwner(branch.getRestaurant().getId(), currentUserId);
 		if (isOwner) return;
 
 		boolean isManager = validateBranchManager(branchId, currentUserId);
@@ -206,7 +235,7 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
 
 		// Check if entity is a Restaurant
-		var restaurantOpt = restaurantRepository.findByRestaurantIdAndDeletedFalse(entityId);
+		var restaurantOpt = restaurantRepository.findByIdAndDeletedFalse(entityId);
 		if (restaurantOpt.isPresent()) {
 			if (!validateRestaurantOwner(entityId, currentUserId)) {
 				throw new AuthenticationException("You do not have permission to manage this restaurant.");
@@ -215,11 +244,11 @@ public class RestaurantStaffServiceImpl implements RestaurantStaffService {
 		}
 
 		// Check if entity is a Branch
-		var branch = branchRepository.findByBranchIdAndDeletedFalse(entityId)
-				.orElseThrow(() -> new AuthenticationException("Entity not found or access denied."));
+		var branch = branchRepository.findByIdAndDeletedFalse(entityId)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Entity not found or access denied."));
 
-		boolean isOwner = validateRestaurantOwner(branch.getRestaurantId(), currentUserId);
-		boolean isManager = isOwner || validateBranchManager(branch.getBranchId(), currentUserId);
+		boolean isOwner = validateRestaurantOwner(branch.getRestaurant().getId(), currentUserId);
+		boolean isManager = isOwner || validateBranchManager(branch.getId(), currentUserId);
 
 		if (!isManager) {
 			throw new AuthenticationException("You do not have permission to manage this branch.");

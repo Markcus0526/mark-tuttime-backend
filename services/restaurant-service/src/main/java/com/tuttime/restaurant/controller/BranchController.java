@@ -4,8 +4,7 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.BranchDto;
-import com.tuttime.restaurant.dto.ZoneDto;
-import com.tuttime.restaurant.service.*;
+import com.tuttime.restaurant.service.BranchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -108,7 +106,7 @@ public class BranchController {
 		String userRoles = UserContext.getRoles();
 
 		branchService.deleteBranch(branchId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Get all branches", description = "Retrieve paginated list of branches with optional filters")

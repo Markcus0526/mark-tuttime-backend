@@ -3,10 +3,10 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.dto.StaffDto;
-import com.tuttime.restaurant.service.*;
+import com.tuttime.restaurant.service.RestaurantService;
+import com.tuttime.restaurant.service.StaffService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,7 +32,7 @@ import java.util.UUID;
 public class RestaurantController {
 
 	private final RestaurantService restaurantService;
-	private final RestaurantStaffService staffService;
+	private final StaffService staffService;
 
 	// --- Restaurant CRUD ---
 
@@ -143,7 +143,7 @@ public class RestaurantController {
 		String userRoles = UserContext.getRoles();
 
 		restaurantService.deleteRestaurant(restaurantId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	// --- Restaurant Search by near ---
@@ -233,7 +233,7 @@ public class RestaurantController {
 
 		staffService.removeStaff(restaurantId, staffId, currentUserId, userRoles);
 
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Update staff role or status", description = "Update the role (e.g., Hostess to Manager) or toggle active status of a staff member")

@@ -16,10 +16,10 @@ public interface ZoneRepository extends JpaRepository<Zone, UUID> {
 
 	List<Zone> findAllByBranchIdAndDeletedFalse(UUID branchId);
 
-	Optional<Zone> findByZoneIdAndDeletedFalse(UUID zoneId);
+	Optional<Zone> findByIdAndDeletedFalse(UUID zoneId);
 
 	@Modifying
 	@Query("UPDATE Zone z SET z.deleted = true, z.deletedAt = CURRENT_TIMESTAMP " +
-			"WHERE z.branchId = :branchId AND z.deleted = false")
+			"WHERE z.branch.id = :branchId AND z.deleted = false")
 	void deleteAllByBranchId(@Param("branchId") UUID branchId);
 }

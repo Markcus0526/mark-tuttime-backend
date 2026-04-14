@@ -107,7 +107,7 @@ public class ScheduleController {
 		String userRoles = UserContext.getRoles();
 
 		scheduleService.deleteSchedule(scheduleId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 }

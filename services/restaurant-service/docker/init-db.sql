@@ -43,7 +43,7 @@ LANGUAGE plpgsql;
 -- 1. RESTAURANTS
 CREATE TABLE restaurants
 (
-    restaurant_id UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
     address       VARCHAR(512) NOT NULL,
@@ -65,8 +65,8 @@ ON COLUMN restaurants.location IS 'Geographical point for proximity searches (lo
 -- 2. BRANCHES
 CREATE TABLE branches
 (
-    branch_id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
-    restaurant_id UUID         NOT NULL REFERENCES restaurants (restaurant_id) ON DELETE CASCADE,
+    id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    restaurant_id UUID         NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
     address       VARCHAR(512) NOT NULL,
@@ -83,12 +83,12 @@ CREATE TABLE branches
 COMMENT
 ON TABLE branches IS 'Physical locations or outlets of a specific restaurant';
 
--- 3. RESTAURANT_STAFFS
-CREATE TABLE restaurant_staffs
+-- 3. STAFFS
+CREATE TABLE staffs
 (
-    staff_id      UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
-    restaurant_id UUID        NOT NULL REFERENCES restaurants (restaurant_id) ON DELETE CASCADE,
-    branch_id     UUID REFERENCES branches (branch_id) ON DELETE CASCADE, -- NULL if managing whole restaurant
+    id      UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
+    restaurant_id UUID        NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
+    branch_id     UUID REFERENCES branches (id) ON DELETE CASCADE, -- NULL if managing whole restaurant
     user_id       UUID        NOT NULL,                                   -- Logical link to User Service
     role_name     VARCHAR(50) NOT NULL CHECK (role_name IN ('OWNER', 'MANAGER', 'HOSTESS')),
     active        BOOLEAN     NOT NULL DEFAULT TRUE,
@@ -97,20 +97,11 @@ CREATE TABLE restaurant_staffs
     CONSTRAINT unique_staff_per_context UNIQUE (restaurant_id, branch_id, user_id)
 );
 
-COMMENT
-ON TABLE restaurant_staffs IS 'Managers are tied to branch_id; Owners manage restaurant_id';
-COMMENT
-ON COLUMN restaurant_staffs.branch_id IS 'If set, the MANAGER or HOSTESS only has authority over this specific branch';
-COMMENT
-ON COLUMN restaurant_staffs.user_id IS 'Logical reference to User Service for account details';
-COMMENT
-ON COLUMN restaurant_staffs.role_name IS 'Local role within the restaurant (Manager can edit schedules, Hostess manages tables)';
-
 -- 4. ZONES
 CREATE TABLE zones
 (
-    zone_id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
-    branch_id   UUID         NOT NULL REFERENCES branches (branch_id) ON DELETE CASCADE,
+    id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    branch_id   UUID         NOT NULL REFERENCES branches (id) ON DELETE CASCADE,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     capacity    INT          NOT NULL,
@@ -121,14 +112,11 @@ CREATE TABLE zones
     updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT
-ON TABLE zones IS 'Specific areas inside a branch (e.g., Terrace, VIP Room)';
-
 -- 5. TABLES
 CREATE TABLE tables
 (
-    table_id   UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
-    zone_id    UUID              NOT NULL REFERENCES zones (zone_id) ON DELETE CASCADE,
+    id   UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
+    zone_id    UUID              NOT NULL REFERENCES zones (id) ON DELETE CASCADE,
     number     VARCHAR(50)       NOT NULL,
     seats      INT               NOT NULL,
     status     table_status_enum NOT NULL DEFAULT 'ACTIVE',
@@ -140,13 +128,10 @@ CREATE TABLE tables
     CONSTRAINT unique_zone_table_number UNIQUE (zone_id, number)
 );
 
-COMMENT
-ON TABLE tables IS 'Individual dining tables linked to zones';
-
 -- 6. MEDIAS
 CREATE TABLE medias
 (
-    media_id       UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
+    id       UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
     entity_id      UUID              NOT NULL,
     url            VARCHAR(1024),
     alt_text       VARCHAR(255),
@@ -160,13 +145,10 @@ CREATE TABLE medias
     updated_at     TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT
-ON TABLE medias IS 'Stores images, videos, and inline SVGs for floor plans';
-
 -- 7. SCHEDULES
 CREATE TABLE schedules
 (
-    schedule_id   UUID PRIMARY KEY  DEFAULT uuid_generate_v4(),
+    id   UUID PRIMARY KEY  DEFAULT uuid_generate_v4(),
     entity_id UUID     NOT NULL,
     day_of_week   SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
     open_time     TIME WITHOUT TIME ZONE NOT NULL,
@@ -178,11 +160,8 @@ CREATE TABLE schedules
     updated_at    TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT
-ON TABLE schedules IS 'General operating hours for the entire restaurant or branch business';
-
 -- === INDEXES ===
-CREATE INDEX idx_staffs_user_id ON restaurant_staffs (user_id);
+CREATE INDEX idx_staffs_user_id ON staffs (user_id);
 CREATE INDEX idx_restaurants_geo ON restaurants USING GIST(location);
 
 -- === TRIGGERS ===
@@ -192,7 +171,7 @@ CREATE TRIGGER trg_restaurants_upd
     FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
 CREATE TRIGGER trg_staffs_upd
     BEFORE UPDATE
-    ON restaurant_staffs
+    ON staffs
     FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
 CREATE TRIGGER trg_branches_upd
     BEFORE UPDATE

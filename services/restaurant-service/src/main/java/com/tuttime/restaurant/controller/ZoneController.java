@@ -3,11 +3,7 @@ package com.tuttime.restaurant.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.dto.ZoneDto;
-import com.tuttime.restaurant.service.BranchService;
-import com.tuttime.restaurant.service.MediaService;
-import com.tuttime.restaurant.service.TableService;
 import com.tuttime.restaurant.service.ZoneService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,12 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -112,7 +106,7 @@ public class ZoneController {
 		String userRoles = UserContext.getRoles();
 
 		zoneService.deleteZone(zoneId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")

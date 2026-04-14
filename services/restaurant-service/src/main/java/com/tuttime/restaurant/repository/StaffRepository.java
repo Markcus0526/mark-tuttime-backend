@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.repository;
 
-import com.tuttime.restaurant.entity.RestaurantStaff;
+import com.tuttime.restaurant.entity.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -9,13 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface RestaurantStaffRepository extends JpaRepository<RestaurantStaff, UUID> {
+public interface StaffRepository extends JpaRepository<Staff, UUID> {
 
-	List<RestaurantStaff> findAllByRestaurantId(UUID restaurantId);
+	List<Staff> findAllByRestaurantId(UUID restaurantId);
 
-	Optional<RestaurantStaff> findByStaffId(UUID staffId);
-
-	Optional<RestaurantStaff> findByUserId(UUID userId);
+	Optional<Staff> findByUserId(UUID userId);
 
 	boolean existsByRestaurantIdAndUserId(UUID restaurantId, UUID userId);
 

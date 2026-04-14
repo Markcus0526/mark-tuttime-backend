@@ -1,11 +1,9 @@
 package com.tuttime.restaurant.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.UUID;
 
 @Entity
 @jakarta.persistence.Table(name = "zones", schema = "restaurant_service", indexes = {
@@ -17,15 +15,11 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Zone extends BaseDeleteEntity {
+public class Zone extends BaseUuidAnDeleteEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	@Column(name = "zone_id", nullable = false, updatable = false)
-	private UUID zoneId;
-
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "branch_id", nullable = false)
+	private Branch branch;
 
 	@Column(name = "name", nullable = false, length = 255)
 	private String name;

@@ -6,7 +6,7 @@ import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import com.tuttime.restaurant.repository.RestaurantStaffRepository;
+import com.tuttime.restaurant.repository.StaffRepository;
 import com.tuttime.restaurant.repository.TableRepository;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
@@ -22,7 +22,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServiceImplBase {
 
-	private final RestaurantStaffRepository staffRepository;
+	private final StaffRepository staffRepository;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
 	private final TableRepository tableRepository;
@@ -51,10 +51,10 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 					finalValid = true;
 				} else {
 					if (userRoles.contains(UserRoleKind.OWNER.name())) {
-						var branchOpt = branchRepository.findByBranchIdAndDeletedFalse(branchId);
+						var branchOpt = branchRepository.findByIdAndDeletedFalse(branchId);
 						if (branchOpt.isPresent()) {
 							finalValid = staffRepository.existsByRestaurantIdAndUserIdAndRoleName(
-									branchOpt.get().getRestaurantId(), currentUserId, UserRoleKind.OWNER.name());
+									branchOpt.get().getRestaurant().getId(), currentUserId, UserRoleKind.OWNER.name());
 						}
 					}
 
@@ -78,7 +78,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		UUID tableId = UUID.fromString(request.getTableId());
 		int partSize = request.getPartySize();
 
-		boolean available = tableRepository.findByTableIdAndDeletedFalse(tableId)
+		boolean available = tableRepository.findByIdAndDeletedFalse(tableId)
 				.map(table ->
 						table.getStatus() == TableStatus.ACTIVE && table.getSeats() <= partSize
 				).orElse(false);
@@ -119,16 +119,16 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 
 		staffRepository.findByUserId(userId).ifPresentOrElse(staff -> {
 			StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder()
-					.setRestaurantId(staff.getRestaurantId().toString());
+					.setRestaurantId(staff.getRestaurant().getId().toString());
 
-			if (staff.getBranchId() != null) {
+			if (staff.getBranch().getId() != null) {
 				// Case 1: Fetch Branch Name
-				responseBuilder.setBranchId(staff.getBranchId().toString());
-				branchRepository.findByBranchIdAndDeletedFalse(staff.getBranchId())
+				responseBuilder.setBranchId(staff.getBranch().getId().toString());
+				branchRepository.findByIdAndDeletedFalse(staff.getBranch().getId())
 						.ifPresent(branch -> responseBuilder.setEntityName(branch.getName()));
 			} else {
 				// Case 2: Fetch Restaurant Name
-				restaurantRepository.findByRestaurantIdAndDeletedFalse(staff.getRestaurantId())
+				restaurantRepository.findByIdAndDeletedFalse(staff.getRestaurant().getId())
 						.ifPresent(restaurant -> responseBuilder.setEntityName(restaurant.getName()));
 			}
 
