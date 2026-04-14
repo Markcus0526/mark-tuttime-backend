@@ -51,7 +51,7 @@ public class MenuItemController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.createMenuItem(request);
+		MenuItemDto.MenuItemDetailedResponse data = menuItemService.createMenuItem(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
@@ -64,6 +64,7 @@ public class MenuItemController {
 	})
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> getMenuItemById(
 			@PathVariable UUID itemId) {
+
 		MenuItemDto.MenuItemDetailedResponse data = menuItemService.getMenuItemById(itemId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
@@ -85,7 +86,7 @@ public class MenuItemController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.updateMenuItem(itemId, request);
+		MenuItemDto.MenuItemDetailedResponse data = menuItemService.updateMenuItem(itemId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -104,7 +105,7 @@ public class MenuItemController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		menuItemService.deleteMenuItem(itemId);
+		menuItemService.deleteMenuItem(itemId, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT)
 				.body(ApiRes.success(null));
 	}

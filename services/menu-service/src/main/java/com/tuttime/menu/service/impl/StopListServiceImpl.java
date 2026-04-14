@@ -29,7 +29,7 @@ public class StopListServiceImpl implements StopListService {
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "#request.branchId()")
-	public StopListDto.StopListResponse addToStopList(StopListDto.StopListRequest request) {
+	public StopListDto.StopListResponse addToStopList(StopListDto.StopListRequest request, UUID currentUserId, String userRoles) {
 		// 1. Verify item exists
 		MenuItem menuItem = menuItemRepository.findById(request.menuItemId())
 				.orElseThrow(() -> new MethodArgumentNotValidException("Menu item not found"));
@@ -62,7 +62,7 @@ public class StopListServiceImpl implements StopListService {
 
 	@Override
 	@Transactional
-	public void removeFromStopList(UUID id) {
+	public void removeFromStopList(UUID id, UUID currentUserId, String userRoles) {
 		StopList stopList = stopListRepository.findById(id)
 				.orElseThrow(() -> new MethodArgumentNotValidException("Stop list entry not found"));
 

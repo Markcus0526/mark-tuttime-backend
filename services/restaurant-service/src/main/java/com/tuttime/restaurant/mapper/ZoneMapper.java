@@ -23,8 +23,8 @@ public interface ZoneMapper {
 
 	void updateEntityFromRequest(ZoneDto.ZoneRequest request, @MappingTarget Zone entity);
 
-	default OffsetDateTime map(Instant value) {
-		return value == null ? null : value.atOffset(ZoneOffset.UTC);
-	}
+//	default OffsetDateTime map(Instant value) {
+//		return value == null ? null : value.atOffset(ZoneOffset.UTC);
+//	}
 }
 

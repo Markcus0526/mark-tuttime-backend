@@ -5,6 +5,7 @@ import com.tuttime.common.exception.ResourceNotFoundException;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
+import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;
@@ -25,14 +26,17 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	private final MenuItemRepository menuItemRepository;
 	private final MenuCategoryRepository categoryRepository;
+	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	@Override
 	@Transactional
 	// Evict the branch menu cache. We find the branchId through the category.
 	@CacheEvict(value = "branch_menus", key = "@menuItemServiceImpl.getBranchIdFromCategory(#request.categoryId())")
-	public MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request) {
+	public MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
 		MenuCategory category = categoryRepository.findById(request.categoryId())
 				.orElseThrow(() -> new MethodArgumentNotValidException("Category not found"));
+
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
 		MenuItem item = MenuItem.builder()
 				.category(category)
@@ -48,9 +52,14 @@ public class MenuItemServiceImpl implements MenuItemService {
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "#result.categoryId != null ? @menuItemServiceImpl.getBranchIdFromCategory(#result.categoryId) : null")
-	public MenuItemDto.MenuItemDetailedResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request) {
+	public MenuItemDto.MenuItemDetailedResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
 		MenuItem existing = menuItemRepository.findById(id)
 				.orElseThrow(() -> new MethodArgumentNotValidException("Item not found"));
+
+		MenuCategory category = categoryRepository.findById(request.categoryId())
+				.orElseThrow(() -> new MethodArgumentNotValidException("Category not found"));
+
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
 		existing.setName(request.name());
 		existing.setDescription(request.description());
@@ -68,6 +77,23 @@ public class MenuItemServiceImpl implements MenuItemService {
 	}
 
 	@Override
+	@Transactional
+	public void deleteMenuItem(UUID id, UUID currentUserId, String userRoles) {
+		MenuItem item = menuItemRepository.findById(id)
+				.orElseThrow(() -> new MethodArgumentNotValidException("Item not found"));
+
+		MenuCategory category = categoryRepository.findById(item.getCategory().getId())
+				.orElseThrow(() -> new MethodArgumentNotValidException("Category not found"));
+
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
+
+		// Manual eviction helper if SpEL is too complex for delete
+		evictCacheByBranch(item.getCategory().getBranchId());
+
+		menuItemRepository.delete(item);
+	}
+
+	@Override
 	public List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String sortBy, String direction) {
 		// 1. Define sort logic
 		Sort sort = direction.equalsIgnoreCase("desc") ?
@@ -80,18 +106,6 @@ public class MenuItemServiceImpl implements MenuItemService {
 						item.getId(), item.getName(), item.getPrice(), item.getAvailable(), item.getPriority()
 				))
 				.collect(Collectors.toList());
-	}
-
-	@Override
-	@Transactional
-	public void deleteMenuItem(UUID id) {
-		MenuItem item = menuItemRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Item not found"));
-
-		// Manual eviction helper if SpEL is too complex for delete
-		evictCacheByBranch(item.getCategory().getBranchId());
-
-		menuItemRepository.delete(item);
 	}
 
 	/**
