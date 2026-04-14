@@ -1,7 +1,6 @@
 package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.proto.*;
-import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;

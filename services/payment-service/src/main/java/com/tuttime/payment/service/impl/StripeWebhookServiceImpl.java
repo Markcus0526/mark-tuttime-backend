@@ -15,18 +15,20 @@ import com.tuttime.payment.kafka.PaymentEventProducer;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.service.StripeWebhookService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Slf4j
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
 public class StripeWebhookServiceImpl implements StripeWebhookService {
 
 	private final PaymentRepository paymentRepository;
@@ -57,7 +59,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 		// 3. PROCESS SPECIFIC EVENT TYPES
 		if ("checkout.session.completed".equals(event.getType())) {
 			Session session = (Session) event.getDataObjectDeserializer().getObject()
-					.orElseThrow(() -> new IllegalStateException("Empty event data"));
+					.orElseThrow(() -> new MethodArgumentNotValidException("Empty event data"));
 
 			processCheckoutCompleted(session);
 		}
@@ -70,12 +72,13 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 				.build());
 	}
 
+	@Transactional
 	private void processCheckoutCompleted(Session session) {
 		// Metadata was set during session creation in createCheckoutSession
 		UUID bookingId = UUID.fromString(session.getMetadata().get("bookingId"));
 
 		Payment payment = paymentRepository.findByBookingId(bookingId)
-				.orElseThrow(() -> new ResourceNotFoundException("Payment missing for booking: " + bookingId));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Payment missing for booking: " + bookingId));
 
 		if (payment.getStatus() != PaymentStatus.COMPLETED) {
 			payment.setStatus(PaymentStatus.COMPLETED);

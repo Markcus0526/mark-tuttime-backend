@@ -12,14 +12,11 @@ import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.booking.service.BookingService;
-import com.tuttime.common.exception.BusinessException;
-import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.*;
 import com.tuttime.common.proto.MenuItemDetail;
 import com.tuttime.common.proto.TableInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.websocket.AuthenticationException;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
@@ -38,9 +35,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Slf4j
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
 public class BookingServiceImpl implements BookingService {
 
 	private final BookingRepository bookingRepository;
@@ -53,7 +52,6 @@ public class BookingServiceImpl implements BookingService {
 	private static final String LOCK_PREFIX = "lock:table:";
 
 	@Override
-	@Transactional
 	public BookingSetupResponse getBookingSetupData(UUID branchId, OffsetDateTime date, int partySize) {
 		// 1. Fetch external data in parallel
 		var tablesFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getTablesForBooking(branchId, partySize));
@@ -155,7 +153,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional
 	public Booking updateStatus(UUID bookingId, BookingStatus newStatus, UUID actorId, String reason) {
 		Booking booking = bookingRepository.findById(bookingId)
-				.orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Booking not found: " + bookingId));
 
 		BookingStatus oldStatus = booking.getStatus();
 		booking.setStatus(newStatus);
@@ -188,7 +186,6 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<BookingResponse> getBookingsByUser(UUID userId) {
 		return bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId)
 				.stream()
@@ -200,7 +197,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional
 	public void cancelBooking(UUID bookingId, UUID userId, String reason) {
 		Booking booking = bookingRepository.findById(bookingId)
-				.orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Booking not found"));
 
 		// 1. Security Check: Ensure the user owns the booking
 		if (!booking.getUserId().equals(userId)) {
@@ -209,7 +206,7 @@ public class BookingServiceImpl implements BookingService {
 
 		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED
 		if (booking.getStatus() == BookingStatus.COMPLETED || booking.getStatus() == BookingStatus.CANCELED) {
-			throw new ResourceNotFoundException("Booking cannot be cancelled in its current state");
+			throw new MethodArgumentNotValidException("Booking cannot be cancelled in its current state");
 		}
 
 		BookingStatus oldStatus = booking.getStatus();
@@ -225,11 +222,10 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public List<BookingHistoryResponse> getStatusHistory(UUID bookingId) {
 		// 1. Verify booking exists
 		if (!bookingRepository.existsById(bookingId)) {
-			throw new ResourceNotFoundException("Booking not found");
+			throw new MethodArgumentNotValidException("Booking not found");
 		}
 
 		// 2. Fetch all history entries for this specific booking

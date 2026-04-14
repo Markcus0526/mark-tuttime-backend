@@ -13,8 +13,7 @@ public class WaitlistDto {
 			@NotNull UUID branchId,
 			UUID zoneId,
 			@NotNull Integer partySize
-	) {
-	}
+	) {}
 
 	public record WaitlistResponse(
 			UUID id,

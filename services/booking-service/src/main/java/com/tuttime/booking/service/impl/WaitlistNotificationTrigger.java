@@ -10,14 +10,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.OffsetDateTime;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
 public class WaitlistNotificationTrigger {
 
 	private final BookingRepository bookingRepository;

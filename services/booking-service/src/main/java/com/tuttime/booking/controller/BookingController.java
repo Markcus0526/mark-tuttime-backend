@@ -94,7 +94,7 @@ public class BookingController {
 			@RequestParam UUID userId,
 			@RequestParam(required = false) String reason) {
 		bookingService.cancelBooking(id, userId, reason);
-		return ResponseEntity.noContent().build();
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 	@GetMapping("/{id}/history")

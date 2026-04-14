@@ -6,6 +6,7 @@ import com.tuttime.booking.entity.enums.WaitlistStatus;
 import com.tuttime.booking.repository.WaitlistRepository;
 import com.tuttime.booking.service.WaitlistService;
 import com.tuttime.common.exception.ConflictException;
+import com.tuttime.common.exception.MethodArgumentNotValidException;
 import com.tuttime.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
 public class WaitlistServiceImpl implements WaitlistService {
 
 	private final WaitlistRepository waitlistRepository;
@@ -50,10 +52,9 @@ public class WaitlistServiceImpl implements WaitlistService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public WaitlistDto.WaitlistResponse getWaitlistEntry(UUID id) {
 		WaitlistEntry entry = waitlistRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Waitlist entry not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Waitlist entry not found"));
 
 		return mapToResponse(entry);
 	}
@@ -62,7 +63,7 @@ public class WaitlistServiceImpl implements WaitlistService {
 	@Transactional
 	public void leaveWaitlist(UUID id) {
 		WaitlistEntry entry = waitlistRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Waitlist entry not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Waitlist entry not found"));
 
 		entry.setStatus(WaitlistStatus.CANCELED);
 		waitlistRepository.save(entry);
@@ -73,7 +74,7 @@ public class WaitlistServiceImpl implements WaitlistService {
 	@Transactional
 	public void updateWaitlistStatus(UUID id, WaitlistStatus newStatus) {
 		WaitlistEntry entry = waitlistRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Waitlist entry not found"));
+				.orElseThrow(() -> new MethodArgumentNotValidException("Waitlist entry not found"));
 
 		entry.setStatus(newStatus);
 		if (newStatus == WaitlistStatus.NOTIFIED) {
