@@ -9,7 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 
 @Entity
-@jakarta.persistence.Table(name = "branches", schema = "restaurant_service", indexes = {
+@Table(name = "branches", schema = "restaurant_service", indexes = {
 		@Index(name = "idx_branches_deleted", columnList = "deleted")
 })
 @NoArgsConstructor

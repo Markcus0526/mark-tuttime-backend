@@ -4,12 +4,16 @@ import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "medias", schema = "restaurant_service", indexes = {
+@Table(name = "medias", schema = "restaurant_service", indexes = {
 		@Index(name = "idx_medias_deleted", columnList = "deleted"),
 		@Index(name = "idx_medias_map_entity", columnList = "map_entity"),
 		@Index(name = "idx_media_lookup", columnList = "entity_type, entity_id")
@@ -35,13 +39,14 @@ public class Media extends BaseUuidAnDeleteEntity {
 	@Column(name = "primary_entity")
 	private Boolean primaryEntity = false;
 
-	@Builder.Default
 	@Enumerated(EnumType.STRING)
 	@Column(name = "media_type")
-	private MediaType mediaType = MediaType.IMAGE;
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM) // Maps to your PostgreSQL 'media_type_enum'
+	private MediaType mediaType;
 
-	@Column(name = "svg_content", columnDefinition = "TEXT")
-	private String svgContent;
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "layout_config", columnDefinition = "jsonb")
+	private Map<String, Object> layoutConfig;
 
 	@Builder.Default
 	@Column(name = "map_entity")

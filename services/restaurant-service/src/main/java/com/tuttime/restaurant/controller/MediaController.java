@@ -132,44 +132,4 @@ public class MediaController {
 		mediaService.deleteMedia(mediaId, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
-
-	// --- Map SVG (Restaurant & Branch) ---
-
-	@Operation(summary = "Get map Canvas", description = "Retrieve the inline Canvas map for a branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Branch map Canvas retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Branch or map not found")
-	})
-	@GetMapping("/maps/{entityId}")
-	public ResponseEntity<ApiRes<String>> getMapCanvas(
-			@Parameter(description = "UUID of the entity", required = true)
-			@PathVariable UUID entityId) {
-
-		String svgContent = mediaService.getMapCanvas(entityId);
-		return ResponseEntity.ok(ApiRes.success(svgContent));
-	}
-
-	@Operation(summary = "Set/update branch map Canvas", description = "Upload or update the inline Canvas map for a branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Branch map Canvas set/updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid Canvas content"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	@PostMapping("/maps/{entityId}")
-	public ResponseEntity<ApiRes<Void>> setMapCanvas(
-			@Parameter(description = "UUID of the entity", required = true)
-			@PathVariable UUID entityId,
-			@Parameter(description = "Canvas XML content", required = true)
-			@RequestBody String svgContent) {
-
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
-
-		mediaService.setOrUpdateMapCanvas(entityId, svgContent, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(null));
-	}
 }

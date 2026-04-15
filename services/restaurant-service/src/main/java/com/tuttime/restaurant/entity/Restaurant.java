@@ -1,10 +1,7 @@
 package com.tuttime.restaurant.entity;
 
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -12,7 +9,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 
 @Entity
-@jakarta.persistence.Table(name = "restaurants")
+@Table(name = "restaurants")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

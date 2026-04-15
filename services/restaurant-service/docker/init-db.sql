@@ -43,18 +43,18 @@ LANGUAGE plpgsql;
 -- 1. RESTAURANTS
 CREATE TABLE restaurants
 (
-    id UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
-    name          VARCHAR(255) NOT NULL,
-    description   TEXT,
-    address       VARCHAR(512) NOT NULL,
-    location      GEOGRAPHY(POINT, 4326),
-    phone         VARCHAR(20),
-    website       VARCHAR(255),
-    rating        NUMERIC(2, 1)         DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
-    deleted       BOOLEAN      NOT NULL DEFAULT FALSE,
-    deleted_at    TIMESTAMPTZ,
-    created_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
+    id          UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    name        VARCHAR(255) NOT NULL,
+    description TEXT,
+    address     VARCHAR(512) NOT NULL,
+    location    GEOGRAPHY(POINT, 4326),
+    phone       VARCHAR(20),
+    website     VARCHAR(255),
+    rating      NUMERIC(2, 1)         DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
+    deleted     BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at  TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMENT
@@ -65,7 +65,7 @@ ON COLUMN restaurants.location IS 'Geographical point for proximity searches (lo
 -- 2. BRANCHES
 CREATE TABLE branches
 (
-    id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     restaurant_id UUID         NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
     name          VARCHAR(255) NOT NULL,
     description   TEXT,
@@ -86,10 +86,10 @@ ON TABLE branches IS 'Physical locations or outlets of a specific restaurant';
 -- 3. STAFFS
 CREATE TABLE staffs
 (
-    id      UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
+    id            UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     restaurant_id UUID        NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
     branch_id     UUID REFERENCES branches (id) ON DELETE CASCADE, -- NULL if managing whole restaurant
-    user_id       UUID        NOT NULL,                                   -- Logical link to User Service
+    user_id       UUID        NOT NULL,                            -- Logical link to User Service
     role_name     VARCHAR(50) NOT NULL CHECK (role_name IN ('OWNER', 'MANAGER', 'HOSTESS')),
     active        BOOLEAN     NOT NULL DEFAULT TRUE,
     created_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
@@ -100,7 +100,7 @@ CREATE TABLE staffs
 -- 4. ZONES
 CREATE TABLE zones
 (
-    id     UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
+    id          UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     branch_id   UUID         NOT NULL REFERENCES branches (id) ON DELETE CASCADE,
     name        VARCHAR(255) NOT NULL,
     description TEXT,
@@ -115,49 +115,56 @@ CREATE TABLE zones
 -- 5. TABLES
 CREATE TABLE tables
 (
-    id   UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
+    id         UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
     zone_id    UUID              NOT NULL REFERENCES zones (id) ON DELETE CASCADE,
-    number     VARCHAR(50)       NOT NULL,
     seats      INT               NOT NULL,
     status     table_status_enum NOT NULL DEFAULT 'ACTIVE',
+    pos_x      FLOAT             NOT NULL,
+    pos_y      FLOAT             NOT NULL,
+    table_type VARCHAR(20),
+    label      VARCHAR(50)       NOT NULL,
+    notes      TEXT,
     closed     BOOLEAN           NOT NULL DEFAULT FALSE,
     deleted    BOOLEAN           NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT unique_zone_table_number UNIQUE (zone_id, number)
+    updated_at TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX unique_zone_table_label
+    ON restaurant_service.tables (zone_id, label)
+    WHERE (deleted = FALSE);
 
 -- 6. MEDIAS
 CREATE TABLE medias
 (
-    id       UUID PRIMARY KEY           DEFAULT uuid_generate_v4(),
-    entity_id      UUID              NOT NULL,
+    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entity_id      UUID    NOT NULL,
     url            VARCHAR(1024),
     alt_text       VARCHAR(255),
-    primary_entity BOOLEAN                    DEFAULT FALSE,
-    media_type     media_type_enum            DEFAULT 'IMAGE',
-    svg_content    TEXT,
-    map_entity     BOOLEAN                    DEFAULT FALSE,
-    deleted        BOOLEAN           NOT NULL DEFAULT FALSE,
+    primary_entity BOOLEAN          DEFAULT FALSE,
+    media_type     media_type_enum  DEFAULT 'IMAGE',
+    layout_config  JSONB, -- Stores {canvas: {...}, fixtures: [...]}
+    map_entity     BOOLEAN          DEFAULT FALSE,
+    deleted        BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at     TIMESTAMPTZ,
-    created_at     TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP
+    created_at     TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 7. SCHEDULES
 CREATE TABLE schedules
 (
-    id   UUID PRIMARY KEY  DEFAULT uuid_generate_v4(),
-    entity_id UUID     NOT NULL,
-    day_of_week   SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
-    open_time     TIME WITHOUT TIME ZONE NOT NULL,
-    close_time    TIME WITHOUT TIME ZONE NOT NULL,
-    closed        BOOLEAN           DEFAULT FALSE NOT NULL,
-    deleted       BOOLEAN  NOT NULL DEFAULT FALSE,
-    deleted_at    TIMESTAMPTZ,
-    created_at    TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP
+    id          UUID PRIMARY KEY  DEFAULT uuid_generate_v4(),
+    entity_id   UUID     NOT NULL,
+    day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+    open_time   TIME WITHOUT TIME ZONE NOT NULL,
+    close_time  TIME WITHOUT TIME ZONE NOT NULL,
+    closed      BOOLEAN           DEFAULT FALSE NOT NULL,
+    deleted     BOOLEAN  NOT NULL DEFAULT FALSE,
+    deleted_at  TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP
 );
 
 -- === INDEXES ===

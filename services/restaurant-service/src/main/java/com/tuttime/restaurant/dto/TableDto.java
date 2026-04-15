@@ -20,9 +20,12 @@ public class TableDto {
 			@NotNull(message = "Zone ID must not be null")
 			UUID zoneId,
 
-			@NotBlank(message = "Table number must not be blank")
-			@Size(max = 50, message = "Table number must be at most 50 characters")
-			String number,
+			@NotBlank(message = "Table label must not be blank")
+			@Size(max = 50, message = "Table label must be at most 50 characters")
+			String label,
+
+			@Size(max = 5000, message = "Description can be up to 5000 characters")
+			String notes,
 
 			@NotNull(message = "Seats must not be null")
 			@Min(value = 1, message = "Seats must be at least 1")
@@ -43,7 +46,8 @@ public class TableDto {
 
 			UUID tableId,
 			UUID zoneId,
-			String number,
+			String label,
+			String notes,
 			int seats,
 			TableStatus status,
 			boolean closed,

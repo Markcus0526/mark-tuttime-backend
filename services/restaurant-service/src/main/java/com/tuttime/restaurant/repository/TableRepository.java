@@ -18,14 +18,14 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	List<DishTable> findAllByZoneIdAndDeletedFalse(UUID zoneId);
 
 	// Check if a table with the given number exists in the zone excluding soft-deleted entries
-	boolean existsByZoneIdAndNumberAndDeletedFalse(UUID zoneId, String number);
+	boolean existsByZoneIdAndLabelAndDeletedFalse(UUID zoneId, String number);
 
 	List<DishTable> findAllByZoneIdAndDeletedFalseAndClosedFalse(UUID zoneId);
 
 	// Find a specific table by ID and status excluding soft-deleted entries
 	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
-	@Query("SELECT t.id, t.number, t.seats, z.name " +
+	@Query("SELECT t.id, t.label, t.notes, t.seats, z.name " +
 			"FROM DishTable t JOIN Zone z ON t.zone.id = z.id " +
 			"WHERE z.branch.id = :branchId AND t.seats >= :partySize AND t.status = 'ACTIVE'")
 	List<Object[]> findTablesWithZoneName(@Param("branchId") UUID branchId, @Param("partySize") int partySize);

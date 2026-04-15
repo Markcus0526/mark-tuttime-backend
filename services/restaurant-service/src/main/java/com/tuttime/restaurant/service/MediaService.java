@@ -18,14 +18,4 @@ public interface MediaService {
 	void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles);
 
 	void deleteAllByEntityId(UUID entityId);
-
-	/**
-	 * Retrieves the primary SVG map content for the given entity type and entity ID.
-	 *
-	 * @param entityId the UUID of the entity
-	 * @return SVG content as a String
-	 */
-	String getMapCanvas(UUID entityId);
-
-	void setOrUpdateMapCanvas(UUID entityId, String svgContent, UUID currentUserId, String userRoles);
 }

@@ -17,8 +17,7 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
 
 	Optional<Media> findByIdAndDeletedFalse(UUID mediaId);
 
-	// Find all media for an entity, excluding soft-deleted
-	List<Media> findAllByEntityIdAndDeletedFalse(UUID entityId);
+	Optional<Media> findByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
 
 	// Find primary SVG map for an entity, excluding soft-deleted
 	Optional<Media> findFirstByEntityIdAndMediaTypeAndDeletedFalse(UUID entityId, MediaType mediaType);

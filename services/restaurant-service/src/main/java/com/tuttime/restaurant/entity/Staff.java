@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "staffs", schema = "restaurant_service")
+@Table(name = "staffs", schema = "restaurant_service")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
