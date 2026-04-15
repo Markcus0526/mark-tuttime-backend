@@ -3,7 +3,6 @@ package com.tuttime.common.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -48,22 +47,21 @@ public class GlobalExceptionHandler {
 				.body(error);
 	}
 
-	/**
-	 * 2. Business Logic Conflict (Your ConflictException fix)
-	 */
-	@ExceptionHandler(ConflictException.class)
-	public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
-		log.warn("Business Conflict [{}]: {}", getCorrelationId(request), ex.getMessage());
+	//-------- Standard Exception ------------//
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> handleGlobal(Exception ex, HttpServletRequest request) {
+		log.error(">>>>> UNEXPECTED ERROR [{}]: ", getCorrelationId(request), ex); // Log full stack trace for devs
 		return createErrorResponse(
-				HttpStatus.CONFLICT,
-				ErrorCodes.BUSINESS_RULE_VIOLATION,
+				HttpStatus.INTERNAL_SERVER_ERROR,
+				ex.getMessage(),
 				ex.getMessage(),
 				request,
 				null);
 	}
 
 	/**
-	 * 3. Validation Errors (DTO @Valid)
+	 * Validation Errors (DTO @Valid)
 	 */
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -71,21 +69,18 @@ public class GlobalExceptionHandler {
 				.map(error -> error.getField() + ": " + error.getDefaultMessage())
 				.collect(Collectors.joining(", "));
 
-		log.error("Validation failed [{}]: {}", getCorrelationId(request), ex.getMessage());
+		log.error(">>>>> MethodArgumentNotValidException: [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
 				HttpStatus.BAD_REQUEST,
-				ErrorCodes.VALIDATION_FAILED,
+				ErrorCodes.INVALID_INPUT,
 				message,
 				request,
 				null);
 	}
 
-	/**
-	 * 4. Resource Not Found
-	 */
-	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
-		log.error("Not Found [{}]: {}", getCorrelationId(request), ex.getMessage());
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleJsonParseError(HttpMessageNotReadableException ex, HttpServletRequest request) {
+		log.error(">>>>> HttpMessageNotReadableException: [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
 				HttpStatus.NOT_FOUND,
 				ErrorCodes.RESOURCE_NOT_FOUND,
@@ -94,12 +89,39 @@ public class GlobalExceptionHandler {
 				null);
 	}
 
+	//-------- Customized Exception ------------//
+
 	/**
-	 * 5. Security / Unauthorized (Catching generic Security exceptions)
+	 * Business Logic Conflict (Your ConflictException fix)
 	 */
-	@ExceptionHandler({AuthenticationException.class})
-	public ResponseEntity<ErrorResponse> handleSecurity(Exception ex, HttpServletRequest request) {
-		log.error("Security violation [{}]: {}", getCorrelationId(request), ex.getMessage());
+	@ExceptionHandler(ConflictException.class)
+	public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
+		log.error(">>>>> ConflictException: [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.CONFLICT,
+				ErrorCodes.CONFLICT,
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	/**
+	 * Security / Unauthorized (Catching generic Security exceptions)
+	 */
+	@ExceptionHandler({ForbiddenException.class})
+	public ResponseEntity<ErrorResponse> handleForbidden(Exception ex, HttpServletRequest request) {
+		log.error(">>>>> ForbiddenException: [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.FORBIDDEN,
+				ErrorCodes.FORBIDDEN,
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	@ExceptionHandler({UnauthorizedException.class})
+	public ResponseEntity<ErrorResponse> handleUnauthorized(Exception ex, HttpServletRequest request) {
+		log.error(">>>>> UnauthorizedException: [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
 				HttpStatus.UNAUTHORIZED,
 				ErrorCodes.UNAUTHORIZED,
@@ -108,23 +130,12 @@ public class GlobalExceptionHandler {
 				null);
 	}
 
-	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ResponseEntity<ErrorResponse> handleJsonParseError(HttpMessageNotReadableException ex, HttpServletRequest request) {
-		log.error("JSON parse error on path [{}]: {}", getCorrelationId(request), ex.getMessage());
-		return createErrorResponse(
-				HttpStatus.NOT_FOUND,
-				ErrorCodes.RESOURCE_NOT_FOUND,
-				ex.getMessage(),
-				request,
-				null);
-	}
-
 	/**
-	 * 4. Resource Not Found
+	 * Resource Not Found
 	 */
 	@ExceptionHandler(InvalidRequestException.class)
-	public ResponseEntity<ErrorResponse> handleNotFound(InvalidRequestException ex, HttpServletRequest request) {
-		log.error("Not Found [{}]: {}", getCorrelationId(request), ex.getMessage());
+	public ResponseEntity<ErrorResponse> handleInvalidRequest(InvalidRequestException ex, HttpServletRequest request) {
+		log.error(">>>>> InvalidRequestException: [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
 				HttpStatus.BAD_REQUEST,
 				ErrorCodes.VALIDATION_FAILED,
@@ -134,18 +145,19 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
-	 * 6. The Catch-All (Avoids leaking raw stack traces to users)
+	 * Business Logic Conflict (Your BusinessException fix)
 	 */
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleGlobal(Exception ex, HttpServletRequest request) {
-		log.error("UNEXPECTED ERROR [{}]: ", getCorrelationId(request), ex); // Log full stack trace for devs
+	@ExceptionHandler(BusinessException.class)
+	public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, HttpServletRequest request) {
+		log.error(">>>>> BusinessException: [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
 				HttpStatus.INTERNAL_SERVER_ERROR,
-				ex.getMessage(),
+				ErrorCodes.INTERNAL_SERVER_ERROR,
 				ex.getMessage(),
 				request,
 				null);
 	}
+
 
 	private String getCorrelationId(HttpServletRequest request) {
 		String id = request.getHeader(CORRELATION_ID_HEADER);
