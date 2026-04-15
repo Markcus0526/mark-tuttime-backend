@@ -273,21 +273,21 @@ public class UserController {
 
 	private void validateAdmin() {
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: You do not manage this method");
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}
 
 	private void validateAdminOrOwner() {
 		if (!UserContext.isValidUUID()
 				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: You do not manage this method");
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}
 
 	private void validateAdminOrOwnerOrManager() {
 		if (!UserContext.isValidUUID()
 				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: You do not manage this method");
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}
 }
