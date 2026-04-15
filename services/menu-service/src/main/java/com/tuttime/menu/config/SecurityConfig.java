@@ -30,6 +30,7 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/menu-medias/**").permitAll()
 						.requestMatchers(
 								"/api/v1/menus/**",
 								"/api/v1/menu-items/**",

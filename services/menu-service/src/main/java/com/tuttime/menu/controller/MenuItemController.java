@@ -134,7 +134,7 @@ public class MenuItemController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		menuItemService.linkModifierGroup(itemId, groupId);
+		menuItemService.linkModifierGroup(itemId, groupId, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(null));
 	}
 
@@ -148,7 +148,7 @@ public class MenuItemController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		menuItemService.unlinkModifierGroup(itemId, groupId);
+		menuItemService.unlinkModifierGroup(itemId, groupId, currentUserId, userRoles);
 		return ResponseEntity.noContent().build();
 	}
 
@@ -163,21 +163,21 @@ public class MenuItemController {
 
 	private void validateAdmin() {
 		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: You do not manage this method");
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}
 
 	private void validateAdminOrOwner() {
 		if (!UserContext.isValidUUID()
 				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: You do not manage this method");
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}
 
 	private void validateAdminOrOwnerOrManager() {
 		if (!UserContext.isValidUUID()
 				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: You do not manage this method");
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}
 }

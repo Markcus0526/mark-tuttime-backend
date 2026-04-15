@@ -16,7 +16,7 @@ public interface MenuItemService {
 
 	List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String sortBy, String direction);
 
-	void linkModifierGroup(UUID itemId, UUID groupId);
+	void linkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles);
 
-	void unlinkModifierGroup(UUID itemId, UUID groupId);
+	void unlinkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles);
 }

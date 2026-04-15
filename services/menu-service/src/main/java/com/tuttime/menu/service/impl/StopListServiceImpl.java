@@ -3,8 +3,12 @@ package com.tuttime.menu.service.impl;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.StopListDto;
+import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.StopList;
+import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
+import com.tuttime.menu.mapper.StopListMapper;
+import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.StopListRepository;
 import com.tuttime.menu.service.StopListService;
@@ -23,6 +27,9 @@ public class StopListServiceImpl implements StopListService {
 
 	private final StopListRepository stopListRepository;
 	private final MenuItemRepository menuItemRepository;
+	private final MenuCategoryRepository menuCategoryRepository;
+	private final StopListMapper stopListMapper;
+	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	@Override
 	@Transactional
@@ -31,6 +38,11 @@ public class StopListServiceImpl implements StopListService {
 		// 1. Verify item exists
 		MenuItem menuItem = menuItemRepository.findById(request.menuItemId())
 				.orElseThrow(() -> new InvalidRequestException("Menu item not found"));
+
+		MenuCategory category = menuCategoryRepository.findById(menuItem.getCategory().getId())
+				.orElseThrow(() -> new InvalidRequestException("Category not found"));
+
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
 		// 2. Check if already on stop list for this branch to avoid duplicates
 		stopListRepository.findByMenuItemIdAndBranchId(request.menuItemId(), request.branchId())
@@ -48,14 +60,14 @@ public class StopListServiceImpl implements StopListService {
 				.build();
 
 		StopList saved = stopListRepository.save(stopList);
-		return mapToResponse(saved);
+		return stopListMapper.toResponse(saved);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public List<StopListDto.StopListResponse> getStopListByBranch(UUID branchId) {
 		return stopListRepository.findByBranchId(branchId).stream()
-				.map(this::mapToResponse)
+				.map(stopListMapper::toResponse)
 				.collect(Collectors.toList());
 	}
 
@@ -64,6 +76,8 @@ public class StopListServiceImpl implements StopListService {
 	public void removeFromStopList(UUID id, UUID currentUserId, String userRoles) {
 		StopList stopList = stopListRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Stop list entry not found"));
+
+		restaurantGrpcClient.validateBranchPermission(stopList.getBranchId(), currentUserId, userRoles);
 
 		// Evict cache before deleting
 		evictCache(stopList.getBranchId());
@@ -75,17 +89,5 @@ public class StopListServiceImpl implements StopListService {
 	@CacheEvict(value = "branch_menus", key = "#branchId")
 	public void evictCache(UUID branchId) {
 		// Helper for manual eviction
-	}
-
-	private StopListDto.StopListResponse mapToResponse(StopList s) {
-		return new StopListDto.StopListResponse(
-				s.getId(),
-				s.getMenuItem().getId(),
-				s.getMenuItem().getName(), // Crucial for Frontend UI
-				s.getBranchId(),
-				s.getStartDate(),
-				s.getEndDate(),
-				s.getReason()
-		);
 	}
 }

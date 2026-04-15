@@ -35,7 +35,8 @@ public class GatewaySecurityConfig {
 
 				.authorizeExchange(exchanges -> exchanges
 						// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
-						.pathMatchers(HttpMethod.GET, "/media/**").permitAll()
+						.pathMatchers(HttpMethod.GET, "/restaurant-medias/**").permitAll()
+						.pathMatchers(HttpMethod.GET, "/menu-medias/**").permitAll()
 
 						.pathMatchers(
 								"/api/v1/**",
