@@ -45,7 +45,7 @@ public class AuthController {
 
 	@Operation(summary = "Login user with email or phone and password.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Login successful", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "Login successful"),
 			@ApiResponse(responseCode = "401", description = "Invalid credentials or account not verified", content = @Content)
 	})
 	@PostMapping("/login")
@@ -71,7 +71,7 @@ public class AuthController {
 
 	@Operation(summary = "Login user via OAuth providers (Google, Apple, etc.)")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "OAuth login successful", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "OAuth login successful"),
 			@ApiResponse(responseCode = "401", description = "Invalid OAuth token", content = @Content)
 	})
 	@PostMapping("/oauth-login")
@@ -84,7 +84,7 @@ public class AuthController {
 
 	@Operation(summary = "Refresh JWT access token using refresh token.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Token refreshed successfully", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
 			@ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content)
 	})
 	@PostMapping("/refresh-token")
@@ -136,7 +136,7 @@ public class AuthController {
 
 	@Operation(summary = "Verify OTP code and login with phone number.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "OTP verified and login successful", content = @Content(schema = @Schema(implementation = AuthDto.AuthResponse.class))),
+			@ApiResponse(responseCode = "200", description = "OTP verified and login successful"),
 			@ApiResponse(responseCode = "400", description = "Invalid or expired OTP code", content = @Content)
 	})
 	@PostMapping("/otp/verify")
