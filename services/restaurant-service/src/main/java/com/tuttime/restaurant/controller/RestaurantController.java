@@ -2,6 +2,8 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.dto.StaffDto;
@@ -91,9 +93,7 @@ public class RestaurantController {
 			@Parameter(description = "Restaurant creation payload", required = true)
 			@Valid @RequestBody RestaurantDto.RestaurantRequest request) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdmin();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -115,9 +115,7 @@ public class RestaurantController {
 			@Parameter(description = "Updated restaurant details", required = true)
 			@Valid @RequestBody RestaurantDto.RestaurantRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwner();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -136,9 +134,7 @@ public class RestaurantController {
 			@Parameter(description = "UUID of the restaurant to delete", required = true)
 			@PathVariable UUID restaurantId) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdmin();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -178,11 +174,7 @@ public class RestaurantController {
 			@PathVariable UUID restaurantId,
 			@RequestBody @Valid StaffDto.StaffRequest request) {
 
-		// Check if user is authenticated and is an Owner or Admin
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -201,10 +193,7 @@ public class RestaurantController {
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId) {
 
-		// Owners and Admins can see the full staff list
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -225,9 +214,7 @@ public class RestaurantController {
 			@Parameter(description = "UUID of the staff record to delete", required = true)
 			@PathVariable UUID staffId) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -243,9 +230,7 @@ public class RestaurantController {
 			@PathVariable UUID staffId,
 			@RequestBody @Valid StaffDto.StaffUpdateRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleOwner() || UserContext.isRoleAdmin() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Only the Restaurant Owner or Manager can manage staff assignments"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -254,4 +239,32 @@ public class RestaurantController {
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
 }

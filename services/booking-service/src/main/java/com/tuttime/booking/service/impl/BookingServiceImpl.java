@@ -202,7 +202,7 @@ public class BookingServiceImpl implements BookingService {
 
 		// 1. Security Check: Ensure the user owns the booking
 		if (!booking.getUserId().equals(userId)) {
-			throw new AuthenticationException("You are not authorized to cancel this booking");
+			throw new ForbiddenException("You are not authorized to cancel this booking");
 		}
 
 		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED

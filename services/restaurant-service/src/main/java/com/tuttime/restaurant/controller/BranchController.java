@@ -2,6 +2,8 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.service.BranchService;
@@ -54,9 +56,7 @@ public class BranchController {
 			@Parameter(description = "Branch creation payload", required = true)
 			@Valid @RequestBody BranchDto.BranchRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwner();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -78,9 +78,7 @@ public class BranchController {
 			@Parameter(description = "Updated branch details", required = true)
 			@Valid @RequestBody BranchDto.BranchRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -99,9 +97,7 @@ public class BranchController {
 			@Parameter(description = "UUID of the branch to delete", required = true)
 			@PathVariable UUID branchId) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwner();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -138,5 +134,34 @@ public class BranchController {
 		}
 		// Additional checks can be added here, e.g., disallow <script> tags
 		return !svgContent.toLowerCase().contains("<script");
+	}
+
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
 	}
 }

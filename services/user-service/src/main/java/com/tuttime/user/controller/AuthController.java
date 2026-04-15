@@ -52,6 +52,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<Void>> login(
 			@Parameter(description = "Login request containing email or phone and password", required = true)
 			@Valid @RequestBody AuthDto.LoginRequest request) {
+
 		authService.loginUser(request);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
@@ -65,6 +66,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<Void>> logout(
 			@Parameter(description = "Logout request with refresh token", required = true)
 			@Valid @RequestBody AuthDto.LogoutRequest request) {
+
 		authService.logoutUser(request.refreshToken());
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
@@ -78,6 +80,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> oauthLogin(
 			@Parameter(description = "OAuth login request with provider and token", required = true)
 			@Valid @RequestBody AuthDto.OAuthLoginRequest request) {
+
 		AuthDto.AuthResponse response = authService.authenticateOAuthUser(request);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
@@ -91,6 +94,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> refreshToken(
 			@Parameter(description = "Token refresh request with refresh token", required = true)
 			@Valid @RequestBody AuthDto.TokenRefreshRequest request) {
+
 		AuthDto.AuthResponse response = authService.refreshJwtToken(request.refreshToken());
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
@@ -104,6 +108,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<Void>> requestPasswordReset(
 			@Parameter(description = "Request with email or phone to initiate password reset", required = true)
 			@Valid @RequestBody AuthDto.PasswordResetRequest request) {
+
 		authService.initiatePasswordReset(request);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
@@ -117,6 +122,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<Void>> confirmPasswordReset(
 			@Parameter(description = "Password reset confirmation request", required = true)
 			@Valid @RequestBody AuthDto.PasswordResetConfirmRequest request) {
+
 		authService.resetPassword(request);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
@@ -130,6 +136,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<Void>> requestOtpLogin(
 			@Parameter(description = "Phone number to receive OTP code", required = true)
 			@Valid @RequestBody AuthDto.OtpVerificationRequest request) {
+
 		authService.sendOtpVerificationCode(request);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
@@ -143,6 +150,7 @@ public class AuthController {
 	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> verifyOtpLogin(
 			@Parameter(description = "Phone number or email and OTP code for login", required = true)
 			@Valid @RequestBody AuthDto.OtpVerificationConfirmRequest request) {
+
 		AuthDto.AuthResponse response = authService.loginWithOtp(request);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}

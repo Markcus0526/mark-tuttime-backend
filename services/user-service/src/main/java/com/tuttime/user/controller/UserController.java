@@ -2,6 +2,8 @@ package com.tuttime.user.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.enums.UserStatus;
@@ -10,7 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,10 +47,7 @@ public class UserController {
 			@Parameter(description = "User details to create", required = true)
 			@Valid @RequestBody UserDto.UserCreateRequest request) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		UserDto.UserResponse createdUser = userService.createUser(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(createdUser));
@@ -66,10 +64,7 @@ public class UserController {
 			@PathVariable UUID userId) {
 
 		// Allow Admin, Owner, and Manager to search/list users
-		if (!UserContext.isValidUUID() ||
-				!(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Access denied"));
-		}
+		validateAdminOrOwnerOrManager();
 
 		UserDto.UserResponse user = userService.getUserById(userId);
 		return ResponseEntity.ok(ApiRes.success(user));
@@ -88,10 +83,7 @@ public class UserController {
 			@Parameter(description = "Fields to update", required = true)
 			@Valid @RequestBody UserDto.UserUpdateRequest request) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		UserDto.UserResponse updatedUser = userService.updateUser(userId, request);
 		return ResponseEntity.ok(ApiRes.success(updatedUser));
@@ -107,10 +99,7 @@ public class UserController {
 			@Parameter(description = "UUID of the user to soft delete", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID userId) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		userService.deleteUser(userId);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
@@ -125,29 +114,26 @@ public class UserController {
 			@Parameter(description = "Keyword to search (name, email, or phone)")
 			@RequestParam(required = false) String query,
 
-			@Parameter(description = "Include blocked, deleted, pending request users in results", required = false)
+			@Parameter(description = "Include blocked, deleted, pending request users in results")
 			@RequestParam(required = false) UserStatus status,
 
-			@Parameter(description = "Include ADMIN, OWNER, MANAGER... users in results", required = false)
+			@Parameter(description = "Include ADMIN, OWNER, MANAGER... users in results")
 			@RequestParam(required = false) String roleName,
 
-			@Parameter(description = "Page number (0-based)", required = false)
+			@Parameter(description = "Page number (0-based)")
 			@RequestParam(defaultValue = "0") int page,
 
-			@Parameter(description = "Page size", required = false)
+			@Parameter(description = "Page size")
 			@RequestParam(defaultValue = "20") int size,
 
-			@Parameter(description = "Sort by field", required = false)
+			@Parameter(description = "Sort by field")
 			@RequestParam(defaultValue = "id") String sort,
 
-			@Parameter(description = "Sort direction: asc or desc", required = false)
+			@Parameter(description = "Sort direction: asc or desc")
 			@RequestParam(defaultValue = "asc") String direction) {
 
 		// Allow Admin, Owner, and Manager to search/list users
-		if (!UserContext.isValidUUID() ||
-				!(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("Access denied"));
-		}
+		validateAdminOrOwnerOrManager();
 
 		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
 		Pageable pageable = PageRequest.of(page, size, sortOrder);
@@ -169,10 +155,7 @@ public class UserController {
 			@Parameter(description = "Role to assign", required = true)
 			@RequestBody UserDto.RoleAssignRequest request) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		userService.assignRoleToUser(userId, request.roleName());
 		return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -190,10 +173,7 @@ public class UserController {
 			@Parameter(description = "Role name to remove", required = true, in = ParameterIn.PATH)
 			@PathVariable String roleName) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		userService.removeRoleFromUser(userId, roleName);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
@@ -212,10 +192,7 @@ public class UserController {
 			@Parameter(description = "Authentication method details", required = true)
 			@Valid @RequestBody UserDto.AuthMethodCreateRequest request) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		userService.addAuthMethod(userId, request);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -233,6 +210,8 @@ public class UserController {
 			@Parameter(description = "User location data", required = true)
 			@Valid @RequestBody UserDto.UserLocationRequest userLocationRequest) {
 
+		validateLogin();
+
 		userService.updateUserLocation(userId, userLocationRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).build();
 	}
@@ -248,10 +227,7 @@ public class UserController {
 			@Parameter(description = "UUID of the user to block", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID userId) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		UserDto.UserResponse blockedUser = userService.blockUser(userId);
 		return ResponseEntity.ok(ApiRes.success(blockedUser));
@@ -268,10 +244,7 @@ public class UserController {
 			@Parameter(description = "UUID of the user to unblock", required = true, in = ParameterIn.PATH)
 			@PathVariable UUID userId) {
 
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiRes.error("You do not manage this specific user"));
-		}
+		validateAdmin();
 
 		UserDto.UserResponse unblockedUser = userService.unblockUser(userId);
 		return ResponseEntity.ok(ApiRes.success(unblockedUser));
@@ -281,9 +254,7 @@ public class UserController {
 	@PatchMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ApiRes<UserDto.UserResponse>> updateProfile(@RequestBody @Valid UserDto.UserUpdateRequest request) {
 
-		if (!UserContext.isValidUUID()) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiRes.error("Authentication required"));
-		}
+		validateLogin();
 
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		UserDto.UserResponse updatedUser = userService.updateUser(currentUserId, request);
@@ -291,4 +262,32 @@ public class UserController {
 		return ResponseEntity.ok(ApiRes.success(updatedUser));
 	}
 
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
 }

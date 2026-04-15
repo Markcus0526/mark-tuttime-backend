@@ -1,7 +1,7 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
-import com.tuttime.common.exception.AuthenticationException;
+import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.StaffUserRequest;
 import com.tuttime.common.proto.StaffUserResponse;
@@ -138,21 +138,21 @@ public class AuthServiceImpl implements AuthService {
 
 		// Check user status
 		if (!user.getStatus().equals(UserStatus.ACTIVE)) {
-			throw new AuthenticationException("User account is not active");
+			throw new ForbiddenException("User account is not active");
 		}
 
 		// Check auth method and verify password
 		if (StringUtils.hasText(email)) {
 			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
-					.orElseThrow(() -> new AuthenticationException("Authentication method not found"));
+					.orElseThrow(() -> new ForbiddenException("Authentication method not found"));
 
 			if (!passwordEncoder.matches(request.password(), authMethod.getCredential())) {
-				throw new AuthenticationException("Invalid credentials");
+				throw new ForbiddenException("Invalid credentials");
 			}
 
 			// Check verification
 			if (!authMethod.isVerified()) {
-				throw new AuthenticationException("User not verified");
+				throw new ForbiddenException("User not verified");
 			}
 		}
 
@@ -166,7 +166,7 @@ public class AuthServiceImpl implements AuthService {
 		// Validate provider and token (pseudo-code)
 		boolean valid = validateOAuthToken(request.provider(), request.oauthToken());
 		if (!valid) {
-			throw new AuthenticationException("Invalid OAuth token");
+			throw new ForbiddenException("Invalid OAuth token");
 		}
 
 		// Retrieve or create user based on OAuth ID (implementation depends on your OAuth linkage)
@@ -187,7 +187,7 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	public AuthDto.AuthResponse refreshJwtToken(String refreshToken) {
 		if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-			throw new AuthenticationException("Invalid refresh token");
+			throw new ForbiddenException("Invalid refresh token");
 		}
 		UUID userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken);
 		User user = userRepository.findById(userId)
