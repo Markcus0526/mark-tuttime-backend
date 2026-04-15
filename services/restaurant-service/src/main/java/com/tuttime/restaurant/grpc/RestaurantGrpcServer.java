@@ -101,7 +101,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		for (Object[] row : results) {
 			TableInfo info = TableInfo.newBuilder()
 					.setTableId(row[0].toString())
-					.setTableNumber(row[1].toString())
+					.setTableLabel(row[1].toString())
 					.setZoneName(row[3].toString()) // Accesses the Zone Name directly from the query
 					.setMaxCapacity((Integer) row[2])
 					.build();

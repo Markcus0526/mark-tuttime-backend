@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
-import com.tuttime.common.exception.AuthenticationException;
+import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
@@ -50,7 +50,7 @@ public class StaffServiceImpl implements StaffService {
 			isOwner = validateRestaurantOwner(restaurantId, currentUserId);
 		}
 		if (!isAdmin && !isOwner) {
-			throw new AuthenticationException("You do not have permission to manage this restaurant.");
+			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 		}
 
 		// 2. Prevent duplicate assignments
@@ -137,7 +137,7 @@ public class StaffServiceImpl implements StaffService {
 			isOwner = validateRestaurantOwner(restaurant.getId(), currentUserId);
 		}
 		if (!isAdmin && !isOwner) {
-			throw new AuthenticationException("You do not have permission to manage this restaurant.");
+			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 		}
 
 		staffMapper.updateEntityFromRequest(request, staff);
@@ -169,7 +169,7 @@ public class StaffServiceImpl implements StaffService {
 			isOwner = validateRestaurantOwner(restaurant.getId(), currentUserId);
 		}
 		if (!isAdmin && !isOwner) {
-			throw new AuthenticationException("You do not have permission to manage this restaurant.");
+			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 		}
 
 		// send staff updated event
@@ -189,7 +189,7 @@ public class StaffServiceImpl implements StaffService {
 	@Transactional(readOnly = true)
 	public void validateAdminAccess(UUID currentUserId) {
 		if (currentUserId == null)
-			throw new AuthenticationException("You do not have permission to manage this restaurant.");
+			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 
 		UserByIdRequest request = UserByIdRequest.newBuilder()
 				.setUserId(currentUserId.toString())
@@ -209,7 +209,7 @@ public class StaffServiceImpl implements StaffService {
 		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
 
 		if (!validateRestaurantOwner(restaurantId, currentUserId)) {
-			throw new AuthenticationException("You do not have permission to manage this restaurant.");
+			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 		}
 	}
 
@@ -229,7 +229,7 @@ public class StaffServiceImpl implements StaffService {
 
 		boolean isManager = validateBranchManager(branchId, currentUserId);
 		if (!isManager) {
-			throw new AuthenticationException("You do not have permission to manage this branch.");
+			throw new ForbiddenException("You do not have permission to manage this branch.");
 		}
 	}
 
@@ -243,7 +243,7 @@ public class StaffServiceImpl implements StaffService {
 		var restaurantOpt = restaurantRepository.findByIdAndDeletedFalse(entityId);
 		if (restaurantOpt.isPresent()) {
 			if (!validateRestaurantOwner(entityId, currentUserId)) {
-				throw new AuthenticationException("You do not have permission to manage this restaurant.");
+				throw new ForbiddenException("You do not have permission to manage this restaurant.");
 			}
 			return;
 		}
@@ -256,7 +256,7 @@ public class StaffServiceImpl implements StaffService {
 		boolean isManager = isOwner || validateBranchManager(branch.getId(), currentUserId);
 
 		if (!isManager) {
-			throw new AuthenticationException("You do not have permission to manage this branch.");
+			throw new ForbiddenException("You do not have permission to manage this branch.");
 		}
 	}
 

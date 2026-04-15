@@ -2,6 +2,8 @@ package com.tuttime.restaurant.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.dto.ZoneLayoutDto;
@@ -29,6 +31,7 @@ public class ZoneController {
 
 	private final ZoneService zoneService;
 	private final ZoneLayoutService zoneLayoutService;
+
 	// --- Zone CRUD ---
 
 	@Operation(summary = "Get zone by ID", description = "Retrieve detailed information about a zone")
@@ -57,9 +60,7 @@ public class ZoneController {
 			@Parameter(description = "Zone creation payload", required = true)
 			@Valid @RequestBody ZoneDto.ZoneRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -81,9 +82,7 @@ public class ZoneController {
 			@Parameter(description = "Updated zone details", required = true)
 			@Valid @RequestBody ZoneDto.ZoneRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -102,9 +101,7 @@ public class ZoneController {
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -147,9 +144,7 @@ public class ZoneController {
 			@PathVariable UUID zoneId,
 			@RequestBody ZoneLayoutDto.LayoutDto layoutDto) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -157,4 +152,32 @@ public class ZoneController {
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
 }

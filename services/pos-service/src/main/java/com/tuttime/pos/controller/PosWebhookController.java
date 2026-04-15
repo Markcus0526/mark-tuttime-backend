@@ -1,6 +1,9 @@
 package com.tuttime.pos.controller;
 
+import com.tuttime.common.auth.security.UserContext;
+import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.pos.entity.PosSystemConfig;
 import com.tuttime.pos.repository.PosSystemConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -60,5 +63,34 @@ public class PosWebhookController {
 		// Example HMAC SHA256 validation, adjust according to POS docs
 		String computedSignature = "sha256=" + Hex.encodeHexString(HmacUtils.hmacSha256(secret, payload));
 		return computedSignature.equals(signature);
+	}
+
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
 	}
 }

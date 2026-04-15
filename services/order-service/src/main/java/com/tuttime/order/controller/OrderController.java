@@ -1,7 +1,10 @@
 package com.tuttime.order.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.enums.OrderStatus;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.order.dto.OrderRequest;
 import com.tuttime.order.dto.OrderResponse;
 import com.tuttime.order.dto.OrderUpdateRequest;
@@ -132,5 +135,34 @@ public class OrderController {
 
 		OrderResponse response = orderService.removeItem(orderId, itemId);
 		return ResponseEntity.ok(ApiRes.success(response));
+	}
+
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
 	}
 }
