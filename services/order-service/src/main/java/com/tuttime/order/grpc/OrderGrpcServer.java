@@ -1,6 +1,6 @@
 package com.tuttime.order.grpc;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.OrderDetailsResponse;
 import com.tuttime.common.proto.OrderItemDetail;
 import com.tuttime.common.proto.OrderRequest;
@@ -24,7 +24,7 @@ public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {
 	@Override
 	public void getOrderDetails(OrderRequest request, StreamObserver<OrderDetailsResponse> responseObserver) {
 		Order order = orderRepository.findById(UUID.fromString(request.getOrderId()))
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found"));
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
 		OrderDetailsResponse.Builder responseBuilder = OrderDetailsResponse.newBuilder()
 				.setOrderId(order.getId().toString())

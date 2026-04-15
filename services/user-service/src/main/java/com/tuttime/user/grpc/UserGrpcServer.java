@@ -1,6 +1,6 @@
 package com.tuttime.user.grpc;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.UserStatus;
@@ -97,7 +97,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 			// Fetching from DB (Ensure Repository handles the UUID correctly)
 			User user = userRepository.findByIdAndDeletedFalse(userId)
-					.orElseThrow(() -> new MethodArgumentNotValidException("User not found or deleted"));
+					.orElseThrow(() -> new InvalidRequestException("User not found or deleted"));
 
 			// Building Response based on your exact SQL fields
 			UserProfileResponse.Builder responseBuilder = UserProfileResponse.newBuilder()

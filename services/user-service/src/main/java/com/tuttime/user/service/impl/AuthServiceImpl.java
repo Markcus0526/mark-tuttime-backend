@@ -2,7 +2,7 @@ package com.tuttime.user.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.AuthenticationException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.StaffUserRequest;
 import com.tuttime.common.proto.StaffUserResponse;
 import com.tuttime.user.dto.AuthDto;
@@ -33,7 +33,6 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService {
 
 	private final UserRepository userRepository;
@@ -58,22 +57,22 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
+			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
 
 		if (!StringUtils.hasText(phoneNumber) && StringUtils.hasText(email) && !StringUtils.hasText(password)) {
-			throw new MethodArgumentNotValidException("Password must be provided");
+			throw new InvalidRequestException("Password must be provided");
 		}
 
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(request.phoneNumber()) &&
 				userRepository.existsByPhoneNumberAndDeletedFalse(request.phoneNumber())) {
-			throw new MethodArgumentNotValidException("Phone number in use");
+			throw new InvalidRequestException("Phone number in use");
 		}
 
 		if (StringUtils.hasText(request.email()) &&
 				userRepository.existsByEmailAndDeletedFalse(request.email())) {
-			throw new MethodArgumentNotValidException("Email in use");
+			throw new InvalidRequestException("Email in use");
 		}
 
 		// 1. Create and populate User first
@@ -85,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
 
 		String targetRole = UserRoleKind.USER.name();
 		Role role = roleRepository.findByName(UserRoleKind.USER.name())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Role " + targetRole + " not found"));
+				.orElseThrow(() -> new InvalidRequestException("Role " + targetRole + " not found"));
 		UserRole userRole = UserRole.builder()
 				.user(user)
 				.role(role)
@@ -110,12 +109,13 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
+	@Transactional
 	public void loginUser(AuthDto.LoginRequest request) {
 		String identifier = request.emailOrPhone();
 		String password = request.password();
 
 		if (!StringUtils.hasText(identifier)) {
-			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
+			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
 
 		String phoneNumber = null;
@@ -126,12 +126,12 @@ public class AuthServiceImpl implements AuthService {
 			phoneNumber = identifier;
 
 		if (!StringUtils.hasText(phoneNumber) && StringUtils.hasText(email) && !StringUtils.hasText(password)) {
-			throw new MethodArgumentNotValidException("Password must be provided");
+			throw new InvalidRequestException("Password must be provided");
 		}
 
 		Optional<User> userOpt = userRepository.findByPhoneNumberOrEmail(phoneNumber, email);
 		if (userOpt.isEmpty()) {
-			throw new MethodArgumentNotValidException("Either phone number or email not registered");
+			throw new InvalidRequestException("Either phone number or email not registered");
 		}
 
 		User user = userOpt.get();
@@ -191,7 +191,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 		UUID userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken);
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		String newAccessToken = jwtTokenProvider.generateAccessToken(user);
 		String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
@@ -219,18 +219,18 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
-			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
+			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
 
 		// Check if user already exists by phone or email
 		if (StringUtils.hasText(phoneNumber) &&
 				!userRepository.existsByPhoneNumberAndDeletedFalse(phoneNumber)) {
-			throw new MethodArgumentNotValidException("Phone number not registered");
+			throw new InvalidRequestException("Phone number not registered");
 		}
 
 		if (StringUtils.hasText(email) &&
 				!userRepository.existsByEmailAndDeletedFalse(email)) {
-			throw new MethodArgumentNotValidException("Email not registered");
+			throw new InvalidRequestException("Email not registered");
 		}
 
 		// Generate code and save
@@ -241,7 +241,7 @@ public class AuthServiceImpl implements AuthService {
 		verificationCode.setCodeHash(code);
 		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(300)); // 5 min expiry
 		verificationCode.setUsed(false);
-		verificationCodeRepository.save(verificationCode);
+		verificationCodeRepository.saveAndFlush(verificationCode);
 
 		if (StringUtils.hasText(phoneNumber)) {
 			smsService.sendVerificationCode(phoneNumber, code);
@@ -254,9 +254,8 @@ public class AuthServiceImpl implements AuthService {
 	public AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request) {
 		String target = StringUtils.hasText(request.phoneNumber()) ? request.phoneNumber() : request.email();
 
-		// 1. Verify and Burn OTP
 		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, request.code())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Invalid or expired OTP code"));
+				.orElseThrow(() -> new InvalidRequestException("Invalid or expired OTP code"));
 
 		otpCode.setUsed(true);
 		verificationCodeRepository.save(otpCode);
@@ -264,14 +263,22 @@ public class AuthServiceImpl implements AuthService {
 		// 2. Find User
 		User user = (otpCode.getType() == VerificationType.PHONE_VERIFY)
 				? userRepository.findByPhoneNumberAndDeletedFalse(target)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"))
+				.orElseThrow(() -> new InvalidRequestException("User not found"))
 				: userRepository.findByEmailAndDeletedFalse(target)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		// 3. Update User State
 		user.setStatus(UserStatus.ACTIVE);
 		user.setLastLogin(OffsetDateTime.now());
 		userRepository.save(user);
+
+		// Optional: If you want to ensure the user has an auth method for EMAIL_PASS
+		if (otpCode.getType() == VerificationType.EMAIL_VERIFY) {
+			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
+					.orElseThrow(() -> new InvalidRequestException("Authentication method not found"));
+			authMethod.setVerified(true);
+			userAuthMethodRepository.save(authMethod);
+		}
 
 		// 4. Fetch Management Context (gRPC) if applicable
 		AuthDto.AuthResponse.RestaurantStaff staffContext = null;
@@ -316,11 +323,11 @@ public class AuthServiceImpl implements AuthService {
 		String email = request.email();
 
 		if (!StringUtils.hasText(email)) {
-			throw new MethodArgumentNotValidException("Email must be provided");
+			throw new InvalidRequestException("Email must be provided");
 		}
 
 		Optional<User> userOpt = userRepository.findByEmailAndDeletedFalse(email);
-		User user = userOpt.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+		User user = userOpt.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		// Generate code and save
 		String code = tokenUtil.generateRandomCode();
@@ -343,18 +350,18 @@ public class AuthServiceImpl implements AuthService {
 
 		// Validate phone/email presence
 		if (!StringUtils.hasText(email)) {
-			throw new MethodArgumentNotValidException("Email must be provided");
+			throw new InvalidRequestException("Email must be provided");
 		}
 		if (!StringUtils.hasText(newPassword)) {
-			throw new MethodArgumentNotValidException("Password must be provided");
+			throw new InvalidRequestException("Password must be provided");
 		}
 		if (!StringUtils.hasText(code)) {
-			throw new MethodArgumentNotValidException("OTP code must be provided");
+			throw new InvalidRequestException("OTP code must be provided");
 		}
 
 		// Step 1: Verify OTP
 		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(email, code)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Invalid or expired OTP code"));
+				.orElseThrow(() -> new InvalidRequestException("Invalid or expired OTP code"));
 
 		// Step 2: Mark OTP as used
 		otpCode.setUsed(true);
@@ -362,7 +369,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Step 3: Find or create user by phone number
 		User user = userRepository.findByEmailAndDeletedFalse(email)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		updatePasswordForUser(user.getId(), newPassword);
 		user.setStatus(UserStatus.ACTIVE);
@@ -371,7 +378,7 @@ public class AuthServiceImpl implements AuthService {
 
 	private void updatePasswordForUser(UUID userId, String newPassword) {
 		UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(userId, AuthProvider.EMAIL_PASS)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Authentication method not found"));
+				.orElseThrow(() -> new InvalidRequestException("Authentication method not found"));
 		authMethod.setCredential(passwordEncoder.encode(newPassword));
 		authMethod.setVerified(true);
 		userAuthMethodRepository.save(authMethod);

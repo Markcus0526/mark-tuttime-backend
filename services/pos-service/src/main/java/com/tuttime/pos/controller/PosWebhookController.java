@@ -1,7 +1,6 @@
 package com.tuttime.pos.controller;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.pos.entity.PosSystemConfig;
 import com.tuttime.pos.repository.PosSystemConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,7 @@ public class PosWebhookController {
 
 	private ResponseEntity<String> processWebhook(String posSystem, String payload, String signature) {
 		PosSystemConfig config = posSystemConfigRepository.findByPosSystemAndEnabledTrue(posSystem)
-				.orElseThrow(() -> new MethodArgumentNotValidException(
+				.orElseThrow(() -> new InvalidRequestException(
 						"Webhook received for unknown or disabled POS system: " + posSystem
 				));
 

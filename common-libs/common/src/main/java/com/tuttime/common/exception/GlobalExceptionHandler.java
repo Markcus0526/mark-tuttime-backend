@@ -7,12 +7,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -65,11 +67,15 @@ public class GlobalExceptionHandler {
 	 */
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+		String message = ex.getBindingResult().getFieldErrors().stream()
+				.map(error -> error.getField() + ": " + error.getDefaultMessage())
+				.collect(Collectors.joining(", "));
+
 		log.error("Validation failed [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
 				HttpStatus.BAD_REQUEST,
 				ErrorCodes.VALIDATION_FAILED,
-				ex.getMessage(),
+				message,
 				request,
 				null);
 	}
@@ -108,6 +114,20 @@ public class GlobalExceptionHandler {
 		return createErrorResponse(
 				HttpStatus.NOT_FOUND,
 				ErrorCodes.RESOURCE_NOT_FOUND,
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	/**
+	 * 4. Resource Not Found
+	 */
+	@ExceptionHandler(InvalidRequestException.class)
+	public ResponseEntity<ErrorResponse> handleNotFound(InvalidRequestException ex, HttpServletRequest request) {
+		log.error("Not Found [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.BAD_REQUEST,
+				ErrorCodes.VALIDATION_FAILED,
 				ex.getMessage(),
 				request,
 				null);

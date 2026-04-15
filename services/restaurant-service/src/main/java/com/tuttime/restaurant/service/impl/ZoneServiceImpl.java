@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Zone;
@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ZoneServiceImpl implements ZoneService {
 
 	private final StaffService staffService;
@@ -32,15 +31,17 @@ public class ZoneServiceImpl implements ZoneService {
 	private final MediaService mediaService;
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<ZoneDto.ZoneResponse> getZonesByBranchId(UUID branchId) {
 		List<Zone> zones = zoneRepository.findAllByBranchIdAndDeletedFalse(branchId);
 		return zones.stream().map(zoneMapper::toResponse).collect(Collectors.toList());
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public ZoneDto.ZoneResponse getZoneById(UUID zoneId) {
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Zone not found with id " + zoneId));
+				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 		return zoneMapper.toResponse(zone);
 	}
 
@@ -48,7 +49,7 @@ public class ZoneServiceImpl implements ZoneService {
 	@Transactional
 	public ZoneDto.ZoneResponse createZone(ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
 		Branch branch = branchRepository.findByIdAndDeletedFalse(request.branchId())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Branch not found: " + request.branchId()));
+				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + request.branchId()));
 
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
 
@@ -64,7 +65,7 @@ public class ZoneServiceImpl implements ZoneService {
 	@Transactional
 	public ZoneDto.ZoneResponse updateZone(UUID zoneId, ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Zone not found with id " + zoneId));
+				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
@@ -78,7 +79,7 @@ public class ZoneServiceImpl implements ZoneService {
 	@Transactional
 	public void deleteZone(UUID zoneId, UUID currentUserId, String userRoles) {
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Zone not found with id " + zoneId));
+				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 

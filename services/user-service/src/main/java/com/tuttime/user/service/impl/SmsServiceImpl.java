@@ -1,7 +1,7 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.common.exception.BusinessException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.config.SmsProperties;
 import com.tuttime.user.service.SmsService;
 import com.twilio.Twilio;
@@ -59,7 +59,7 @@ public class SmsServiceImpl implements SmsService {
 			case "log" -> log.info("[SMS LOG] To: {}, Message: {}", toPhoneNumber, message);
 			default -> {
 				log.error("No valid SMS provider configured. SMS not sent.");
-				throw new MethodArgumentNotValidException("No valid SMS provider configured.");
+				throw new InvalidRequestException("No valid SMS provider configured.");
 			}
 		}
 	}

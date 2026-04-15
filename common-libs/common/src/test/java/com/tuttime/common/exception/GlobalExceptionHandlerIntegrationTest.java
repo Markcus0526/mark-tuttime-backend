@@ -9,18 +9,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.tuttime.common.exception.ErrorResponseTestUtil.assertErrorResponse;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -139,10 +127,10 @@ class GlobalExceptionHandlerIntegrationTest {
 	}
 
 	@Test
-	@DisplayName("MethodArgumentNotValidException should include field details in error response")
-	void testMethodArgumentNotValidException_IncludesFieldDetails() {
+	@DisplayName("InvalidRequestException should include field details in error response")
+	void testInvalidRequestException_IncludesFieldDetails() {
 		// Given
-//		MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
+//		InvalidRequestException exception = mock(InvalidRequestException.class);
 //		BindingResult bindingResult = mock(BindingResult.class);
 //		List<org.springframework.validation.ObjectError> errors = new ArrayList<>();
 //

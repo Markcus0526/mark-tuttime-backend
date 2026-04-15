@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class BookingServiceImpl implements BookingService {
 
@@ -52,6 +51,7 @@ public class BookingServiceImpl implements BookingService {
 	private static final String LOCK_PREFIX = "lock:table:";
 
 	@Override
+	@Transactional(readOnly = true)
 	public BookingSetupResponse getBookingSetupData(UUID branchId, OffsetDateTime date, int partySize) {
 		// 1. Fetch external data in parallel
 		var tablesFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getTablesForBooking(branchId, partySize));
@@ -153,7 +153,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional
 	public Booking updateStatus(UUID bookingId, BookingStatus newStatus, UUID actorId, String reason) {
 		Booking booking = bookingRepository.findById(bookingId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Booking not found: " + bookingId));
+				.orElseThrow(() -> new InvalidRequestException("Booking not found: " + bookingId));
 
 		BookingStatus oldStatus = booking.getStatus();
 		booking.setStatus(newStatus);
@@ -186,6 +186,7 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<BookingResponse> getBookingsByUser(UUID userId) {
 		return bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId)
 				.stream()
@@ -197,7 +198,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional
 	public void cancelBooking(UUID bookingId, UUID userId, String reason) {
 		Booking booking = bookingRepository.findById(bookingId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Booking not found"));
+				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
 
 		// 1. Security Check: Ensure the user owns the booking
 		if (!booking.getUserId().equals(userId)) {
@@ -206,7 +207,7 @@ public class BookingServiceImpl implements BookingService {
 
 		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED
 		if (booking.getStatus() == BookingStatus.COMPLETED || booking.getStatus() == BookingStatus.CANCELED) {
-			throw new MethodArgumentNotValidException("Booking cannot be cancelled in its current state");
+			throw new InvalidRequestException("Booking cannot be cancelled in its current state");
 		}
 
 		BookingStatus oldStatus = booking.getStatus();
@@ -222,10 +223,11 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<BookingHistoryResponse> getStatusHistory(UUID bookingId) {
 		// 1. Verify booking exists
 		if (!bookingRepository.existsById(bookingId)) {
-			throw new MethodArgumentNotValidException("Booking not found");
+			throw new InvalidRequestException("Booking not found");
 		}
 
 		// 2. Fetch all history entries for this specific booking
@@ -235,6 +237,7 @@ public class BookingServiceImpl implements BookingService {
 				.toList();
 	}
 
+	@Transactional(readOnly = true)
 	public List<BookingResponse> getBookingsByRestaurant(UUID restaurantId, OffsetDateTime date) {
 		// 1. Define the start and end of the day for the filter
 		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);

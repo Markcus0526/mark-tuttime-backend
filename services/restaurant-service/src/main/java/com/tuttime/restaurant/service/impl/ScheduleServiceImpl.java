@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.ScheduleDto;
 import com.tuttime.restaurant.entity.Schedule;
 import com.tuttime.restaurant.mapper.ScheduleMapper;
@@ -16,7 +16,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ScheduleServiceImpl implements ScheduleService {
 
 	private final StaffService staffService;
@@ -24,6 +23,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	private final ScheduleMapper scheduleMapper;
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<ScheduleDto.ScheduleResponse> getSchedules(UUID entityId) {
 		return scheduleRepository.findAllByEntityId(entityId)
 				.stream()
@@ -47,7 +47,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	@Transactional
 	public ScheduleDto.ScheduleResponse updateSchedule(UUID scheduleId, ScheduleDto.ScheduleRequest request, UUID currentUserId, String userRoles) {
 		Schedule schedule = scheduleRepository.findByIdAndDeletedFalse(scheduleId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Schedule not found: " + scheduleId));
+				.orElseThrow(() -> new InvalidRequestException("Schedule not found: " + scheduleId));
 
 		staffService.validatePermissions(schedule.getEntityId(), currentUserId, userRoles);
 
@@ -60,7 +60,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	@Transactional
 	public void deleteSchedule(UUID scheduleId, UUID currentUserId, String userRoles) {
 		Schedule schedule = scheduleRepository.findByIdAndDeletedFalse(scheduleId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Schedule not found: " + scheduleId));
+				.orElseThrow(() -> new InvalidRequestException("Schedule not found: " + scheduleId));
 
 		// 1. Centralized permission check
 		staffService.validatePermissions(schedule.getEntityId(), currentUserId, userRoles);
@@ -71,6 +71,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	}
 
 	@Override
+	@Transactional
 	public void deleteAllByEntityId(UUID entityId) {
 		scheduleRepository.deleteAllByEntityId(entityId);
 	}

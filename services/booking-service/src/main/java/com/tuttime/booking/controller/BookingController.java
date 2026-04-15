@@ -89,7 +89,7 @@ public class BookingController {
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Cancel a booking", description = "Sets status to CANCELED and records the reason.")
-	public ResponseEntity<Void> cancelBooking(
+	public ResponseEntity<ApiRes<Void>> cancelBooking(
 			@PathVariable UUID id,
 			@RequestParam UUID userId,
 			@RequestParam(required = false) String reason) {

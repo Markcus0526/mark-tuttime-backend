@@ -1,6 +1,7 @@
 package com.tuttime.order.entity;
 
 import com.tuttime.common.entity.BaseLockingEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,7 +22,7 @@ import java.util.UUID;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE order_service.orders SET deleted_at = now() WHERE id = ?")
-public class Order extends BaseLockingEntity {
+public class Order extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "booking_id", nullable = false)
 	private UUID bookingId;
@@ -63,7 +64,7 @@ public class Order extends BaseLockingEntity {
 
 	public void recalculateTotal() {
 		this.totalAmount = this.items.stream()
-				.filter(item -> item.getDeletedAt() == null) // Important if using soft deletes
+//				.filter(item -> item.getDeletedAt() == null) // Important if using soft deletes
 				.map(OrderItem::getSubtotal) // Uses the logic inside OrderItem
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}

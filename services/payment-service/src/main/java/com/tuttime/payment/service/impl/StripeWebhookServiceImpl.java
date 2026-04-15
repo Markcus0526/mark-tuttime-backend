@@ -4,10 +4,7 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
-import com.tuttime.common.event.EventProducer;
-import com.tuttime.common.event.PaymentEvent;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.entity.enums.PaymentStatus;
@@ -21,13 +18,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class StripeWebhookServiceImpl implements StripeWebhookService {
 
@@ -47,7 +42,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 			event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
 		} catch (SignatureVerificationException e) {
 			log.error("Stripe signature verification failed: {}", e.getMessage());
-			throw new MethodArgumentNotValidException("Invalid signature");
+			throw new InvalidRequestException("Invalid signature");
 		}
 
 		// 2. IDEMPOTENCY CHECK (Exactly-once processing)
@@ -59,7 +54,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 		// 3. PROCESS SPECIFIC EVENT TYPES
 		if ("checkout.session.completed".equals(event.getType())) {
 			Session session = (Session) event.getDataObjectDeserializer().getObject()
-					.orElseThrow(() -> new MethodArgumentNotValidException("Empty event data"));
+					.orElseThrow(() -> new InvalidRequestException("Empty event data"));
 
 			processCheckoutCompleted(session);
 		}
@@ -72,13 +67,12 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 				.build());
 	}
 
-	@Transactional
 	private void processCheckoutCompleted(Session session) {
 		// Metadata was set during session creation in createCheckoutSession
 		UUID bookingId = UUID.fromString(session.getMetadata().get("bookingId"));
 
 		Payment payment = paymentRepository.findByBookingId(bookingId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Payment missing for booking: " + bookingId));
+				.orElseThrow(() -> new InvalidRequestException("Payment missing for booking: " + bookingId));
 
 		if (payment.getStatus() != PaymentStatus.COMPLETED) {
 			payment.setStatus(PaymentStatus.COMPLETED);

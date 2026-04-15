@@ -1,6 +1,7 @@
 package com.tuttime.order.entity;
 
 import com.tuttime.common.entity.BaseLockingEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 @SQLDelete(sql = "UPDATE order_service.order_items SET deleted_at = now() WHERE id = ?")
-public class OrderItem extends BaseLockingEntity {
+public class OrderItem extends BaseUuidAnDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "order_id")
@@ -51,7 +52,7 @@ public class OrderItem extends BaseLockingEntity {
 		// 2. Add the sum of all modifier price adjustments
 		BigDecimal modifiersTotal = this.modifiers.stream()
 				// Only include modifiers that aren't soft-deleted
-				.filter(mod -> mod.getDeletedAt() == null)
+//				.filter(mod -> mod.getDeletedAt() == null)
 				.map(OrderItemModifier::getPriceAdjustment)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 

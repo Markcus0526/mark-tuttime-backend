@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
@@ -19,11 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
-
 @Service
 @AllArgsConstructor
-@Transactional(readOnly = true)
 public class BranchServiceImpl implements BranchService {
 
 	private final StaffService staffService;
@@ -39,7 +36,7 @@ public class BranchServiceImpl implements BranchService {
 	@Transactional
 	public BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(request.restaurantId())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + request.restaurantId()));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + request.restaurantId()));
 
 		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
@@ -52,13 +49,15 @@ public class BranchServiceImpl implements BranchService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public BranchDto.BranchResponse getBranchById(UUID branchId) {
 		Branch entity = branchRepository.findByIdAndDeletedFalse(branchId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Branch not found: " + branchId));
+				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
 		return branchMapper.toResponse(entity);
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Branch> branchPage;
@@ -76,7 +75,7 @@ public class BranchServiceImpl implements BranchService {
 	@Transactional
 	public BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, UUID currentUserId, String userRoles) {
 		Branch branch = branchRepository.findByIdAndDeletedFalse(branchId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Branch not found: " + branchId));
+				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
 
 		// 1. Unified Permission Check
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
@@ -92,7 +91,7 @@ public class BranchServiceImpl implements BranchService {
 	@Transactional
 	public void deleteBranch(UUID branchId, UUID currentUserId, String userRoles) {
 		Branch branch = branchRepository.findByIdAndDeletedFalse(branchId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Branch not found: " + branchId));
+				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
 
 		// 1. Unified Permission Check
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);

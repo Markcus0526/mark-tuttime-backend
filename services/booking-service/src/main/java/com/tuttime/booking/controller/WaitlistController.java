@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -58,7 +59,7 @@ public class WaitlistController {
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Leave the waitlist", description = "Cancels the waitlist entry (soft delete/status update).")
 	@ApiResponse(responseCode = "204", description = "Successfully left the queue")
-	public ResponseEntity<Void> leaveWaitlist(@PathVariable UUID id) {
+	public ResponseEntity<ApiRes<Void>> leaveWaitlist(@PathVariable UUID id) {
 		waitlistService.leaveWaitlist(id);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}

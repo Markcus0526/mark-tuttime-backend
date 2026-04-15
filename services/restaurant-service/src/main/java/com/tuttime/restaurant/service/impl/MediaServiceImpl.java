@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.BusinessException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.enums.MediaType;
@@ -26,7 +26,6 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class MediaServiceImpl implements MediaService {
 
 	private final MediaRepository mediaRepository;
@@ -35,6 +34,7 @@ public class MediaServiceImpl implements MediaService {
 	private final FileStorageService fileStorageService;
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<MediaDto.MediaResponse> getMediaByEntity(UUID entityId, MediaType mediaType) {
 		// If mediaType is null, the query returns all media for the entity
 		return mediaRepository.findAllByEntityIdAndOptionalMediaType(entityId, mediaType)
@@ -80,7 +80,7 @@ public class MediaServiceImpl implements MediaService {
 	public MediaDto.MediaResponse updateMedia(UUID mediaId, MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles) {
 		// 1. Fetch and Validate
 		Media media = mediaRepository.findByIdAndDeletedFalse(mediaId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Media not found: " + mediaId));
+				.orElseThrow(() -> new InvalidRequestException("Media not found: " + mediaId));
 
 		staffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
 
@@ -131,7 +131,7 @@ public class MediaServiceImpl implements MediaService {
 	@Transactional
 	public void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles) {
 		Media media = mediaRepository.findByIdAndDeletedFalse(mediaId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Media not found: " + mediaId));
+				.orElseThrow(() -> new InvalidRequestException("Media not found: " + mediaId));
 
 		// 1. Centralized permission check
 		staffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
@@ -155,7 +155,7 @@ public class MediaServiceImpl implements MediaService {
 		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(
 				entityId,
 				MediaType.CANVAS
-		).orElseThrow(() -> new MethodArgumentNotValidException("Primary SVG map not found for entity: " + entityId));
+		).orElseThrow(() -> new InvalidRequestException("Primary SVG map not found for entity: " + entityId));
 
 		return media.getSvgContent();
 	}
@@ -189,7 +189,7 @@ public class MediaServiceImpl implements MediaService {
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB
 		if (file.getSize() > maxFileSize) {
-			throw new MethodArgumentNotValidException("File size exceeds the maximum allowed limit of 5 MB");
+			throw new InvalidRequestException("File size exceeds the maximum allowed limit of 5 MB");
 		}
 
 		// Validate file type using Apache Tika
@@ -198,7 +198,7 @@ public class MediaServiceImpl implements MediaService {
 		try {
 			detectedType = tika.detect(file.getInputStream());
 		} catch (IOException e) {
-			throw new MethodArgumentNotValidException("Could not detect file type");
+			throw new InvalidRequestException("Could not detect file type");
 		}
 
 		// Allowed MIME types based on mediaType parameter
@@ -206,11 +206,11 @@ public class MediaServiceImpl implements MediaService {
 			case MediaType.IMAGE -> List.of("image/jpeg", "image/png", "image/gif", "image/svg+xml");
 			case MediaType.VIDEO -> List.of("video/mp4", "video/webm", "video/ogg");
 			case MediaType.CANVAS -> List.of("image/canvas+xml");
-			default -> throw new MethodArgumentNotValidException("Unsupported media type");
+			default -> throw new InvalidRequestException("Unsupported media type");
 		};
 
 		if (!allowedMimeTypes.contains(detectedType)) {
-			throw new MethodArgumentNotValidException("Invalid file type: " + detectedType);
+			throw new InvalidRequestException("Invalid file type: " + detectedType);
 		}
 
 		// Optional: further validate SVG content if mediaType == SVG
@@ -218,10 +218,10 @@ public class MediaServiceImpl implements MediaService {
 			try {
 				String svgContent = new String(file.getBytes(), StandardCharsets.UTF_8);
 				if (!isValidSvg(svgContent)) {
-					throw new MethodArgumentNotValidException("Invalid or unsafe Canvas content");
+					throw new InvalidRequestException("Invalid or unsafe Canvas content");
 				}
 			} catch (IOException e) {
-				throw new MethodArgumentNotValidException("Failed to read Canvas content");
+				throw new InvalidRequestException("Failed to read Canvas content");
 			}
 		}
 	}
