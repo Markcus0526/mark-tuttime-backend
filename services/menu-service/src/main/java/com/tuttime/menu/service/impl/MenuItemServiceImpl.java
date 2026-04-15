@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class MenuItemServiceImpl implements MenuItemService {
 
 	private final MenuItemRepository menuItemRepository;
-	private final MenuCategoryRepository categoryRepository;
+	private final MenuCategoryRepository menuCategoryRepository;
 	private final MenuItemMapper menuItemMapper; // Use this instead of manual mapping
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final ModifierService modifierService; // Needed for link/unlink
@@ -34,7 +34,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "@menuItemServiceImpl.getBranchIdFromCategory(#request.categoryId())")
 	public MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
-		MenuCategory category = categoryRepository.findById(request.categoryId())
+		MenuCategory category = menuCategoryRepository.findById(request.categoryId())
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
@@ -59,7 +59,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 		MenuItem existing = menuItemRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
-		MenuCategory category = categoryRepository.findById(request.categoryId())
+		MenuCategory category = menuCategoryRepository.findById(request.categoryId())
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
@@ -88,7 +88,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 		MenuItem item = menuItemRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
-		MenuCategory category = categoryRepository.findById(item.getCategory().getId())
+		MenuCategory category = menuCategoryRepository.findById(item.getCategory().getId())
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
@@ -112,11 +112,14 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	@Override
 	@Transactional
-	public void linkModifierGroup(UUID itemId, UUID groupId) {
+	public void linkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles) {
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
-		// Logical check for permissions could go here using restaurantGrpcClient
+		MenuCategory category = menuCategoryRepository.findById(item.getCategory().getId())
+				.orElseThrow(() -> new InvalidRequestException("Category not found"));
+
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
 		// Assuming ModifierGroup is fetched and added to item.modifierGroups
 		// Or call a specialized method in modifierService
@@ -126,10 +129,15 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	@Override
 	@Transactional
-	public void unlinkModifierGroup(UUID itemId, UUID groupId) {
+	public void unlinkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles) {
 		// 1. Fetch the item
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Menu Item not found"));
+
+		MenuCategory category = menuCategoryRepository.findById(item.getCategory().getId())
+				.orElseThrow(() -> new InvalidRequestException("Category not found"));
+
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
 		// 2. Remove the association from the set
 		// This triggers a DELETE on the 'menu_item_modifier_groups' table
@@ -152,7 +160,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 	 */
 	@Transactional(readOnly = true)
 	public UUID getBranchIdFromCategory(UUID categoryId) {
-		return categoryRepository.findById(categoryId)
+		return menuCategoryRepository.findById(categoryId)
 				.map(MenuCategory::getBranchId)
 				.orElse(null);
 	}

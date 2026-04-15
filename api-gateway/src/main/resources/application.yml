@@ -177,7 +177,7 @@ spring:
           order: 27
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
           predicates:
-            - Path=/media/**
+            - Path=/restaurant-medias/**
           filters:
             - name: CircuitBreaker # GOOD
             # - JwtAuthentication # REMOVE THIS IF IT IS HERE
@@ -256,7 +256,7 @@ spring:
 
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /api/v1/menu-medias/**
-        - id: menu-service-stoplist
+        - id: menu-service-media
           order: 36
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
@@ -267,6 +267,16 @@ spring:
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /media/**
+        - id: restaurant-service-media-files
+          order: 37
+          uri: http://173.249.29.61:28003
+          predicates:
+            - Path=/menu-medias/**
+          filters:
+            - name: CircuitBreaker # GOOD
 
         ################# Booking Service Routes #######################
 
