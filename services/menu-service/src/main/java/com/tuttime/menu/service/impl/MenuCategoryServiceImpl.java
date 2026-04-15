@@ -2,8 +2,7 @@ package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.exception.AuthenticationException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.CategoryDto;
 import com.tuttime.menu.dto.FullMenuDto;
 import com.tuttime.menu.entity.MenuCategory;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class MenuCategoryServiceImpl implements MenuCategoryService {
 
 	private final MenuCategoryRepository categoryRepository;
@@ -49,7 +47,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		restaurantGrpcClient.validateBranchPermission(request.branchId(), currentUserId, userRoles);
 
 		MenuCategory existing = categoryRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Category not found with id: " + id));
+				.orElseThrow(() -> new InvalidRequestException("Category not found with id: " + id));
 
 		existing.setName(request.name());
 		existing.setDescription(request.description());
@@ -59,13 +57,15 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public CategoryDto.CategoryResponse getCategoryById(UUID id) {
 		return categoryRepository.findById(id)
 				.map(categoryMapper::toResponse)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Category not found with id: " + id));
+				.orElseThrow(() -> new InvalidRequestException("Category not found with id: " + id));
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<CategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId) {
 		return categoryRepository.findAllByBranchId(branchId)
 				.stream()
@@ -74,6 +74,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	@Cacheable(value = "branch_menus", key = "#branchId") // Re-added caching for the read operation
 	public FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId) {
 		// This now returns Categories sorted by priority 0, 1, 2...
@@ -87,7 +88,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Transactional
 	public void deleteCategory(UUID id, UUID currentUserId, String userRoles) {
 		MenuCategory category = categoryRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Category not found"));
+				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
@@ -98,6 +99,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void validateMenuCategory(UUID id) {
 		if (UserContext.getUserId() == null)
 			throw new AuthenticationException("You do not manage this specific restaurant or branch");
@@ -111,6 +113,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		}
 	}
 
+	@Transactional(readOnly = true)
 	@CacheEvict(value = "branch_menus", key = "#branchId")
 	public void evictBranchCache(UUID branchId) {
 		// Helper method to trigger cache eviction by branchId

@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class AnalyticsServiceImpl implements AnalyticsService {
 
@@ -49,6 +48,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	 * Maps Entity to Record for Controller response.
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public List<EventResponse> getRestaurantHistory(UUID restaurantId) {
 		return eventRepository.findByEntityIdOrderByOccurredAtDesc(restaurantId)
 				.stream()
@@ -60,6 +60,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	 * Calculates Top 10 Restaurants based on booking volume.
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public List<TopRestaurantProjection> getTopRestaurants(int days) {
 		OffsetDateTime since = OffsetDateTime.now().minusDays(days);
 		return eventRepository.findTopRestaurantsByBookingCount(since);
@@ -69,6 +70,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	 * Generates data for the Hourly Booking Heatmap (0-23).
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public List<HourlyBookingProjection> getBookingHeatmap(int days) {
 		OffsetDateTime since = OffsetDateTime.now().minusDays(days);
 		return eventRepository.findBookingHeatmap(since);

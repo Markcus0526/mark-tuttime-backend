@@ -4,8 +4,7 @@ import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.OrderEvent;
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.order.dto.OrderRequest;
 import com.tuttime.order.dto.OrderResponse;
 import com.tuttime.order.dto
@@ -29,7 +28,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class OrderServiceImpl implements OrderService {
 
@@ -77,17 +75,19 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public OrderResponse getOrderById(UUID id) {
 		return orderRepository.findById(id)
 				.map(orderMapper::toResponse)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found: " + id));
+				.orElseThrow(() -> new InvalidRequestException("Order not found: " + id));
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public OrderResponse getOrderByBookingId(UUID bookingId) {
 		return orderRepository.findByBookingId(bookingId)
 				.map(orderMapper::toResponse)
-				.orElseThrow(() -> new MethodArgumentNotValidException("No order found for booking: " + bookingId));
+				.orElseThrow(() -> new InvalidRequestException("No order found for booking: " + bookingId));
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class OrderServiceImpl implements OrderService {
 	public OrderResponse updateOrderContent(UUID id, OrderUpdateRequest request) {
 		// 1. Fetch with Pessimistic Lock to prevent others from modifying while we recalculate
 		Order order = orderRepository.findByIdWithLock(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found"));
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
 		// 2. Business Rule: Cannot modify order if already being prepared
 		if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.ACCEPTED) {
@@ -141,7 +141,7 @@ public class OrderServiceImpl implements OrderService {
 		// 1. CALL THE LOCKING METHOD
 		// This executes "SELECT ... FOR UPDATE" in Postgres
 		Order order = orderRepository.findByIdWithLock(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found"));
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
 		// 2. Perform logic while the DB row is LOCKED
 		OrderStatus oldStatus = order.getStatus();
@@ -174,7 +174,7 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional
 	public OrderResponse cancelOrder(UUID id) {
 		Order order = orderRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found: " + id));
+				.orElseThrow(() -> new InvalidRequestException("Order not found: " + id));
 
 		// Business Rule: Cannot cancel if food is already being served
 		if (order.getStatus() == OrderStatus.SERVED || order.getStatus() == OrderStatus.COMPLETED) {
@@ -197,7 +197,7 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional
 	public OrderResponse removeItem(UUID orderId, UUID itemId) {
 		Order order = orderRepository.findByIdWithLock(orderId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found"));
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
 		// Business Rule check
 		if (order.getStatus() != OrderStatus.CREATED) {
@@ -208,7 +208,7 @@ public class OrderServiceImpl implements OrderService {
 		boolean removed = order.getItems().removeIf(item -> item.getId().equals(itemId));
 
 		if (!removed) {
-			throw new MethodArgumentNotValidException("Item not found in this order");
+			throw new InvalidRequestException("Item not found in this order");
 		}
 
 		// Recalculate total and save
@@ -221,7 +221,7 @@ public class OrderServiceImpl implements OrderService {
 	public OrderResponse checkout(UUID id) {
 		// 1. Lock the order to prevent concurrent modifications
 		Order order = orderRepository.findByIdWithLock(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Order not found: " + id));
+				.orElseThrow(() -> new InvalidRequestException("Order not found: " + id));
 
 		// 2. Validate State
 		if (order.getStatus() != OrderStatus.CREATED) {
@@ -255,7 +255,7 @@ public class OrderServiceImpl implements OrderService {
 	public Order confirmOrderPayment(UUID bookingId) {
 		// 1. Locate the specific order linked to this booking
 		Order order = orderRepository.findByBookingId(bookingId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("No order found for booking: " + bookingId));
+				.orElseThrow(() -> new InvalidRequestException("No order found for booking: " + bookingId));
 
 		// 2. Validate current state (prevent redundant updates or illegal transitions)
 		if (order.getStatus() == OrderStatus.PAID) {

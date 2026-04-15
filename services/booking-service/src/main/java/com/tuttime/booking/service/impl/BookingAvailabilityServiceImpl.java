@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class BookingAvailabilityServiceImpl implements BookingAvailabilityService {
 
 	private final RedissonClient redissonClient;

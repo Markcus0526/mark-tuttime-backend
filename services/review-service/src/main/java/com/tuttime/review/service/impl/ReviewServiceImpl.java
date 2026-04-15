@@ -1,7 +1,7 @@
 package com.tuttime.review.service.impl;
 
 import com.tuttime.common.event.ReviewEvent;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.review.dto.RatingStatsResponse;
 import com.tuttime.review.dto.ReviewRequest;
 import com.tuttime.review.dto.ReviewResponse;
@@ -29,7 +29,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class ReviewServiceImpl implements ReviewService {
 
@@ -59,7 +58,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional
 	public void approveReview(UUID reviewId, UUID moderatorId, String reason) {
 		Review review = reviewRepository.findById(reviewId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Review not found with ID: " + reviewId));
+				.orElseThrow(() -> new InvalidRequestException("Review not found with ID: " + reviewId));
 
 		review.setStatus(ReviewStatus.APPROVED);
 
@@ -90,7 +89,7 @@ public class ReviewServiceImpl implements ReviewService {
 	@Transactional
 	public void rejectReview(UUID reviewId, UUID moderatorId, String reason) {
 		Review review = reviewRepository.findById(reviewId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Review not found"));
+				.orElseThrow(() -> new InvalidRequestException("Review not found"));
 
 		review.setStatus(ReviewStatus.REJECTED);
 
@@ -103,6 +102,7 @@ public class ReviewServiceImpl implements ReviewService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public RatingStatsResponse getRestaurantStats(UUID restaurantId) {
 		RatingAggregate aggregate = aggregateRepository.findById(restaurantId)
 				.orElse(new RatingAggregate());

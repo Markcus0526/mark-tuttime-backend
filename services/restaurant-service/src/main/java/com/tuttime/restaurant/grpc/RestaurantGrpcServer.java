@@ -121,10 +121,12 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder()
 					.setRestaurantId(staff.getRestaurant().getId().toString());
 
-			if (staff.getBranch().getId() != null) {
+			if (staff.getBranch() != null && staff.getBranch().getId() != null) {
 				// Case 1: Fetch Branch Name
-				responseBuilder.setBranchId(staff.getBranch().getId().toString());
-				branchRepository.findByIdAndDeletedFalse(staff.getBranch().getId())
+				UUID branchId = staff.getBranch().getId();
+				responseBuilder.setBranchId(branchId.toString());
+
+				branchRepository.findByIdAndDeletedFalse(branchId)
 						.ifPresent(branch -> responseBuilder.setEntityName(branch.getName()));
 			} else {
 				// Case 2: Fetch Restaurant Name

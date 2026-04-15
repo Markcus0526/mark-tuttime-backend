@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.TableDto;
 import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.entity.Zone;
@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class TableServiceImpl implements TableService {
 
 	private final StaffService staffService;
@@ -33,15 +32,17 @@ public class TableServiceImpl implements TableService {
 	private final TableMapper tableMapper;
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<TableDto.TableResponse> getTablesByZoneId(UUID zoneId) {
 		List<DishTable> tables = tableRepository.findAllByZoneIdAndDeletedFalse(zoneId);
 		return tables.stream().map(tableMapper::toResponse).collect(Collectors.toList());
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public TableDto.TableResponse getTableById(UUID tableId) {
 		DishTable dishTable = tableRepository.findByIdAndDeletedFalse(tableId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Table not found in zone"));
+				.orElseThrow(() -> new InvalidRequestException("Table not found in zone"));
 
 		return tableMapper.toResponse(dishTable);
 	}
@@ -50,7 +51,7 @@ public class TableServiceImpl implements TableService {
 	@Transactional
 	public TableDto.TableResponse createTable(TableDto.TableRequest request, UUID currentUserId, String userRoles) {
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(request.zoneId())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Zone not found: " + request.zoneId()));
+				.orElseThrow(() -> new InvalidRequestException("Zone not found: " + request.zoneId()));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
@@ -76,10 +77,10 @@ public class TableServiceImpl implements TableService {
 	@Transactional
 	public TableDto.TableResponse updateTable(UUID tableId, TableDto.TableRequest request, UUID currentUserId, String userRoles) {
 		DishTable dishTable = tableRepository.findByIdAndDeletedFalse(tableId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Table not found"));
+				.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(dishTable.getZone().getId())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Zone not found: " + dishTable.getZone().getId()));
+				.orElseThrow(() -> new InvalidRequestException("Zone not found: " + dishTable.getZone().getId()));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
@@ -102,10 +103,10 @@ public class TableServiceImpl implements TableService {
 	@Transactional
 	public void deleteTable(UUID tableId, UUID currentUserId, String userRoles) {
 		DishTable dishTable = tableRepository.findByIdAndDeletedFalse(tableId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Table not found"));
+				.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(dishTable.getZone().getId())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Zone not found: " + dishTable.getZone().getId()));
+				.orElseThrow(() -> new InvalidRequestException("Zone not found: " + dishTable.getZone().getId()));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
@@ -115,6 +116,7 @@ public class TableServiceImpl implements TableService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<TableDto.TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to) {
 		List<DishTable> dishTables = tableRepository.findAllByZoneIdAndDeletedFalseAndClosedFalse(zoneId);
 
@@ -125,6 +127,7 @@ public class TableServiceImpl implements TableService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public TableStatus getTableCurrentStatus(UUID tableId) {
 		return tableRepository.findByIdAndDeletedFalse(tableId)
 				.map(DishTable::getStatus) // Extracts status if table exists

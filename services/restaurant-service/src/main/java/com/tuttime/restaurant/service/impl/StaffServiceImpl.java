@@ -3,7 +3,7 @@ package com.tuttime.restaurant.service.impl;
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import com.tuttime.restaurant.dto.StaffDto;
 import com.tuttime.restaurant.entity.Branch;
@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class StaffServiceImpl implements StaffService {
 
@@ -43,6 +42,7 @@ public class StaffServiceImpl implements StaffService {
 	private final RestaurantEventProducer restaurantEventProducer;
 
 	@Override
+	@Transactional
 	public StaffDto.StaffResponse assignStaff(UUID restaurantId, StaffDto.StaffRequest request, UUID currentUserId, String userRoles) {
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
@@ -59,13 +59,13 @@ public class StaffServiceImpl implements StaffService {
 		}
 
 		Restaurant restaurant = restaurantRepository.findById(restaurantId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found"));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found"));
 
 		Staff staff = staffMapper.toEntity(request);
 		staff.setRestaurant(restaurant);
 		if (request.branchId() != null) {
 			Branch branch = branchRepository.findById(request.branchId())
-					.orElseThrow(() -> new MethodArgumentNotValidException("Branch not found"));
+					.orElseThrow(() -> new InvalidRequestException("Branch not found"));
 			staff.setBranch(branch);
 		}
 		staff.setRoleName(request.roleName().toUpperCase());
@@ -84,6 +84,7 @@ public class StaffServiceImpl implements StaffService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<StaffDto.StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
 		// 1. Permission Check
 		validateRestaurantAccess(restaurantId, currentUserId, userRoles);
@@ -125,10 +126,10 @@ public class StaffServiceImpl implements StaffService {
 	@Transactional
 	public StaffDto.StaffResponse updateStaff(UUID restaurantId, UUID staffId, StaffDto.StaffUpdateRequest request, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
 		Staff staff = staffRepository.findById(staffId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Staff record not found"));
+				.orElseThrow(() -> new InvalidRequestException("Staff record not found"));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
@@ -157,10 +158,10 @@ public class StaffServiceImpl implements StaffService {
 	@Transactional
 	public void removeStaff(UUID restaurantId, UUID staffId, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
 		Staff staff = staffRepository.findById(staffId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Staff not found: " + staffId));
+				.orElseThrow(() -> new InvalidRequestException("Staff not found: " + staffId));
 
 		boolean isAdmin = userRoles.contains(UserRoleKind.ADMIN.name());
 		boolean isOwner = false;
@@ -185,6 +186,7 @@ public class StaffServiceImpl implements StaffService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void validateAdminAccess(UUID currentUserId) {
 		if (currentUserId == null)
 			throw new AuthenticationException("You do not have permission to manage this restaurant.");
@@ -195,13 +197,14 @@ public class StaffServiceImpl implements StaffService {
 
 		UserValidResponse response = userGrpClient.validateUserById(request);
 		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.ADMIN.name()))
-			throw new MethodArgumentNotValidException("Current User not found: " + currentUserId);
+			throw new InvalidRequestException("Current User not found: " + currentUserId);
 	}
 
 	/**
 	 * Shared helper to validate if a user can manage a specific restaurant
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles) {
 		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
 
@@ -214,12 +217,13 @@ public class StaffServiceImpl implements StaffService {
 	 * Shared helper to validate if a user can manage a specific branch
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public void validateBranchAccess(UUID branchId, UUID currentUserId, String userRoles) {
 		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
 
 		// Check if entity is a Branch
 		var branch = branchRepository.findByIdAndDeletedFalse(branchId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Entity not found or access denied."));
+				.orElseThrow(() -> new InvalidRequestException("Entity not found or access denied."));
 		boolean isOwner = validateRestaurantOwner(branch.getRestaurant().getId(), currentUserId);
 		if (isOwner) return;
 
@@ -230,6 +234,7 @@ public class StaffServiceImpl implements StaffService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void validatePermissions(UUID entityId, UUID currentUserId, String userRoles) {
 		// Early exit for Admins
 		if (userRoles.contains(UserRoleKind.ADMIN.name())) return;
@@ -245,7 +250,7 @@ public class StaffServiceImpl implements StaffService {
 
 		// Check if entity is a Branch
 		var branch = branchRepository.findByIdAndDeletedFalse(entityId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Entity not found or access denied."));
+				.orElseThrow(() -> new InvalidRequestException("Entity not found or access denied."));
 
 		boolean isOwner = validateRestaurantOwner(branch.getRestaurant().getId(), currentUserId);
 		boolean isManager = isOwner || validateBranchManager(branch.getId(), currentUserId);

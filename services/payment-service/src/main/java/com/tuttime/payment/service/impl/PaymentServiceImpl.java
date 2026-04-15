@@ -7,8 +7,7 @@ import com.stripe.param.checkout.SessionCreateParams;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.common.exception.BusinessException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.Refund;
 import com.tuttime.payment.entity.enums.PaymentStatus;
@@ -27,7 +26,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
@@ -90,7 +88,7 @@ public class PaymentServiceImpl implements PaymentService {
 	@Transactional
 	public void processRefund(UUID bookingId, BigDecimal amount, String reason) {
 		Payment payment = paymentRepository.findByBookingId(bookingId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Payment not found"));
+				.orElseThrow(() -> new InvalidRequestException("Payment not found"));
 
 		try {
 			// Create the params using our builder

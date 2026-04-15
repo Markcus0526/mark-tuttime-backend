@@ -1,6 +1,6 @@
 package com.tuttime.user.service.impl;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		// Optional: Implement if needed for form login
-		throw new MethodArgumentNotValidException("Load by username not supported");
+		throw new InvalidRequestException("Load by username not supported");
 	}
 
 }

@@ -1,8 +1,7 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
-import com.tuttime.common.exception.ResourceNotFoundException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.StopListDto;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.StopList;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class StopListServiceImpl implements StopListService {
 
 	private final StopListRepository stopListRepository;
@@ -32,7 +30,7 @@ public class StopListServiceImpl implements StopListService {
 	public StopListDto.StopListResponse addToStopList(StopListDto.StopListRequest request, UUID currentUserId, String userRoles) {
 		// 1. Verify item exists
 		MenuItem menuItem = menuItemRepository.findById(request.menuItemId())
-				.orElseThrow(() -> new MethodArgumentNotValidException("Menu item not found"));
+				.orElseThrow(() -> new InvalidRequestException("Menu item not found"));
 
 		// 2. Check if already on stop list for this branch to avoid duplicates
 		stopListRepository.findByMenuItemIdAndBranchId(request.menuItemId(), request.branchId())
@@ -54,6 +52,7 @@ public class StopListServiceImpl implements StopListService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<StopListDto.StopListResponse> getStopListByBranch(UUID branchId) {
 		return stopListRepository.findByBranchId(branchId).stream()
 				.map(this::mapToResponse)
@@ -64,7 +63,7 @@ public class StopListServiceImpl implements StopListService {
 	@Transactional
 	public void removeFromStopList(UUID id, UUID currentUserId, String userRoles) {
 		StopList stopList = stopListRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Stop list entry not found"));
+				.orElseThrow(() -> new InvalidRequestException("Stop list entry not found"));
 
 		// Evict cache before deleting
 		evictCache(stopList.getBranchId());
@@ -72,6 +71,7 @@ public class StopListServiceImpl implements StopListService {
 		stopListRepository.delete(stopList);
 	}
 
+	@Transactional(readOnly = true)
 	@CacheEvict(value = "branch_menus", key = "#branchId")
 	public void evictCache(UUID branchId) {
 		// Helper for manual eviction

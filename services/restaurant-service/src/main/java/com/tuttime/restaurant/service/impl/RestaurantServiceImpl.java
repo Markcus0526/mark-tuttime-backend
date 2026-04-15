@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
@@ -27,7 +27,6 @@ import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class RestaurantServiceImpl implements RestaurantService {
 
 	private final StaffService staffService;
@@ -39,6 +38,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final ScheduleService scheduleService;
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
 		Specification<Restaurant> spec = createSpecification(query, ownerUserId, minRating, maxRating);
 		return restaurantRepository.findAll(spec, pageable)
@@ -46,9 +46,10 @@ public class RestaurantServiceImpl implements RestaurantService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public RestaurantDto.RestaurantResponse getRestaurantById(UUID restaurantId) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 		return restaurantMapper.toResponse(restaurant);
 	}
 
@@ -85,7 +86,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Transactional
 	public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
 		// 1. Unified Permission Check
 		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
@@ -101,7 +102,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Transactional
 	public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Restaurant not found: " + restaurantId));
+				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
 		// 1. Unified Permission Check
 		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
@@ -117,6 +118,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 		restaurantRepository.save(restaurant);
 	}
 
+	@Transactional(readOnly = true)
 	public Page<RestaurantDto.RestaurantResponse> findRestaurantsNearLocation(
 			double latitude,
 			double longitude,

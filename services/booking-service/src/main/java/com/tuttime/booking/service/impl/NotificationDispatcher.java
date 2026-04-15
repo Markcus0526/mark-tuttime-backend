@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
 @Slf4j
 public class NotificationDispatcher {
 
 	@Async // Requires @EnableAsync in your JpaConfig or App class
 	@EventListener
+	@Transactional(readOnly = true)
 	public void dispatchNotification(WaitlistNotificationEvent event) {
 		log.info("Sending Push Notification to user {}: {}", event.userId(), event.message());
 

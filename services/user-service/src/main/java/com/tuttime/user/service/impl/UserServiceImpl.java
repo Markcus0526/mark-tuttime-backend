@@ -2,7 +2,7 @@ package com.tuttime.user.service.impl;
 
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
-import com.tuttime.common.exception.MethodArgumentNotValidException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
@@ -35,7 +35,6 @@ import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
 	private final EmailService emailService;
@@ -58,10 +57,10 @@ public class UserServiceImpl implements UserService {
 		String roleName = request.roleName();
 
 		if (!StringUtils.hasText(identifier)) {
-			throw new MethodArgumentNotValidException("Either phone number or email must be provided");
+			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
 		if (!StringUtils.hasText(roleName)) {
-			throw new MethodArgumentNotValidException("Role must be provided");
+			throw new InvalidRequestException("Role must be provided");
 		}
 
 		String phoneNumber = null;
@@ -85,7 +84,7 @@ public class UserServiceImpl implements UserService {
 		user = userRepository.saveAndFlush(user);
 
 		Role role = roleRepository.findByName(roleName)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Role " + roleName + " not found"));
+				.orElseThrow(() -> new InvalidRequestException("Role " + roleName + " not found"));
 		UserRole userRole = UserRole.builder()
 				.user(user)
 				.role(role)
@@ -126,9 +125,10 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public UserDto.UserResponse getUserById(UUID id) {
 		User user = userRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 		return userMapper.toResponse(user);
 	}
 
@@ -136,7 +136,7 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public UserDto.UserResponse updateUser(UUID id, UserDto.UserUpdateRequest userUpdateRequest) {
 		User user = userRepository.findById(id)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		if (userUpdateRequest.phoneNumber() != null && !userUpdateRequest.phoneNumber().equals(user.getPhoneNumber())) {
 			userRepository.findByPhoneNumberAndDeletedFalse(userUpdateRequest.phoneNumber())
@@ -169,7 +169,7 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void deleteUser(UUID userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 		user.setDeleted(true);
 		userRepository.save(user);
 
@@ -181,6 +181,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<UserDto.UserResponse> findUsers(String query, UserStatus status, String roleName, Pageable pageable) {
 		// Build the dynamic WHERE clause
 		Specification<User> spec = (root, criteriaQuery, cb) -> {
@@ -219,9 +220,9 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void assignRoleToUser(UUID userId, String roleName) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 		Role role = roleRepository.findByName(roleName)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Role not found"));
+				.orElseThrow(() -> new InvalidRequestException("Role not found"));
 
 		boolean exists = userRoleRepository.existsByUserIdAndRole(user.getId(), role);
 		if (exists) {
@@ -239,12 +240,12 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void removeRoleFromUser(UUID userId, String roleName) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 		Role role = roleRepository.findByName(roleName)
-				.orElseThrow(() -> new MethodArgumentNotValidException("Role not found"));
+				.orElseThrow(() -> new InvalidRequestException("Role not found"));
 
 		UserRole userRole = userRoleRepository.findByUserIdAndRole(user.getId(), role)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User role not found"));
+				.orElseThrow(() -> new InvalidRequestException("User role not found"));
 
 		userRoleRepository.delete(userRole);
 	}
@@ -253,7 +254,7 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void addAuthMethod(UUID userId, UserDto.AuthMethodCreateRequest authMethodCreateRequest) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		authMethodRepository.findByUserIdAndAuthType(user.getId(), authMethodCreateRequest.authType())
 				.ifPresent(am -> {
@@ -282,7 +283,7 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public void updateUserLocation(UUID userId, UserDto.UserLocationRequest request) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		UserLocation location = new UserLocation();
 		location.setUser(user);
@@ -296,7 +297,7 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public UserDto.UserResponse blockUser(UUID userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		user.setStatus(UserStatus.BLOCKED);
 		userRepository.save(user);
@@ -310,7 +311,7 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public UserDto.UserResponse unblockUser(UUID userId) {
 		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new MethodArgumentNotValidException("User not found"));
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);

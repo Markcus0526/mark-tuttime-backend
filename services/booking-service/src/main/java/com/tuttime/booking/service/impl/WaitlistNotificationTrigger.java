@@ -18,7 +18,6 @@ import java.time.OffsetDateTime;
 
 @Component
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class WaitlistNotificationTrigger {
 
@@ -30,6 +29,7 @@ public class WaitlistNotificationTrigger {
 	 * Triggered ONLY after the booking cancellation transaction commits.
 	 */
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@Transactional(readOnly = true)
 	public void handleBookingCancellation(BookingStatusChangedEvent event) {
 		if (event.newStatus() != BookingStatus.CANCELED) return;
 
