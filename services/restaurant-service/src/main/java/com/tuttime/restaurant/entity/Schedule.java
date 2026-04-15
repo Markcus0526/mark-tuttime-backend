@@ -10,7 +10,7 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@jakarta.persistence.Table(name = "schedules", schema = "restaurant_service", indexes = {
+@Table(name = "schedules", schema = "restaurant_service", indexes = {
 		@Index(name = "idx_schedule_day_of_week", columnList = "day_of_week"),
 		@Index(name = "idx_schedule_deleted", columnList = "deleted")
 })

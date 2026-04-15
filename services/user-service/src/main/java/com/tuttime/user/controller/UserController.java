@@ -37,9 +37,7 @@ public class UserController {
 
 	@Operation(summary = "Create a new user", description = "Creates a new user with phone number or email and optional profile details")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "User created successfully",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserDto.UserResponse.class))),
+			@ApiResponse(responseCode = "201", description = "User created successfully"),
 			@ApiResponse(responseCode = "400", description = "Invalid input data", content = @Content),
 			@ApiResponse(responseCode = "409", description = "User with phone or email already exists", content = @Content)
 	})
@@ -59,9 +57,7 @@ public class UserController {
 
 	@Operation(summary = "Get user by ID", description = "Fetches a user by their unique identifier (UUID)")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "User found",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserDto.UserResponse.class))),
+			@ApiResponse(responseCode = "200", description = "User found"),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
 	@GetMapping(value = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -81,9 +77,7 @@ public class UserController {
 
 	@Operation(summary = "Update user details", description = "Updates user information partially by user ID")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "User updated successfully",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserDto.UserResponse.class))),
+			@ApiResponse(responseCode = "200", description = "User updated successfully"),
 			@ApiResponse(responseCode = "400", description = "Invalid update data", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
@@ -124,11 +118,9 @@ public class UserController {
 
 	@Operation(summary = "List users", description = "Lists users with optional inclusion of soft deleted users, pagination, and sorting")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "List of users",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserDto.UserResponse.class)))
+			@ApiResponse(responseCode = "200", description = "List of users")
 	})
-	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping
 	public ResponseEntity<ApiRes<Page<UserDto.UserResponse>>> listAndSearchUsers(
 			@Parameter(description = "Keyword to search (name, email, or phone)")
 			@RequestParam(required = false) String query,
@@ -247,9 +239,7 @@ public class UserController {
 
 	@Operation(summary = "Block user", description = "Blocks a user's access to the system. Triggers real-time rejection at the Gateway level.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "User blocked successfully",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserDto.UserResponse.class))),
+			@ApiResponse(responseCode = "200", description = "User blocked successfully"),
 			@ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})
@@ -269,9 +259,7 @@ public class UserController {
 
 	@Operation(summary = "Unblock user", description = "Restores access for a previously blocked user.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "User unblocked successfully",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-							schema = @Schema(implementation = UserDto.UserResponse.class))),
+			@ApiResponse(responseCode = "200", description = "User unblocked successfully"),
 			@ApiResponse(responseCode = "403", description = "Insufficient permissions", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content)
 	})

@@ -22,4 +22,6 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
 	boolean existsByRestaurantIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
 
 	boolean existsByBranchIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
+
+	void deleteByUserId(UUID userId);
 }

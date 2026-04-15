@@ -4,6 +4,8 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.ZoneDto;
+import com.tuttime.restaurant.dto.ZoneLayoutDto;
+import com.tuttime.restaurant.service.ZoneLayoutService;
 import com.tuttime.restaurant.service.ZoneService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +28,7 @@ import java.util.UUID;
 public class ZoneController {
 
 	private final ZoneService zoneService;
+	private final ZoneLayoutService zoneLayoutService;
 	// --- Zone CRUD ---
 
 	@Operation(summary = "Get zone by ID", description = "Retrieve detailed information about a zone")
@@ -121,6 +124,37 @@ public class ZoneController {
 
 		List<ZoneDto.ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
 		return ResponseEntity.ok(ApiRes.success(zones));
+	}
+
+	/**
+	 * GET /api/v1/zones/{zoneId}/layout
+	 * Retrieves the visual layout, fixtures, and table positions for the admin panel.
+	 */
+	@GetMapping("/{zoneId}/layout")
+	public ResponseEntity<ApiRes<ZoneLayoutDto.LayoutDto>> getLayout(
+			@PathVariable UUID zoneId) {
+
+		ZoneLayoutDto.LayoutDto layout = zoneLayoutService.getZoneLayout(zoneId);
+		return ResponseEntity.ok(ApiRes.success(layout));
+	}
+
+	/**
+	 * PUT /api/v1/zones/{zoneId}/layout
+	 * Synchronizes the layout from the admin panel (Inserts new, Updates moved, Soft-Deletes removed).
+	 */
+	@PutMapping("/{zoneId}/layout")
+	public ResponseEntity<ApiRes<Void>> updateLayout(
+			@PathVariable UUID zoneId,
+			@RequestBody ZoneLayoutDto.LayoutDto layoutDto) {
+
+		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
+		}
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		zoneLayoutService.syncLayout(zoneId, layoutDto, currentUserId, userRoles);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
 }

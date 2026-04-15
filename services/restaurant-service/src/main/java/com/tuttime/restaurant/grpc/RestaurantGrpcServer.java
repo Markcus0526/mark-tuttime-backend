@@ -120,6 +120,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		staffRepository.findByUserId(userId).ifPresentOrElse(staff -> {
 			StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder()
 					.setRestaurantId(staff.getRestaurant().getId().toString());
+			responseBuilder.setActive(staff.getActive());
 
 			if (staff.getBranch() != null && staff.getBranch().getId() != null) {
 				// Case 1: Fetch Branch Name

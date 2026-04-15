@@ -6,7 +6,7 @@ import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@jakarta.persistence.Table(name = "zones", schema = "restaurant_service", indexes = {
+@Table(name = "zones", schema = "restaurant_service", indexes = {
 		@Index(name = "idx_zones_deleted", columnList = "deleted")
 })
 @NoArgsConstructor

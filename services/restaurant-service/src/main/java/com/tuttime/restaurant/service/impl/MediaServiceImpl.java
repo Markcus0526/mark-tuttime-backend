@@ -150,41 +150,6 @@ public class MediaServiceImpl implements MediaService {
 		mediaRepository.deleteAllByEntityId(entityId);
 	}
 
-	@Override
-	public String getMapCanvas(UUID entityId) {
-		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(
-				entityId,
-				MediaType.CANVAS
-		).orElseThrow(() -> new InvalidRequestException("Primary SVG map not found for entity: " + entityId));
-
-		return media.getSvgContent();
-	}
-
-	@Override
-	@Transactional
-	public void setOrUpdateMapCanvas(UUID entityId, String svgContent, UUID currentUserId, String userRoles) {
-		// 1. Centralized Permission Check (Reuse existing logic)
-		staffService.validatePermissions(entityId, currentUserId, userRoles);
-
-		// 2. Fetch existing primary map or create a new instance
-		Media media = mediaRepository.findPrimaryMapByEntityAndDeletedFalse(entityId)
-				.orElseGet(() -> {
-					Media newMedia = new Media();
-					newMedia.setEntityId(entityId);
-					newMedia.setMediaType(MediaType.CANVAS);
-					newMedia.setMapEntity(true);
-					newMedia.setDeleted(false);
-					return newMedia;
-				});
-
-		// 3. Update the content
-		media.setSvgContent(svgContent);
-
-		// 4. Save (Hibernate handles Update vs Insert automatically)
-		mediaRepository.save(media);
-	}
-
-
 	private void checkMedia(MultipartFile file, MediaType mediaType) {
 		// Validate file size (e.g., max 5MB)
 		long maxFileSize = 5 * 1024 * 1024; // 5 MB

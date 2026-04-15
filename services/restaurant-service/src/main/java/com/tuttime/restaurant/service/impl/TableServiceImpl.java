@@ -56,14 +56,15 @@ public class TableServiceImpl implements TableService {
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
 		// Optional: enforce unique table number within zone
-		boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getId(), request.number());
+		boolean exists = tableRepository.existsByZoneIdAndLabelAndDeletedFalse(zone.getId(), request.label());
 		if (exists) {
 			throw new ConflictException("Table number already exists in this zone");
 		}
 
 		DishTable dishTable = new DishTable();
 		dishTable.setZone(zone);
-		dishTable.setNumber(request.number());
+		dishTable.setLabel(request.label());
+		dishTable.setNotes(request.notes());
 		dishTable.setSeats(request.seats());
 		dishTable.setStatus(request.status());
 		dishTable.setClosed(request.closed() != null ? request.closed() : false);
@@ -85,12 +86,12 @@ public class TableServiceImpl implements TableService {
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
 		// Optional: if number changes, check uniqueness
-		if (!dishTable.getNumber().equals(request.number())) {
-			boolean exists = tableRepository.existsByZoneIdAndNumberAndDeletedFalse(zone.getId(), request.number());
+		if (!dishTable.getLabel().equals(request.label())) {
+			boolean exists = tableRepository.existsByZoneIdAndLabelAndDeletedFalse(zone.getId(), request.label());
 			if (exists) {
 				throw new ConflictException("Table number already exists in this zone");
 			}
-			dishTable.setNumber(request.number());
+			dishTable.setLabel(request.label());
 		}
 
 		tableMapper.updateEntityFromRequest(request, dishTable);
