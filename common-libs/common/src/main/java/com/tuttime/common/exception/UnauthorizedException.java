@@ -7,13 +7,13 @@ package com.tuttime.common.exception;
  * have permission to perform the requested operation. The handler will return
  * HTTP 403 Forbidden status.
  */
-public class AuthorizationException extends RuntimeException {
+public class UnauthorizedException extends RuntimeException {
 
-	public AuthorizationException(String message) {
+	public UnauthorizedException(String message) {
 		super(message);
 	}
 
-	public AuthorizationException(String message, Throwable cause) {
+	public UnauthorizedException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }
