@@ -16,7 +16,7 @@ public record BookingSetupResponse(
 
 	public record TableInfoDto(
 			UUID tableId,
-			String tableNumber,
+			String tableLabel,
 			String zoneName,
 			int capacity
 	) {}

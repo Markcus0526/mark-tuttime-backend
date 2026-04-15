@@ -14,7 +14,7 @@ public class RKeeperBookingDTO {
 	private String clientName;
 	private String clientPhone;
 	private String restaurantCode;
-	private String tableNumber;
+	private String tableLabel;
 	private String reservationStart;  // ISO 8601 string
 	private String reservationEnd;    // ISO 8601 string
 	private Integer personsCount;

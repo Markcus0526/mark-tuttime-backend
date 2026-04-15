@@ -62,7 +62,7 @@ public class RKeeperPosAdapter implements PosAdapter {
 				.clientName("Jane Smith")
 				.clientPhone("0987654321")
 				.restaurantCode("rk_rest_001")
-				.tableNumber("T12")
+				.tableLabel("T12")
 				.reservationStart(ISO_FORMATTER.format(posLog.getLastAttempt().atZoneSameInstant(ZoneOffset.UTC)))
 				.reservationEnd(ISO_FORMATTER.format(posLog.getLastAttempt().plusSeconds(5400).atZoneSameInstant(ZoneOffset.UTC)))
 				.personsCount(3)

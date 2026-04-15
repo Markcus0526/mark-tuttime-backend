@@ -59,7 +59,7 @@ message TableListResponse {
 
 message TableInfo {
   string table_id = 1;
-  string table_number = 2;
+  string table_label = 2;
   string zone_name = 3;
   int32 min_capacity = 4;
   int32 max_capacity = 5;
