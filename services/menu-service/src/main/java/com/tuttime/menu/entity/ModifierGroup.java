@@ -33,7 +33,7 @@ public class ModifierGroup extends BaseUuidAnDeleteEntity {
 	@Builder.Default
 	private Integer maxSelect = 1;
 
-	@OneToMany(mappedBy = "group", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private Set<Modifier> modifiers = new LinkedHashSet<>();
 }

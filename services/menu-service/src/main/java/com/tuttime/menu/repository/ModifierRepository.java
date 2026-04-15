@@ -9,5 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface ModifierRepository extends JpaRepository<Modifier, UUID> {
-	List<Modifier> findByGroupId(UUID groupId);
+
+	List<Modifier> findByModifierGroupId(UUID groupId);
+
 }

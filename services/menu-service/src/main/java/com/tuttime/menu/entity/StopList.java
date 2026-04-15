@@ -26,7 +26,6 @@ public class StopList extends BaseUuidEntity {
 	private MenuItem menuItem;
 
 	@Column(name = "branch_id", nullable = false)
-	@JdbcType(UUIDJdbcType.class)
 	private UUID branchId;
 
 	@Column(name = "start_date", nullable = false)

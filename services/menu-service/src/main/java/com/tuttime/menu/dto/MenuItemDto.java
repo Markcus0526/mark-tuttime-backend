@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,27 +28,48 @@ public class MenuItemDto {
 			@NotNull @DecimalMin("0.00") BigDecimal price,
 
 			@Schema(description = "If false, prevents customer selection", example = "true")
-			Boolean available
+			Boolean available,
+
+			@Schema(description = "Display order priority", example = "1")
+			Integer priority
 	) {}
 
-	// Detailed response with all groups and modifiers (for item selection in Flutter)
-	@Schema(description = "Menu Item response details")
+
+	@Schema(description = "Menu Item response with full customization and pricing logic")
+	@Builder
 	public record MenuItemDetailedResponse(
 			UUID menuItemId,
 			UUID categoryId,
 			String name,
 			String description,
-			BigDecimal price,
+
+			@Schema(description = "Base price set in database")
+			BigDecimal originalPrice,
+
+			@Schema(description = "Price after active discounts applied")
+			BigDecimal discountedPrice,
+
+			@Schema(description = "Name of the promotion applied", example = "Happy Hour")
+			String activeDiscountName,
+
 			Boolean available,
-			List<ModifierDto.ModifierGroupResponse> modifierGroups
+
+			@Schema(description = "Merged list: Item-specific + Inherited Category modifier groups")
+			List<ModifierDto.ModifierGroupResponse> modifierGroups,
+
+			@Schema(description = "URL for primary image from Media table")
+			String imageUrl
 	) {}
 
-	// Compact summary response (for basic list rendering)
+	@Schema(description = "Compact summary response for category list views")
+	@Builder
 	public record MenuItemResponseSummary(
 			UUID menuItemId,
 			String name,
-			BigDecimal price,
+			@Schema(description = "The lower price (discounted) to show in lists")
+			BigDecimal currentPrice,
 			Boolean available,
-			Integer priority
+			Integer priority,
+			String imageUrl
 	) {}
 }

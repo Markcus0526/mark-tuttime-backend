@@ -2,6 +2,8 @@ package com.tuttime.menu.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.service.MenuCategoryService;
@@ -45,9 +47,7 @@ public class MenuItemController {
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> createMenuItem(
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -65,6 +65,8 @@ public class MenuItemController {
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> getMenuItemById(
 			@PathVariable UUID itemId) {
 
+		// This service method should now include the PricingService logic
+		// to calculate 'discountedPrice' and 'originalPrice' TODO
 		MenuItemDto.MenuItemDetailedResponse data = menuItemService.getMenuItemById(itemId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
@@ -80,9 +82,7 @@ public class MenuItemController {
 			@PathVariable UUID itemId,
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -99,9 +99,7 @@ public class MenuItemController {
 	public ResponseEntity<ApiRes<Void>> deleteMenuItem(
 			@PathVariable UUID itemId) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -121,8 +119,65 @@ public class MenuItemController {
 			@Parameter(description = "Field to sort by (e.g., name, price, priority)") @RequestParam(defaultValue = "name") String sortBy,
 			@Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "asc") String direction) {
 
+		// Logic here should filter using the StopList check discussed earlier TODO
 		List<MenuItemDto.MenuItemResponseSummary> data = menuItemService.getItemsByCategory(categoryId, sortBy, direction);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
+	@PostMapping("/{itemId}/modifier-groups/{groupId}")
+	@Operation(summary = "Link a modifier group to an item", description = "Associates a customization rule directly with this dish.")
+	public ResponseEntity<ApiRes<Void>> linkModifierGroup(
+			@PathVariable UUID itemId,
+			@PathVariable UUID groupId) {
+
+		validateAdminOrOwnerOrManager(); // Refactored security check
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		menuItemService.linkModifierGroup(itemId, groupId);
+		return ResponseEntity.ok(ApiRes.success(null));
+	}
+
+	@DeleteMapping("/{itemId}/modifier-groups/{groupId}")
+	@Operation(summary = "Unlink a modifier group from an item")
+	public ResponseEntity<ApiRes<Void>> unlinkModifierGroup(
+			@PathVariable UUID itemId,
+			@PathVariable UUID groupId) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		menuItemService.unlinkModifierGroup(itemId, groupId);
+		return ResponseEntity.noContent().build();
+	}
+
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
 }

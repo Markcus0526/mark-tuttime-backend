@@ -32,7 +32,7 @@ public class MenuItem extends BaseUuidAnDeleteEntity {
 	@Column(name = "description")
 	private String description;
 
-	@Column(name = "price", nullable = false, precision = 10, scale = 2)
+	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal price;
 
 	@Column(name = "available")
@@ -43,6 +43,10 @@ public class MenuItem extends BaseUuidAnDeleteEntity {
 	@Builder.Default
 	private Integer priority = 0;
 
+	/**
+	 * Many-to-Many relationship with Modifier Groups.
+	 * This links specific customization rules directly to this item.
+	 */
 	@ManyToMany
 	@JoinTable(
 			name = "menu_item_modifier_groups",

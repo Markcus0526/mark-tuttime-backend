@@ -2,12 +2,12 @@ package com.tuttime.menu.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.menu.dto.CategoryDto;
+import com.tuttime.menu.dto.MenuCategoryDto;
 import com.tuttime.menu.dto.FullMenuDto;
-import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.service.MenuCategoryService;
-import com.tuttime.menu.service.MenuItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -29,29 +29,27 @@ import java.util.UUID;
 @RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
 @Tag(name = "1.Menu Categories", description = "Endpoints for managing top-level menu groupings and bulk menu fetches")
-public class CategoryController {
+public class MenuCategoryController {
 
 	private final MenuCategoryService categoryService;
 
 	@PostMapping
 	@Operation(summary = "Create a new category")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(
-			content = @Content(schema = @Schema(implementation = CategoryDto.CategoryRequest.class))
+			content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryRequest.class))
 	)
 	@ApiResponses({
 			@ApiResponse(responseCode = "201", description = "Category created",
-					content = @Content(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))),
+					content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid input data")
 	})
-	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody CategoryDto.CategoryRequest request) {
+	public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody MenuCategoryDto.CategoryRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		CategoryDto.CategoryResponse data = categoryService.createCategory(request, currentUserId, userRoles);
+		MenuCategoryDto.CategoryResponse data = categoryService.createCategory(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
@@ -59,12 +57,13 @@ public class CategoryController {
 	@Operation(summary = "Get category by ID")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
-					content = @Content(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))),
+					content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Category not found")
 	})
-	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> getCategoryById(@PathVariable UUID categoryId) {
+	public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> getCategoryById(
+			@PathVariable UUID categoryId) {
 
-		CategoryDto.CategoryResponse data = categoryService.getCategoryById(categoryId);
+		MenuCategoryDto.CategoryResponse data = categoryService.getCategoryById(categoryId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -72,20 +71,18 @@ public class CategoryController {
 	@Operation(summary = "Update an existing category")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Update successful",
-					content = @Content(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))),
+					content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Category not found")
 	})
-	public ResponseEntity<ApiRes<CategoryDto.CategoryResponse>> updateCategory(
+	public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> updateCategory(
 			@PathVariable UUID categoryId,
-			@Valid @RequestBody CategoryDto.CategoryRequest request) {
+			@Valid @RequestBody MenuCategoryDto.CategoryRequest request) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		CategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request, currentUserId, userRoles);
+		MenuCategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -97,9 +94,7 @@ public class CategoryController {
 	})
 	public ResponseEntity<ApiRes<Void>> deleteCategory(@PathVariable UUID categoryId) {
 
-		if (!UserContext.isValidUUID() || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiRes.error("You do not manage this specific restaurant"));
-		}
+		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -111,11 +106,12 @@ public class CategoryController {
 	@Operation(summary = "Get categories by branch")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
-					content = @Content(array = @ArraySchema(schema = @Schema(implementation = CategoryDto.CategoryResponse.class))))
+					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))))
 	})
-	public ResponseEntity<ApiRes<List<CategoryDto.CategoryResponse>>> getCategoriesByBranch(@PathVariable UUID branchId) {
+	public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> getCategoriesByBranch(
+			@PathVariable UUID branchId) {
 
-		List<CategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId);
+		List<MenuCategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -131,5 +127,34 @@ public class CategoryController {
 
 		FullMenuDto.FullMenuBranchMenuResponse data = categoryService.getFullMenuForBranch(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
+	}
+
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: You do not manage this method");
+		}
 	}
 }

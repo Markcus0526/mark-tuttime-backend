@@ -5,6 +5,8 @@ import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.*;
@@ -29,10 +31,20 @@ public class MenuCategory extends BaseUuidAnDeleteEntity {
 	private String description;
 
 	@OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
+	@Fetch(FetchMode.SUBSELECT) // Optimizes N+1 for collections
 	@Builder.Default
 	private Set<MenuItem> items = new LinkedHashSet<>();
 
 	@Column(name = "priority")
 	@Builder.Default
 	private Integer priority = 0; // Default to 0, lower numbers show up first
+
+	@ManyToMany
+	@JoinTable(
+			name = "menu_category_modifier_groups",
+			joinColumns = @JoinColumn(name = "menu_category_id"),
+			inverseJoinColumns = @JoinColumn(name = "modifier_group_id")
+	)
+	@Builder.Default
+	private Set<ModifierGroup> modifierGroups = new HashSet<>();
 }

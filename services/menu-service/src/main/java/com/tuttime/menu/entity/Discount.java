@@ -41,6 +41,10 @@ public class Discount extends BaseUuidEntity {
 	@Column(name = "applies_to", nullable = false)
 	private AppliesTo appliesTo;
 
+	/**
+	 * Generic reference to either a Menu Item ID or Menu Category ID.
+	 * Logic is handled in the Service layer based on 'appliesTo'.
+	 */
 	@Column(name = "reference_id")
 	private UUID referenceId; // Can be a Category UUID or an Item UUID
 

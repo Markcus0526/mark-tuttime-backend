@@ -1,17 +1,29 @@
 package com.tuttime.menu.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 public class FullMenuDto {
 
-	// 1. Top Level: The Branch Menu
-	public record FullMenuBranchMenuResponse(
-			UUID branchId,
-			List<FullMenuCategoryResponse> categories
+	@Schema(description = "Category containing its nested items")
+	public record CategoryWithItemsResponse(
+			UUID categoryId,
+			String name,
+			String description,
+			Integer priority,
+			List<MenuItemDto.MenuItemResponseSummary> items
 	) {}
 
+	@Schema(description = "Master response for the entire branch menu")
+	public record FullMenuBranchMenuResponse(
+			UUID branchId,
+			List<CategoryWithItemsResponse> categories
+	) {}
+
+	////////////////////////////////////////////////////////////
 	// 2. Category Level
 	public record FullMenuCategoryResponse(
 			UUID categoryId,
