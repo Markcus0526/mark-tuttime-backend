@@ -1,14 +1,11 @@
 package com.tuttime.menu.service.impl;
 
-import com.tuttime.common.auth.security.UserContext;
-import com.tuttime.common.exception.AuthenticationException;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.menu.dto.CategoryDto;
+import com.tuttime.menu.dto.MenuCategoryDto;
 import com.tuttime.menu.dto.FullMenuDto;
 import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
-import com.tuttime.menu.mapper.CategoryMapper;
-import com.tuttime.menu.mapper.FullMenuMapper;
+import com.tuttime.menu.mapper.MenuCategoryMapper;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.service.MenuCategoryService;
 import lombok.RequiredArgsConstructor;
@@ -26,62 +23,74 @@ import java.util.stream.Collectors;
 public class MenuCategoryServiceImpl implements MenuCategoryService {
 
 	private final MenuCategoryRepository categoryRepository;
-	private final CategoryMapper categoryMapper;
-	private final FullMenuMapper fullMenuMapper;
+	private final MenuCategoryMapper menuCategoryMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "#request.branchId()")
-	public CategoryDto.CategoryResponse createCategory(CategoryDto.CategoryRequest request, UUID currentUserId, String userRoles) {
+	public MenuCategoryDto.CategoryResponse createCategory(MenuCategoryDto.CategoryRequest request, UUID currentUserId, String userRoles) {
+		// 1. Security Check via gRPC
 		restaurantGrpcClient.validateBranchPermission(request.branchId(), currentUserId, userRoles);
 
-		MenuCategory category = categoryMapper.toEntity(request);
-		return categoryMapper.toResponse(categoryRepository.save(category));
+		// 2. Build Entity
+		MenuCategory category = MenuCategory.builder()
+				.branchId(request.branchId())
+				.name(request.name())
+				.description(request.description())
+				.priority(request.priority() != null ? request.priority() : 0)
+				.build();
+
+		// 3. Save and Map
+		return menuCategoryMapper.toResponse(categoryRepository.save(category));
 	}
 
 	@Override
 	@Transactional
-	@CacheEvict(value = "branch_menus", key = "#result.branchId()") // Evict based on the returned DTO's branchId
-	public CategoryDto.CategoryResponse updateCategory(UUID id, CategoryDto.CategoryRequest request, UUID currentUserId, String userRoles) {
-		restaurantGrpcClient.validateBranchPermission(request.branchId(), currentUserId, userRoles);
-
+	@CacheEvict(value = "branch_menus", key = "#result.branchId()")
+	public MenuCategoryDto.CategoryResponse updateCategory(UUID id, MenuCategoryDto.CategoryRequest request, UUID currentUserId, String userRoles) {
 		MenuCategory existing = categoryRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Category not found with id: " + id));
+
+		// Ensure user has permission for the branch this category belongs to
+		restaurantGrpcClient.validateBranchPermission(existing.getBranchId(), currentUserId, userRoles);
 
 		existing.setName(request.name());
 		existing.setDescription(request.description());
 		existing.setPriority(request.priority());
 
-		return categoryMapper.toResponse(categoryRepository.save(existing));
+		return menuCategoryMapper.toResponse(categoryRepository.save(existing));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public CategoryDto.CategoryResponse getCategoryById(UUID id) {
+	public MenuCategoryDto.CategoryResponse getCategoryById(UUID id) {
 		return categoryRepository.findById(id)
-				.map(categoryMapper::toResponse)
+				.map(menuCategoryMapper::toResponse)
 				.orElseThrow(() -> new InvalidRequestException("Category not found with id: " + id));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<CategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId) {
-		return categoryRepository.findAllByBranchId(branchId)
-				.stream()
-				.map(categoryMapper::toResponse)
+	public List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId) {
+		return categoryRepository.findAllByBranchId(branchId).stream()
+				.map(menuCategoryMapper::toResponse)
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "branch_menus", key = "#branchId") // Re-added caching for the read operation
+	@Cacheable(value = "branch_menus", key = "#branchId")
 	public FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId) {
-		// This now returns Categories sorted by priority 0, 1, 2...
-		List<MenuCategory> categories = categoryRepository.findAllByBranchIdOrderByPriorityAsc(branchId);
+		// 1. Fetch Categories (Optimized with EntityGraph in Repository to avoid N+1)
+		List<MenuCategory> categories = categoryRepository.findByBranchIdAndDeletedFalseOrderByPriorityAsc(branchId);
 
-		// In your Mapper logic, ensure items are also sorted by priority
-		return fullMenuMapper.toBranchMenuResponse(branchId, categories);
+		// 2. Map to the nested tree structure (Category -> Items -> Modifiers)
+		List<FullMenuDto.CategoryWithItemsResponse> categoryData = categories.stream()
+				.map(menuCategoryMapper::toCategoryWithItemsResponse)
+				.toList();
+
+		return new FullMenuDto.FullMenuBranchMenuResponse(branchId, categoryData);
 	}
 
 	@Override
@@ -92,30 +101,17 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
 
-		// Evict cache for this branch before deleting
+		// Manually evict cache for this branch before soft-deleting
 		evictBranchCache(category.getBranchId());
 
 		categoryRepository.delete(category);
 	}
 
-	@Override
-	@Transactional(readOnly = true)
-	public void validateMenuCategory(UUID id) {
-		if (UserContext.getUserId() == null)
-			throw new AuthenticationException("You do not manage this specific restaurant or branch");
-
-		if (UserContext.isRoleAdmin()) return;
-
-		boolean exists = categoryRepository.existsById(id);
-
-		if (!exists) {
-			throw new AuthenticationException("You do not manage this specific restaurant");
-		}
-	}
-
-	@Transactional(readOnly = true)
+	/**
+	 * Helper used for manual eviction in delete or complex update scenarios
+	 */
 	@CacheEvict(value = "branch_menus", key = "#branchId")
 	public void evictBranchCache(UUID branchId) {
-		// Helper method to trigger cache eviction by branchId
+		// Intentionally blank - annotation handles logic
 	}
 }

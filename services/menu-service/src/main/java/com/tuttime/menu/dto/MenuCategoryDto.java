@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
-public class CategoryDto {
+public class MenuCategoryDto {
 
 	// Request payload for creating/updating a category
 	@Schema(description = "Category request details")
@@ -28,7 +28,6 @@ public class CategoryDto {
 	@Schema(description = "Category response details")
 	public record CategoryResponse(
 			UUID categoryId,
-			UUID branchId,
 			String name,
 			String description,
 			Integer priority,

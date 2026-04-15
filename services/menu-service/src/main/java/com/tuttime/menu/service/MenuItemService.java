@@ -12,7 +12,11 @@ public interface MenuItemService {
 
 	MenuItemDto.MenuItemDetailedResponse getMenuItemById(UUID id);
 
+	void deleteMenuItem(UUID id, UUID currentUserId, String userRoles);
+
 	List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String sortBy, String direction);
 
-	void deleteMenuItem(UUID id, UUID currentUserId, String userRoles);
+	void linkModifierGroup(UUID itemId, UUID groupId);
+
+	void unlinkModifierGroup(UUID itemId, UUID groupId);
 }

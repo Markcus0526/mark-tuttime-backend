@@ -22,7 +22,7 @@ public class Modifier extends BaseUuidAnDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "modifier_group_id", nullable = false)
-	private ModifierGroup group;
+	private ModifierGroup modifierGroup;
 
 	@Column(name = "name", nullable = false)
 	private String name;
@@ -30,7 +30,7 @@ public class Modifier extends BaseUuidAnDeleteEntity {
 	@Column(name = "description")
 	private String description;
 
-	@Column(name = "price_adjustment", nullable = false, precision = 10, scale = 2)
+	@Column(name = "price_adjustment", precision = 10, scale = 2)
 	@Builder.Default
 	private BigDecimal priceAdjustment = BigDecimal.ZERO;
 }

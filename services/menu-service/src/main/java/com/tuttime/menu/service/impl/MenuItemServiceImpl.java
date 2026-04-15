@@ -5,9 +5,11 @@ import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
+import com.tuttime.menu.mapper.MenuItemMapper;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;
+import com.tuttime.menu.service.ModifierService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
@@ -24,11 +26,12 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	private final MenuItemRepository menuItemRepository;
 	private final MenuCategoryRepository categoryRepository;
+	private final MenuItemMapper menuItemMapper; // Use this instead of manual mapping
 	private final RestaurantGrpcClient restaurantGrpcClient;
+	private final ModifierService modifierService; // Needed for link/unlink
 
 	@Override
 	@Transactional
-	// Evict the branch menu cache. We find the branchId through the category.
 	@CacheEvict(value = "branch_menus", key = "@menuItemServiceImpl.getBranchIdFromCategory(#request.categoryId())")
 	public MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
 		MenuCategory category = categoryRepository.findById(request.categoryId())
@@ -42,9 +45,11 @@ public class MenuItemServiceImpl implements MenuItemService {
 				.description(request.description())
 				.price(request.price())
 				.available(request.available() != null ? request.available() : true)
+				.priority(request.priority() != null ? request.priority() : 0)
 				.build();
 
-		return mapToDetailedResponse(menuItemRepository.save(item));
+		// Use the mapper to get automatic pricing, media, and modifier inheritance
+		return menuItemMapper.toDetailedResponse(menuItemRepository.save(item));
 	}
 
 	@Override
@@ -64,15 +69,17 @@ public class MenuItemServiceImpl implements MenuItemService {
 		existing.setPrice(request.price());
 		existing.setAvailable(request.available());
 
-		return mapToDetailedResponse(menuItemRepository.save(existing));
+		return menuItemMapper.toDetailedResponse(menuItemRepository.save(existing));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public MenuItemDto.MenuItemDetailedResponse getMenuItemById(UUID id) {
-		return menuItemRepository.findById(id)
-				.map(this::mapToDetailedResponse)
+	public MenuItemDto.MenuItemDetailedResponse getMenuItemById(UUID itemId) {
+		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
+
+		// This now returns discountedPrice, originalPrice, and merged Modifiers
+		return menuItemMapper.toDetailedResponse(item);
 	}
 
 	@Override
@@ -95,17 +102,49 @@ public class MenuItemServiceImpl implements MenuItemService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String sortBy, String direction) {
-		// 1. Define sort logic
-		Sort sort = direction.equalsIgnoreCase("desc") ?
-				Sort.by(sortBy).descending() :
-				Sort.by(sortBy).ascending();
+		Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
-		// 2. Fetch sorted list
+		// Use the mapper to handle discounted 'currentPrice' and 'imageUrl'
 		return menuItemRepository.findByCategoryId(categoryId, sort).stream()
-				.map(item -> new MenuItemDto.MenuItemResponseSummary(
-						item.getId(), item.getName(), item.getPrice(), item.getAvailable(), item.getPriority()
-				))
+				.map(menuItemMapper::toSummaryResponse)
 				.collect(Collectors.toList());
+	}
+
+	@Override
+	@Transactional
+	public void linkModifierGroup(UUID itemId, UUID groupId) {
+		MenuItem item = menuItemRepository.findById(itemId)
+				.orElseThrow(() -> new InvalidRequestException("Item not found"));
+
+		// Logical check for permissions could go here using restaurantGrpcClient
+
+		// Assuming ModifierGroup is fetched and added to item.modifierGroups
+		// Or call a specialized method in modifierService
+		modifierService.linkToItem(groupId, itemId);
+		evictCacheByBranch(item.getCategory().getBranchId());
+	}
+
+	@Override
+	@Transactional
+	public void unlinkModifierGroup(UUID itemId, UUID groupId) {
+		// 1. Fetch the item
+		MenuItem item = menuItemRepository.findById(itemId)
+				.orElseThrow(() -> new InvalidRequestException("Menu Item not found"));
+
+		// 2. Remove the association from the set
+		// This triggers a DELETE on the 'menu_item_modifier_groups' table
+		item.getModifierGroups().removeIf(group -> group.getId().equals(groupId));
+
+		// 3. Save to persist changes and evict cache
+		menuItemRepository.save(item);
+		evictCacheByBranch(item.getCategory().getBranchId());
+	}
+
+	@Transactional(readOnly = true)
+	@CacheEvict(value = "branch_menus", key = "#branchId")
+	public void evictCacheByBranch(UUID branchId) {
+		// This method body is empty because the @CacheEvict
+		// annotation does all the work before/after the method runs.
 	}
 
 	/**
@@ -116,21 +155,5 @@ public class MenuItemServiceImpl implements MenuItemService {
 		return categoryRepository.findById(categoryId)
 				.map(MenuCategory::getBranchId)
 				.orElse(null);
-	}
-
-	@Transactional(readOnly = true)
-	@CacheEvict(value = "branch_menus", key = "#branchId")
-	public void evictCacheByBranch(UUID branchId) {}
-
-	private MenuItemDto.MenuItemDetailedResponse mapToDetailedResponse(MenuItem item) {
-		return new MenuItemDto.MenuItemDetailedResponse(
-				item.getId(),
-				item.getCategory().getId(),
-				item.getName(),
-				item.getDescription(),
-				item.getPrice(),
-				item.getAvailable(),
-				List.of() // Modifiers mapped here if needed
-		);
 	}
 }
