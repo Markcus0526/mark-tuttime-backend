@@ -41,7 +41,7 @@ public class Media extends BaseUuidAnDeleteEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "media_type")
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM) // Maps to your PostgreSQL 'media_type_enum'
+//	@JdbcTypeCode(SqlTypes.NAMED_ENUM) // Maps to your PostgreSQL 'media_type_enum'
 	private MediaType mediaType;
 
 	@JdbcTypeCode(SqlTypes.JSON)

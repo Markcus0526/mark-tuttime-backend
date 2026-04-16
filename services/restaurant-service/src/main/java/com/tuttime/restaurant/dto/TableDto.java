@@ -8,8 +8,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class TableDto {
@@ -40,8 +42,8 @@ public class TableDto {
 	) {
 	}
 
-
-	@Schema(description = "Table request details")
+	@Schema(description = "Table response")
+	@Builder
 	public record TableResponse(
 
 			UUID tableId,
@@ -51,6 +53,33 @@ public class TableDto {
 			int seats,
 			TableStatus status,
 			boolean closed,
+			String imageUrl,
+			OffsetDateTime createdAt,
+			OffsetDateTime updatedAt
+	) {
+	}
+
+	@Schema(description = "Table response details")
+	@Builder
+	public record TableDetailedResponse(
+
+			UUID tableId,
+
+			UUID zoneId,
+
+			String label,
+
+			String notes,
+
+			int seats,
+
+			TableStatus status,
+
+			boolean closed,
+
+			@Schema(description = "URL for all images and videos from Media table")
+			List<MediaDto.MediaResponse> medias,
+
 			OffsetDateTime createdAt,
 			OffsetDateTime updatedAt
 	) {

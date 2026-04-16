@@ -6,6 +6,7 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.BranchDto;
+import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.service.BranchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +16,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,11 +41,11 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}")
-	public ResponseEntity<ApiRes<BranchDto.BranchResponse>> getBranchById(
+	public ResponseEntity<ApiRes<BranchDto.BranchDetailedResponse>> getBranchById(
 			@Parameter(description = "UUID of the branch to retrieve", required = true)
 			@PathVariable UUID branchId) {
 
-		BranchDto.BranchResponse branch = branchService.getBranchById(branchId);
+		BranchDto.BranchDetailedResponse branch = branchService.getBranchById(branchId);
 		return ResponseEntity.ok(ApiRes.success(branch));
 	}
 
@@ -114,12 +118,24 @@ public class BranchController {
 	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> getAllBranches(
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
+			@Parameter(description = "Search by name or address")
+			@RequestParam(required = false) String query,
 
-		int maxPageSize = 100;
-		if (size > maxPageSize) size = maxPageSize;
-		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, page, size);
+			@RequestParam(required = false) Double minRating,
+			@RequestParam(required = false) Double maxRating,
+
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "createdAt") String sort,
+			@RequestParam(defaultValue = "desc") String direction) {
+
+		// Cap the page size for performance
+		int pageSize = Math.min(size, 100);
+
+		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
+		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
+
+		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, query, minRating, maxRating, pageable);
 		return ResponseEntity.ok(ApiRes.success(branches));
 	}
 

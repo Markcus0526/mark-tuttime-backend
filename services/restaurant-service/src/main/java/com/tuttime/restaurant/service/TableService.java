@@ -11,7 +11,7 @@ public interface TableService {
 
 	List<TableDto.TableResponse> getTablesByZoneId(UUID zoneId);
 
-	TableDto.TableResponse getTableById(UUID tableId);
+	TableDto.TableDetailedResponse getTableById(UUID tableId);
 
 	TableDto.TableResponse createTable(TableDto.TableRequest request, UUID currentUserId, String userRoles);
 

@@ -329,6 +329,9 @@ app:
       secret-key: ${S3_SECRET_KEY:}
       base-url: ${S3_BASE_URL:} # Optional: CDN or public URL base (e.g., https://cdn.example.com)
       presigned-url-expiration-hours: ${S3_PRESIGNED_URL_EXPIRATION_HOURS:24}
+    local:
+      upload-dir: ${IMAGE_STORAGE_PATH:./uploads/images}
+      upload-url: ${IMAGE_URL_PATH:/restaurant-medias/}
     max-size: ${IMAGE_MAX_SIZE:5242880} # 5MB
     max-dimension: ${IMAGE_MAX_DIMENSION:1024} # Max width/height in pixels
     quality: ${IMAGE_QUALITY:0.85} # JPEG quality (0.0 to 1.0)

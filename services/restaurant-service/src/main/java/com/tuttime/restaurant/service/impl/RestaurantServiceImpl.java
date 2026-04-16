@@ -47,10 +47,10 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public RestaurantDto.RestaurantResponse getRestaurantById(UUID restaurantId) {
+	public RestaurantDto.RestaurantDetailedResponse getRestaurantById(UUID restaurantId) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
-		return restaurantMapper.toResponse(restaurant);
+		return restaurantMapper.toDetailedResponse(restaurant);
 	}
 
 	@Override
@@ -162,6 +162,5 @@ public class RestaurantServiceImpl implements RestaurantService {
 			return cb.and(predicates.toArray(new Predicate[0]));
 		};
 	}
-
 
 }

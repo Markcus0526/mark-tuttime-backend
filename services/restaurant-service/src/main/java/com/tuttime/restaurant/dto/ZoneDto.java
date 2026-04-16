@@ -5,8 +5,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class ZoneDto {
@@ -33,7 +35,8 @@ public class ZoneDto {
 	) {
 	}
 
-	@Schema(description = "Zone request details")
+	@Schema(description = "Zone response")
+	@Builder
 	public record ZoneResponse(
 
 			UUID zoneId,
@@ -42,6 +45,31 @@ public class ZoneDto {
 			String description,
 			int capacity,
 			boolean closed,
+			String imageUrl,
+			OffsetDateTime createdAt,
+			OffsetDateTime updatedAt
+	) {
+	}
+
+	@Schema(description = "Zone response details")
+	@Builder
+	public record ZoneDetailedResponse(
+
+			UUID zoneId,
+
+			UUID branchId,
+
+			String name,
+
+			String description,
+
+			int capacity,
+
+			boolean closed,
+
+			@Schema(description = "URL for all images and videos from Media table")
+			List<MediaDto.MediaResponse> medias,
+
 			OffsetDateTime createdAt,
 			OffsetDateTime updatedAt
 	) {
