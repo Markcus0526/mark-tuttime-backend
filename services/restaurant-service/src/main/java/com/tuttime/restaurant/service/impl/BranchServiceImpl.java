@@ -9,13 +9,16 @@ import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
 import com.tuttime.restaurant.repository.StaffRepository;
 import com.tuttime.restaurant.service.*;
+import jakarta.persistence.criteria.Predicate;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +29,6 @@ public class BranchServiceImpl implements BranchService {
 	private final StaffService staffService;
 	private final BranchRepository branchRepository;
 	private final RestaurantRepository restaurantRepository;
-	private final StaffRepository staffRepository;
 	private final BranchMapper branchMapper;
 	private final ZoneService zoneService;
 	private final MediaService mediaService;
@@ -50,25 +52,19 @@ public class BranchServiceImpl implements BranchService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public BranchDto.BranchResponse getBranchById(UUID branchId) {
+	public BranchDto.BranchDetailedResponse getBranchById(UUID branchId) {
 		Branch entity = branchRepository.findByIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
-		return branchMapper.toResponse(entity);
+		return branchMapper.toDetailedResponse(entity);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Branch> branchPage;
+	public Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, String query, Double minRating, Double maxRating, Pageable pageable) {
+		Specification<Branch> spec = createSpecification(restaurantId, query, minRating, maxRating);
 
-		if (restaurantId != null) {
-			branchPage = branchRepository.findPagesByRestaurantIdAndDeletedFalse(restaurantId, pageable);
-		} else {
-			branchPage = branchRepository.findByDeletedFalse(pageable);
-		}
-
-		return branchPage.map(branchMapper::toResponse);
+		return branchRepository.findAll(spec, pageable)
+				.map(branchMapper::toResponse);
 	}
 
 	@Override
@@ -118,5 +114,37 @@ public class BranchServiceImpl implements BranchService {
 		branchRepository.deleteAllByRestaurantId(restaurantId);
 
 		return true;
+	}
+
+	private Specification<Branch> createSpecification(UUID restaurantId, String query, Double minRating, Double maxRating) {
+		return (root, criteriaQuery, cb) -> {
+			List<Predicate> predicates = new ArrayList<>();
+
+			if (restaurantId != null) {
+				predicates.add(cb.equal(root.get("restaurant").get("id"), restaurantId));
+			}
+
+			// 2. Keyword search (Name or Address)
+			if (query != null && !query.isBlank()) {
+				String pattern = "%" + query.toLowerCase() + "%";
+				predicates.add(cb.or(
+						cb.like(cb.lower(root.get("name")), pattern),
+						cb.like(cb.lower(root.get("address")), pattern)
+				));
+			}
+
+			// 3. Rating range
+			if (minRating != null) {
+				predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), minRating));
+			}
+			if (maxRating != null) {
+				predicates.add(cb.lessThanOrEqualTo(root.get("rating"), maxRating));
+			}
+
+			// 4. Soft-delete filter (Always exclude deleted by default)
+			predicates.add(cb.equal(root.get("deleted"), false));
+
+			return cb.and(predicates.toArray(new Predicate[0]));
+		};
 	}
 }

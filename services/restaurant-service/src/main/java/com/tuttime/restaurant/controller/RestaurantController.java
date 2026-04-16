@@ -74,11 +74,11 @@ public class RestaurantController {
 			@ApiResponse(responseCode = "404", description = "Restaurant not found")
 	})
 	@GetMapping("/{restaurantId}")
-	public ResponseEntity<ApiRes<RestaurantDto.RestaurantResponse>> getRestaurantById(
+	public ResponseEntity<ApiRes<RestaurantDto.RestaurantDetailedResponse>> getRestaurantById(
 			@Parameter(description = "UUID of the restaurant to retrieve", required = true)
 			@PathVariable UUID restaurantId) {
 
-		RestaurantDto.RestaurantResponse restaurant = restaurantService.getRestaurantById(restaurantId);
+		RestaurantDto.RestaurantDetailedResponse restaurant = restaurantService.getRestaurantById(restaurantId);
 		return ResponseEntity.ok(ApiRes.success(restaurant));
 	}
 

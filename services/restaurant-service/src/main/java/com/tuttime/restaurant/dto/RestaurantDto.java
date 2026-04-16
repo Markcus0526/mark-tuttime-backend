@@ -2,9 +2,11 @@ package com.tuttime.restaurant.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class RestaurantDto {
@@ -45,7 +47,8 @@ public class RestaurantDto {
 	) {
 	}
 
-	@Schema(description = "Restaurant response details")
+	@Schema(description = "Restaurant response")
+	@Builder
 	public record RestaurantResponse(
 
 			UUID restaurantId,
@@ -57,7 +60,39 @@ public class RestaurantDto {
 			String phone,
 			String website,
 			BigDecimal rating,
+			String imageUrl,
 			OffsetDateTime createdAt,
+			OffsetDateTime updatedAt
+	) {
+	}
+
+	@Schema(description = "Restaurant response details")
+	@Builder
+	public record RestaurantDetailedResponse(
+
+			UUID restaurantId,
+
+			String name,
+
+			String description,
+
+			String address,
+
+			Double longitude,
+
+			Double latitude,
+
+			String phone,
+
+			String website,
+
+			BigDecimal rating,
+
+			@Schema(description = "URL for all images and videos from Media table")
+			List<MediaDto.MediaResponse> medias,
+
+			OffsetDateTime createdAt,
+
 			OffsetDateTime updatedAt
 	) {
 	}

@@ -2,9 +2,11 @@ package com.tuttime.restaurant.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class BranchDto {
@@ -48,7 +50,8 @@ public class BranchDto {
 	) {
 	}
 
-	@Schema(description = "Branch response details")
+	@Schema(description = "Branch response")
+	@Builder
 	public record BranchResponse(
 
 			UUID branchId,
@@ -61,7 +64,41 @@ public class BranchDto {
 			Double longitude,
 			Double latitude,
 			BigDecimal rating,
+			String imageUrl,
 			OffsetDateTime createdAt,
+			OffsetDateTime updatedAt
+	) {
+	}
+
+	@Schema(description = "Branch response details")
+	@Builder
+	public record BranchDetailedResponse(
+
+			UUID branchId,
+
+			UUID restaurantId,
+
+			String name,
+
+			String description,
+
+			String address,
+
+			String phone,
+
+			String timezone,
+
+			Double longitude,
+
+			Double latitude,
+
+			BigDecimal rating,
+
+			@Schema(description = "URL for all images and videos from Media table")
+			List<MediaDto.MediaResponse> medias,
+
+			OffsetDateTime createdAt,
+
 			OffsetDateTime updatedAt
 	) {
 	}

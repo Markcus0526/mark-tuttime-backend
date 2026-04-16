@@ -3,6 +3,7 @@ package com.tuttime.restaurant.config;
 import com.tuttime.common.auth.security.GatewayHeaderSecurityFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,9 @@ public class SecurityConfig {
 
 	private final GatewayHeaderSecurityFilter gatewayHeaderSecurityFilter;
 
+	@Value("${app.image.local.upload-url}")
+	private String uploadUrl;
+
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
@@ -31,7 +35,7 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(HttpMethod.GET, "/media/**").permitAll()
+						.requestMatchers(uploadUrl + "**").permitAll()
 						.requestMatchers(
 								"/api/v1/restaurants/**",
 								"/api/v1/restaurant-branches/**",

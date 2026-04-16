@@ -10,7 +10,7 @@ public interface RestaurantService {
 
 	Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable);
 
-	RestaurantDto.RestaurantResponse getRestaurantById(UUID restaurantId);
+	RestaurantDto.RestaurantDetailedResponse getRestaurantById(UUID restaurantId);
 
 	RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles);
 

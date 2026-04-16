@@ -40,11 +40,11 @@ public class ZoneController {
 			@ApiResponse(responseCode = "404", description = "Zone not found")
 	})
 	@GetMapping("/{zoneId}")
-	public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> getZoneById(
+	public ResponseEntity<ApiRes<ZoneDto.ZoneDetailedResponse>> getZoneById(
 			@Parameter(description = "UUID of the zone", required = true)
 			@PathVariable UUID zoneId) {
 
-		ZoneDto.ZoneResponse zone = zoneService.getZoneById(zoneId);
+		ZoneDto.ZoneDetailedResponse zone = zoneService.getZoneById(zoneId);
 		return ResponseEntity.ok(ApiRes.success(zone));
 	}
 
