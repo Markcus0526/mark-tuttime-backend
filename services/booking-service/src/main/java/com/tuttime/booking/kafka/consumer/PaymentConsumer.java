@@ -30,9 +30,9 @@ public class PaymentConsumer {
 		bookingService.updateStatus(
 				event.bookingId(),
 				BookingStatus.PAID,
-				null, // System Actor
-				"Stripe Payment Verified: " + event.stripePaymentIntentId()
-		);
+				"Stripe Payment Verified: " + event.stripePaymentIntentId(),
+				null,
+				null);
 	}
 
 	/**
@@ -47,8 +47,8 @@ public class PaymentConsumer {
 		bookingService.updateStatus(
 				event.bookingId(),
 				BookingStatus.CANCELED,
+				"Automatic Cancellation: Refund Processed",
 				null,
-				"Automatic Cancellation: Refund Processed"
-		);
+				null);
 	}
 }

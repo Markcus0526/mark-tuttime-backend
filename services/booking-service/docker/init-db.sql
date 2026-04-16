@@ -59,6 +59,23 @@ CREATE TABLE booking_notifications
     updated_at        TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 4. Booking Items (Pre-ordered food/services)
+CREATE TABLE booking_items
+(
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id    UUID           NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    menu_item_id  UUID           NOT NULL, -- Reference to Menu Service
+    quantity      INT            NOT NULL CHECK (quantity > 0),
+    unit_price    DECIMAL(10, 2) NOT NULL,
+    total_price   DECIMAL(10, 2) NOT NULL,
+    notes         VARCHAR(255),
+    created_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_booking_items_parent ON booking_items (booking_id);
+
+
 CREATE TABLE waitlist_entries
 (
     id          UUID PRIMARY KEY     DEFAULT gen_random_uuid(),

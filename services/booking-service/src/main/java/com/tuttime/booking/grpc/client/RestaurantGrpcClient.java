@@ -1,7 +1,6 @@
 package com.tuttime.booking.grpc.client;
 
-import com.tuttime.booking.dto.BookingRequest;
-import com.tuttime.common.exception.BusinessException;
+import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.proto.*;
 import lombok.extern.slf4j.Slf4j;
@@ -20,22 +19,15 @@ public class RestaurantGrpcClient {
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
-	public void checkAvailableTableForBooking(BookingRequest bookingRequest) {
+	public AvailableTableResponse checkAvailableTableForBooking(BookingDto.BookingRequest bookingRequest) {
 		AvailableTableRequest request = AvailableTableRequest.newBuilder()
-				.setRestaurantId(bookingRequest.restaurantId().toString())
-				.setBranchId(bookingRequest.branchId().toString())
-				.setZoneId(bookingRequest.zoneId().toString())
 				.setTableId(bookingRequest.tableId().toString())
 				.setPartySize(bookingRequest.partySize())
 				.setStartTime(convertOffsetDatetimeToProtobuf(bookingRequest.bookingDatetime()))
 				.setDurationMinutes(bookingRequest.duration())
 				.build();
 
-		AvailableTableResponse response = restaurantServiceBlockingStub.checkAvailableTableForBooking(request);
-
-		if (!response.getAvailable()) {
-			throw new ConflictException("You do not reserve this specific booking");
-		}
+		return restaurantServiceBlockingStub.checkAvailableTableForBooking(request);
 	}
 
 	public List<TableInfo> getTablesForBooking(UUID branchId, int partySize) {

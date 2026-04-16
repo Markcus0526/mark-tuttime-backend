@@ -1,9 +1,8 @@
 package com.tuttime.booking.service;
 
-import com.tuttime.booking.dto.BookingSetupResponse;
-import com.tuttime.booking.dto.BookingHistoryResponse;
-import com.tuttime.booking.dto.BookingRequest;
-import com.tuttime.booking.dto.BookingResponse;
+import com.tuttime.booking.dto.BookingDto;
+import com.tuttime.booking.dto.BookingHistoryDto;
+import com.tuttime.booking.dto.BookingSetupDto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.enums.BookingStatus;
 
@@ -13,33 +12,25 @@ import java.util.UUID;
 
 public interface BookingService {
 
-	BookingSetupResponse getBookingSetupData(UUID branchId, OffsetDateTime date, int partySize);
-
 	/**
 	 * Creates a new booking with distributed locking for concurrency control.
 	 */
-	Booking createBooking(BookingRequest request);
+	BookingDto.BookingResponse createBooking(BookingDto.BookingRequest request, UUID currentUserId, String userRoles);
 
-	/**
-	 * Updates the status of an existing booking and triggers domain events.
-	 */
-	Booking updateStatus(UUID bookingId, BookingStatus newStatus, UUID actorId, String reason);
+	BookingDto.BookingResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles);
 
-	/**
-	 * Confirms payment for a booking (usually called by Payment Service).
-	 */
-	void confirmPayment(UUID bookingId);
+	BookingDto.BookingResponse updateStatus(UUID bookingId, BookingStatus newStatus, String reason, UUID currentUserId, String userRoles);
 
-	/**
-	 * Cancels an unpaid booking if it exceeds the payment timeout.
-	 */
-	void cancelUnpaidBooking(UUID bookingId);
+	void deleteBooking(UUID bookingId, UUID userId, String reason, UUID currentUserId, String userRoles);
 
-	List<BookingResponse> getBookingsByUser(UUID userId);
+	List<BookingDto.BookingResponse> getBookingsByUser(UUID userId);
 
-	void cancelBooking(UUID bookingId, UUID userId, String reason);
+	List<BookingHistoryDto.BookingHistoryResponse> getStatusHistory(UUID bookingId);
 
-	List<BookingHistoryResponse> getStatusHistory(UUID bookingId);
+	List<BookingDto.BookingResponse> getBookingsByRestaurant(UUID restaurantId, OffsetDateTime date, UUID currentUserId, String userRoles);
 
-	List<BookingResponse> getBookingsByRestaurant(UUID restaurantId, OffsetDateTime date);
+	List<BookingDto.BookingResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles);
+
+	BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize,UUID currentUserId);
+
 }

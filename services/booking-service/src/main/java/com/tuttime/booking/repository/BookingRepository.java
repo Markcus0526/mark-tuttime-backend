@@ -20,17 +20,26 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 	 * Checks if a table has any active bookings that overlap with the given time range.
 	 * Logic: An overlap exists if (existingStart < newEnd) AND (existingEnd > newStart).
 	 */
-	@Query(value = "SELECT COUNT(*) > 0 FROM bookings b " +
-			"WHERE b.table_id = :tableId " +
-			"AND b.status NOT IN ('CANCELED', 'NO_SHOW') " +
-			"AND b.booking_datetime < :endTime " +
-			"AND (b.booking_datetime + (b.duration * INTERVAL '1 minute')) > :startTime",
-			nativeQuery = true)
-	boolean existsOverlappingBooking(
-			@Param("tableId") UUID tableId,
-			@Param("startTime") OffsetDateTime startTime,
-			@Param("endTime") OffsetDateTime endTime
-	);
+//	@Query(value = "SELECT COUNT(*) > 0 FROM bookings b " +
+//			"WHERE b.table_id = :tableId " +
+//			"AND b.status NOT IN ('CANCELED', 'NO_SHOW') " +
+//			"AND b.booking_datetime < :endTime " +
+//			"AND (b.booking_datetime + (b.duration * INTERVAL '1 minute')) > :startTime",
+//			nativeQuery = true)
+//	boolean existsOverlappingBooking(
+//			@Param("tableId") UUID tableId,
+//			@Param("startTime") OffsetDateTime startTime,
+//			@Param("endTime") OffsetDateTime endTime
+//	);
+
+	@Query(value = "SELECT EXISTS (" +
+			"SELECT 1 FROM bookings " +
+			"WHERE table_id = :tableId " +
+			"AND status NOT IN ('CANCELED') " +
+			"AND (booking_datetime, (booking_datetime + (duration || ' minutes')::interval)) " +
+			"OVERLAPS (:start, :end))", nativeQuery = true)
+	boolean existsOverlappingBooking(UUID tableId, OffsetDateTime start, OffsetDateTime end);
+
 
 	/**
 	 * Bulk updates expired bookings (e.g., CREATED but not PAID within 15 mins).
@@ -52,7 +61,9 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 	// Spring Data JPA derives the query: SELECT * FROM bookings WHERE user_id = :userId ORDER BY booking_datetime DESC
 	List<Booking> findAllByUserIdOrderByBookingDatetimeDesc(UUID userId);
 
-	List<Booking> findByRestaurantIdAndBookingDatetimeBetween(UUID restaurantId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
+	List<Booking> findAllByRestaurantIdAndBookingDatetimeBetween(UUID restaurantId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
+
+	List<Booking> findAllByBranchIdAndBookingDatetimeBetween(UUID branchId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 
 	List<Booking> findAllByBranchIdAndBookingDatetime(UUID branchId, OffsetDateTime date);
 }

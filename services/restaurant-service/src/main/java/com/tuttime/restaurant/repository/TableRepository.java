@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.DishTable;
+import com.tuttime.restaurant.repository.record.TableBookingProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -25,10 +26,27 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	// Find a specific table by ID and status excluding soft-deleted entries
 	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
-	@Query("SELECT t.id, t.label, t.notes, t.seats, z.name " +
-			"FROM DishTable t JOIN Zone z ON t.zone.id = z.id " +
-			"WHERE z.branch.id = :branchId AND t.seats >= :partySize AND t.status = 'ACTIVE'")
-	List<Object[]> findTablesWithZoneName(@Param("branchId") UUID branchId, @Param("partySize") int partySize);
+	@Query("""
+        SELECT new com.tuttime.restaurant.repository.record.TableBookingProjection(
+                 t.id,
+                 z.id,
+                 t.label,
+                 z.name,
+                 t.seats
+             )
+        FROM DishTable t
+        JOIN t.zone z
+        WHERE z.branch.id = :branchId 
+          AND t.deleted = false 
+          AND t.closed = false 
+          AND t.seats >= :partySize
+          AND z.deleted = false
+          AND z.closed = false
+    """)
+	List<TableBookingProjection> findTablesByBranchIdAndPartySize(
+			@Param("branchId") UUID branchId,
+			@Param("partySize") int partySize
+	);
 
 	@Modifying
 	@Query("UPDATE DishTable t SET t.deleted = true, t.deletedAt = CURRENT_TIMESTAMP " +

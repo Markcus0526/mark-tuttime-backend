@@ -10,6 +10,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -52,8 +54,9 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "party_size", nullable = false)
 	private Integer partySize;
 
-	@Column(name = "total_amount", nullable = false)
-	private BigDecimal totalAmount;
+	@Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+	@Builder.Default
+	private BigDecimal totalAmount = BigDecimal.ZERO;
 
 	@Column(name = "lead_time_minutes")
 	@Builder.Default
@@ -69,4 +72,14 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "auto_cancelled")
 	@Builder.Default
 	private Boolean autoCancelled = false;
+
+	@OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
+	@ToString.Exclude
+	private List<BookingItem> items = new ArrayList<>();
+
+	public void addItem(BookingItem item) {
+		items.add(item);
+		item.setBooking(this);
+	}
 }

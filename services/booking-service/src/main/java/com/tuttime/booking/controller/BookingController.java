@@ -8,6 +8,7 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
+import com.tuttime.common.util.UuidUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,75 +35,129 @@ public class BookingController {
 
 	private final BookingService bookingService;
 
-//	@GetMapping("/availability")
-//	@Operation(summary = "Check table availability", description = "Checks if a specific table or zone is available for a time slot.")
-//	public ResponseEntity<ApiRes<Boolean>> checkAvailability(
-//			@RequestParam UUID branchId,
-//			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime dateTime,
-//			@RequestParam Integer partySize) {
-//		return ResponseEntity.ok(ApiRes.success(bookingService.isAvailable(branchId, dateTime, partySize)));
-//	}
+	// Booking CRUD
 
-	@GetMapping("/restaurant/{branchId}/slots")
-	public ResponseEntity<ApiRes<BookingSetupResponse>> getAvailableSlots(
-			@PathVariable UUID branchId,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) OffsetDateTime date,
-			@RequestParam Integer partySize) {
+	@PostMapping
+	@Operation(summary = "Create a booking", description = "Creates a PENDING booking and locks the table in Redis.")
+	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> createBooking(
+			@Valid @RequestBody BookingDto.BookingRequest request) {
 
-		BookingSetupResponse data = bookingService.getBookingSetupData(branchId, date, partySize);
+		validateUser();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		BookingDto.BookingResponse data = bookingService.createBooking(request, currentUserId, userRoles);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
+	}
+
+	@GetMapping("/{bookingId}")
+	@Operation(summary = "Get booking detail", description = "Updates booking status to COMPLETED/ARRIVED when guest arrives.")
+	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> getBooking(
+			@PathVariable UUID bookingId) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		BookingDto.BookingResponse data = bookingService.getBooking(bookingId, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@PostMapping
-	@Operation(summary = "Initiate a booking", description = "Creates a PENDING booking and locks the table in Redis.")
-	public ResponseEntity<ApiRes<BookingResponse>> createBooking(@Valid @RequestBody BookingRequest request) {
-		Booking saved = bookingService.createBooking(request);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiRes.success(BookingResponse.fromEntity(saved)));
+	@PostMapping("/{bookingId}")
+	@Operation(summary = "Update booking state", description = "Updates booking status to COMPLETED/ARRIVED when guest arrives.")
+	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> updateBooking(
+			@PathVariable UUID bookingId,
+			@RequestParam BookingStatus newStatus,
+			@RequestParam(required = false) String reason) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		BookingDto.BookingResponse data = bookingService.updateStatus(bookingId, newStatus, reason, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping("/me")
-	@Operation(summary = "Get my bookings", description = "Returns the booking history and upcoming reservations for the current user.")
-	public ResponseEntity<ApiRes<List<BookingResponse>>> getMyBookings() {
-		List<BookingResponse> data = bookingService.getBookingsByUser(UUID.fromString(UserContext.getUserId()));
+	@DeleteMapping("/{bookingId}")
+	@Operation(summary = "Cancel a booking", description = "Sets status to CANCELED and records the reason.")
+	public ResponseEntity<ApiRes<Void>> deleteBooking(
+			@PathVariable UUID bookingId,
+			@RequestParam UUID userId,
+			@RequestParam(required = false) String reason) {
+
+		validateUser();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		bookingService.deleteBooking(bookingId, userId, reason, currentUserId, userRoles);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+	}
+
+	@GetMapping("/{bookingId}/history")
+	@Operation(summary = "Get audit trail", description = "Returns timeline of status changes from booking_status_histories table.")
+	public ResponseEntity<ApiRes<List<BookingHistoryDto.BookingHistoryResponse>>> getBookingHistory(
+			@PathVariable UUID bookingId) {
+
+		validateUser();
+
+		List<BookingHistoryDto.BookingHistoryResponse> data = bookingService.getStatusHistory(bookingId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
 	@GetMapping("/restaurant/{restaurantId}")
-	@Operation(summary = "Admin: Get restaurant bookings", description = "Allows restaurant staff to view all bookings for their branch.")
-	public ResponseEntity<ApiRes<List<BookingResponse>>> getRestaurantBookings(
+	@Operation(summary = "Admin: Get restaurant bookings", description = "Allows restaurant staff to view all bookings for their restaurant.")
+	public ResponseEntity<ApiRes<List<BookingDto.BookingResponse>>> getRestaurantBookings(
 			@PathVariable UUID restaurantId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date) {
-		List<BookingResponse> data = bookingService.getBookingsByRestaurant(restaurantId, date);
+
+		validateAdminOrOwner();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		List<BookingDto.BookingResponse> data = bookingService.getBookingsByRestaurant(restaurantId, date, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@PostMapping("/{id}/check-in")
-	@Operation(summary = "Check-in guest", description = "Updates booking status to COMPLETED/ARRIVED when guest arrives.")
-	public ResponseEntity<ApiRes<BookingResponse>> checkIn(
-			@PathVariable UUID id) {
-		Booking updated = bookingService.updateStatus(
-				id,
-				BookingStatus.COMPLETED,
-				UUID.fromString(UserContext.getUserId()),
-				"Customer checked in at restaurant"); // Logic from booking_status_histories SQL
-		return ResponseEntity.ok(ApiRes.success(BookingResponse.fromEntity(updated)));
+	@GetMapping("/branch/{branchId}")
+	@Operation(summary = "Admin: Get branch bookings", description = "Allows branch staff to view all bookings for their branch.")
+	public ResponseEntity<ApiRes<List<BookingDto.BookingResponse>>> getBranchBookings(
+			@PathVariable UUID branchId,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date) {
+		
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+		
+		List<BookingDto.BookingResponse> data = bookingService.getBookingsByBranch(branchId, date, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@DeleteMapping("/{id}")
-	@Operation(summary = "Cancel a booking", description = "Sets status to CANCELED and records the reason.")
-	public ResponseEntity<ApiRes<Void>> cancelBooking(
-			@PathVariable UUID id,
-			@RequestParam UUID userId,
-			@RequestParam(required = false) String reason) {
-		bookingService.cancelBooking(id, userId, reason);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+	@GetMapping("/me")
+	@Operation(summary = "Get my bookings", description = "Returns the booking history and upcoming reservations for the current user.")
+	public ResponseEntity<ApiRes<List<BookingDto.BookingResponse>>> getMyBookings() {
+
+		validateUser();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		List<BookingDto.BookingResponse> data = bookingService.getBookingsByUser(currentUserId);
+		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping("/{id}/history")
-	@Operation(summary = "Get audit trail", description = "Returns timeline of status changes from booking_status_histories table.")
-	public ResponseEntity<ApiRes<List<BookingHistoryResponse>>> getBookingHistory(@PathVariable UUID id) {
-		List<BookingHistoryResponse> data = bookingService.getStatusHistory(id);
+	@GetMapping("/branch/{branchId}/slots")
+	public ResponseEntity<ApiRes<BookingSetupDto.BookingSetupResponse>> getAvailableSlots(
+			@Parameter(description = "The unique ID of the branch")
+			@PathVariable UUID branchId,
+
+			@Parameter(description = "Date in ISO format (e.g., 2026-04-16T10:00:00+02:00)")
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) OffsetDateTime date,
+
+			@Parameter(description = "Number of people in the booking party")
+			@RequestParam Integer partySize) {
+
+		validateUser();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		BookingSetupDto.BookingSetupResponse data = bookingService.getAvailableSlots(branchId, date, partySize, currentUserId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -131,6 +186,12 @@ public class BookingController {
 	private void validateAdminOrOwnerOrManager() {
 		if (!UserContext.isValidUUID()
 				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
+	}
+
+	private void validateUser() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleUser()) {
 			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}

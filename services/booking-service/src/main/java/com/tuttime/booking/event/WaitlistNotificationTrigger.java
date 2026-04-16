@@ -1,9 +1,7 @@
-package com.tuttime.booking.service.impl;
+package com.tuttime.booking.event;
 
 import com.tuttime.booking.entity.enums.BookingStatus;
 import com.tuttime.booking.entity.enums.WaitlistStatus;
-import com.tuttime.booking.event.BookingStatusChangedEvent;
-import com.tuttime.booking.event.WaitlistNotificationEvent;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.WaitlistRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.OffsetDateTime;
@@ -28,8 +26,8 @@ public class WaitlistNotificationTrigger {
 	/**
 	 * Triggered ONLY after the booking cancellation transaction commits.
 	 */
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	@Transactional(readOnly = true)
+	@TransactionalEventListener
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void handleBookingCancellation(BookingStatusChangedEvent event) {
 		if (event.newStatus() != BookingStatus.CANCELED) return;
 
