@@ -109,18 +109,19 @@ public class MenuItemController {
 	}
 
 	@GetMapping("/categorys/{categoryId}")
-	@Operation(summary = "Get sorted items in a category")
+	@Operation(summary = "Get searched and sorted items in a category")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "List of items retrieved",
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponseSummary.class))))
 	})
 	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponseSummary>>> getItemsByCategory(
 			@PathVariable UUID categoryId,
+			@Parameter(description = "Search keyword for item name or description") @RequestParam(required = false) String search,
 			@Parameter(description = "Field to sort by (e.g., name, price, priority)") @RequestParam(defaultValue = "name") String sortBy,
 			@Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "asc") String direction) {
 
-		// Logic here should filter using the StopList check discussed earlier TODO
-		List<MenuItemDto.MenuItemResponseSummary> data = menuItemService.getItemsByCategory(categoryId, sortBy, direction);
+		// Pass the 'search' parameter to the service logic
+		List<MenuItemDto.MenuItemResponseSummary> data = menuItemService.getItemsByCategory(categoryId, search, sortBy, direction);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

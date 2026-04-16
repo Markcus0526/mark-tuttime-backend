@@ -1,9 +1,13 @@
 package com.tuttime.menu.mapper;
 
+import com.tuttime.menu.dto.MediaDto;
+import com.tuttime.menu.dto.MenuCategoryDto;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.dto.ModifierDto;
+import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.ModifierGroup;
+import com.tuttime.menu.repository.MediaRepository;
 import com.tuttime.menu.service.PricingService;
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
@@ -20,7 +24,7 @@ import java.util.stream.Collectors;
 @Mapper(
 		componentModel = "spring",
 		unmappedTargetPolicy = ReportingPolicy.IGNORE,
-		uses = {ModifierMapper.class})
+		uses = {ModifierMapper.class, MediaMapper.class})
 public abstract class MenuItemMapper {
 
 	@Autowired
@@ -29,17 +33,24 @@ public abstract class MenuItemMapper {
 	@Autowired
 	protected ModifierMapper modifierMapper;
 
+	@Autowired
+	protected MediaRepository mediaRepository;
+
+	@Autowired
+	protected MediaMapper mediaMapper;
+
 	@Mapping(target = "menuItemId", source = "id")
 	@Mapping(target = "categoryId", source = "category.id")
 	@Mapping(target = "originalPrice", source = "price")
 	@Mapping(target = "discountedPrice", ignore = true) // Calculated in afterMapping
 	@Mapping(target = "modifierGroups", ignore = true)  // Merged in afterMapping
-	@Mapping(target = "imageUrl", ignore = true)        // Logic to fetch from Media table
 	@Mapping(target = "activeDiscountName", ignore = true)
+	@Mapping(target = "medias", ignore = true)
 	public abstract MenuItemDto.MenuItemDetailedResponse toDetailedResponse(MenuItem item);
 
 	@Mapping(target = "menuItemId", source = "id")
 	@Mapping(target = "currentPrice", ignore = true) // Calculated in afterMapping
+	@Mapping(target = "imageUrl", ignore = true)        // Logic to fetch from Media table
 	public abstract MenuItemDto.MenuItemResponseSummary toSummaryResponse(MenuItem item);
 
 	/**
@@ -77,5 +88,23 @@ public abstract class MenuItemMapper {
 	@AfterMapping
 	protected void postMappingSummaryLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponseSummary.MenuItemResponseSummaryBuilder builder) {
 		builder.currentPrice(pricingService.calculateFinalPrice(item));
+	}
+
+	@AfterMapping
+	protected void addImageUrl(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponseSummary.MenuItemResponseSummaryBuilder builder) {
+		// Find the primary image URL where entityId matches the categoryId
+		mediaRepository.findFirstByEntityIdAndPrimaryEntityTrue(item.getId())
+				.ifPresent(media -> builder.imageUrl(media.getUrl()));
+	}
+
+	@AfterMapping
+	protected void addMedias(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailedResponse.MenuItemDetailedResponseBuilder builder) {
+		// Fetch ALL Media (Images & Videos)
+		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllByEntityIdAndDeletedFalse(item.getId())
+				.stream()
+				.map(mediaMapper::toResponse)
+				.collect(Collectors.toList());
+
+		builder.medias(allMedia);
 	}
 }

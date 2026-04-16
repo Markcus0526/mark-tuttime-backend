@@ -14,7 +14,7 @@ public interface MenuItemService {
 
 	void deleteMenuItem(UUID id, UUID currentUserId, String userRoles);
 
-	List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String sortBy, String direction);
+	List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String search, String sortBy, String direction);
 
 	void linkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles);
 

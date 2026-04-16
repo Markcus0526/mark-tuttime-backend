@@ -57,8 +57,8 @@ public class MenuItemDto {
 			@Schema(description = "Merged list: Item-specific + Inherited Category modifier groups")
 			List<ModifierDto.ModifierGroupResponse> modifierGroups,
 
-			@Schema(description = "URL for primary image from Media table")
-			String imageUrl
+			@Schema(description = "URL for all images and videos from Media table")
+			List<MediaDto.MediaResponse> medias
 	) {}
 
 	@Schema(description = "Compact summary response for category list views")

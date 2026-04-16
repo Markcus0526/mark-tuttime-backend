@@ -11,8 +11,8 @@ import org.mapstruct.ReportingPolicy;
 		unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface MediaMapper {
 
-	@Mapping(target = "mediaId", source = "id")
-	MediaDto.MediaResponse toResponse(Media media);
+		@Mapping(target = "mediaId", source = "id")
+		MediaDto.MediaResponse toResponse(Media media);
 
 	@Mapping(target = "url", ignore = true)
 	Media toEntity(MediaDto.MediaRequest request);

@@ -103,15 +103,20 @@ public class MenuCategoryController {
 	}
 
 	@GetMapping("/branches/{branchId}")
-	@Operation(summary = "Get categories by branch")
+	@Operation(summary = "Search and sort categories by branch")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))))
 	})
 	public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> getCategoriesByBranch(
-			@PathVariable UUID branchId) {
+			@PathVariable UUID branchId,
+			@RequestParam(required = false) String query,
+			@Parameter(description = "Sort field: priority, name, or created_at")
+			@RequestParam(defaultValue = "priority") String sortBy,
+			@Parameter(description = "Sort direction: asc or desc")
+			@RequestParam(defaultValue = "asc") String direction) {
 
-		List<MenuCategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId);
+		List<MenuCategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId, query, sortBy, direction);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

@@ -19,6 +19,16 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 	 */
 	List<MenuItem> findByCategoryId(UUID categoryId, Sort sort);
 
+	// Finds items in a category where name or description contains the search string
+	@Query("SELECT mi FROM MenuItem mi WHERE mi.category.id = :categoryId " +
+			"AND mi.deleted = false " +
+			"AND (CAST(:search AS string) IS NULL OR " + // Added CAST here
+			"LOWER(mi.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
+			"LOWER(mi.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
+	List<MenuItem> findByCategoryAndSearch(@Param("categoryId") UUID categoryId,
+	                                       @Param("search") String search,
+	                                       Sort sort);
+
 	/**
 	 * Efficiently fetches a single menu item with all its modifier groups
 	 * and modifiers in one SQL query.
