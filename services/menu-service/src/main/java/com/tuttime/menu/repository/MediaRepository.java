@@ -3,9 +3,11 @@ package com.tuttime.menu.repository;
 import com.tuttime.menu.entity.Media;
 import com.tuttime.menu.entity.enums.MediaType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,5 +29,17 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
 			@Param("entityId") UUID entityId,
 			@Param("mediaType") MediaType mediaType
 	);
+
+	Optional<Media> findFirstByEntityIdAndPrimaryEntityTrue(UUID entityId);
+
+	// Fetches every image/video linked to this item
+	List<Media> findAllByEntityIdAndDeletedFalse(UUID entityId);
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE Media m SET m.primaryEntity = false WHERE m.entityId = :entityId AND m.primaryEntity = true")
+	void resetPrimaryStatus(@Param("entityId") UUID entityId);
+
+	Optional<Media> findFirstByEntityIdOrderByCreatedAtAsc(UUID entityId);
 }
 

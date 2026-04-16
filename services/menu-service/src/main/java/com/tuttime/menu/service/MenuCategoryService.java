@@ -13,7 +13,7 @@ public interface MenuCategoryService {
 
 	MenuCategoryDto.CategoryResponse getCategoryById(UUID id);
 
-	List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId);
+	List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId, String query, String sortBy, String direction);
 
 	FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId); // Master Endpoint
 

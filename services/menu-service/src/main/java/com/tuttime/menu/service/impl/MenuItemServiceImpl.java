@@ -101,11 +101,13 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String sortBy, String direction) {
-		Sort sort = direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+	public List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String search, String sortBy, String direction) {
+		Sort sortOrder = direction.equalsIgnoreCase("desc") ?
+				Sort.by(sortBy).descending() :
+				Sort.by(sortBy).ascending();
 
 		// Use the mapper to handle discounted 'currentPrice' and 'imageUrl'
-		return menuItemRepository.findByCategoryId(categoryId, sort).stream()
+		return menuItemRepository.findByCategoryAndSearch(categoryId, search, sortOrder).stream()
 				.map(menuItemMapper::toSummaryResponse)
 				.collect(Collectors.toList());
 	}

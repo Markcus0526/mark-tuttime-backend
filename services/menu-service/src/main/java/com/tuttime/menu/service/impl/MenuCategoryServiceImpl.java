@@ -11,6 +11,7 @@ import com.tuttime.menu.service.MenuCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MenuCategoryServiceImpl implements MenuCategoryService {
 
-	private final MenuCategoryRepository categoryRepository;
+	private final MenuCategoryRepository menuCategoryRepository;
 	private final MenuCategoryMapper menuCategoryMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 
@@ -42,14 +43,14 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 				.build();
 
 		// 3. Save and Map
-		return menuCategoryMapper.toResponse(categoryRepository.save(category));
+		return menuCategoryMapper.toResponse(menuCategoryRepository.save(category));
 	}
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "#result.branchId()")
 	public MenuCategoryDto.CategoryResponse updateCategory(UUID id, MenuCategoryDto.CategoryRequest request, UUID currentUserId, String userRoles) {
-		MenuCategory existing = categoryRepository.findById(id)
+		MenuCategory existing = menuCategoryRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Category not found with id: " + id));
 
 		// Ensure user has permission for the branch this category belongs to
@@ -59,21 +60,32 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		existing.setDescription(request.description());
 		existing.setPriority(request.priority());
 
-		return menuCategoryMapper.toResponse(categoryRepository.save(existing));
+		return menuCategoryMapper.toResponse(menuCategoryRepository.save(existing));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public MenuCategoryDto.CategoryResponse getCategoryById(UUID id) {
-		return categoryRepository.findById(id)
+		return menuCategoryRepository.findById(id)
 				.map(menuCategoryMapper::toResponse)
 				.orElseThrow(() -> new InvalidRequestException("Category not found with id: " + id));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId) {
-		return categoryRepository.findAllByBranchId(branchId).stream()
+	@Cacheable(value = "branch_menus", key = "#branchId")
+	public List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId, String query, String sortBy, String direction) {
+
+		// 1. Build the Sort object
+		Sort sortOrder = direction.equalsIgnoreCase("desc") ?
+				Sort.by(sortBy).descending() :
+				Sort.by(sortBy).ascending();
+
+		// 2. Fetch categories with dynamic search and sort
+		List<MenuCategory> categories = menuCategoryRepository.findActiveByBranchWithSearch(branchId, query, sortOrder);
+
+		// 3. Map to DTOs
+		return categories.stream()
 				.map(menuCategoryMapper::toResponse)
 				.collect(Collectors.toList());
 	}
@@ -83,7 +95,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Cacheable(value = "branch_menus", key = "#branchId")
 	public FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId) {
 		// 1. Fetch Categories (Optimized with EntityGraph in Repository to avoid N+1)
-		List<MenuCategory> categories = categoryRepository.findByBranchIdAndDeletedFalseOrderByPriorityAsc(branchId);
+		List<MenuCategory> categories = menuCategoryRepository.findByBranchIdAndDeletedFalseOrderByPriorityAsc(branchId);
 
 		// 2. Map to the nested tree structure (Category -> Items -> Modifiers)
 		List<FullMenuDto.CategoryWithItemsResponse> categoryData = categories.stream()
@@ -96,7 +108,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Override
 	@Transactional
 	public void deleteCategory(UUID id, UUID currentUserId, String userRoles) {
-		MenuCategory category = categoryRepository.findById(id)
+		MenuCategory category = menuCategoryRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
@@ -104,7 +116,7 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		// Manually evict cache for this branch before soft-deleting
 		evictBranchCache(category.getBranchId());
 
-		categoryRepository.delete(category);
+		menuCategoryRepository.delete(category);
 	}
 
 	/**

@@ -3,6 +3,8 @@ package com.tuttime.menu.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,11 +28,13 @@ public class MenuCategoryDto {
 
 	// Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
 	@Schema(description = "Category response details")
+	@Builder
 	public record CategoryResponse(
 			UUID categoryId,
 			String name,
 			String description,
 			Integer priority,
+			String imageUrl,
 			List<MenuItemDto.MenuItemResponseSummary> items
 	) {}
 }

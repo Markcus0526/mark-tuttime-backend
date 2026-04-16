@@ -11,6 +11,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Configuration
@@ -23,6 +25,9 @@ public class WebConfig implements WebMvcConfigurer {
 	@Value("${app.image.local.upload-dir}")
 	private String uploadDir;
 
+	@Value("${app.image.local.upload-url}")
+	private String uploadUrl;
+
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(userHeaderInterceptor)
@@ -32,9 +37,11 @@ public class WebConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		// This maps the URL path /media/ to your actual folder on the server
-		registry.addResourceHandler("/menu-medias/**")
-				.addResourceLocations("file:///1_DEVELOPMENT/Markcus0526/mark/tuttime-backend/uploads/images/");
+		Path path = Paths.get(uploadDir).toAbsolutePath();
+		String location = "file:" + path.toString() + "/";
+
+		registry.addResourceHandler(uploadUrl + "**")
+				.addResourceLocations(location);
 	}
 
 	@Override
