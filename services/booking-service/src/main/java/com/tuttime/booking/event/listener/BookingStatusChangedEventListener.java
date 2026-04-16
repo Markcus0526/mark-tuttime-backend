@@ -1,8 +1,11 @@
 package com.tuttime.booking.event.listener;
 
+import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingStatusHistory;
 import com.tuttime.booking.event.BookingStatusChangedEvent;
+import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
+import com.tuttime.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,17 +19,21 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class BookingStatusChangedEventListener {
 
+	private final BookingRepository bookingRepository;
 	private final BookingStatusHistoryRepository historyRepository;
 
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	@Transactional
+	@TransactionalEventListener
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void handleBookingStatusChange(BookingStatusChangedEvent event) {
 		log.info("Auditing status change for booking {}: {} -> {}",
 				event.bookingId(), event.oldStatus(), event.newStatus());
 
+		Booking booking = bookingRepository.findById(event.bookingId())
+				.orElseThrow(() -> new InvalidRequestException("Booking not found: " + event.bookingId()));
+
 		// Mapping Record fields to Entity
 		BookingStatusHistory history = BookingStatusHistory.builder()
-				.bookingId(event.bookingId())
+				.booking(booking)
 				.oldStatus(event.oldStatus())
 				.newStatus(event.newStatus())
 				.changedBy(event.changedBy())

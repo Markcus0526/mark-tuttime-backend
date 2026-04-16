@@ -1,7 +1,7 @@
 package com.tuttime.booking.service;
 
-import com.tuttime.booking.dto.BookingRequest;
+import com.tuttime.booking.dto.BookingDto;
 
 public interface BookingAvailabilityService {
-	boolean reserveTable(BookingRequest request);
+	boolean reserveTable(BookingDto.BookingRequest request);
 }

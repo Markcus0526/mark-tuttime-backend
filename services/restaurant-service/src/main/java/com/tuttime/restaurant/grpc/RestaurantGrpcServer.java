@@ -2,12 +2,12 @@ package com.tuttime.restaurant.grpc;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.proto.*;
+import com.tuttime.restaurant.entity.DishTable;
+import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
-import com.tuttime.restaurant.repository.BranchRepository;
-import com.tuttime.restaurant.repository.RestaurantRepository;
-import com.tuttime.restaurant.repository.StaffRepository;
-import com.tuttime.restaurant.repository.TableRepository;
+import com.tuttime.restaurant.repository.*;
+import com.tuttime.restaurant.repository.record.TableBookingProjection;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +25,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	private final StaffRepository staffRepository;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
+	private final ZoneRepository zoneRepository;
 	private final TableRepository tableRepository;
 	private final UserGrpcClient userGrpClient;
 
@@ -92,18 +93,18 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		UUID branchId = UUID.fromString(request.getBranchId());
 		int partySize = request.getPartySize();
 
-		// 1. Fetch tables from SQL that are active and can fit the party size
-		List<Object[]> results = tableRepository.findTablesWithZoneName(branchId, partySize);
+		// Fetch using the type-safe projection
+		List<TableBookingProjection> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
 
-		// 2. Build the Protobuf response
 		TableListResponse.Builder responseBuilder = TableListResponse.newBuilder();
 
-		for (Object[] row : results) {
+		for (TableBookingProjection table : tables) {
 			TableInfo info = TableInfo.newBuilder()
-					.setTableId(row[0].toString())
-					.setTableLabel(row[1].toString())
-					.setZoneName(row[3].toString()) // Accesses the Zone Name directly from the query
-					.setMaxCapacity((Integer) row[2])
+					.setTableId(table.tableId().toString())      // Record style: table.id() instead of getId()
+					.setZoneId(table.zoneId().toString())      // Record style: table.id() instead of getId()
+					.setTableLabel(table.tableLabel() != null ? table.tableLabel() : "Standard")
+					.setZoneName(table.zoneName() != null ? table.zoneName() : "Standard")
+					.setMaxCapacity(table.seats())
 					.build();
 			responseBuilder.addTables(info);
 		}

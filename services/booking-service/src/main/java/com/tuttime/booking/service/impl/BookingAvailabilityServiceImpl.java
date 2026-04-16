@@ -1,6 +1,6 @@
 package com.tuttime.booking.service.impl;
 
-import com.tuttime.booking.dto.BookingRequest;
+import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.service.BookingAvailabilityService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class BookingAvailabilityServiceImpl implements BookingAvailabilityServic
 
 	@Override
 	@Transactional
-	public boolean reserveTable(BookingRequest request) {
+	public boolean reserveTable(BookingDto.BookingRequest request) {
 		// 1. Create a distributed lock key for this specific table and time slot
 		String lockKey = "lock:table:" + request.tableId() + ":" + request.bookingDatetime();
 		RLock lock = redissonClient.getLock(lockKey);

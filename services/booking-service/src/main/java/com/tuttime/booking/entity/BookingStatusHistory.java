@@ -25,8 +25,9 @@ public class BookingStatusHistory {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "booking_id", nullable = false)
-	private UUID bookingId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "booking_id", nullable = false, updatable = false)
+	private Booking booking;
 
 	@Enumerated(EnumType.STRING)
 	@JdbcType(PostgreSQLEnumJdbcType.class)
@@ -46,4 +47,14 @@ public class BookingStatusHistory {
 	private OffsetDateTime changedAt;
 
 	private String reason;
+
+	public static BookingStatusHistory of(Booking booking, BookingStatus oldStatus, UUID changedBy, String reason) {
+		return BookingStatusHistory.builder()
+				.booking(booking)
+				.oldStatus(oldStatus)
+				.newStatus(booking.getStatus())
+				.changedBy(changedBy)
+				.reason(reason)
+				.build();
+	}
 }
