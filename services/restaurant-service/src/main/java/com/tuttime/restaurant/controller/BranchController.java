@@ -35,6 +35,33 @@ public class BranchController {
 
 	// --- Branch CRUD ---
 
+	@Operation(summary = "Get/Search all branches", description = "Retrieve paginated branches with filters for keyword, owner, and ratings.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Restaurants retrieved successfully"),
+			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
+	})
+	@GetMapping
+	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> getAllBranches(
+			@Parameter(description = "Search by name or address")
+			@RequestParam(required = false) String query,
+
+			@RequestParam(required = false) Double minRating,
+			@RequestParam(required = false) Double maxRating,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "createdAt") String sort,
+			@RequestParam(defaultValue = "desc") String direction) {
+
+		// Cap the page size for performance
+		int pageSize = Math.min(size, 100);
+
+		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
+		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
+
+		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(null, query, minRating, maxRating, pageable);
+		return ResponseEntity.ok(ApiRes.success(branches));
+	}
+
 	@Operation(summary = "Get a branch by ID", description = "Retrieve detailed information about a branch by its ID")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Branch retrieved successfully"),
