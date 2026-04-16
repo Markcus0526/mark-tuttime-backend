@@ -19,7 +19,7 @@ public class BookingStatusChangedEventListener {
 	private final BookingStatusHistoryRepository historyRepository;
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void handleBookingStatusChange(BookingStatusChangedEvent event) {
 		log.info("Auditing status change for booking {}: {} -> {}",
 				event.bookingId(), event.oldStatus(), event.newStatus());

@@ -14,4 +14,4 @@ admin-gateway/target
 common-libs/common-auth/target
 common-libs/common-event/target
 common-libs/common/target
-/media-uploads
+/uploads
