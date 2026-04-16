@@ -321,7 +321,7 @@ public class BookingServiceImpl implements BookingService {
 	private BookingSetupResponse.TableInfoDto mapTableToDto(TableInfo grpcTable) {
 		return new BookingSetupResponse.TableInfoDto(
 				UUID.fromString(grpcTable.getTableId()),
-				grpcTable.getTableNumber(),
+				grpcTable.getTableLabel(),
 				grpcTable.getZoneName(),
 				grpcTable.getMaxCapacity()
 		);

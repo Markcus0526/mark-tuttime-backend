@@ -22,7 +22,7 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 	@Override
 	public void pushToKitchen(PosOrderRequest request, StreamObserver<PosOrderResponse> responseObserver) {
 		log.info("Received order {} for table {} in zone {}",
-				request.getOrderId(), request.getTableNumber(), request.getZoneName());
+				request.getOrderId(), request.getTableLabel(), request.getZoneName());
 
 		try {
 			// 1. Forward the order to the restaurant's local physical system
