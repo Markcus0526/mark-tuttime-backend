@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_CONFIRMED;
 import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_COMPLETED;
 
 @Service

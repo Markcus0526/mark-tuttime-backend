@@ -8,12 +8,12 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_CREATED;
+import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BookingConsumer {
+public class BookingEventConsumer {
 
 	private final AnalyticsService analyticsService;
 
@@ -22,18 +22,18 @@ public class BookingConsumer {
 	 * Processes 'BOOKING_CREATED' events for heatmaps and reporting.
 	 */
 	@KafkaListener(
-			topics = TOPIC_BOOKING_CREATED,
+			topics = TOPIC_BOOKING_STATUS_UPDATED,
 			groupId = "analytics-service-group")
-	public void handleBookingCreated(BookingEvent.BookingCreatedEvent event, Acknowledgment ack) {
+	public void handleBookingStatusUpdated(BookingEvent.BookingStatusUpdatedEvent event, Acknowledgment ack) {
 		log.info("Analytics received Booking Event: {} for Restaurant: {}",
-				event.bookingId(), event.restaurantId());
+				event.bookingId(), event.bookingId());
 
 		try {
 			// Mapping the specific event to the generic Analytics log
 			analyticsService.logEvent(
 					"BOOKING_SERVICE",   // service name
-					"BOOKING_CREATED",   // event type (used for Heatmap/Top 10 queries)
-					event.restaurantId(),// entityId (linked to the restaurant)
+					event.newStatus().name(),  // event type (used for Heatmap/Top 10 queries)
+					event.bookingId(),// entityId (linked to the restaurant)
 					event                // full payload (stored as JSONB)
 			);
 
