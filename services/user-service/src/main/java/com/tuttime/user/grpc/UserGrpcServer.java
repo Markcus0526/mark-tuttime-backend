@@ -38,7 +38,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	 */
 	@Override
 	@Transactional(readOnly = true) // Crucial for loading roles correctly
-	public void validateUserToken(ValidateTokenRequest request, StreamObserver<ValidateTokenResponse> responseObserver) {
+	public void validateUserToken(ValidTokenRequest request, StreamObserver<ValidTokenResponse> responseObserver) {
 		try {
 			String token = request.getJwtToken();
 
@@ -65,7 +65,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 							.asRuntimeException());
 
 			// 4. Build Response (Protobuf handles empty strings as default)
-			ValidateTokenResponse response = ValidateTokenResponse.newBuilder()
+			ValidTokenResponse response = ValidTokenResponse.newBuilder()
 					.setUserId(user.getId().toString())
 					.setEmail(Optional.ofNullable(user.getEmail()).orElse(""))
 					.setStatus(user.getStatus().name())
@@ -91,7 +91,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public void getUserProfile(UserByIdRequest request, StreamObserver<UserProfileResponse> responseObserver) {
+	public void getUserDetail(UserDetailRequest request, StreamObserver<UserDetailResponse> responseObserver) {
 		try {
 			UUID userId = UUID.fromString(request.getUserId());
 
@@ -100,10 +100,10 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 					.orElseThrow(() -> new InvalidRequestException("User not found or deleted"));
 
 			// Building Response based on your exact SQL fields
-			UserProfileResponse.Builder responseBuilder = UserProfileResponse.newBuilder()
+			UserDetailResponse.Builder responseBuilder = UserDetailResponse.newBuilder()
 					.setUserId(user.getId().toString())
 					.setEmail(user.getEmail())
-					.setFullName(user.getFullName())
+					.setFullName(user.getFullName() != null ? user.getFullName() : "")
 					.setStatus(user.getStatus().toString())
 					.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
 					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
@@ -152,13 +152,14 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 		} catch (StatusRuntimeException e) {
 			responseObserver.onError(e);
 		} catch (Exception e) {
-			responseObserver.onError(Status.INTERNAL.asRuntimeException());
+			log.error("CRITICAL: getUserDetail failed", e); // Now it shows in logs
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public void validateUserById(UserByIdRequest request, StreamObserver<UserValidResponse> responseObserver) {
+	public void validateUser(UserValidRequest request, StreamObserver<UserValidResponse> responseObserver) {
 		try {
 			UUID userId = UUID.fromString(request.getUserId());
 
@@ -195,7 +196,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
-	public void getUserProfiles(UserByIdsRequest request, StreamObserver<UserProfilesResponse> responseObserver) {
+	public void getUserDetails(UserDetailsRequest request, StreamObserver<UserDetailsResponse> responseObserver) {
 		// 1. Extract and convert User IDs from Request
 		List<UUID> userIds = request.getUserIdsList().stream()
 				.map(UUID::fromString)
@@ -205,10 +206,10 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 		List<User> users = userRepository.findAllByIdInAndDeletedFalse(userIds);
 
 		// 3. Build the Response
-		UserProfilesResponse.Builder responseBuilder = UserProfilesResponse.newBuilder();
+		UserDetailsResponse.Builder responseBuilder = UserDetailsResponse.newBuilder();
 
 		for (User user : users) {
-			UserProfileResponse profile = UserProfileResponse.newBuilder()
+			UserDetailResponse profile = UserDetailResponse.newBuilder()
 					.setUserId(user.getId().toString())
 					.setFullName(user.getFullName() != null ? user.getFullName() : "")
 					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")

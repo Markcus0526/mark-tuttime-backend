@@ -31,7 +31,7 @@ public class RestaurantEventConsumer {
 			topics = TOPIC_RESTAURANT_STAFF_UPDATED,
 			groupId = "user-service-group")
 	@Transactional // Ensures the entire update/delete is atomic
-	public void consumeStaffUpdated(String eventString) {
+	public void handleStaffUpdated(String eventString) {
 		RestaurantEvent.StaffUpdatedEvent event = null;
 		try {
 			// 1. Handle Null Event
