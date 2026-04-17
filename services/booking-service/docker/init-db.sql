@@ -8,7 +8,7 @@ CREATE
 EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Enum for Type-Safe Statuses
-CREATE TYPE booking_status_enum AS ENUM ('CREATED', 'PAID', 'CANCELED', 'NO_SHOW', 'COMPLETED');
+CREATE TYPE booking_status_enum AS ENUM ('CREATED', 'PAID', 'ARRIVED', 'CANCELED', 'NO_SHOW', 'COMPLETED');
 
 -- 1. Bookings Table (Updated for TIMESTAMPTZ and UUID defaults)
 CREATE TABLE bookings
@@ -65,6 +65,7 @@ CREATE TABLE booking_items
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     booking_id    UUID           NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
     menu_item_id  UUID           NOT NULL, -- Reference to Menu Service
+    modifier_ids  UUID[],
     quantity      INT            NOT NULL CHECK (quantity > 0),
     unit_price    DECIMAL(10, 2) NOT NULL,
     total_price   DECIMAL(10, 2) NOT NULL,

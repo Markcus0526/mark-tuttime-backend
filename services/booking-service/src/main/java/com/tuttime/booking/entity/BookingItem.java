@@ -23,6 +23,9 @@ public class BookingItem extends BaseUuidEntity {
 	@Column(name = "menu_item_id", nullable = false)
 	private UUID menuItemId;
 
+	@Column(name = "selected_modifiers") // Add this to your SQL too!
+	private String selectedModifiers;
+
 	private Integer quantity;
 	private BigDecimal unitPrice;
 	private BigDecimal totalPrice;

@@ -1,6 +1,6 @@
 package com.tuttime.booking.entity;
 
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;

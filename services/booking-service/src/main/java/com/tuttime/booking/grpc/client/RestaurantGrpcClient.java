@@ -19,15 +19,12 @@ public class RestaurantGrpcClient {
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
-	public AvailableTableResponse checkAvailableTableForBooking(BookingDto.BookingRequest bookingRequest) {
-		AvailableTableRequest request = AvailableTableRequest.newBuilder()
-				.setTableId(bookingRequest.tableId().toString())
-				.setPartySize(bookingRequest.partySize())
-				.setStartTime(convertOffsetDatetimeToProtobuf(bookingRequest.bookingDatetime()))
-				.setDurationMinutes(bookingRequest.duration())
+	public TableDetailResponse getTableDetails(UUID tableId) {
+		TableDetailRequest request = TableDetailRequest.newBuilder()
+				.setTableId(tableId.toString())
 				.build();
 
-		return restaurantServiceBlockingStub.checkAvailableTableForBooking(request);
+		return restaurantServiceBlockingStub.getTableDetails(request);
 	}
 
 	public List<TableInfo> getTablesForBooking(UUID branchId, int partySize) {
@@ -36,5 +33,13 @@ public class RestaurantGrpcClient {
 				.setPartySize(partySize)
 				.build();
 		return restaurantServiceBlockingStub.getTablesForBooking(req).getTablesList();
+	}
+
+	public ScheduleResponse getBranchSchedule(UUID branchId, int dayOfWeek) {
+		ScheduleRequest req = ScheduleRequest.newBuilder()
+				.setBranchId(branchId.toString())
+				.setDayOfWeek(dayOfWeek)
+				.build();
+		return restaurantServiceBlockingStub.getBranchSchedule(req);
 	}
 }
