@@ -37,7 +37,7 @@ public class MenuItemDto {
 
 	@Schema(description = "Menu Item response with full customization and pricing logic")
 	@Builder
-	public record MenuItemDetailedResponse(
+	public record MenuItemDetailResponse(
 			UUID menuItemId,
 			UUID categoryId,
 			String name,

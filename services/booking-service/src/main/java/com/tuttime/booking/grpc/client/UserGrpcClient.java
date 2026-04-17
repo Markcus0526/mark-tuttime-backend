@@ -14,4 +14,7 @@ public class UserGrpcClient {
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
+	public UserDetailResponse getUserDetail(UserDetailRequest request) {
+		return userServiceBlockingStub.getUserDetail(request);
+	}
 }

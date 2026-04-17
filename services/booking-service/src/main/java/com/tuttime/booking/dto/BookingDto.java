@@ -1,6 +1,9 @@
 package com.tuttime.booking.dto;
 
 import com.tuttime.booking.entity.Booking;
+import com.tuttime.booking.entity.BookingItem;
+import com.tuttime.common.enums.BookingStatus;
+import com.tuttime.common.proto.MenuItemDetail;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -63,36 +66,62 @@ public class BookingDto {
 	 * Immutable response DTO for client applications.
 	 */
 	public record BookingResponse(
-			UUID id,
-			UUID userId,
-			UUID tableId,
+			UUID bookingId,
 			OffsetDateTime bookingDatetime,
 			Integer duration,
 			Integer partySize,
 			Integer gracePeriodMins,
-			String status,
-			String cancellationReason,
+			BookingStatus status,
 			BigDecimal totalAmount,
-			String paymentUrl // Optional: To redirect user to a gateway like Stripe/Apple Pay
+			String cancellationReason
 	) {
-		/**
-		 * Static factory method to map from Entity to Record.
-		 * Keeps your Controller code clean.
-		 */
-		public static BookingResponse fromEntity(Booking entity) {
-			return new BookingResponse(
-					entity.getId(),
-					entity.getUserId(),
-					entity.getTableId(),
-					entity.getBookingDatetime(),
-					entity.getDuration(),
-					entity.getPartySize(),
-					entity.getGracePeriodMins(),
-					entity.getStatus().name(),
-					entity.getCancellationReason(),
-					entity.getTotalAmount(),
-					null // Populate with actual gateway link if needed
-			);
-		}
+		public record UserDetailResponse(
+				UUID userId,
+				String phoneNumber,
+				String email,
+				String fullName
+		) {}
 	}
+
+	public record BookingDetailResponse(
+			UUID bookingId,
+			OffsetDateTime bookingDatetime,
+			Integer duration,
+			Integer partySize,
+			Integer gracePeriodMins,
+			BookingStatus status,
+			BigDecimal totalAmount,
+			String cancellationReason,
+			UserDetailResponse user,
+			BranchDetailResponse branch,
+			List<BookingDetailResponse.BookingItemResponse> items
+	) {
+		public record UserDetailResponse(
+				UUID userId,
+				String phoneNumber,
+				String email,
+				String fullName
+		) {}
+
+		public record BranchDetailResponse(
+				UUID branchId,
+				UUID restaurantId,
+				String branchName,
+				String branchAddress,
+				String branchPhone,
+				String restaurantName,
+				String restaurantAddress,
+				String restaurantPhone
+		) {}
+
+		public record BookingItemResponse(
+				UUID menuItemId,
+				String itemName,      // From Menu gRPC
+				Integer quantity,     // From local DB
+				BigDecimal unitPrice, // From local DB (historical price)
+				BigDecimal totalPrice,// Calculated (quantity * unitPrice)
+				String notes          // From local DB
+		) {}
+	}
+
 }
