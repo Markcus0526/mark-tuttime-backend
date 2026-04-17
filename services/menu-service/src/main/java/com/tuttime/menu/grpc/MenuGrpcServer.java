@@ -6,6 +6,7 @@ import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.ModifierRepository;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,16 +82,19 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
 						.setBasePrice(menuItem.getPrice().doubleValue())
-						.setCategory(category.getName());
+						.setCategory(category.getName())
+						.setAvailable(menuItem.getAvailable());
 
 				// 3. Map Modifiers (from MenuItem entity)
 				if (menuItem.getModifierGroups() != null) {
 					menuItem.getModifierGroups().forEach(group -> {
 						ModifierGroup.Builder groupBuilder = ModifierGroup.newBuilder()
-								.setGroupName(group.getName());
+								.setGroupName(group.getName())
+								.setMinSelect(group.getMinSelect())
+								.setMaxSelect(group.getMaxSelect());
 
 						group.getModifiers().forEach(opt -> groupBuilder.addOptions(
-								Modifier.newBuilder()
+								ModifierOption.newBuilder()
 										.setName(opt.getName())
 										.setExtraPrice(opt.getPriceAdjustment().doubleValue())
 										.build()
@@ -106,4 +110,68 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 		responseObserver.onNext(responseBuilder.build());
 		responseObserver.onCompleted();
 	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public void getMenuDetails(MenuDetailsRequest request, StreamObserver<MenuDetailsResponse> responseObserver) {
+		try {
+			// 1. Convert String IDs from gRPC to UUIDs
+			List<UUID> uuids = request.getMenuItemIdsList().stream()
+					.map(UUID::fromString)
+					.toList();
+
+			// 2. Fetch from DB (Use FetchType.EAGER or EntityGraph for ModifierGroups)
+			List<MenuItem> entities = menuItemRepository.findAllById(uuids);
+
+			// 3. Build the Response
+			MenuDetailsResponse.Builder responseBuilder = MenuDetailsResponse.newBuilder();
+
+			for (MenuItem entity : entities) {
+				responseBuilder.addItems(mapToProto(entity));
+			}
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (Exception e) {
+			log.error("Error fetching menu details: ", e);
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Internal error fetching menu items")
+					.asRuntimeException());
+		}
+	}
+
+	private MenuItemDetail mapToProto(MenuItem entity) {
+		MenuItemDetail.Builder builder = MenuItemDetail.newBuilder()
+				.setMenuItemId(entity.getId().toString())
+				.setName(entity.getName())
+				.setDescription(entity.getDescription() != null ? entity.getDescription() : "")
+				.setBasePrice(entity.getPrice().doubleValue()) // DB column is 'price'
+				.setAvailable(entity.getAvailable()); // DB column is 'available'
+
+		// Map through the join table: menu_item_modifier_groups
+		if (entity.getModifierGroups() != null) {
+			entity.getModifierGroups().forEach(group -> {
+				ModifierGroup.Builder groupBuilder = ModifierGroup.newBuilder()
+						.setGroupId(group.getId().toString())
+						.setGroupName(group.getName())
+						.setMinSelect(group.getMinSelect()) // DB column 'min_select'
+						.setMaxSelect(group.getMaxSelect()); // DB column 'max_select'
+
+				// Map the child choices from the 'modifiers' table
+				if (group.getModifiers() != null) {
+					group.getModifiers().forEach(modifier -> {
+						groupBuilder.addOptions(ModifierOption.newBuilder()
+								.setOptionId(modifier.getId().toString())
+								.setName(modifier.getName())
+								.setExtraPrice(modifier.getPriceAdjustment().doubleValue()) // DB column 'price_adjustment'
+								.build());
+					});
+				}
+				builder.addModifierGroups(groupBuilder.build());
+			});
+		}
+		return builder.build();
+	}
+
 }
