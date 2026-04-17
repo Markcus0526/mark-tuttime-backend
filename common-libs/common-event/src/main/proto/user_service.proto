@@ -11,34 +11,35 @@ option java_outer_classname = "UserServiceProto";
 // User Service gRPC
 service UserService {
   // Synchronous call for Gateway and Services to validate a user
-  rpc ValidateUserToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc ValidateUserToken (ValidTokenRequest) returns (ValidTokenResponse);
 
   // Fetch basic profile info for display in Reviews/Bookings
-  rpc GetUserProfile (UserByIdRequest) returns (UserProfileResponse);
+  rpc GetUserDetail (UserDetailRequest) returns (UserDetailResponse);
 
-  rpc ValidateUserById (UserByIdRequest) returns (UserValidResponse);
+  rpc ValidateUser (UserValidRequest) returns (UserValidResponse);
 
-  rpc GetUserProfiles (UserByIdsRequest) returns (UserProfilesResponse);
+  rpc GetUserDetails (UserDetailsRequest) returns (UserDetailsResponse);
 
 }
 
-// REQUESTS
-message ValidateTokenRequest {
+//////////////////////////////
+message ValidTokenRequest {
   string jwt_token = 1;
 }
 
-message UserByIdRequest {
-  string user_id = 1;
-}
-
-message ValidateTokenResponse {
+message ValidTokenResponse {
   string user_id = 1;
   string email = 2;
   string roles = 3;
   string status = 4;        // 'ACTIVE', 'INACTIVE', etc.
 }
 
-message UserProfileResponse {
+//////////////////////////////
+message UserDetailRequest {
+  string user_id = 1;
+}
+
+message UserDetailResponse {
   string user_id = 1;
   string phone_number = 2;
   string email = 3;
@@ -57,15 +58,21 @@ message UserProfileResponse {
   google.protobuf.Timestamp updated_at = 23;
 }
 
+//////////////////////////////
+message UserValidRequest {
+  string user_id = 1;
+}
+
 message UserValidResponse {
   string roles = 1;
   bool valid = 2;
 }
 
-message UserByIdsRequest {
+//////////////////////////////
+message UserDetailsRequest {
   repeated string userIds = 1;
 }
 
-message UserProfilesResponse {
-  repeated UserProfileResponse profiles = 1;
+message UserDetailsResponse {
+  repeated UserDetailResponse profiles = 1;
 }
