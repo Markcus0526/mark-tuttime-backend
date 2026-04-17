@@ -23,7 +23,7 @@ public class BookingEventConsumer {
 
 	@KafkaListener(
 			topics = TOPIC_BOOKING_STATUS_UPDATED,
-			groupId = "restaurant-group")
+			groupId = "restaurant-service-group")
 	public void handleBookingStatusUpdated(String eventString) {
 		BookingEvent.BookingStatusUpdatedEvent event = null;
 
@@ -42,6 +42,8 @@ public class BookingEventConsumer {
 			UUID tableId = finalEvent.tableId();
 
 			switch (finalEvent.newStatus()) {
+				case PAID ->
+						updateTableStatus(tableId, TableStatus.RESERVED);
 				case ARRIVED ->
 						updateTableStatus(tableId, TableStatus.OCCUPIED);
 				case COMPLETED, CANCELED, NO_SHOW ->

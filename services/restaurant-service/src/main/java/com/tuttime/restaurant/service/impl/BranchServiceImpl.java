@@ -7,12 +7,10 @@ import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
-import com.tuttime.restaurant.repository.StaffRepository;
 import com.tuttime.restaurant.service.*;
 import jakarta.persistence.criteria.Predicate;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -52,10 +50,10 @@ public class BranchServiceImpl implements BranchService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public BranchDto.BranchDetailedResponse getBranchById(UUID branchId) {
+	public BranchDto.BranchDetailResponse getBranchById(UUID branchId) {
 		Branch entity = branchRepository.findByIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
-		return branchMapper.toDetailedResponse(entity);
+		return branchMapper.toDetailResponse(entity);
 	}
 
 	@Override

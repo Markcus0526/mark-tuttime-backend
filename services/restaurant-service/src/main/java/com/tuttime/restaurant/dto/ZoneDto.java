@@ -53,7 +53,7 @@ public class ZoneDto {
 
 	@Schema(description = "Zone response details")
 	@Builder
-	public record ZoneDetailedResponse(
+	public record ZoneDetailResponse(
 
 			UUID zoneId,
 

@@ -9,7 +9,7 @@ public interface ZoneService {
 
 	List<ZoneDto.ZoneResponse> getZonesByBranchId(UUID branchId);
 
-	ZoneDto.ZoneDetailedResponse getZoneById(UUID zoneId);
+	ZoneDto.ZoneDetailResponse getZoneById(UUID zoneId);
 
 	ZoneDto.ZoneResponse createZone(ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles);
 

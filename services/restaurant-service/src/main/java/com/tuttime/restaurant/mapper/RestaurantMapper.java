@@ -34,7 +34,7 @@ public abstract class RestaurantMapper {
 	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
 	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "medias", ignore = true)
-	public abstract RestaurantDto.RestaurantDetailedResponse toDetailedResponse(Restaurant entity);
+	public abstract RestaurantDto.RestaurantDetailResponse toDetailResponse(Restaurant entity);
 
 	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")
 	public abstract Restaurant toEntity(RestaurantDto.RestaurantRequest request);
@@ -50,7 +50,7 @@ public abstract class RestaurantMapper {
 	}
 
 	@AfterMapping
-	protected void addMedias(Restaurant item, @MappingTarget RestaurantDto.RestaurantDetailedResponse.RestaurantDetailedResponseBuilder builder) {
+	protected void addMedias(Restaurant item, @MappingTarget RestaurantDto.RestaurantDetailResponse.RestaurantDetailResponseBuilder builder) {
 		// Fetch ALL Media (Images & Videos)
 		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
 				.stream()

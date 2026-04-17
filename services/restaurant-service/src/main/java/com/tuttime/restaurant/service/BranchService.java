@@ -12,7 +12,7 @@ public interface BranchService {
 
 	BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, UUID currentUserId, String userRoles);
 
-	BranchDto.BranchDetailedResponse getBranchById(UUID branchId);
+	BranchDto.BranchDetailResponse getBranchById(UUID branchId);
 
 	BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, UUID currentUserId, String userRoles);
 

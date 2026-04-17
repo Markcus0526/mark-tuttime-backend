@@ -1,17 +1,12 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.dto.ZoneDto;
-import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.repository.MediaRepository;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +31,7 @@ public abstract class ZoneMapper {
 	@Mapping(target = "zoneId", source = "id")
 	@Mapping(target = "branchId", source = "branch.id")
 	@Mapping(target = "medias", ignore = true)
-	public abstract ZoneDto.ZoneDetailedResponse toDetailedResponse(Zone zone);
+	public abstract ZoneDto.ZoneDetailResponse toDetailResponse(Zone zone);
 
 	public abstract void updateEntityFromRequest(ZoneDto.ZoneRequest request, @MappingTarget Zone entity);
 
@@ -48,7 +43,7 @@ public abstract class ZoneMapper {
 	}
 
 	@AfterMapping
-	protected void addMedias(Zone item, @MappingTarget ZoneDto.ZoneDetailedResponse.ZoneDetailedResponseBuilder builder) {
+	protected void addMedias(Zone item, @MappingTarget ZoneDto.ZoneDetailResponse.ZoneDetailResponseBuilder builder) {
 		// Fetch ALL Media (Images & Videos)
 		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
 				.stream()

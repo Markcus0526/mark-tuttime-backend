@@ -2,6 +2,7 @@ package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.repository.record.BranchDetailRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,20 @@ public interface BranchRepository extends JpaRepository<Branch, UUID>, JpaSpecif
 			"WHERE b.restaurant.id = :restaurantId AND b.deleted = false")
 	void deleteAllByRestaurantId(@Param("restaurantId") UUID restaurantId);
 
+	@Query("""
+	    SELECT new com.tuttime.restaurant.repository.record.BranchDetailRecord(
+	        b.id, 
+	        r.id, 
+	        b.name, 
+	        b.address, 
+	        b.phone, 
+	        r.name, 
+	        r.address, 
+	        r.phone
+	    )
+	    FROM Branch b
+		LEFT JOIN b.restaurant r
+		WHERE b.id = :branchId
+	""")
+	Optional<BranchDetailRecord> findRestaurantDetailByBranchId(@Param("branchId") UUID branchId);
 }

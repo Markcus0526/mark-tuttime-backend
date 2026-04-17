@@ -1,8 +1,8 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.DishTable;
-import com.tuttime.restaurant.repository.record.TableBookingInfo;
-import com.tuttime.restaurant.repository.record.TableHierarchyInfo;
+import com.tuttime.restaurant.repository.record.TableDetailRecord;
+import com.tuttime.restaurant.repository.record.TableHierarchyRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,7 +28,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
 	@Query("""
-        SELECT new com.tuttime.restaurant.repository.record.TableBookingInfo(
+        SELECT new com.tuttime.restaurant.repository.record.TableDetailRecord(
                  t.id,
                  z.id,
                  t.label,
@@ -44,7 +44,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
           AND z.deleted = false
           AND z.closed = false
     """)
-	List<TableBookingInfo> findTablesByBranchIdAndPartySize(
+	List<TableDetailRecord> findTablesByBranchIdAndPartySize(
 			@Param("branchId") UUID branchId,
 			@Param("partySize") int partySize
 	);
@@ -55,7 +55,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	void deleteAllByZoneId(@Param("zoneId") UUID zoneId);
 
 	@Query("""
-	    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyInfo(
+	    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyRecord(
 	        b.restaurant.id, 
 	        z.branch.id, 
 	        z.id, 
@@ -66,6 +66,6 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	    JOIN z.branch b
 	    WHERE t.id = :tableId AND t.deleted = false
 	""")
-	Optional<TableHierarchyInfo> findTableHierarchy(@Param("tableId") UUID tableId);
+	Optional<TableHierarchyRecord> findTableHierarchy(@Param("tableId") UUID tableId);
 
 }

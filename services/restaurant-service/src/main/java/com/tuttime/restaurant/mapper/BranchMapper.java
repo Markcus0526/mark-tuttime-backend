@@ -2,9 +2,7 @@ package com.tuttime.restaurant.mapper;
 
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
-import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.repository.MediaRepository;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -38,7 +36,7 @@ public abstract class BranchMapper {
 	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
 	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "medias", ignore = true)
-	public abstract BranchDto.BranchDetailedResponse toDetailedResponse(Branch entity);
+	public abstract BranchDto.BranchDetailResponse toDetailResponse(Branch entity);
 
 	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")
 	public abstract Branch toEntity(BranchDto.BranchRequest request);
@@ -54,7 +52,7 @@ public abstract class BranchMapper {
 	}
 
 	@AfterMapping
-	protected void addMedias(Branch item, @MappingTarget BranchDto.BranchDetailedResponse.BranchDetailedResponseBuilder builder) {
+	protected void addMedias(Branch item, @MappingTarget BranchDto.BranchDetailResponse.BranchDetailResponseBuilder builder) {
 		// Fetch ALL Media (Images & Videos)
 		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
 				.stream()
