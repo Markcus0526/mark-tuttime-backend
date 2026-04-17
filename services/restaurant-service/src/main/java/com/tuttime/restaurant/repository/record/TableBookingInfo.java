@@ -2,7 +2,7 @@ package com.tuttime.restaurant.repository.record;
 
 import java.util.UUID;
 
-public record TableBookingProjection(
+public record TableBookingInfo(
 		UUID tableId,
 		UUID zoneId,
 		String tableLabel,

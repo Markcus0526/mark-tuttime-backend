@@ -1,20 +1,26 @@
 package com.tuttime.restaurant.grpc;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
-import com.tuttime.restaurant.entity.DishTable;
-import com.tuttime.restaurant.entity.Zone;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.*;
-import com.tuttime.restaurant.repository.record.TableBookingProjection;
+import com.tuttime.restaurant.repository.record.ScheduleInfo;
+import com.tuttime.restaurant.repository.record.TableBookingInfo;
+import com.tuttime.restaurant.repository.record.TableHierarchyInfo;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
+import java.awt.dnd.InvalidDnDOperationException;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -25,9 +31,11 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	private final StaffRepository staffRepository;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
-	private final ZoneRepository zoneRepository;
 	private final TableRepository tableRepository;
+	private final ScheduleRepository scheduleRepository;
 	private final UserGrpcClient userGrpClient;
+
+	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
 	@PostConstruct
 	public void init() {
@@ -75,17 +83,29 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void checkAvailableTableForBooking(AvailableTableRequest request, StreamObserver<AvailableTableResponse> responseObserver) {
-		UUID tableId = UUID.fromString(request.getTableId());
-		int partSize = request.getPartySize();
+	public void getTableDetails(TableDetailRequest request, StreamObserver<TableDetailResponse> responseObserver) {
+		try {
+			UUID tableId = UUID.fromString(request.getTableId());
 
-		boolean available = tableRepository.findByIdAndDeletedFalse(tableId)
-				.map(table ->
-						table.getStatus() == TableStatus.ACTIVE && table.getSeats() <= partSize
-				).orElse(false);
+			TableHierarchyInfo details = tableRepository.findTableHierarchy(tableId)
+					.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
-		responseObserver.onNext(AvailableTableResponse.newBuilder().setAvailable(available).build());
-		responseObserver.onCompleted();
+			TableDetailResponse response = TableDetailResponse.newBuilder()
+					.setRestaurantId(details.getRestaurantId().toString())
+					.setBranchId(details.getBranchId().toString())
+					.setZoneId(details.getZoneId().toString())
+					.setTableId(details.getTableId().toString())
+					.setAvailable(true)
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Table ID format").asRuntimeException());
+		} catch (Exception e) {
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
 	}
 
 	@Override
@@ -94,11 +114,11 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		int partySize = request.getPartySize();
 
 		// Fetch using the type-safe projection
-		List<TableBookingProjection> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
+		List<TableBookingInfo> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
 
 		TableListResponse.Builder responseBuilder = TableListResponse.newBuilder();
 
-		for (TableBookingProjection table : tables) {
+		for (TableBookingInfo table : tables) {
 			TableInfo info = TableInfo.newBuilder()
 					.setTableId(table.tableId().toString())      // Record style: table.id() instead of getId()
 					.setZoneId(table.zoneId().toString())      // Record style: table.id() instead of getId()
@@ -112,6 +132,53 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		// 3. Send back to the Booking Service
 		responseObserver.onNext(responseBuilder.build());
 		responseObserver.onCompleted();
+	}
+
+	@Override
+	public void getBranchSchedule(ScheduleRequest request, StreamObserver<ScheduleResponse> responseObserver) {
+		try {
+			UUID branchId = UUID.fromString(request.getBranchId());
+			int dayOfWeek = request.getDayOfWeek();
+
+			// 1. Fetch from DB
+			Optional<ScheduleInfo> scheduleOpt = scheduleRepository.findActiveSchedule(branchId, dayOfWeek);
+
+			ScheduleResponse.Builder responseBuilder = ScheduleResponse.newBuilder();
+
+			if (scheduleOpt.isEmpty()) {
+				// If no row exists for that day, the branch is closed
+				responseBuilder.setClosed(true)
+						.setOpenTime("00:00")
+						.setCloseTime("00:00");
+			} else {
+				ScheduleInfo schedule = scheduleOpt.get();
+
+				String openTimeStr = schedule.openTime().format(TIME_FORMATTER);
+				String closeTimeStr = schedule.closeTime().format(TIME_FORMATTER);
+
+				responseBuilder.setOpenTime(openTimeStr)
+						.setCloseTime(closeTimeStr)
+						.setClosed(schedule.closed());
+			}
+
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT
+					.withDescription("The provided branch ID is not a valid UUID")
+					.asRuntimeException());
+		} catch (Exception e) {
+			// 1. Log the context (IDs and Params) so you can find the bad data in the DB
+			log.error("Failed to fetch schedule for branch {} on day {}: {}",
+					request.getBranchId(), request.getDayOfWeek(), e.getMessage(), e);
+
+			// 2. Return a status with a description so the Booking Service knows it's not a network error
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Database error occurred while fetching branch schedule")
+					.withCause(e) // This is for internal interceptors, not sent to client
+					.asRuntimeException());
+		}
 	}
 
 	@Override

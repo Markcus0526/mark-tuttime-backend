@@ -1,7 +1,8 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.DishTable;
-import com.tuttime.restaurant.repository.record.TableBookingProjection;
+import com.tuttime.restaurant.repository.record.TableBookingInfo;
+import com.tuttime.restaurant.repository.record.TableHierarchyInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,7 +28,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
 	@Query("""
-        SELECT new com.tuttime.restaurant.repository.record.TableBookingProjection(
+        SELECT new com.tuttime.restaurant.repository.record.TableBookingInfo(
                  t.id,
                  z.id,
                  t.label,
@@ -43,7 +44,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
           AND z.deleted = false
           AND z.closed = false
     """)
-	List<TableBookingProjection> findTablesByBranchIdAndPartySize(
+	List<TableBookingInfo> findTablesByBranchIdAndPartySize(
 			@Param("branchId") UUID branchId,
 			@Param("partySize") int partySize
 	);
@@ -52,4 +53,19 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	@Query("UPDATE DishTable t SET t.deleted = true, t.deletedAt = CURRENT_TIMESTAMP " +
 			"WHERE t.zone.id = :zoneId AND t.deleted = false")
 	void deleteAllByZoneId(@Param("zoneId") UUID zoneId);
+
+	@Query("""
+	    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyInfo(
+	        b.restaurant.id, 
+	        z.branch.id, 
+	        z.id, 
+	        t.id
+	    )
+	    FROM DishTable t
+	    JOIN t.zone z
+	    JOIN z.branch b
+	    WHERE t.id = :tableId AND t.deleted = false
+	""")
+	Optional<TableHierarchyInfo> findTableHierarchy(@Param("tableId") UUID tableId);
+
 }
