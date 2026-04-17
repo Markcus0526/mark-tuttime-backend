@@ -10,14 +10,28 @@ option java_outer_classname = "RestaurantServiceProto";
 // Restaurant Service gRPC
 service RestaurantService {
 
-  rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
-
-  rpc CheckAvailableTableForBooking (AvailableTableRequest) returns (AvailableTableResponse);
-
-  rpc getTablesForBooking (SlotAvailabilityRequest) returns (TableListResponse);
-
   rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
 
+  rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
+
+  rpc GetTableDetails (TableDetailRequest) returns (TableDetailResponse);
+
+  rpc GetTablesForBooking (SlotAvailabilityRequest) returns (TableListResponse);
+
+  rpc GetBranchSchedule (ScheduleRequest) returns (ScheduleResponse);
+
+}
+
+message StaffUserRequest {
+  string user_id = 1;
+}
+
+message StaffUserResponse {
+  string restaurant_id = 1;
+  string branch_id = 2; // Optional, can be empty string
+  string entity_name = 3;
+  string role_name = 4;
+  bool active = 5;
 }
 
 message BranchPermissionRequest {
@@ -30,20 +44,16 @@ message BranchPermissionResponse {
   bool valid = 1;
 }
 
-message AvailableTableRequest {
+message TableDetailRequest {
   string table_id = 1;
-  int32 party_size = 2;
-  int32 duration_minutes = 3;
-  google.protobuf.Timestamp start_time = 4;
 }
 
-message AvailableTableResponse {
+message TableDetailResponse {
   string restaurant_id = 1;
   string branch_id = 2;
   string zone_id = 3;
   string table_id = 4;
   bool available = 5;
-  int32 seats = 6;
 }
 
 message SlotAvailabilityRequest {
@@ -71,14 +81,13 @@ message TableInfo {
   int32 max_capacity = 6;
 }
 
-message StaffUserRequest {
-  string user_id = 1;
+message ScheduleRequest {
+  string branch_id = 1;
+  int32 day_of_week = 2; // 0-6 (Sunday to Saturday)
 }
 
-message StaffUserResponse {
-  string restaurant_id = 1;
-  string branch_id = 2; // Optional, can be empty string
-  string entity_name = 3;
-  string role_name = 4;
-  bool active = 5;
+message ScheduleResponse {
+  string open_time = 1;  // "HH:mm" format
+  string close_time = 2; // "HH:mm" format
+  bool closed = 3;
 }

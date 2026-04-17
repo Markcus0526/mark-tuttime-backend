@@ -8,8 +8,8 @@ public sealed interface BaseEvent permits
 
 		MenuEvent.MenuUpdatedEvent,
 
+		BookingEvent.BookingStatusUpdatedEvent,
 		BookingEvent.BookingConfirmedEvent,
-		BookingEvent.BookingCreatedEvent,
 
 		OrderEvent.OrderCreatedEvent,
 		OrderEvent.OrderStatusEvent,

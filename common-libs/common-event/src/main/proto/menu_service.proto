@@ -13,6 +13,8 @@ service MenuService {
 
   rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
 
+  rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
+
 }
 
 message PriceRequest {
@@ -39,18 +41,28 @@ message MenuItemDetail {
   string description = 3;
   double base_price = 4;
   string category = 5;
-  bool is_available = 6;
+  bool available = 6;
   repeated ModifierGroup modifier_groups = 7;
 }
 
 message ModifierGroup {
   string group_id = 1;
   string group_name = 2;
-  repeated Modifier options = 3;
+  int32 min_select = 3;
+  int32 max_select = 4;
+  repeated ModifierOption options = 5;
 }
 
-message Modifier {
-  string modifier_id = 1;
+message ModifierOption {
+  string option_id = 1;
   string name = 2;
   double extra_price = 3;
+}
+
+message MenuDetailsRequest {
+  repeated string menu_item_ids = 1;
+}
+
+message MenuDetailsResponse {
+  repeated MenuItemDetail items = 1;
 }
