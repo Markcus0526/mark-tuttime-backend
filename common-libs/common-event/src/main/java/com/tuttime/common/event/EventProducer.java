@@ -27,8 +27,7 @@ public class EventProducer {
 
 	public static final String TOPIC_MENU_UPDATED = "tuttime.menu.updated";
 
-	public static final String TOPIC_BOOKING_CREATED = "tuttime.booking.created";
-	public static final String TOPIC_BOOKING_CONFIRMED = "tuttime.booking.confirmed";
+	public static final String TOPIC_BOOKING_STATUS_UPDATED = "tuttime.booking.status.updated";
 
 	public static final String TOPIC_PAYMENT_COMPLETED = "tuttime.payment.completed";
 	public static final String TOPIC_PAYMENT_REFUND = "tuttime.payment.refund";
@@ -55,12 +54,8 @@ public class EventProducer {
 	}
 
 	// Booking Events Publisher
-	public void sendBookingCreatedEvent(BookingEvent.BookingCreatedEvent event) {
-		sendEvent(TOPIC_BOOKING_CREATED, event.restaurantId().toString(), event);
-	}
-
-	public void sendBookingConfirmedEvent(BookingEvent.BookingConfirmedEvent event) {
-		sendEvent(TOPIC_BOOKING_CONFIRMED, event.restaurantId().toString(), event);
+	public void sendBookingStatusUpdatedEvent(BookingEvent.BookingStatusUpdatedEvent event) {
+		sendEvent(TOPIC_BOOKING_STATUS_UPDATED, event.bookingId().toString(), event);
 	}
 
 
