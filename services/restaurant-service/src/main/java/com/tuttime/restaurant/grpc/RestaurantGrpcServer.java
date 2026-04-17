@@ -3,12 +3,12 @@ package com.tuttime.restaurant.grpc;
 import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
-import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.*;
-import com.tuttime.restaurant.repository.record.ScheduleInfo;
-import com.tuttime.restaurant.repository.record.TableBookingInfo;
-import com.tuttime.restaurant.repository.record.TableHierarchyInfo;
+import com.tuttime.restaurant.repository.record.BranchDetailRecord;
+import com.tuttime.restaurant.repository.record.ScheduleRecord;
+import com.tuttime.restaurant.repository.record.TableDetailRecord;
+import com.tuttime.restaurant.repository.record.TableHierarchyRecord;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
@@ -16,8 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 
-import java.awt.dnd.InvalidDnDOperationException;
-import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -51,8 +49,8 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			String userRoles = request.getUserRoles();
 
 			// 1. Validate User Identity first
-			UserValidResponse response = userGrpClient.validateUserById(
-					UserByIdRequest.newBuilder().setUserId(currentUserId.toString()).build());
+			UserValidResponse response = userGrpClient.validateUser(
+					UserValidRequest.newBuilder().setUserId(currentUserId.toString()).build());
 
 			if (response.getValid()) {
 				// 2. Privilege Escalation: Admins are always valid
@@ -83,11 +81,11 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getTableDetails(TableDetailRequest request, StreamObserver<TableDetailResponse> responseObserver) {
+	public void getTableDetail(TableDetailRequest request, StreamObserver<TableDetailResponse> responseObserver) {
 		try {
 			UUID tableId = UUID.fromString(request.getTableId());
 
-			TableHierarchyInfo details = tableRepository.findTableHierarchy(tableId)
+			TableHierarchyRecord details = tableRepository.findTableHierarchy(tableId)
 					.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
 			TableDetailResponse response = TableDetailResponse.newBuilder()
@@ -109,17 +107,17 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getTablesForBooking(SlotAvailabilityRequest request, StreamObserver<TableListResponse> responseObserver) {
+	public void getBranchSlots(BranchSlotsRequest request, StreamObserver<BranchSlotsResponse> responseObserver) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		int partySize = request.getPartySize();
 
 		// Fetch using the type-safe projection
-		List<TableBookingInfo> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
+		List<TableDetailRecord> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
 
-		TableListResponse.Builder responseBuilder = TableListResponse.newBuilder();
+		BranchSlotsResponse.Builder responseBuilder = BranchSlotsResponse.newBuilder();
 
-		for (TableBookingInfo table : tables) {
-			TableInfo info = TableInfo.newBuilder()
+		for (TableDetailRecord table : tables) {
+			TableSlotResponse info = TableSlotResponse.newBuilder()
 					.setTableId(table.tableId().toString())      // Record style: table.id() instead of getId()
 					.setZoneId(table.zoneId().toString())      // Record style: table.id() instead of getId()
 					.setTableLabel(table.tableLabel() != null ? table.tableLabel() : "Standard")
@@ -141,7 +139,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			int dayOfWeek = request.getDayOfWeek();
 
 			// 1. Fetch from DB
-			Optional<ScheduleInfo> scheduleOpt = scheduleRepository.findActiveSchedule(branchId, dayOfWeek);
+			Optional<ScheduleRecord> scheduleOpt = scheduleRepository.findActiveSchedule(branchId, dayOfWeek);
 
 			ScheduleResponse.Builder responseBuilder = ScheduleResponse.newBuilder();
 
@@ -151,7 +149,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 						.setOpenTime("00:00")
 						.setCloseTime("00:00");
 			} else {
-				ScheduleInfo schedule = scheduleOpt.get();
+				ScheduleRecord schedule = scheduleOpt.get();
 
 				String openTimeStr = schedule.openTime().format(TIME_FORMATTER);
 				String closeTimeStr = schedule.closeTime().format(TIME_FORMATTER);
@@ -210,5 +208,38 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		});
 
 		responseObserver.onCompleted();
+	}
+
+	@Override
+	public void getBranchDetail(BranchDetailRequest request, StreamObserver<BranchDetailResponse> responseObserver) {
+		try {
+			UUID branchId = UUID.fromString(request.getBranchId());
+
+			BranchDetailRecord details = branchRepository.findRestaurantDetailByBranchId(branchId)
+					.orElseThrow(() -> new InvalidRequestException("Branch not found"));
+
+			// Map Record -> Protobuf Message
+			BranchDetailResponse response = BranchDetailResponse.newBuilder()
+					.setBranchId((details.branchId().toString()))
+					.setRestaurantId(details.restaurantId().toString())
+					.setBranchName(details.branchName())
+					.setBranchAddress(details.branchAddress())
+					.setBranchPhone(details.branchPhone() != null ? details.branchPhone() : "")
+					.setRestaurantName(details.restaurantName())
+					.setRestaurantAddress(details.restaurantAddress())
+					.setRestaurantPhone(details.restaurantPhone() != null ? details.restaurantPhone() : "")
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND
+					.withDescription(e.getMessage())
+					.asRuntimeException());
+		} catch (Exception e) {
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Internal provider error")
+					.asRuntimeException());
+		}
 	}
 }

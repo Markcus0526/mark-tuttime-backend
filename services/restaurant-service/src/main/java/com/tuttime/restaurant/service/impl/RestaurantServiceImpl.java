@@ -47,10 +47,10 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public RestaurantDto.RestaurantDetailedResponse getRestaurantById(UUID restaurantId) {
+	public RestaurantDto.RestaurantDetailResponse getRestaurantById(UUID restaurantId) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
-		return restaurantMapper.toDetailedResponse(restaurant);
+		return restaurantMapper.toDetailResponse(restaurant);
 	}
 
 	@Override

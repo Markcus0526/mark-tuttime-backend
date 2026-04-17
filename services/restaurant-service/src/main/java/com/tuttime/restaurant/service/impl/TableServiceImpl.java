@@ -40,11 +40,11 @@ public class TableServiceImpl implements TableService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public TableDto.TableDetailedResponse getTableById(UUID tableId) {
+	public TableDto.TableDetailResponse getTableById(UUID tableId) {
 		DishTable dishTable = tableRepository.findByIdAndDeletedFalse(tableId)
 				.orElseThrow(() -> new InvalidRequestException("Table not found in zone"));
 
-		return tableMapper.toDetailedResponse(dishTable);
+		return tableMapper.toDetailResponse(dishTable);
 	}
 
 	@Override

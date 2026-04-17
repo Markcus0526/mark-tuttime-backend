@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.Schedule;
-import com.tuttime.restaurant.repository.record.ScheduleInfo;
+import com.tuttime.restaurant.repository.record.ScheduleRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -28,12 +28,12 @@ public interface ScheduleRepository extends JpaRepository<Schedule, UUID> {
 			"AND s.deleted = false")
 	List<Schedule> findAllByEntityId(@Param("entityId") UUID entityId);
 
-	@Query("SELECT new com.tuttime.restaurant.repository.record.ScheduleInfo(" +
+	@Query("SELECT new com.tuttime.restaurant.repository.record.ScheduleRecord(" +
 			"s.dayOfWeek, s.openTime, s.closeTime, s.closed) " +
 			"FROM Schedule s " +
 			"WHERE s.entityId = :branchId " +
 			"AND s.dayOfWeek = :dayOfWeek " +
 			"AND s.deleted = false")
-	Optional<ScheduleInfo> findActiveSchedule(@Param("branchId") UUID branchId,
-	                                          @Param("dayOfWeek") int dayOfWeek);
+	Optional<ScheduleRecord> findActiveSchedule(@Param("branchId") UUID branchId,
+	                                            @Param("dayOfWeek") int dayOfWeek);
 }

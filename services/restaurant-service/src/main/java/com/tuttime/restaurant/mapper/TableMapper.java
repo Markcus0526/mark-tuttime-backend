@@ -1,9 +1,7 @@
 package com.tuttime.restaurant.mapper;
 
-import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.dto.TableDto;
-import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.repository.MediaRepository;
 import org.mapstruct.*;
@@ -31,7 +29,7 @@ public abstract class TableMapper {
 
 	@Mapping(target = "tableId", source = "id")
 	@Mapping(target = "zoneId", source = "zone.id")
-	public abstract TableDto.TableDetailedResponse toDetailedResponse(DishTable table);
+	public abstract TableDto.TableDetailResponse toDetailResponse(DishTable table);
 
 
 	public abstract void updateEntityFromRequest(TableDto.TableRequest request, @MappingTarget DishTable entity);
@@ -44,7 +42,7 @@ public abstract class TableMapper {
 	}
 
 	@AfterMapping
-	protected void addMedias(DishTable item, @MappingTarget TableDto.TableDetailedResponse.TableDetailedResponseBuilder builder) {
+	protected void addMedias(DishTable item, @MappingTarget TableDto.TableDetailResponse.TableDetailResponseBuilder builder) {
 		// Fetch ALL Media (Images & Videos)
 		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
 				.stream()

@@ -38,11 +38,11 @@ public class TableController {
 			@ApiResponse(responseCode = "404", description = "Table not found")
 	})
 	@GetMapping("/{tableId}")
-	public ResponseEntity<ApiRes<TableDto.TableDetailedResponse>> getTableById(
+	public ResponseEntity<ApiRes<TableDto.TableDetailResponse>> getTableById(
 			@Parameter(description = "UUID of the table", required = true)
 			@PathVariable UUID tableId) {
 
-		TableDto.TableDetailedResponse table = tableService.getTableById(tableId);
+		TableDto.TableDetailResponse table = tableService.getTableById(tableId);
 		return ResponseEntity.ok(ApiRes.success(table));
 	}
 

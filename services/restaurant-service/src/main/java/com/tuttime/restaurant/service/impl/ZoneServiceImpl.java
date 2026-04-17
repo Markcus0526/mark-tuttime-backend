@@ -39,10 +39,10 @@ public class ZoneServiceImpl implements ZoneService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public ZoneDto.ZoneDetailedResponse getZoneById(UUID zoneId) {
+	public ZoneDto.ZoneDetailResponse getZoneById(UUID zoneId) {
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
-		return zoneMapper.toDetailedResponse(zone);
+		return zoneMapper.toDetailResponse(zone);
 	}
 
 	@Override

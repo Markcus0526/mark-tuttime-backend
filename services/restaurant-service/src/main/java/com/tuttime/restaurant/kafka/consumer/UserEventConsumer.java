@@ -26,9 +26,9 @@ public class UserEventConsumer {
 
 	@KafkaListener(
 			topics = TOPIC_USER_SECURITY_UPDATED,
-			groupId = "restaurant-group")
+			groupId = "restaurant-service-group")
 	@Transactional
-	public void consumeSecurityEvent(String eventString) {
+	public void handleSecurityEvent(String eventString) {
 		UserEvent.SecurityEvent event = null;
 
 		try {

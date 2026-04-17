@@ -68,7 +68,7 @@ public class RestaurantDto {
 
 	@Schema(description = "Restaurant response details")
 	@Builder
-	public record RestaurantDetailedResponse(
+	public record RestaurantDetailResponse(
 
 			UUID restaurantId,
 

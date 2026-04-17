@@ -72,7 +72,7 @@ public class BranchDto {
 
 	@Schema(description = "Branch response details")
 	@Builder
-	public record BranchDetailedResponse(
+	public record BranchDetailResponse(
 
 			UUID branchId,
 

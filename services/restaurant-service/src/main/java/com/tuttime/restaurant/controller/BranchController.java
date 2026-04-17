@@ -6,7 +6,6 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.BranchDto;
-import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.service.BranchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -68,11 +67,11 @@ public class BranchController {
 			@ApiResponse(responseCode = "404", description = "Branch not found")
 	})
 	@GetMapping("/{branchId}")
-	public ResponseEntity<ApiRes<BranchDto.BranchDetailedResponse>> getBranchById(
+	public ResponseEntity<ApiRes<BranchDto.BranchDetailResponse>> getBranchById(
 			@Parameter(description = "UUID of the branch to retrieve", required = true)
 			@PathVariable UUID branchId) {
 
-		BranchDto.BranchDetailedResponse branch = branchService.getBranchById(branchId);
+		BranchDto.BranchDetailResponse branch = branchService.getBranchById(branchId);
 		return ResponseEntity.ok(ApiRes.success(branch));
 	}
 

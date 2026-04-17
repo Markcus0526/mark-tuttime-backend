@@ -61,7 +61,7 @@ public class TableDto {
 
 	@Schema(description = "Table response details")
 	@Builder
-	public record TableDetailedResponse(
+	public record TableDetailResponse(
 
 			UUID tableId,
 

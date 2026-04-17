@@ -12,11 +12,11 @@ public class UserGrpcClient {
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
-	public UserValidResponse validateUserById(UserByIdRequest request) {
-		return userServiceBlockingStub.validateUserById(request);
+	public UserValidResponse validateUser(UserValidRequest request) {
+		return userServiceBlockingStub.validateUser(request);
 	}
 
-	public UserProfilesResponse getUserProfiles(UserByIdsRequest request) {
-		return userServiceBlockingStub.getUserProfiles(request);
+	public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
+		return userServiceBlockingStub.getUserDetails(request);
 	}
 }
