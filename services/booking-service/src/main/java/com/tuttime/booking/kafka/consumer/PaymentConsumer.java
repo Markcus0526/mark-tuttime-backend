@@ -1,6 +1,6 @@
 package com.tuttime.booking.kafka.consumer;
 
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;

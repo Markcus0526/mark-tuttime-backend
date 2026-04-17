@@ -1,12 +1,12 @@
 package com.tuttime.booking.event;
 
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.entity.enums.WaitlistStatus;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.WaitlistRepository;
+import com.tuttime.common.event.BookingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,14 +21,13 @@ public class WaitlistNotificationTrigger {
 
 	private final BookingRepository bookingRepository;
 	private final WaitlistRepository waitlistRepository;
-	private final ApplicationEventPublisher eventPublisher;
 
 	/**
 	 * Triggered ONLY after the booking cancellation transaction commits.
 	 */
 	@TransactionalEventListener
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void handleBookingCancellation(BookingStatusChangedEvent event) {
+	public void handleBookingCancellation(BookingEvent.BookingStatusUpdatedEvent event) {
 		if (event.newStatus() != BookingStatus.CANCELED) return;
 
 		// 1. Fetch the booking to know WHERE the table opened up
@@ -46,13 +45,13 @@ public class WaitlistNotificationTrigger {
 				entry.setNotifiedAt(OffsetDateTime.now());
 				waitlistRepository.save(entry);
 
-				// 4. Trigger the actual notification
-				eventPublisher.publishEvent(new WaitlistNotificationEvent(
-						entry.getUserId(),
-						entry.getBranchId(),
-						entry.getId(),
-						"Good news! A table is now available in " + booking.getZoneId()
-				));
+				// 4. Trigger the actual notification TODO
+//				eventPublisher.publishEvent(new WaitlistNotificationEvent(
+//						entry.getUserId(),
+//						entry.getBranchId(),
+//						entry.getId(),
+//						"Good news! A table is now available in " + booking.getZoneId()
+//				));
 			});
 		});
 	}

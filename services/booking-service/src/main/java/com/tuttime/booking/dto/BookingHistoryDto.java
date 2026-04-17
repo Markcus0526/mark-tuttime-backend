@@ -1,7 +1,7 @@
 package com.tuttime.booking.dto;
 
 import com.tuttime.booking.entity.BookingStatusHistory;
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

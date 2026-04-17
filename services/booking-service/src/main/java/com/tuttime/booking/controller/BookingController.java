@@ -1,8 +1,7 @@
 package com.tuttime.booking.controller;
 
 import com.tuttime.booking.dto.*;
-import com.tuttime.booking.entity.Booking;
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
@@ -11,10 +10,6 @@ import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +58,7 @@ public class BookingController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@PostMapping("/{bookingId}")
+	@PostMapping("/{bookingId}/status")
 	@Operation(summary = "Update booking state", description = "Updates booking status to COMPLETED/ARRIVED when guest arrives.")
 	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> updateBooking(
 			@PathVariable UUID bookingId,
@@ -190,8 +185,9 @@ public class BookingController {
 		}
 	}
 
+
 	private void validateUser() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleUser()) {
+		if (!UserContext.isValidUUID()) {
 			throw new ForbiddenException("Access forbidden: Insufficient permissions");
 		}
 	}

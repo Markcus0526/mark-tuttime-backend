@@ -1,7 +1,7 @@
 package com.tuttime.booking.repository;
 
 import com.tuttime.booking.entity.Booking;
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -66,4 +66,23 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 	List<Booking> findAllByBranchIdAndBookingDatetimeBetween(UUID branchId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 
 	List<Booking> findAllByBranchIdAndBookingDatetime(UUID branchId, OffsetDateTime date);
+
+	/**
+	 * Fetches all active bookings for a branch within a specific time range.
+	 * Use this to get all bookings for a full day.
+	 */
+	@Query("SELECT b FROM Booking b " +
+			"WHERE b.branchId = :branchId " +
+			"AND b.status != com.tuttime.common.enums.BookingStatus.CANCELED " +
+			"AND b.bookingDatetime BETWEEN :start AND :end")
+	List<Booking> findAllByBranchIdAndDayRange(
+			@Param("branchId") UUID branchId,
+			@Param("start") OffsetDateTime start,
+			@Param("end") OffsetDateTime end);
+
+	@Query(value = "SELECT * FROM bookings b " +
+			"WHERE b.status IN ('CREATED', 'PAID') " +
+			"AND (b.booking_datetime + (b.grace_period_mins || ' minutes')::interval) < :now",
+			nativeQuery = true)
+	List<Booking> findExpiredBookings(@Param("now") OffsetDateTime now);
 }

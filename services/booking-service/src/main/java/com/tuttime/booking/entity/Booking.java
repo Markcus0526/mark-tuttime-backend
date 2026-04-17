@@ -1,11 +1,9 @@
 package com.tuttime.booking.entity;
 
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcType;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
@@ -40,7 +38,6 @@ public class Booking extends BaseUuidEntity {
 	private UUID tableId;
 
 	@Enumerated(EnumType.STRING)
-	@JdbcType(PostgreSQLEnumJdbcType.class)
 	@Column(columnDefinition = "booking_status_enum", nullable = false)
 	@Builder.Default
 	private BookingStatus status = BookingStatus.CREATED;

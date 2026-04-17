@@ -10,9 +10,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@Slf4j
+
 @SpringBootApplication(scanBasePackages = "com.tuttime")
-@EnableScheduling
+@Slf4j
 public class BookingServiceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BookingServiceApplication.class, args);

@@ -3,8 +3,7 @@ package com.tuttime.booking.service;
 import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.dto.BookingHistoryDto;
 import com.tuttime.booking.dto.BookingSetupDto;
-import com.tuttime.booking.entity.Booking;
-import com.tuttime.booking.entity.enums.BookingStatus;
+import com.tuttime.common.enums.BookingStatus;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -31,6 +30,6 @@ public interface BookingService {
 
 	List<BookingDto.BookingResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles);
 
-	BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize,UUID currentUserId);
+	BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId);
 
 }
