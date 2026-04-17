@@ -14,14 +14,17 @@ service RestaurantService {
 
   rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
 
-  rpc GetTableDetails (TableDetailRequest) returns (TableDetailResponse);
+  rpc GetTableDetail (TableDetailRequest) returns (TableDetailResponse);
 
-  rpc GetTablesForBooking (SlotAvailabilityRequest) returns (TableListResponse);
+  rpc GetBranchSlots (BranchSlotsRequest) returns (BranchSlotsResponse);
 
   rpc GetBranchSchedule (ScheduleRequest) returns (ScheduleResponse);
 
+  rpc GetBranchDetail (BranchDetailRequest) returns (BranchDetailResponse);
+
 }
 
+////////////
 message StaffUserRequest {
   string user_id = 1;
 }
@@ -34,6 +37,7 @@ message StaffUserResponse {
   bool active = 5;
 }
 
+////////////////
 message BranchPermissionRequest {
   string branch_id = 1; // Branch or Restaurant UUID
   string user_id = 2; // User UUID
@@ -44,6 +48,7 @@ message BranchPermissionResponse {
   bool valid = 1;
 }
 
+////////////////
 message TableDetailRequest {
   string table_id = 1;
 }
@@ -56,7 +61,8 @@ message TableDetailResponse {
   bool available = 5;
 }
 
-message SlotAvailabilityRequest {
+////////////////
+message BranchSlotsRequest {
   string restaurant_id = 1;
   string branch_id = 2;
   google.protobuf.Timestamp target_date = 3;
@@ -64,15 +70,15 @@ message SlotAvailabilityRequest {
   optional string zone_id = 5; // Optional: filter for specific areas like 'Terrace' or 'VIP'
 }
 
-message TableListResponse {
+message BranchSlotsResponse {
   string branch_id = 1;
   string restaurant_id = 2;
   string branch_name = 3;
   string restaurant_name = 4;
-  repeated TableInfo tables = 5;
+  repeated TableSlotResponse tables = 5;
 }
 
-message TableInfo {
+message TableSlotResponse {
   string table_id = 1;
   string zone_id = 2;
   string zone_name = 3;
@@ -81,6 +87,7 @@ message TableInfo {
   int32 max_capacity = 6;
 }
 
+////////////////
 message ScheduleRequest {
   string branch_id = 1;
   int32 day_of_week = 2; // 0-6 (Sunday to Saturday)
@@ -90,4 +97,20 @@ message ScheduleResponse {
   string open_time = 1;  // "HH:mm" format
   string close_time = 2; // "HH:mm" format
   bool closed = 3;
+}
+
+////////////////
+message BranchDetailRequest {
+  string branch_id = 1;
+}
+
+message BranchDetailResponse {
+  string branch_id = 1;
+  string restaurant_id = 2;
+  string branch_name = 3;
+  string branch_address = 4;
+  string branch_phone = 5;
+  string restaurant_name = 6;
+  string restaurant_address = 7;
+  string restaurant_phone = 8;
 }
