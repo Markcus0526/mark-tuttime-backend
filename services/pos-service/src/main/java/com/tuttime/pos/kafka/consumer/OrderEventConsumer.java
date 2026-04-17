@@ -36,7 +36,7 @@ public class OrderEventConsumer {
 	@KafkaListener(
 			topics = TOPIC_ORDER_CREATED,
 			groupId = "pos-service-group")
-	public void consumeOrderCreated(ConsumerRecord<String, OrderEvent.OrderCreatedEvent> record) {
+	public void handleOrderCreated(ConsumerRecord<String, OrderEvent.OrderCreatedEvent> record) {
 		OrderEvent.OrderCreatedEvent event = record.value();
 		OrderSyncRequest request = new OrderSyncRequest(event.orderId(), event.posSystem());
 		posSyncService.syncOrder(request);
@@ -82,7 +82,7 @@ public class OrderEventConsumer {
 	@KafkaListener(
 			topics = TOPIC_ORDER_STATUS_UPDATED,
 			groupId = "pos-service-group")
-	public void consumeWithRetry(OrderEvent.OrderStatusEvent event) {
+	public void handleWithRetry(OrderEvent.OrderStatusEvent event) {
 		// ... same logic as above
 	}
 

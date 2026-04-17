@@ -1,12 +1,8 @@
 package com.tuttime.order.grpc.client;
 
-import com.tuttime.common.proto.Modifier;
-import com.tuttime.common.proto.PosOrderItem;
 import com.tuttime.common.proto.PosOrderRequest;
 import com.tuttime.common.proto.PosServiceGrpc;
 import com.tuttime.order.entity.Order;
-import com.tuttime.order.entity.OrderItem;
-import com.tuttime.order.entity.OrderItemModifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;

@@ -13,7 +13,7 @@ import static com.tuttime.common.event.EventProducer.TOPIC_REVIEW_APPROVED;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ReviewConsumer {
+public class ReviewEventConsumer {
 
 	private final AnalyticsService analyticsService;
 
@@ -23,7 +23,7 @@ public class ReviewConsumer {
 	 */
 	@KafkaListener(
 			topics = TOPIC_REVIEW_APPROVED,
-			groupId = "analytics-service-reviews",
+			groupId = "analytics-service-group",
 			containerFactory = "kafkaListenerContainerFactory"
 	)
 	public void handleReviewApproved(ReviewEvent.ReviewApprovedEvent event, Acknowledgment ack) {

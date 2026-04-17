@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_CONFIRMED;
+import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
 
 @Service
 @RequiredArgsConstructor
@@ -19,9 +19,9 @@ public class BookingEventConsumer {
 	private final PosSyncService posSyncService;
 
 	@KafkaListener(
-			topics = TOPIC_BOOKING_CONFIRMED,
+			topics = TOPIC_BOOKING_STATUS_UPDATED,
 			groupId = "pos-service-group")
-	public void consumeBookingConfirmed(ConsumerRecord<String, BookingEvent.BookingConfirmedEvent> record) {
+	public void handleBookingStatusUpdated(ConsumerRecord<String, BookingEvent.BookingConfirmedEvent> record) {
 		BookingEvent.BookingConfirmedEvent event = record.value();
 		BookingSyncRequest request = new BookingSyncRequest(event.restaurantId(), event.posSystem());
 		posSyncService.syncBooking(request);
