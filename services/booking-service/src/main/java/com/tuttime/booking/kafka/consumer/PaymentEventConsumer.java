@@ -1,12 +1,17 @@
 package com.tuttime.booking.kafka.consumer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.service.BookingService;
+import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_COMPLETED;
 import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_REFUND;
@@ -14,7 +19,9 @@ import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_REFUND;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PaymentConsumer {
+public class PaymentEventConsumer {
+
+	private final ObjectMapper objectMapper;
 	private final BookingService bookingService;
 
 	/**
@@ -23,16 +30,25 @@ public class PaymentConsumer {
 	@KafkaListener(
 			topics = TOPIC_PAYMENT_COMPLETED,
 			groupId = "booking-service-group")
-	public void handlePaymentCompleted(PaymentEvent.PaymentCompletedEvent event) {
-		log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
+	public void handlePaymentCompleted(String eventString) {
+		PaymentEvent.PaymentCompletedEvent  event = null;
 
-		// This method should update status to PAID and trigger the 'StatusChangedEvent'
-		bookingService.updateStatus(
-				event.bookingId(),
-				BookingStatus.PAID,
-				"Stripe Payment Verified: " + event.stripePaymentIntentId(),
-				null,
-				null);
+		try {
+			if (org.apache.commons.lang3.StringUtils.isEmpty(eventString)) {
+				log.error("Received null event");
+				return;
+			}
+
+			event = objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+			PaymentEvent.PaymentCompletedEvent finalEvent = event;
+
+			log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
+
+			bookingService.markAsPaid(finalEvent.bookingId(), finalEvent.userId(), finalEvent.stripePaymentIntentId());
+
+		} catch (Exception e) {
+			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);
+		}
 	}
 
 	/**
@@ -51,4 +67,6 @@ public class PaymentConsumer {
 				null,
 				null);
 	}
+
+
 }

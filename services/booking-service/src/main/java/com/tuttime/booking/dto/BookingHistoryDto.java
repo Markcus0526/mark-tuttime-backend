@@ -9,23 +9,12 @@ import java.util.UUID;
 public class BookingHistoryDto {
 
 	public record BookingHistoryResponse(
-			Long id,
+			Long historyId,
 			BookingStatus oldStatus,
 			BookingStatus newStatus,
 			UUID changedBy,
 			OffsetDateTime changedAt,
 			String reason
-	) {
-		public static BookingHistoryResponse fromEntity(BookingStatusHistory entity) {
-			return new BookingHistoryResponse(
-					entity.getId(),
-					entity.getOldStatus(),
-					entity.getNewStatus(),
-					entity.getChangedBy(),
-					entity.getChangedAt(),
-					entity.getReason()
-			);
-		}
-	}
+	) {}
 
 }

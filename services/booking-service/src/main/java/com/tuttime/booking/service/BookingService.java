@@ -16,7 +16,7 @@ public interface BookingService {
 	 */
 	BookingDto.BookingResponse createBooking(BookingDto.BookingRequest request, UUID currentUserId, String userRoles);
 
-	BookingDto.BookingResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles);
+	BookingDto.BookingDetailResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles);
 
 	BookingDto.BookingResponse updateStatus(UUID bookingId, BookingStatus newStatus, String reason, UUID currentUserId, String userRoles);
 
@@ -31,5 +31,7 @@ public interface BookingService {
 	List<BookingDto.BookingResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles);
 
 	BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId);
+
+	BookingDto.BookingResponse markAsPaid(UUID bookingId, UUID staffOrSystemId, String paymentRef);
 
 }

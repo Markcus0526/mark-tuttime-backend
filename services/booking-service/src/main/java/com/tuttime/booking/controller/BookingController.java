@@ -47,14 +47,14 @@ public class BookingController {
 
 	@GetMapping("/{bookingId}")
 	@Operation(summary = "Get booking detail", description = "Updates booking status to COMPLETED/ARRIVED when guest arrives.")
-	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> getBooking(
+	public ResponseEntity<ApiRes<BookingDto.BookingDetailResponse>> getBooking(
 			@PathVariable UUID bookingId) {
 
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		BookingDto.BookingResponse data = bookingService.getBooking(bookingId, currentUserId, userRoles);
+		BookingDto.BookingDetailResponse data = bookingService.getBooking(bookingId, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

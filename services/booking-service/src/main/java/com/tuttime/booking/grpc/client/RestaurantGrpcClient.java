@@ -2,6 +2,7 @@ package com.tuttime.booking.grpc.client;
 
 import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.common.exception.ConflictException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -19,20 +20,34 @@ public class RestaurantGrpcClient {
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
+	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
+		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
+				.setBranchId(branchId.toString())
+				.setUserId(userId.toString())
+				.setUserRoles(userRoles)
+				.build();
+
+		BranchPermissionResponse response = restaurantServiceBlockingStub.validateBranchPermission(request);
+
+		if (!response.getValid()) {
+			throw new InvalidRequestException("You do not manage this specific menu");
+		}
+	}
+
 	public TableDetailResponse getTableDetails(UUID tableId) {
 		TableDetailRequest request = TableDetailRequest.newBuilder()
 				.setTableId(tableId.toString())
 				.build();
 
-		return restaurantServiceBlockingStub.getTableDetails(request);
+		return restaurantServiceBlockingStub.getTableDetail(request);
 	}
 
-	public List<TableInfo> getTablesForBooking(UUID branchId, int partySize) {
-		SlotAvailabilityRequest req = SlotAvailabilityRequest.newBuilder()
+	public List<TableSlotResponse> getBranchSlots(UUID branchId, int partySize) {
+		BranchSlotsRequest req = BranchSlotsRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.setPartySize(partySize)
 				.build();
-		return restaurantServiceBlockingStub.getTablesForBooking(req).getTablesList();
+		return restaurantServiceBlockingStub.getBranchSlots(req).getTablesList();
 	}
 
 	public ScheduleResponse getBranchSchedule(UUID branchId, int dayOfWeek) {
@@ -41,5 +56,12 @@ public class RestaurantGrpcClient {
 				.setDayOfWeek(dayOfWeek)
 				.build();
 		return restaurantServiceBlockingStub.getBranchSchedule(req);
+	}
+
+	public BranchDetailResponse getBranchDetail(UUID branchId) {
+		BranchDetailRequest req = BranchDetailRequest.newBuilder()
+				.setBranchId(branchId.toString())
+				.build();
+		return restaurantServiceBlockingStub.getBranchDetail(req);
 	}
 }

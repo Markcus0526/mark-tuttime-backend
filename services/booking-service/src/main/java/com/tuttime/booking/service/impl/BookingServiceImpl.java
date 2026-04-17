@@ -6,6 +6,8 @@ import com.tuttime.booking.dto.BookingSetupDto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingItem;
 import com.tuttime.booking.entity.BookingStatusHistory;
+import com.tuttime.booking.grpc.client.UserGrpcClient;
+import com.tuttime.booking.mapper.BookingHistoryMapper;
 import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.grpc.client.MenuGrpcClient;
 import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
@@ -23,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +46,9 @@ public class BookingServiceImpl implements BookingService {
 	private final BookingItemRepository bookingItemRepository;
 	private final BookingStatusHistoryRepository historyRepository;
 	private final BookingMapper bookingMapper;
+	private final BookingHistoryMapper bookingHistoryMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
+	private final UserGrpcClient userGrpcClient;
 	private final MenuGrpcClient menuGrpcClient;
 	private final RedissonClient redissonClient;
 	private final EventProducer eventProducer;
@@ -131,10 +134,36 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
-	public BookingDto.BookingResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles) {
-		return null;
-	}
+	@Transactional(readOnly = true)
+	public BookingDto.BookingDetailResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles) {
+		// 1. Fetch local booking
+		Booking booking = bookingRepository.findById(bookingId)
+				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
 
+		// 2. Security: Check if user owns the booking or is staff
+		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
+
+		// 3. Fetch external data in parallel (Restaurant name, Menu names/descriptions)
+
+		var userFuture = CompletableFuture.supplyAsync(() ->
+				userGrpcClient.getUserDetail(
+						UserDetailRequest.newBuilder().setUserId(booking.getUserId().toString()).build()));
+
+		var branchFuture = CompletableFuture.supplyAsync(() ->
+				restaurantGrpcClient.getBranchDetail(booking.getBranchId()));
+
+		var menuDetailsFuture = CompletableFuture.supplyAsync(() ->
+				menuGrpcClient.getMenuDetails(booking.getItems().stream()
+						.map(i -> i.getMenuItemId().toString()).toList()));
+
+		// 4. Map everything to Response using your Mapper
+		return bookingMapper.toDetailResponse(
+				booking,
+				userFuture.join(),
+				branchFuture.join(),
+				menuDetailsFuture.join()
+		);
+	}
 
 	@Override
 	public BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId) {
@@ -143,7 +172,7 @@ public class BookingServiceImpl implements BookingService {
 		OffsetDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
 
 		// 2. Parallel Data Fetching
-		var tablesFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getTablesForBooking(branchId, partySize));
+		var tablesFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSlots(branchId, partySize));
 		var scheduleFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSchedule(branchId, date.getDayOfWeek().getValue()));
 		var menuFuture = CompletableFuture.supplyAsync(() -> menuGrpcClient.getPreOrderMenu(branchId));
 
@@ -151,7 +180,7 @@ public class BookingServiceImpl implements BookingService {
 		List<Booking> occupied = bookingRepository.findAllByBranchIdAndDayRange(branchId, startOfDay, endOfDay);
 
 		// 4. Combine Results
-		List<TableInfo> physicalTables = tablesFuture.join();
+		List<TableSlotResponse> physicalTables = tablesFuture.join();
 		ScheduleResponse schedule = scheduleFuture.join();
 		List<MenuItemDetail> menuItems = menuFuture.join();
 
@@ -166,6 +195,8 @@ public class BookingServiceImpl implements BookingService {
 	public BookingDto.BookingResponse updateStatus(UUID bookingId, BookingStatus newStatus, String reason, UUID currentUserId, String userRoles) {
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found: " + bookingId));
+
+		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
 
 		BookingStatus oldStatus = booking.getStatus();
 
@@ -201,10 +232,11 @@ public class BookingServiceImpl implements BookingService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<BookingDto.BookingResponse> getBookingsByUser(UUID userId) {
-		return bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId)
-				.stream()
-				.map(BookingDto.BookingResponse::fromEntity)
-				.toList();
+		List<Booking> bookings = bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId);
+
+		return bookings.stream()
+				.map(bookingMapper::toResponse)
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -251,11 +283,12 @@ public class BookingServiceImpl implements BookingService {
 			throw new InvalidRequestException("Booking not found");
 		}
 
-		// 2. Fetch all history entries for this specific booking
-		return historyRepository.findAllByBookingIdOrderByChangedAtDesc(bookingId)
-				.stream()
-				.map(BookingHistoryDto.BookingHistoryResponse::fromEntity)
-				.toList();
+		List<BookingStatusHistory> histories = historyRepository.findAllByBookingIdOrderByChangedAtDesc(bookingId);
+
+		// 3. Map to DTOs
+		return histories.stream()
+				.map(bookingHistoryMapper::toResponse)
+				.collect(Collectors.toList());
 	}
 
 	@Transactional(readOnly = true)
@@ -273,8 +306,8 @@ public class BookingServiceImpl implements BookingService {
 
 		// 3. Map to DTOs
 		return bookings.stream()
-				.map(BookingDto.BookingResponse::fromEntity)
-				.toList();
+				.map(bookingMapper::toResponse)
+				.collect(Collectors.toList());
 	}
 
 	@Transactional(readOnly = true)
@@ -292,10 +325,48 @@ public class BookingServiceImpl implements BookingService {
 
 		// 3. Map to DTOs
 		return bookings.stream()
-				.map(BookingDto.BookingResponse::fromEntity)
-				.toList();
+				.map(bookingMapper::toResponse)
+				.collect(Collectors.toList());
 	}
 
+	@Transactional
+	public BookingDto.BookingResponse markAsPaid(UUID bookingId, UUID staffOrSystemId, String paymentRef) {
+		// 1. Fetch the booking
+		Booking booking = bookingRepository.findById(bookingId)
+				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
+
+		BookingStatus oldStatus = booking.getStatus();
+
+		// 2. Validate current state (e.g., only CREATED bookings can be PAID)
+		if (oldStatus != BookingStatus.CREATED) {
+			throw new IllegalStateException("Only CREATED bookings can be marked as PAID. Current status: " + oldStatus);
+		}
+
+		// 3. Update the state
+		booking.setStatus(BookingStatus.PAID);
+		bookingRepository.save(booking);
+
+		// 4. Save Audit History (booking_status_histories table)
+		historyRepository.save(BookingStatusHistory.of(
+				booking,
+				oldStatus,
+				staffOrSystemId,
+				"Payment confirmed. Ref: " + paymentRef
+		));
+
+		// 5. Publish Event (Kafka)
+		// This allows the Notification Service to send a receipt or confirmation email.
+		eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
+				booking.getId(),
+				booking.getTableId(),
+				oldStatus,
+				BookingStatus.PAID,
+				staffOrSystemId,
+				"Payment confirmed. Ref: " + paymentRef,
+				OffsetDateTime.now()));
+
+		return bookingMapper.toResponse(booking);
+	}
 
 //	@Override
 //	@Transactional
@@ -311,7 +382,7 @@ public class BookingServiceImpl implements BookingService {
 
 
 	private List<BookingSetupDto.BookingSetupResponse.AvailableSlot> calculateSlots(
-			OffsetDateTime date, List<TableInfo> physical, List<Booking> occupied, ScheduleResponse schedule) {
+			OffsetDateTime date, List<TableSlotResponse> physical, List<Booking> occupied, ScheduleResponse schedule) {
 
 		if (schedule.getClosed()) return Collections.emptyList();
 
@@ -510,7 +581,7 @@ public class BookingServiceImpl implements BookingService {
 		bookingItemRepository.saveAll(entities);
 	}
 
-	private BookingSetupDto.BookingSetupResponse.TableInfoDto mapTableToDto(TableInfo grpcTable) {
+	private BookingSetupDto.BookingSetupResponse.TableInfoDto mapTableToDto(TableSlotResponse grpcTable) {
 		return new BookingSetupDto.BookingSetupResponse.TableInfoDto(
 				UUID.fromString(grpcTable.getTableId()),
 				grpcTable.getTableLabel(),
