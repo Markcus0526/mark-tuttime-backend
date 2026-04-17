@@ -33,7 +33,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "@menuItemServiceImpl.getBranchIdFromCategory(#request.categoryId())")
-	public MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
+	public MenuItemDto.MenuItemDetailResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
 		MenuCategory category = menuCategoryRepository.findById(request.categoryId())
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
@@ -49,13 +49,13 @@ public class MenuItemServiceImpl implements MenuItemService {
 				.build();
 
 		// Use the mapper to get automatic pricing, media, and modifier inheritance
-		return menuItemMapper.toDetailedResponse(menuItemRepository.save(item));
+		return menuItemMapper.toDetailResponse(menuItemRepository.save(item));
 	}
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "#result.categoryId != null ? @menuItemServiceImpl.getBranchIdFromCategory(#result.categoryId) : null")
-	public MenuItemDto.MenuItemDetailedResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
+	public MenuItemDto.MenuItemDetailResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
 		MenuItem existing = menuItemRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
@@ -69,17 +69,17 @@ public class MenuItemServiceImpl implements MenuItemService {
 		existing.setPrice(request.price());
 		existing.setAvailable(request.available());
 
-		return menuItemMapper.toDetailedResponse(menuItemRepository.save(existing));
+		return menuItemMapper.toDetailResponse(menuItemRepository.save(existing));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public MenuItemDto.MenuItemDetailedResponse getMenuItemById(UUID itemId) {
+	public MenuItemDto.MenuItemDetailResponse getMenuItemById(UUID itemId) {
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
 		// This now returns discountedPrice, originalPrice, and merged Modifiers
-		return menuItemMapper.toDetailedResponse(item);
+		return menuItemMapper.toDetailResponse(item);
 	}
 
 	@Override

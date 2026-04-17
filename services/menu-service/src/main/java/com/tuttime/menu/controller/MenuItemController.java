@@ -41,17 +41,17 @@ public class MenuItemController {
 	)
 	@ApiResponses({
 			@ApiResponse(responseCode = "201", description = "Item created",
-					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailedResponse.class))),
+					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid request payload")
 	})
-	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> createMenuItem(
+	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailResponse>> createMenuItem(
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
 
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.createMenuItem(request, currentUserId, userRoles);
+		MenuItemDto.MenuItemDetailResponse data = menuItemService.createMenuItem(request, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
@@ -59,15 +59,15 @@ public class MenuItemController {
 	@Operation(summary = "Get a menu item by ID", description = "Fetches complete object properties including relational modifier groups.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Success",
-					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailedResponse.class))),
+					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
-	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> getMenuItemById(
+	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailResponse>> getMenuItemById(
 			@PathVariable UUID itemId) {
 
 		// This service method should now include the PricingService logic
 		// to calculate 'discountedPrice' and 'originalPrice' TODO
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.getMenuItemById(itemId);
+		MenuItemDto.MenuItemDetailResponse data = menuItemService.getMenuItemById(itemId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -75,10 +75,10 @@ public class MenuItemController {
 	@Operation(summary = "Update an item's parameters")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Update successful",
-					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailedResponse.class))),
+					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailResponse.class))),
 			@ApiResponse(responseCode = "404", description = "Item not found")
 	})
-	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailedResponse>> updateMenuItem(
+	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailResponse>> updateMenuItem(
 			@PathVariable UUID itemId,
 			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
 
@@ -86,7 +86,7 @@ public class MenuItemController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MenuItemDto.MenuItemDetailedResponse data = menuItemService.updateMenuItem(itemId, request, currentUserId, userRoles);
+		MenuItemDto.MenuItemDetailResponse data = menuItemService.updateMenuItem(itemId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

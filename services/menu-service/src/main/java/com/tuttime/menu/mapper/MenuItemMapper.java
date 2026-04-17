@@ -1,21 +1,16 @@
 package com.tuttime.menu.mapper;
 
 import com.tuttime.menu.dto.MediaDto;
-import com.tuttime.menu.dto.MenuCategoryDto;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.dto.ModifierDto;
-import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.ModifierGroup;
 import com.tuttime.menu.repository.MediaRepository;
 import com.tuttime.menu.service.PricingService;
-import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,7 +41,7 @@ public abstract class MenuItemMapper {
 	@Mapping(target = "modifierGroups", ignore = true)  // Merged in afterMapping
 	@Mapping(target = "activeDiscountName", ignore = true)
 	@Mapping(target = "medias", ignore = true)
-	public abstract MenuItemDto.MenuItemDetailedResponse toDetailedResponse(MenuItem item);
+	public abstract MenuItemDto.MenuItemDetailResponse toDetailResponse(MenuItem item);
 
 	@Mapping(target = "menuItemId", source = "id")
 	@Mapping(target = "currentPrice", ignore = true) // Calculated in afterMapping
@@ -57,7 +52,7 @@ public abstract class MenuItemMapper {
 	 * Logic to merge Item + Category Modifiers and Calculate Prices
 	 */
 	@AfterMapping
-	protected void postMappingLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailedResponse.MenuItemDetailedResponseBuilder builder) {
+	protected void postMappingLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailResponse.MenuItemDetailResponseBuilder builder) {
 		// 1. Calculate Prices
 		BigDecimal finalPrice = pricingService.calculateFinalPrice(item);
 		builder.discountedPrice(finalPrice);
@@ -98,7 +93,7 @@ public abstract class MenuItemMapper {
 	}
 
 	@AfterMapping
-	protected void addMedias(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailedResponse.MenuItemDetailedResponseBuilder builder) {
+	protected void addMedias(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailResponse.MenuItemDetailResponseBuilder builder) {
 		// Fetch ALL Media (Images & Videos)
 		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllByEntityIdAndDeletedFalse(item.getId())
 				.stream()

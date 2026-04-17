@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MenuItemService {
-	MenuItemDto.MenuItemDetailedResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles);
+	MenuItemDto.MenuItemDetailResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles);
 
-	MenuItemDto.MenuItemDetailedResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles);
+	MenuItemDto.MenuItemDetailResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles);
 
-	MenuItemDto.MenuItemDetailedResponse getMenuItemById(UUID id);
+	MenuItemDto.MenuItemDetailResponse getMenuItemById(UUID id);
 
 	void deleteMenuItem(UUID id, UUID currentUserId, String userRoles);
 
