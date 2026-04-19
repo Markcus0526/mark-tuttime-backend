@@ -22,9 +22,11 @@ service RestaurantService {
 
   rpc GetBranchDetail (BranchDetailRequest) returns (BranchDetailResponse);
 
+  rpc GetTableHierarchyDetail (TableHierarchyRequest) returns (TableHierarchyResponse);
+
 }
 
-////////////
+// rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
 message StaffUserRequest {
   string user_id = 1;
 }
@@ -37,7 +39,7 @@ message StaffUserResponse {
   bool active = 5;
 }
 
-////////////////
+// rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
 message BranchPermissionRequest {
   string branch_id = 1; // Branch or Restaurant UUID
   string user_id = 2; // User UUID
@@ -48,7 +50,7 @@ message BranchPermissionResponse {
   bool valid = 1;
 }
 
-////////////////
+// rpc GetTableDetail (TableDetailRequest) returns (TableDetailResponse);
 message TableDetailRequest {
   string table_id = 1;
 }
@@ -61,7 +63,7 @@ message TableDetailResponse {
   bool available = 5;
 }
 
-////////////////
+// rpc GetBranchSlots (BranchSlotsRequest) returns (BranchSlotsResponse);
 message BranchSlotsRequest {
   string restaurant_id = 1;
   string branch_id = 2;
@@ -87,7 +89,7 @@ message TableSlotResponse {
   int32 max_capacity = 6;
 }
 
-////////////////
+// rpc GetBranchSchedule (ScheduleRequest) returns (ScheduleResponse);
 message ScheduleRequest {
   string branch_id = 1;
   int32 day_of_week = 2; // 0-6 (Sunday to Saturday)
@@ -99,7 +101,7 @@ message ScheduleResponse {
   bool closed = 3;
 }
 
-////////////////
+// rpc GetBranchDetail (BranchDetailRequest) returns (BranchDetailResponse);
 message BranchDetailRequest {
   string branch_id = 1;
 }
@@ -111,6 +113,22 @@ message BranchDetailResponse {
   string branch_address = 4;
   string branch_phone = 5;
   string restaurant_name = 6;
-  string restaurant_address = 7;
-  string restaurant_phone = 8;
+}
+
+// rpc GetTableHierarchyDetail (TableHierarchyRequest) returns (TableHierarchyResponse);
+message TableHierarchyRequest {
+  string table_id = 1;
+}
+
+message TableHierarchyResponse {
+  string table_id = 1;
+  string zone_id = 2;
+  string branch_id = 3;
+  string restaurant_id = 4;
+  string table_label = 5;
+  string zone_name = 6;
+  string branch_name = 7;
+  string branch_address = 8;
+  string branch_phone = 9;
+  string restaurant_name = 10;
 }

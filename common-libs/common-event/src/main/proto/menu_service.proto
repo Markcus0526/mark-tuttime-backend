@@ -17,6 +17,7 @@ service MenuService {
 
 }
 
+// rpc getPriceForOrder (PriceRequest) returns (PriceResponse);
 message PriceRequest {
   string item_id = 1;
   repeated string modifier_ids = 2;
@@ -27,42 +28,44 @@ message PriceResponse {
   double modifiers_total = 2;
 }
 
+// rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
 message MenuRequest {
   string branch_id = 1;
 }
 
 message MenuResponse {
-  repeated MenuItemDetail items = 1;
+  repeated MenuItemDetailResponse items = 1;
 }
 
-message MenuItemDetail {
+message MenuItemDetailResponse {
   string menu_item_id = 1;
   string name = 2;
   string description = 3;
   double base_price = 4;
   string category = 5;
   bool available = 6;
-  repeated ModifierGroup modifier_groups = 7;
+  repeated ModifierGroupResponse modifier_groups = 7;
 }
 
-message ModifierGroup {
+message ModifierGroupResponse {
   string group_id = 1;
   string group_name = 2;
   int32 min_select = 3;
   int32 max_select = 4;
-  repeated ModifierOption options = 5;
+  repeated ModifierOptionResponse options = 5;
 }
 
-message ModifierOption {
+message ModifierOptionResponse {
   string option_id = 1;
   string name = 2;
   double extra_price = 3;
 }
 
+// rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
 message MenuDetailsRequest {
   repeated string menu_item_ids = 1;
 }
 
 message MenuDetailsResponse {
-  repeated MenuItemDetail items = 1;
+  repeated MenuItemDetailResponse items = 1;
 }
