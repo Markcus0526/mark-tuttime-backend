@@ -14,9 +14,8 @@ public interface RestaurantService {
 
 	RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles);
 
-	RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles);
+	RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantUpdateRequest request, UUID currentUserId, String userRoles);
 
 	void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles);
 
-	Page<RestaurantDto.RestaurantResponse> findRestaurantsNearLocation(double latitude, double longitude, double radiusMeters, int page, int size);
 }

@@ -25,17 +25,19 @@ public abstract class BranchMapper {
 	protected MediaMapper mediaMapper;
 
 	@Mapping(target = "branchId", source = "id")
-	@Mapping(target = "restaurantId", source = "restaurant.id")
 	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
 	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "imageUrl", ignore = true)
+	@Mapping(target = "restaurantId", source = "restaurant.id")
+	@Mapping(target = "restaurantName", source = "restaurant.name")
 	public abstract BranchDto.BranchResponse toResponse(Branch entity);
 
 	@Mapping(target = "branchId", source = "id")
-	@Mapping(target = "restaurantId", source = "restaurant.id")
 	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
 	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "medias", ignore = true)
+	@Mapping(target = "restaurantId", source = "restaurant.id")
+	@Mapping(target = "restaurantName", source = "restaurant.name")
 	public abstract BranchDto.BranchDetailResponse toDetailResponse(Branch entity);
 
 	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")

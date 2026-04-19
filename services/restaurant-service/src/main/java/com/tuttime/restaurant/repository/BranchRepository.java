@@ -39,13 +39,24 @@ public interface BranchRepository extends JpaRepository<Branch, UUID>, JpaSpecif
 	        b.name, 
 	        b.address, 
 	        b.phone, 
-	        r.name, 
-	        r.address, 
-	        r.phone
+	        r.name
 	    )
 	    FROM Branch b
 		LEFT JOIN b.restaurant r
 		WHERE b.id = :branchId
 	""")
 	Optional<BranchDetailRecord> findRestaurantDetailByBranchId(@Param("branchId") UUID branchId);
+
+	@Query(value = "SELECT * FROM branches b " +
+			"WHERE b.deleted = false AND " +
+			"ST_DWithin(b.location, ST_MakePoint(:lng, :lat)::geography, :radius) " +
+			"ORDER BY ST_Distance(b.location, ST_MakePoint(:lng, :lat)::geography) ASC",
+			countQuery = "SELECT count(*) FROM branches b " +
+					"WHERE b.deleted = false AND " +
+					"ST_DWithin(b.location, ST_MakePoint(:lng, :lat)::geography, :radius)",
+			nativeQuery = true)
+	Page<Branch> findPagesByLocationNear(@Param("lat") double latitude,
+	                                         @Param("lng") double longitude,
+	                                         @Param("radius") double radiusMeters,
+	                                         Pageable pageable);
 }

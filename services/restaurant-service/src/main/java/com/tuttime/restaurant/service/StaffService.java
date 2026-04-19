@@ -16,6 +16,8 @@ public interface StaffService {
 
 	void validateAdminAccess(UUID currentUserId);
 
+	void validateAdminOrOwnerAccess(UUID currentUserId);
+
 	void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles);
 
 	void validateBranchAccess(UUID branchId, UUID currentUserId, String userRoles);

@@ -2,6 +2,7 @@ package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.BranchDto;
+import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.BranchMapper;
@@ -11,6 +12,7 @@ import com.tuttime.restaurant.service.*;
 import jakarta.persistence.criteria.Predicate;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -112,6 +114,18 @@ public class BranchServiceImpl implements BranchService {
 		branchRepository.deleteAllByRestaurantId(restaurantId);
 
 		return true;
+	}
+
+	@Transactional(readOnly = true)
+	public Page<BranchDto.BranchResponse> findBranchesNearLocation(
+			double latitude,
+			double longitude,
+			double radiusMeters,
+			int page,
+			int size) {
+		Pageable pageable = PageRequest.of(page, size);
+		Page<Branch> entities = branchRepository.findPagesByLocationNear(latitude, longitude, radiusMeters, pageable);
+		return entities.map(branchMapper::toResponse);
 	}
 
 	private Specification<Branch> createSpecification(UUID restaurantId, String query, Double minRating, Double maxRating) {

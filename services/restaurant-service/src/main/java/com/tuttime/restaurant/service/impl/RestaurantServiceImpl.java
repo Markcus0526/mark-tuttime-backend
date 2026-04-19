@@ -1,18 +1,22 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.RestaurantDto;
+import com.tuttime.restaurant.dto.StaffDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
+import com.tuttime.restaurant.entity.Staff;
 import com.tuttime.restaurant.mapper.RestaurantMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
+import com.tuttime.restaurant.repository.StaffRepository;
 import com.tuttime.restaurant.service.*;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -32,6 +36,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 	private final StaffService staffService;
 	private final RestaurantRepository restaurantRepository;
 	private final BranchRepository branchRepository;
+	private final StaffRepository staffRepository;
 	private final RestaurantMapper restaurantMapper;
 	private final BranchService branchService;
 	private final MediaService mediaService;
@@ -56,27 +61,40 @@ public class RestaurantServiceImpl implements RestaurantService {
 	@Override
 	@Transactional
 	public RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
-		staffService.validateAdminAccess(currentUserId);
+		staffService.validateAdminOrOwnerAccess(currentUserId);
+
+		if (staffRepository.existsByUserIdAndRoleName(currentUserId, UserRoleKind.OWNER.name())) {
+			throw new ConflictException("Restaurant is been created by this user.");
+		}
 
 		// Map request DTO to entity
 		Restaurant restaurant = restaurantMapper.toEntity(request);
 
-		// Persist restaurant
-		restaurant.setLocation(createPoint(request.longitude(), request.latitude()));
-
 		Restaurant savedRestaurant = restaurantRepository.save(restaurant);
 
+		// Create Staff table as owner
+		if (userRoles.contains(UserRoleKind.OWNER.name())) {
+			Staff staff = new Staff();
+			staff.setRestaurant(savedRestaurant);
+			staff.setUserId(currentUserId);
+			staff.setRoleName(UserRoleKind.OWNER.name());
+			staff.setActive(true);
+			staffRepository.save(staff);
+		}
+
 		// Create default branch linked to restaurant
-		Branch defaultBranch = new Branch();
-		defaultBranch.setRestaurant(savedRestaurant);
-		defaultBranch.setName(savedRestaurant.getName());
-		defaultBranch.setDescription(savedRestaurant.getDescription());
-		defaultBranch.setAddress(savedRestaurant.getAddress());
-		defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
-		defaultBranch.setPhone(savedRestaurant.getPhone());
-		defaultBranch.setRating(savedRestaurant.getRating());
-		defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
-		branchRepository.save(defaultBranch);
+		if (request.generateBranch()) {
+			Branch defaultBranch = new Branch();
+			defaultBranch.setRestaurant(savedRestaurant);
+			defaultBranch.setName(request.name());
+			defaultBranch.setDescription(request.description());
+			defaultBranch.setAddress(request.address());
+			defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
+			defaultBranch.setPhone(request.phone());
+			defaultBranch.setRating(request.rating());
+			defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
+			branchRepository.save(defaultBranch);
+		}
 
 		// Return mapped response DTO
 		return restaurantMapper.toResponse(savedRestaurant);
@@ -84,7 +102,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 
 	@Override
 	@Transactional
-	public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
+	public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantUpdateRequest request, UUID currentUserId, String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
 				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
@@ -92,7 +110,7 @@ public class RestaurantServiceImpl implements RestaurantService {
 		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
 		// 2. Map fields and handle PostGIS Point
-		restaurantMapper.updateEntityFromRequest(request, restaurant);
+		restaurantMapper.toEntityFromUpdateRequest(request, restaurant);
 
 		// Hibernate dirty checking updates the DB automatically
 		return restaurantMapper.toResponse(restaurant);
@@ -116,18 +134,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 		// 3. Soft delete the Restaurant
 		restaurant.setDeleted(true);
 		restaurantRepository.save(restaurant);
-	}
-
-	@Transactional(readOnly = true)
-	public Page<RestaurantDto.RestaurantResponse> findRestaurantsNearLocation(
-			double latitude,
-			double longitude,
-			double radiusMeters,
-			int page,
-			int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Restaurant> entities = restaurantRepository.findPagesByLocationNear(latitude, longitude, radiusMeters, pageable);
-		return entities.map(restaurantMapper::toResponse);
 	}
 
 	private Specification<Restaurant> createSpecification(String query, UUID ownerId, Double minRating, Double maxRating) {
