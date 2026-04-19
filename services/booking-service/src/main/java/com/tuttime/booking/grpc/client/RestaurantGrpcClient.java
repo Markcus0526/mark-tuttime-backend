@@ -64,4 +64,8 @@ public class RestaurantGrpcClient {
 				.build();
 		return restaurantServiceBlockingStub.getBranchDetail(req);
 	}
+
+	public TableHierarchyResponse getTableHierarchyDetail(TableHierarchyRequest request) {
+		return restaurantServiceBlockingStub.getTableHierarchyDetail(request);
+	}
 }

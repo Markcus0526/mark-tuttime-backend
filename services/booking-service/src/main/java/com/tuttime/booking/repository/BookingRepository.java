@@ -65,7 +65,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
 	List<Booking> findAllByBranchIdAndBookingDatetimeBetween(UUID branchId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 
-	List<Booking> findAllByBranchIdAndBookingDatetime(UUID branchId, OffsetDateTime date);
+	List<Booking> findAllByStatusAndCreatedAtBefore(BookingStatus status, OffsetDateTime cutoff);
 
 	/**
 	 * Fetches all active bookings for a branch within a specific time range.

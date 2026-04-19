@@ -22,13 +22,11 @@ public interface BookingService {
 
 	void deleteBooking(UUID bookingId, UUID userId, String reason, UUID currentUserId, String userRoles);
 
-	List<BookingDto.BookingResponse> getBookingsByUser(UUID userId);
+	List<BookingDto.BookingDetailResponse> getBookingsByUser(UUID userId);
 
 	List<BookingHistoryDto.BookingHistoryResponse> getStatusHistory(UUID bookingId);
 
-	List<BookingDto.BookingResponse> getBookingsByRestaurant(UUID restaurantId, OffsetDateTime date, UUID currentUserId, String userRoles);
-
-	List<BookingDto.BookingResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles);
+	List<BookingDto.BookingDetailResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles);
 
 	BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId);
 

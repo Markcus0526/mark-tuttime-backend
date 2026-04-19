@@ -1,9 +1,6 @@
 package com.tuttime.booking.dto;
 
-import com.tuttime.booking.entity.Booking;
-import com.tuttime.booking.entity.BookingItem;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.proto.MenuItemDetail;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -51,7 +48,6 @@ public class BookingDto {
 				@NotNull UUID menuItemId,
 				@Min(1) Integer quantity,
 				List<UUID> modifierIds, // For extras like "extra cheese"
-				BigDecimal price, // For initial client-side total calculation
 				String notes
 		) {}
 
@@ -73,7 +69,8 @@ public class BookingDto {
 			Integer gracePeriodMins,
 			BookingStatus status,
 			BigDecimal totalAmount,
-			String cancellationReason
+			String cancellationReason,
+			UserDetailResponse user
 	) {
 		public record UserDetailResponse(
 				UUID userId,
@@ -93,8 +90,8 @@ public class BookingDto {
 			BigDecimal totalAmount,
 			String cancellationReason,
 			UserDetailResponse user,
-			BranchDetailResponse branch,
-			List<BookingDetailResponse.BookingItemResponse> items
+			TableDetailResponse table,
+			List<MenuItemResponse> menuItems
 	) {
 		public record UserDetailResponse(
 				UUID userId,
@@ -103,18 +100,20 @@ public class BookingDto {
 				String fullName
 		) {}
 
-		public record BranchDetailResponse(
+		public record TableDetailResponse(
 				UUID branchId,
 				UUID restaurantId,
+				UUID zoneId,
+				UUID tableId,
+				String restaurantName,
 				String branchName,
 				String branchAddress,
 				String branchPhone,
-				String restaurantName,
-				String restaurantAddress,
-				String restaurantPhone
+				String zoneName,
+				String tableLabel
 		) {}
 
-		public record BookingItemResponse(
+		public record MenuItemResponse(
 				UUID menuItemId,
 				String itemName,      // From Menu gRPC
 				Integer quantity,     // From local DB

@@ -36,6 +36,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.tuttime.common.util.UuidUtil.NIL_UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -80,7 +82,7 @@ public class BookingServiceImpl implements BookingService {
 
 			// 3. SECURE PRICE & MODIFIER VALIDATION (New Step)
 			// Fetch full menu details from gRPC to get base_price and modifier rules
-			List<MenuItemDetail> menuDetails = menuGrpcClient.getMenuDetails(
+			List<MenuItemDetailResponse> menuDetails = menuGrpcClient.getMenuDetails(
 					request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
 			);
 
@@ -134,38 +136,6 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
-	@Transactional(readOnly = true)
-	public BookingDto.BookingDetailResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles) {
-		// 1. Fetch local booking
-		Booking booking = bookingRepository.findById(bookingId)
-				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
-
-		// 2. Security: Check if user owns the booking or is staff
-		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
-
-		// 3. Fetch external data in parallel (Restaurant name, Menu names/descriptions)
-
-		var userFuture = CompletableFuture.supplyAsync(() ->
-				userGrpcClient.getUserDetail(
-						UserDetailRequest.newBuilder().setUserId(booking.getUserId().toString()).build()));
-
-		var branchFuture = CompletableFuture.supplyAsync(() ->
-				restaurantGrpcClient.getBranchDetail(booking.getBranchId()));
-
-		var menuDetailsFuture = CompletableFuture.supplyAsync(() ->
-				menuGrpcClient.getMenuDetails(booking.getItems().stream()
-						.map(i -> i.getMenuItemId().toString()).toList()));
-
-		// 4. Map everything to Response using your Mapper
-		return bookingMapper.toDetailResponse(
-				booking,
-				userFuture.join(),
-				branchFuture.join(),
-				menuDetailsFuture.join()
-		);
-	}
-
-	@Override
 	public BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId) {
 		// 1. Setup Time Range for the Target Day
 		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);
@@ -182,7 +152,7 @@ public class BookingServiceImpl implements BookingService {
 		// 4. Combine Results
 		List<TableSlotResponse> physicalTables = tablesFuture.join();
 		ScheduleResponse schedule = scheduleFuture.join();
-		List<MenuItemDetail> menuItems = menuFuture.join();
+		List<MenuItemDetailResponse> menuItems = menuFuture.join();
 
 		// 5. Generate and Filter Slots
 		List<BookingSetupDto.BookingSetupResponse.AvailableSlot> slots = calculateSlots(date, physicalTables, occupied, schedule);
@@ -231,12 +201,23 @@ public class BookingServiceImpl implements BookingService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<BookingDto.BookingResponse> getBookingsByUser(UUID userId) {
-		List<Booking> bookings = bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId);
+	public BookingDto.BookingDetailResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles) {
+		Booking booking = bookingRepository.findById(bookingId)
+				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
 
-		return bookings.stream()
-				.map(bookingMapper::toResponse)
-				.collect(Collectors.toList());
+		// Security check remains sequential as it's a prerequisite
+		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
+
+		return getEnrichedBookings(List.of(booking)).get(0);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<BookingDto.BookingDetailResponse> getBookingsByUser(UUID userId) {
+		List<Booking> bookings = bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId);
+		if (bookings.isEmpty()) return List.of();
+
+		return getEnrichedBookings(bookings);
 	}
 
 	@Override
@@ -292,26 +273,7 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<BookingDto.BookingResponse> getBookingsByRestaurant(UUID restaurantId, OffsetDateTime date, UUID currentUserId, String userRoles) {
-		// 1. Define the start and end of the day for the filter
-		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);
-		OffsetDateTime endOfDay = startOfDay.plusDays(1);
-
-		// 2. Fetch from repository using your SQL index
-		List<Booking> bookings = bookingRepository.findAllByRestaurantIdAndBookingDatetimeBetween(
-				restaurantId,
-				startOfDay,
-				endOfDay
-		);
-
-		// 3. Map to DTOs
-		return bookings.stream()
-				.map(bookingMapper::toResponse)
-				.collect(Collectors.toList());
-	}
-
-	@Transactional(readOnly = true)
-	public List<BookingDto.BookingResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles) {
+	public List<BookingDto.BookingDetailResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles) {
 		// 1. Define the start and end of the day for the filter
 		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);
 		OffsetDateTime endOfDay = startOfDay.plusDays(1);
@@ -323,10 +285,9 @@ public class BookingServiceImpl implements BookingService {
 				endOfDay
 		);
 
-		// 3. Map to DTOs
-		return bookings.stream()
-				.map(bookingMapper::toResponse)
-				.collect(Collectors.toList());
+		if (bookings.isEmpty()) return List.of();
+
+		return getEnrichedBookings(bookings);
 	}
 
 	@Transactional
@@ -440,23 +401,16 @@ public class BookingServiceImpl implements BookingService {
 		return result;
 	}
 
-	private BigDecimal calculateTotal(List<BookingDto.BookingRequest.PreOrderItemRequest> items) {
-		if (items == null) return BigDecimal.ZERO;
-		return items.stream()
-				.map(i -> i.price().multiply(BigDecimal.valueOf(i.quantity())))
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-	}
-
-	private List<BookingSetupDto.BookingSetupResponse.MenuItemDto> mapMenu(List<MenuItemDetail> menuItems) {
+	private List<BookingSetupDto.BookingSetupResponse.MenuItemDto> mapMenu(List<MenuItemDetailResponse> menuItems) {
 		if (menuItems == null) return Collections.emptyList();
 
 		return menuItems.stream()
-				.filter(MenuItemDetail::getAvailable) // Only show items that are currently in stock
+				.filter(MenuItemDetailResponse::getAvailable) // Only show items that are currently in stock
 				.map(this::mapToDto)
 				.toList();
 	}
 
-	private BookingSetupDto.BookingSetupResponse.MenuItemDto mapToDto(MenuItemDetail item) {
+	private BookingSetupDto.BookingSetupResponse.MenuItemDto mapToDto(MenuItemDetailResponse item) {
 		return BookingSetupDto.BookingSetupResponse.MenuItemDto.builder()
 				.menuItemId(UUID.fromString(item.getMenuItemId()))
 				.name(item.getName())
@@ -478,16 +432,16 @@ public class BookingServiceImpl implements BookingService {
 				.build();
 	}
 
-	public void validateModifierSelections(List<BookingDto.BookingRequest.PreOrderItemRequest> selections, List<MenuItemDetail> menuDetails) {
+	public void validateModifierSelections(List<BookingDto.BookingRequest.PreOrderItemRequest> selections, List<MenuItemDetailResponse> menuDetails) {
 		for (var selection : selections) {
 			// 1. Find source-of-truth menu detail
-			MenuItemDetail menu = menuDetails.stream()
+			MenuItemDetailResponse menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(selection.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Menu item not found: " + selection.menuItemId()));
 
 			// 2. Validate each group (e.g., "Sides", "Toppings")
-			for (ModifierGroup group : menu.getModifierGroupsList()) {
+			for (ModifierGroupResponse group : menu.getModifierGroupsList()) {
 				// Count how many of the user's modifierIds belong to this specific group
 				long selectedInGroupCount = selection.modifierIds() == null ? 0 :
 						selection.modifierIds().stream()
@@ -508,11 +462,11 @@ public class BookingServiceImpl implements BookingService {
 		}
 	}
 
-	private BigDecimal calculateFinalPrice(List<BookingDto.BookingRequest.PreOrderItemRequest> selections, List<MenuItemDetail> menuDetails) {
+	private BigDecimal calculateFinalPrice(List<BookingDto.BookingRequest.PreOrderItemRequest> selections, List<MenuItemDetailResponse> menuDetails) {
 		BigDecimal grandTotal = BigDecimal.ZERO;
 
 		for (var selection : selections) {
-			MenuItemDetail menu = menuDetails.stream()
+			MenuItemDetailResponse menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(selection.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Menu item mismatch"));
@@ -526,7 +480,7 @@ public class BookingServiceImpl implements BookingService {
 					double extra = menu.getModifierGroupsList().stream()
 							.flatMap(g -> g.getOptionsList().stream())
 							.filter(o -> o.getOptionId().equals(modId.toString()))
-							.mapToDouble(ModifierOption::getExtraPrice)
+							.mapToDouble(ModifierOptionResponse::getExtraPrice)
 							.findFirst()
 							.orElse(0.0);
 					itemPrice = itemPrice.add(BigDecimal.valueOf(extra));
@@ -541,12 +495,12 @@ public class BookingServiceImpl implements BookingService {
 
 	private void saveBookingItems(Booking savedBooking,
 	                              List<BookingDto.BookingRequest.PreOrderItemRequest> preOrderItems,
-	                              List<MenuItemDetail> menuDetails) {
+	                              List<MenuItemDetailResponse> menuDetails) {
 		if (preOrderItems == null || preOrderItems.isEmpty()) return;
 
 		List<BookingItem> entities = preOrderItems.stream().map(itemDto -> {
 			// 1. Find the specific menu item from gRPC data to get real prices
-			MenuItemDetail menu = menuDetails.stream()
+			MenuItemDetailResponse menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(itemDto.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Item mismatch"));
@@ -559,7 +513,7 @@ public class BookingServiceImpl implements BookingService {
 					double extra = menu.getModifierGroupsList().stream()
 							.flatMap(g -> g.getOptionsList().stream())
 							.filter(o -> o.getOptionId().equals(modId.toString()))
-							.mapToDouble(ModifierOption::getExtraPrice)
+							.mapToDouble(ModifierOptionResponse::getExtraPrice)
 							.findFirst()
 							.orElse(0.0);
 					unitPrice = unitPrice.add(BigDecimal.valueOf(extra));
@@ -579,6 +533,81 @@ public class BookingServiceImpl implements BookingService {
 		}).toList();
 
 		bookingItemRepository.saveAll(entities);
+	}
+
+	private List<BookingDto.BookingDetailResponse> getEnrichedBookings(List<Booking> bookings) {
+		// 1. Collect all unique IDs to avoid redundant gRPC calls
+		Set<String> userIds = bookings.stream().map(b -> b.getUserId().toString()).collect(Collectors.toSet());
+		Set<String> tableIds = bookings.stream().map(b -> b.getTableId().toString()).collect(Collectors.toSet());
+		List<String> menuItemIds = bookings.stream()
+				.flatMap(b -> b.getItems().stream().map(i -> i.getMenuItemId().toString()))
+				.distinct().toList();
+
+		// 2. Fetch all external data in parallel
+		var usersFuture = CompletableFuture.supplyAsync(() -> fetchUsersMap(userIds));
+		var tablesFuture = CompletableFuture.supplyAsync(() -> fetchTablesMap(tableIds));
+		var menusFuture = CompletableFuture.supplyAsync(() -> {
+			try {
+				return menuGrpcClient.getMenuDetails(menuItemIds).stream()
+						.collect(Collectors.toMap(MenuItemDetailResponse::getMenuItemId, m -> m, (a, b) -> a));
+			} catch (Exception e) {
+				log.warn("Menu service failed, proceeding with empty menu data");
+				return Collections.<String, MenuItemDetailResponse>emptyMap();
+			}
+		});
+
+		CompletableFuture.allOf(usersFuture, tablesFuture, menusFuture).join();
+
+		var userMap = usersFuture.join();
+		var tableMap = tablesFuture.join();
+		var menuMap = menusFuture.join();
+
+		// 3. Map and return
+		return bookings.stream().map(booking -> {
+			var user = userMap.getOrDefault(booking.getUserId().toString(),
+					UserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
+
+			var table = tableMap.getOrDefault(booking.getTableId().toString(),
+					TableHierarchyResponse.newBuilder().setTableId(NIL_UUID).setTableLabel("N/A").build());
+
+			var bookingMenus = booking.getItems().stream()
+					.map(i -> menuMap.get(i.getMenuItemId().toString()))
+					.filter(Objects::nonNull)
+					.toList();
+
+			return bookingMapper.toDetailResponse(booking, user, table, bookingMenus);
+		}).toList();
+	}
+
+	private Map<String, UserDetailResponse> fetchUsersMap(Set<String> ids) {
+		return ids.parallelStream().collect(Collectors.toMap(
+				id -> id,
+				id -> {
+					try { return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build()); }
+					catch (Exception e) { return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build(); }
+				}
+		));
+	}
+
+	private Map<String, TableHierarchyResponse> fetchTablesMap(Set<String> ids) {
+		return ids.parallelStream().collect(Collectors.toMap(
+				id -> id,
+				id -> {
+					try { return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build()); }
+					catch (Exception e) { return TableHierarchyResponse.newBuilder()
+							.setTableId(NIL_UUID)      // Result: "00000000..."
+							.setZoneId(NIL_UUID)       // Result: "00000000..."
+							.setBranchId(NIL_UUID)     // Result: "00000000..."
+							.setRestaurantId(NIL_UUID) // Result: "00000000..."
+							.setTableLabel("N/A")
+							.setZoneName("Unknown")
+							.setRestaurantName("Unknown")
+							.setBranchName("Unknown")
+							.setBranchAddress("N/A")
+							.setBranchPhone("N/A")
+							.build(); }
+				}
+		));
 	}
 
 	private BookingSetupDto.BookingSetupResponse.TableInfoDto mapTableToDto(TableSlotResponse grpcTable) {
