@@ -99,23 +99,9 @@ public class BookingController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping("/restaurant/{restaurantId}")
-	@Operation(summary = "Admin: Get restaurant bookings", description = "Allows restaurant staff to view all bookings for their restaurant.")
-	public ResponseEntity<ApiRes<List<BookingDto.BookingResponse>>> getRestaurantBookings(
-			@PathVariable UUID restaurantId,
-			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date) {
-
-		validateAdminOrOwner();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
-
-		List<BookingDto.BookingResponse> data = bookingService.getBookingsByRestaurant(restaurantId, date, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
-
 	@GetMapping("/branch/{branchId}")
 	@Operation(summary = "Admin: Get branch bookings", description = "Allows branch staff to view all bookings for their branch.")
-	public ResponseEntity<ApiRes<List<BookingDto.BookingResponse>>> getBranchBookings(
+	public ResponseEntity<ApiRes<List<BookingDto.BookingDetailResponse>>> getBranchBookings(
 			@PathVariable UUID branchId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date) {
 		
@@ -123,18 +109,18 @@ public class BookingController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 		
-		List<BookingDto.BookingResponse> data = bookingService.getBookingsByBranch(branchId, date, currentUserId, userRoles);
+		List<BookingDto.BookingDetailResponse> data = bookingService.getBookingsByBranch(branchId, date, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@GetMapping("/me")
+	@GetMapping("/user/{userId}")
 	@Operation(summary = "Get my bookings", description = "Returns the booking history and upcoming reservations for the current user.")
-	public ResponseEntity<ApiRes<List<BookingDto.BookingResponse>>> getMyBookings() {
+	public ResponseEntity<ApiRes<List<BookingDto.BookingDetailResponse>>> getMyBookings(
+			@PathVariable UUID userId) {
 
 		validateUser();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 
-		List<BookingDto.BookingResponse> data = bookingService.getBookingsByUser(currentUserId);
+		List<BookingDto.BookingDetailResponse> data = bookingService.getBookingsByUser(userId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

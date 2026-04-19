@@ -20,14 +20,14 @@ public class MenuGrpcClient {
 	private MenuServiceGrpc.MenuServiceBlockingStub menuServiceBlockingStub;
 
 
-	public List<MenuItemDetail> getPreOrderMenu(UUID branchId) {
+	public List<MenuItemDetailResponse> getPreOrderMenu(UUID branchId) {
 		MenuRequest req = MenuRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
 		return menuServiceBlockingStub.getPreOrderMenu(req).getItemsList();
 	}
 
-	public List<MenuItemDetail> getMenuDetails(List<String> menuItemIds) {
+	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
 		// 1. Build the request with repeated IDs
 		MenuDetailsRequest request = MenuDetailsRequest.newBuilder()
 				.addAllMenuItemIds(menuItemIds)
