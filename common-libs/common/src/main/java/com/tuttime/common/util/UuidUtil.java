@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public class UuidUtil {
 
+	public static final String NIL_UUID = new UUID(0, 0).toString();
+
 	/**
 	 * Safely converts a String to a UUID.
 	 * Returns null if the input is null, empty, or malformed.

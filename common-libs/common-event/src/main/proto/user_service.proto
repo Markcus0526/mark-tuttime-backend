@@ -22,7 +22,7 @@ service UserService {
 
 }
 
-//////////////////////////////
+// rpc ValidateUserToken (ValidTokenRequest) returns (ValidTokenResponse);
 message ValidTokenRequest {
   string jwt_token = 1;
 }
@@ -34,7 +34,7 @@ message ValidTokenResponse {
   string status = 4;        // 'ACTIVE', 'INACTIVE', etc.
 }
 
-//////////////////////////////
+// rpc GetUserDetail (UserDetailRequest) returns (UserDetailResponse);
 message UserDetailRequest {
   string user_id = 1;
 }
@@ -58,7 +58,7 @@ message UserDetailResponse {
   google.protobuf.Timestamp updated_at = 23;
 }
 
-//////////////////////////////
+// rpc ValidateUser (UserValidRequest) returns (UserValidResponse);
 message UserValidRequest {
   string user_id = 1;
 }
@@ -68,7 +68,7 @@ message UserValidResponse {
   bool valid = 2;
 }
 
-//////////////////////////////
+// rpc GetUserDetails (UserDetailsRequest) returns (UserDetailsResponse);
 message UserDetailsRequest {
   repeated string userIds = 1;
 }
