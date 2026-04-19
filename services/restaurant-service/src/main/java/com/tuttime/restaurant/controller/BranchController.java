@@ -6,6 +6,7 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.restaurant.dto.BranchDto;
+import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.service.BranchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -163,6 +164,24 @@ public class BranchController {
 
 		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, query, minRating, maxRating, pageable);
 		return ResponseEntity.ok(ApiRes.success(branches));
+	}
+
+	// --- Restaurant Search by near ---
+
+	@Operation(summary = "Find branches near a location", description = "Retrieve branches within a radius (in meters) of given latitude and longitude")
+	@GetMapping("/near")
+	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> findBranchesNear(
+			@RequestParam double latitude,
+			@RequestParam double longitude,
+			@RequestParam(defaultValue = "1000") double radiusMeters,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+
+		int maxPageSize = 100;
+		if (size > maxPageSize) size = maxPageSize;
+
+		Page<BranchDto.BranchResponse> restaurants = branchService.findBranchesNearLocation(latitude, longitude, radiusMeters, page, size);
+		return ResponseEntity.ok(ApiRes.success(restaurants));
 	}
 
 	/**

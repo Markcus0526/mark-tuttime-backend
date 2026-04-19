@@ -77,7 +77,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 				// Skip if the item is not available
 				if (!menuItem.getAvailable()) continue;
 
-				MenuItemDetail.Builder itemBuilder = MenuItemDetail.newBuilder()
+				MenuItemDetailResponse.Builder itemBuilder = MenuItemDetailResponse.newBuilder()
 						.setMenuItemId(menuItem.getId().toString())
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
@@ -88,13 +88,13 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 				// 3. Map Modifiers (from MenuItem entity)
 				if (menuItem.getModifierGroups() != null) {
 					menuItem.getModifierGroups().forEach(group -> {
-						ModifierGroup.Builder groupBuilder = ModifierGroup.newBuilder()
+						ModifierGroupResponse.Builder groupBuilder = ModifierGroupResponse.newBuilder()
 								.setGroupName(group.getName())
 								.setMinSelect(group.getMinSelect())
 								.setMaxSelect(group.getMaxSelect());
 
 						group.getModifiers().forEach(opt -> groupBuilder.addOptions(
-								ModifierOption.newBuilder()
+								ModifierOptionResponse.newBuilder()
 										.setName(opt.getName())
 										.setExtraPrice(opt.getPriceAdjustment().doubleValue())
 										.build()
@@ -141,8 +141,8 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 		}
 	}
 
-	private MenuItemDetail mapToProto(MenuItem entity) {
-		MenuItemDetail.Builder builder = MenuItemDetail.newBuilder()
+	private MenuItemDetailResponse mapToProto(MenuItem entity) {
+		MenuItemDetailResponse.Builder builder = MenuItemDetailResponse.newBuilder()
 				.setMenuItemId(entity.getId().toString())
 				.setName(entity.getName())
 				.setDescription(entity.getDescription() != null ? entity.getDescription() : "")
@@ -152,7 +152,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 		// Map through the join table: menu_item_modifier_groups
 		if (entity.getModifierGroups() != null) {
 			entity.getModifierGroups().forEach(group -> {
-				ModifierGroup.Builder groupBuilder = ModifierGroup.newBuilder()
+				ModifierGroupResponse.Builder groupBuilder = ModifierGroupResponse.newBuilder()
 						.setGroupId(group.getId().toString())
 						.setGroupName(group.getName())
 						.setMinSelect(group.getMinSelect()) // DB column 'min_select'
@@ -161,7 +161,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 				// Map the child choices from the 'modifiers' table
 				if (group.getModifiers() != null) {
 					group.getModifiers().forEach(modifier -> {
-						groupBuilder.addOptions(ModifierOption.newBuilder()
+						groupBuilder.addOptions(ModifierOptionResponse.newBuilder()
 								.setOptionId(modifier.getId().toString())
 								.setName(modifier.getName())
 								.setExtraPrice(modifier.getPriceAdjustment().doubleValue()) // DB column 'price_adjustment'

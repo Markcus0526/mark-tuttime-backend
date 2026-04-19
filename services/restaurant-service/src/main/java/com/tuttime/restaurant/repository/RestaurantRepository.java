@@ -18,17 +18,4 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID>, J
 
 	Optional<Restaurant> findByIdAndDeletedFalse(UUID restaurantId);
 
-	@Query(value = "SELECT * FROM restaurants r " +
-			"WHERE r.deleted = false AND " +
-			"ST_DWithin(r.location, ST_MakePoint(:lng, :lat)::geography, :radius) " +
-			"ORDER BY ST_Distance(r.location, ST_MakePoint(:lng, :lat)::geography) ASC",
-			countQuery = "SELECT count(*) FROM restaurants r " +
-					"WHERE r.deleted = false AND " +
-					"ST_DWithin(r.location, ST_MakePoint(:lng, :lat)::geography, :radius)",
-			nativeQuery = true)
-	Page<Restaurant> findPagesByLocationNear(@Param("lat") double latitude,
-	                                         @Param("lng") double longitude,
-	                                         @Param("radius") double radiusMeters,
-	                                         Pageable pageable);
-
 }

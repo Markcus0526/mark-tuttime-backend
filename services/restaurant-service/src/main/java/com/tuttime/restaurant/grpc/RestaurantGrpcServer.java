@@ -85,14 +85,14 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		try {
 			UUID tableId = UUID.fromString(request.getTableId());
 
-			TableHierarchyRecord details = tableRepository.findTableHierarchy(tableId)
+			TableHierarchyRecord record = tableRepository.findTableHierarchy(tableId)
 					.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
 			TableDetailResponse response = TableDetailResponse.newBuilder()
-					.setRestaurantId(details.getRestaurantId().toString())
-					.setBranchId(details.getBranchId().toString())
-					.setZoneId(details.getZoneId().toString())
-					.setTableId(details.getTableId().toString())
+					.setRestaurantId(record.restaurantId().toString())
+					.setBranchId(record.branchId().toString())
+					.setZoneId(record.zoneId().toString())
+					.setTableId(record.tableId().toString())
 					.setAvailable(true)
 					.build();
 
@@ -226,8 +226,6 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 					.setBranchAddress(details.branchAddress())
 					.setBranchPhone(details.branchPhone() != null ? details.branchPhone() : "")
 					.setRestaurantName(details.restaurantName())
-					.setRestaurantAddress(details.restaurantAddress())
-					.setRestaurantPhone(details.restaurantPhone() != null ? details.restaurantPhone() : "")
 					.build();
 
 			responseObserver.onNext(response);
@@ -240,6 +238,41 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onError(Status.INTERNAL
 					.withDescription("Internal provider error")
 					.asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getTableHierarchyDetail(TableHierarchyRequest request, StreamObserver<TableHierarchyResponse> responseObserver) {
+		try {
+			UUID tableId = UUID.fromString(request.getTableId());
+
+			TableHierarchyRecord record = tableRepository.findTableHierarchy(tableId)
+					.orElseThrow(() -> new InvalidRequestException("Table not found"));
+
+			TableHierarchyResponse response = TableHierarchyResponse.newBuilder()
+					.setTableId(record.tableId().toString())
+					.setZoneId(record.zoneId().toString())
+					.setBranchId(record.branchId().toString())
+					.setRestaurantId(record.restaurantId().toString())
+					.setTableLabel(record.tableLabel())
+					.setZoneName(record.zoneName())
+					.setBranchName(record.branchName())
+					.setBranchAddress(record.branchAddress())
+					.setBranchPhone(record.branchPhone())
+					.setRestaurantName(record.restaurantName())
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Table ID format").asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Change this to NOT_FOUND so the Booking Service knows it's just a missing record
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Only actual code crashes (NPEs, DB down) should end up here
+			responseObserver.onError(Status.INTERNAL.withDescription("An unexpected error occurred").asRuntimeException());
 		}
 	}
 }

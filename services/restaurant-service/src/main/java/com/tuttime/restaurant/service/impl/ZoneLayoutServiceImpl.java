@@ -74,12 +74,13 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 
 	@Transactional
 	public void syncLayout(UUID zoneId, ZoneLayoutDto.LayoutDto dto, UUID currentUserId, String userRoles) {
+		// 1. Validate Zone and Permissions
 		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
 				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
-		// 1. Sync Media
+		// 2. Sync Media (Using HashMap to allow nulls and prevent Map.of NPE)
 		Media media = mediaRepository.findByEntityIdAndMediaType(zoneId, MediaType.CANVAS)
 				.orElseGet(() -> {
 					Media m = new Media();
@@ -87,39 +88,43 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 					m.setMediaType(MediaType.CANVAS);
 					return m;
 				});
-		media.setLayoutConfig(Map.of("canvas", dto.canvas(), "fixtures", dto.fixtures()));
+
+		Map<String, Object> config = new HashMap<>();
+		config.put("canvas", dto.canvas());
+		config.put("fixtures", dto.fixtures());
+		media.setLayoutConfig(config);
 		mediaRepository.save(media);
 
-		// 2. Identify Deletions
+		// 3. Identify Deletions
 		List<DishTable> existingInDb = tableRepository.findAllByZoneIdAndDeletedFalse(zoneId);
+
+		// Create a set of incoming IDs for O(1) lookup
 		Set<UUID> incomingIds = dto.tables().stream()
 				.map(ZoneLayoutDto.TableDto::id)
 				.filter(Objects::nonNull)
 				.collect(Collectors.toSet());
 
-		existingInDb.stream()
+		List<DishTable> toDelete = existingInDb.stream()
 				.filter(t -> !incomingIds.contains(t.getId()))
-				.forEach(t -> {
-					if (t.getStatus() != TableStatus.ACTIVE)
-						throw new IllegalStateException("Table " + t.getLabel() + " is busy!");
+				.peek(t -> {
+					if (t.getStatus() != TableStatus.ACTIVE) {
+						throw new IllegalStateException("Table " + t.getLabel() + " is currently busy and cannot be removed!");
+					}
 					t.setDeleted(true);
-					tableRepository.save(t);
-				});
+				})
+				.collect(Collectors.toList());
 
-		// IMPORTANT: Force the deletions to happen in the DB NOW
-		// before we try to insert/update new labels.
-		tableRepository.flush();
+		if (!toDelete.isEmpty()) {
+			tableRepository.saveAll(toDelete);
+			tableRepository.flush(); // Clear deleted labels from DB constraints before upserting
+		}
 
-		// 3. Upsert Tables
+		// 4. Batch Upsert Tables
+		List<DishTable> toSave = new ArrayList<>();
 		for (ZoneLayoutDto.TableDto tDto : dto.tables()) {
-			// If ID is null or not found, it's a new table
 			DishTable table = (tDto.id() != null)
-					? tableRepository.findById(tDto.id()).orElse(new DishTable())
+					? tableRepository.findById(tDto.id()).orElseGet(DishTable::new)
 					: new DishTable();
-
-			if (tDto.id() != null) {
-				table.setId(tDto.id());
-			}
 
 			table.setZone(zone);
 			table.setLabel(tDto.label());
@@ -129,8 +134,11 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 			table.setPosY(tDto.y());
 			table.setTableType(tDto.type());
 			table.setDeleted(false);
-			tableRepository.save(table);
+
+			toSave.add(table);
 		}
+
+		tableRepository.saveAll(toSave);
 	}
 
 }

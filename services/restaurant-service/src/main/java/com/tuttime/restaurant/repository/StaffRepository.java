@@ -17,7 +17,7 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
 
 	boolean existsByRestaurantIdAndUserId(UUID restaurantId, UUID userId);
 
-	boolean existsByBranchIdAndUserId(UUID branchId, UUID userId);
+	boolean existsByUserIdAndRoleName(UUID userId, String roleName);
 
 	boolean existsByRestaurantIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
 

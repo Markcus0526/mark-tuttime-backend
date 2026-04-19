@@ -25,22 +25,16 @@ public abstract class RestaurantMapper {
 	protected MediaMapper mediaMapper;
 
 	@Mapping(target = "restaurantId", source = "id")
-	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
-	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "imageUrl", ignore = true)
 	public abstract RestaurantDto.RestaurantResponse toResponse(Restaurant entity);
 
 	@Mapping(target = "restaurantId", source = "id")
-	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
-	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "medias", ignore = true)
 	public abstract RestaurantDto.RestaurantDetailResponse toDetailResponse(Restaurant entity);
 
-	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")
 	public abstract Restaurant toEntity(RestaurantDto.RestaurantRequest request);
 
-	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")
-	public abstract void updateEntityFromRequest(RestaurantDto.RestaurantRequest request, @MappingTarget Restaurant entity);
+	public abstract void toEntityFromUpdateRequest(RestaurantDto.RestaurantUpdateRequest request, @MappingTarget Restaurant entity);
 
 	@AfterMapping
 	protected void addImageUrl(Restaurant entity, @MappingTarget RestaurantDto.RestaurantResponse.RestaurantResponseBuilder builder) {

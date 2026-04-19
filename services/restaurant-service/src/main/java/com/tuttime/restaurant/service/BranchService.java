@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.service;
 
 import com.tuttime.restaurant.dto.BranchDto;
+import com.tuttime.restaurant.dto.RestaurantDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,4 +20,6 @@ public interface BranchService {
 	void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
 
 	boolean deleteAllByRestaurantId(UUID restaurantId);
+
+	Page<BranchDto.BranchResponse> findBranchesNearLocation(double latitude, double longitude, double radiusMeters, int page, int size);
 }

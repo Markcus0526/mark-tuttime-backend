@@ -46,8 +46,6 @@ CREATE TABLE restaurants
     id          UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     name        VARCHAR(255) NOT NULL,
     description TEXT,
-    address     VARCHAR(512) NOT NULL,
-    location    GEOGRAPHY(POINT, 4326),
     phone       VARCHAR(20),
     website     VARCHAR(255),
     rating      NUMERIC(2, 1)         DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
@@ -59,8 +57,6 @@ CREATE TABLE restaurants
 
 COMMENT
 ON TABLE restaurants IS 'Primary dishTable for restaurants';
-COMMENT
-ON COLUMN restaurants.location IS 'Geographical point for proximity searches (lon, lat)';
 
 -- 2. BRANCHES
 CREATE TABLE branches
@@ -72,7 +68,7 @@ CREATE TABLE branches
     address       VARCHAR(512) NOT NULL,
     phone         VARCHAR(20),
     timezone      VARCHAR(50)  NOT NULL,
-    location      GEOGRAPHY(POINT, 4326),
+    location    GEOGRAPHY(POINT, 4326),
     rating        NUMERIC(2, 1)         DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
     deleted       BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at    TIMESTAMPTZ,
@@ -169,7 +165,7 @@ CREATE TABLE schedules
 
 -- === INDEXES ===
 CREATE INDEX idx_staffs_user_id ON staffs (user_id);
-CREATE INDEX idx_restaurants_geo ON restaurants USING GIST(location);
+CREATE INDEX idx_branches_geo ON branches USING GIST(location);
 
 -- === TRIGGERS ===
 CREATE TRIGGER trg_restaurants_upd

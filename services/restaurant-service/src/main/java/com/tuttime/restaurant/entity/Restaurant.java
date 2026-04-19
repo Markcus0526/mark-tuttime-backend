@@ -9,7 +9,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "restaurants")
+@Table(name = "restaurants", schema = "restaurant_service", indexes = {
+		@Index(name = "idx_restaurants_deleted", columnList = "deleted")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -23,12 +25,6 @@ public class Restaurant extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
-
-	@Column(name = "address", nullable = false, length = 512)
-	private String address;
-
-	@Column(name = "location", columnDefinition = "geography(Point,4326)")
-	private Point location;
 
 	@Column(name = "phone", length = 20)
 	private String phone;

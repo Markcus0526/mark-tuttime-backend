@@ -36,13 +36,13 @@ public class BranchDto {
 			@Size(max = 50, message = "Timezone must be at most 50 characters")
 			String timezone,
 
-			@DecimalMin(value = "-180.0", inclusive = true, message = "Longitude must be >= -180")
-			@DecimalMax(value = "180.0", inclusive = true, message = "Longitude must be <= 180")
-			Double longitude,
-
 			@DecimalMin(value = "-90.0", inclusive = true, message = "Latitude must be >= -90")
 			@DecimalMax(value = "90.0", inclusive = true, message = "Latitude must be <= 90")
 			Double latitude,
+
+			@DecimalMin(value = "-180.0", inclusive = true, message = "Longitude must be >= -180")
+			@DecimalMax(value = "180.0", inclusive = true, message = "Longitude must be <= 180")
+			Double longitude,
 
 			@DecimalMin(value = "0.0", inclusive = true, message = "Rating must be at least 0.0")
 			@DecimalMax(value = "5.0", inclusive = true, message = "Rating must be at most 5.0")
@@ -55,17 +55,31 @@ public class BranchDto {
 	public record BranchResponse(
 
 			UUID branchId,
-			UUID restaurantId,
+
 			String name,
+
 			String description,
+
 			String address,
+
 			String phone,
+
 			String timezone,
-			Double longitude,
+
 			Double latitude,
+
+			Double longitude,
+
 			BigDecimal rating,
+
 			String imageUrl,
+
+			UUID restaurantId,
+
+			String restaurantName,
+
 			OffsetDateTime createdAt,
+
 			OffsetDateTime updatedAt
 	) {
 	}
@@ -76,8 +90,6 @@ public class BranchDto {
 
 			UUID branchId,
 
-			UUID restaurantId,
-
 			String name,
 
 			String description,
@@ -88,14 +100,18 @@ public class BranchDto {
 
 			String timezone,
 
-			Double longitude,
-
 			Double latitude,
+
+			Double longitude,
 
 			BigDecimal rating,
 
 			@Schema(description = "URL for all images and videos from Media table")
 			List<MediaDto.MediaResponse> medias,
+
+			UUID restaurantId,
+
+			String restaurantName,
 
 			OffsetDateTime createdAt,
 

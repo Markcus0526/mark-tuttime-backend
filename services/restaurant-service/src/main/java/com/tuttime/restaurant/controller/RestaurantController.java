@@ -93,7 +93,7 @@ public class RestaurantController {
 			@Parameter(description = "Restaurant creation payload", required = true)
 			@Valid @RequestBody RestaurantDto.RestaurantRequest request) {
 
-		validateAdmin();
+		validateAdminOrOwner();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -113,7 +113,7 @@ public class RestaurantController {
 			@Parameter(description = "UUID of the restaurant to update", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Updated restaurant details", required = true)
-			@Valid @RequestBody RestaurantDto.RestaurantRequest request) {
+			@Valid @RequestBody RestaurantDto.RestaurantUpdateRequest request) {
 
 		validateAdminOrOwner();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
@@ -140,24 +140,6 @@ public class RestaurantController {
 
 		restaurantService.deleteRestaurant(restaurantId, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
-
-	// --- Restaurant Search by near ---
-
-	@Operation(summary = "Find restaurants near a location", description = "Retrieve restaurants within a radius (in meters) of given latitude and longitude")
-	@GetMapping("/near")
-	public ResponseEntity<ApiRes<Page<RestaurantDto.RestaurantResponse>>> findRestaurantsNear(
-			@RequestParam double latitude,
-			@RequestParam double longitude,
-			@RequestParam(defaultValue = "1000") double radiusMeters,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-
-		int maxPageSize = 100;
-		if (size > maxPageSize) size = maxPageSize;
-
-		Page<RestaurantDto.RestaurantResponse> restaurants = restaurantService.findRestaurantsNearLocation(latitude, longitude, radiusMeters, page, size);
-		return ResponseEntity.ok(ApiRes.success(restaurants));
 	}
 
 	// --- Restaurant Staff ---

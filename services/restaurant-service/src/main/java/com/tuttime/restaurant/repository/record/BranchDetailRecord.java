@@ -8,7 +8,5 @@ public record BranchDetailRecord(
 	String branchName,
 	String branchAddress,
 	String branchPhone,
-	String restaurantName,
-	String restaurantAddress,
-	String restaurantPhone
+	String restaurantName
 ) {}

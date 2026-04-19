@@ -56,14 +56,21 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 
 	@Query("""
 	    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyRecord(
+		    t.id,
+			z.id,
+			z.branch.id,
 	        b.restaurant.id, 
-	        z.branch.id, 
-	        z.id, 
-	        t.id
+	        t.label,
+		    z.name, 
+	        b.name,
+		    b.address,
+			b.phone,
+			r.name
 	    )
 	    FROM DishTable t
 	    JOIN t.zone z
 	    JOIN z.branch b
+		JOIN b.restaurant r
 	    WHERE t.id = :tableId AND t.deleted = false
 	""")
 	Optional<TableHierarchyRecord> findTableHierarchy(@Param("tableId") UUID tableId);

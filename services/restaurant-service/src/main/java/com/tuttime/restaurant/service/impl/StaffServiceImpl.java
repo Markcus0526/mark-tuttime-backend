@@ -200,6 +200,21 @@ public class StaffServiceImpl implements StaffService {
 			throw new InvalidRequestException("Current User not found: " + currentUserId);
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public void validateAdminOrOwnerAccess(UUID currentUserId) {
+		if (currentUserId == null)
+			throw new ForbiddenException("You do not have permission to manage this restaurant.");
+
+		UserValidRequest request = UserValidRequest.newBuilder()
+				.setUserId(currentUserId.toString())
+				.build();
+
+		UserValidResponse response = userGrpClient.validateUser(request);
+		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.OWNER.name()))
+			throw new InvalidRequestException("Current User not found: " + currentUserId);
+	}
+
 	/**
 	 * Shared helper to validate if a user can manage a specific restaurant
 	 */
