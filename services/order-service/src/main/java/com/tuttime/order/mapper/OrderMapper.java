@@ -1,5 +1,9 @@
 package com.tuttime.order.mapper;
 
+import com.tuttime.common.proto.MenuItemDetailResponse;
+import com.tuttime.common.proto.TableHierarchyResponse;
+import com.tuttime.common.proto.UserDetailResponse;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.dto.OrderItemDto;
 import com.tuttime.order.dto.OrderModifierDto;
@@ -8,34 +12,92 @@ import com.tuttime.order.entity.OrderItem;
 import com.tuttime.order.entity.OrderItemModifier;
 import org.mapstruct.*;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 @Mapper(componentModel = "spring",
 		unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface OrderMapper {
+public abstract class OrderMapper {
 
 	// Main conversion: Entity -> Response DTO
 	@Mapping(target = "orderId", source = "id")
-	OrderDto.OrderResponse toResponse(Order order);
+	public abstract OrderDto.OrderResponse toResponse(Order order);
 
 	// MapStruct automatically uses these for nested lists
 	@Mapping(target = "orderItemId", source = "id")
-	OrderItemDto.OrderItemResponse toItemResponse(OrderItem item);
+	public abstract OrderItemDto.OrderItemResponse toItemResponse(OrderItem item);
 
 	@Mapping(target = "modifierId", source = "id")
-	OrderModifierDto.OrderModifierResponse toModifierResponse(OrderItemModifier modifier);
+	public abstract OrderModifierDto.OrderModifierResponse toModifierResponse(OrderItemModifier modifier);
 
-	// Main update method
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "bookingId", ignore = true) // Booking ID shouldn't change
-	@Mapping(target = "branchId", ignore = true)  // Branch ID shouldn't change
-	@Mapping(target = "totalAmount", ignore = true) // Recalculated in Service
-	@Mapping(target = "items", source = "items")
-	void updateEntityFromDto(OrderDto.OrderUpdateRequest dto, @MappingTarget Order order);
+	@Mapping(target = "orderId", source = "order.id")
+	@Mapping(target = "createdAt", source = "order.createdAt")
+	@Mapping(target = "status", source = "order.status")
+	@Mapping(target = "user", source = "user")
+	@Mapping(target = "table", source = "table")
+// Use 'order' instead of 'entity' to match the parameter name exactly
+	@Mapping(target = "items", expression = "java(mapItemsWithDetails(order.getItems(), menuDetails))")
+	public abstract OrderDto.OrderDetailResponse toDetailResponse(
+			Order order,
+			UserDetailResponse user,
+			TableHierarchyResponse table,
+			List<MenuItemDetailResponse> menuDetails);
 
-	// Maps DTO item to Entity item
-	OrderItem toItemEntity(OrderItemDto.OrderItemRequest itemDto);
+	/**
+	 * Enhanced mapping to include Item Names and Modifiers
+	 */
+	protected List<OrderDto.OrderDetailResponse.MenuItemResponse> mapItemsWithDetails(
+			List<OrderItem> items,
+			List<MenuItemDetailResponse> details) {
 
-	// Maps DTO modifier to Entity modifier
-	OrderItemModifier toModifierEntity(OrderModifierDto.OrderModifierRequest modDto);
+		if (items == null) return Collections.emptyList();
+
+		return items.stream().map(item -> {
+			// Find matching menu detail from the gRPC list
+			var detail = (details == null) ? null : details.stream()
+					.filter(d -> d.getMenuItemId().equals(item.getMenuItemId().toString()))
+					.findFirst()
+					.orElse(null);
+
+			return OrderDto.OrderDetailResponse.MenuItemResponse.builder()
+					.menuItemId(item.getMenuItemId())
+					.name(detail != null ? detail.getName() : "Unknown Item")
+					.quantity(item.getQuantity())
+					.price(item.getPrice())
+					// Ensure you map modifiers here too!
+					.modifiers(mapModifiersWithDetails(item.getModifiers(), detail))
+					.build();
+		}).toList();
+	}
+
+	protected List<OrderDto.OrderDetailResponse.ModifierResponse> mapModifiersWithDetails(
+			List<OrderItemModifier> selectedModifiers,
+			MenuItemDetailResponse menuDetail) {
+
+		if (selectedModifiers == null || selectedModifiers.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		return selectedModifiers.stream().map(mod -> {
+			// Flatten the groups to find the specific option ID
+			var modOption = (menuDetail == null) ? null : menuDetail.getModifierGroupsList().stream()
+					.flatMap(group -> group.getOptionsList().stream())
+					.filter(option -> option.getOptionId().equals(mod.getModifierId().toString()))
+					.findFirst()
+					.orElse(null);
+
+			return OrderDto.OrderDetailResponse.ModifierResponse.builder()
+					.modifierId(mod.getModifierId())
+					.name(modOption != null ? modOption.getName() : "Extra Option")
+					.priceAdjustment(mod.getPriceAdjustment())
+					.build();
+		}).toList();
+	}
+
+	protected UUID map(String value) {
+		return UuidUtil.toUuid(value);
+	}
 
 	/**
 	 * CRITICAL: Bidirectional Sync
@@ -43,7 +105,7 @@ public interface OrderMapper {
 	 * references so Hibernate knows how to fill the Foreign Key columns.
 	 */
 	@AfterMapping
-	default void linkItems(@MappingTarget Order order) {
+	void linkItems(@MappingTarget Order order) {
 		if (order.getItems() != null) {
 			order.getItems().forEach(item -> {
 				item.setOrder(order); // Sets fk_order_items_orders (order_id)

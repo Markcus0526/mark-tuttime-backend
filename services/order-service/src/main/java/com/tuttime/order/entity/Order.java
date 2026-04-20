@@ -31,6 +31,9 @@ public class Order extends BaseUuidAnDeleteEntity {
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
+	@Column(name = "table_id", nullable = false)
+	private UUID tableId;
+
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
 	@JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) // CRITICAL for PG Enum

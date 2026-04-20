@@ -34,8 +34,13 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 			Pageable pageable);
 
 	// 3. User History Lookup
+	@EntityGraph(attributePaths = {"items"})
 	Page<Order> findByUserIdAndDeletedAtIsNull(UUID userId, Pageable pageable);
 
 	// 4. Booking Lookup
 	Optional<Order> findByBookingIdAndDeletedAtIsNull(UUID bookingId);
+
+	@Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.bookingId = :bookingId AND o.deletedAt IS NULL")
+	Optional<Order> findByBookingIdWithItems(@Param("bookingId") UUID bookingId);
+
 }
