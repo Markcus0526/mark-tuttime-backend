@@ -6,6 +6,7 @@ import com.tuttime.booking.dto.BookingSetupDto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingItem;
 import com.tuttime.booking.entity.BookingStatusHistory;
+import com.tuttime.booking.grpc.client.OrderGrpcClient;
 import com.tuttime.booking.grpc.client.UserGrpcClient;
 import com.tuttime.booking.mapper.BookingHistoryMapper;
 import com.tuttime.common.enums.BookingStatus;
@@ -27,6 +28,8 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.*;
@@ -52,6 +55,7 @@ public class BookingServiceImpl implements BookingService {
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final UserGrpcClient userGrpcClient;
 	private final MenuGrpcClient menuGrpcClient;
+	private final OrderGrpcClient orderGrpcClient;
 	private final RedissonClient redissonClient;
 	private final EventProducer eventProducer;
 
@@ -60,7 +64,7 @@ public class BookingServiceImpl implements BookingService {
 	@Override
 	@Transactional
 	public BookingDto.BookingResponse createBooking(BookingDto.BookingRequest request, UUID currentUserId, String userRoles) {
-		TableDetailResponse response = restaurantGrpcClient.getTableDetails(request.tableId());
+		TableDetailResponse response = restaurantGrpcClient.getTableDetail(request.tableId());
 		if (!response.getAvailable()) {
 			throw new InvalidRequestException("Table is no longer available.");
 		}
@@ -124,6 +128,16 @@ public class BookingServiceImpl implements BookingService {
 					request.userId(),
 					"Created",
 					OffsetDateTime.now()));
+
+			// 7. Initialize Order in Order Service
+			// We do this BEFORE the return so the order exists before the user sees the payment screen
+			// Create the request using the Builder
+			orderGrpcClient.createOrder(CreateOrderRequest.newBuilder()
+					.setBookingId(savedBooking.getId().toString())
+					.setUserId(savedBooking.getUserId().toString())
+					.setBranchId(savedBooking.getBranchId().toString())
+					.setTotalAmount(savedBooking.getTotalAmount().doubleValue()) // This expects a double
+					.build());
 
 			return bookingMapper.toResponse(savedBooking);
 
@@ -300,7 +314,8 @@ public class BookingServiceImpl implements BookingService {
 
 		// 2. Validate current state (e.g., only CREATED bookings can be PAID)
 		if (oldStatus != BookingStatus.CREATED) {
-			throw new IllegalStateException("Only CREATED bookings can be marked as PAID. Current status: " + oldStatus);
+			log.warn("Booking {} already processed. Current status: {}", bookingId, oldStatus);
+			return bookingMapper.toResponse(booking); // Return current state for idempotency
 		}
 
 		// 3. Update the state
@@ -315,16 +330,29 @@ public class BookingServiceImpl implements BookingService {
 				"Payment confirmed. Ref: " + paymentRef
 		));
 
-		// 5. Publish Event (Kafka)
-		// This allows the Notification Service to send a receipt or confirmation email.
-		eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
-				booking.getId(),
-				booking.getTableId(),
-				oldStatus,
-				BookingStatus.PAID,
-				staffOrSystemId,
-				"Payment confirmed. Ref: " + paymentRef,
-				OffsetDateTime.now()));
+		// 5. REGISTER ACTIONS AFTER COMMIT
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				// Send Kafka message ONLY after DB is updated
+				eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
+						booking.getId(),
+						booking.getTableId(),
+						oldStatus,
+						BookingStatus.PAID,
+						staffOrSystemId,
+						"Payment confirmed. Ref: " + paymentRef,
+						OffsetDateTime.now()));
+
+				// Release lock ONLY after data is visible to other threads/services
+				String lockKey = "lock:table:" + booking.getTableId();
+				try {
+					redissonClient.getLock(lockKey).unlock();
+				} catch (IllegalMonitorStateException e) {
+					log.info("Lock for table {} already released.", booking.getTableId());
+				}
+			}
+		});
 
 		return bookingMapper.toResponse(booking);
 	}

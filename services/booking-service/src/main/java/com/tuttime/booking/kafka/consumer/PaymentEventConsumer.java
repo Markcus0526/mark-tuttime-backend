@@ -45,7 +45,6 @@ public class PaymentEventConsumer {
 			log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
 
 			bookingService.markAsPaid(finalEvent.bookingId(), finalEvent.userId(), finalEvent.stripePaymentIntentId());
-
 		} catch (Exception e) {
 			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);
 		}
@@ -57,16 +56,29 @@ public class PaymentEventConsumer {
 	@KafkaListener(
 			topics = TOPIC_PAYMENT_REFUND,
 			groupId = "booking-service-group")
-	public void handlePaymentRefunded(PaymentEvent.PaymentRefundedEvent event) {
-		log.info("Kafka: Refund received for booking {}. Releasing table.", event.bookingId());
+	public void handlePaymentRefunded(String eventString) {
+		PaymentEvent.PaymentRefundedEvent event = null;
 
-		bookingService.updateStatus(
-				event.bookingId(),
-				BookingStatus.CANCELED,
-				"Automatic Cancellation: Refund Processed",
-				null,
-				null);
+		try {
+			if (org.apache.commons.lang3.StringUtils.isEmpty(eventString)) {
+				log.error("Received null event");
+				return;
+			}
+
+			event = objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
+			PaymentEvent.PaymentRefundedEvent finalEvent = event;
+
+			log.info("Kafka: Refund received for booking {}. Releasing table.", finalEvent.bookingId());
+
+			bookingService.updateStatus(
+					finalEvent.bookingId(),
+					BookingStatus.CANCELED,
+					"Automatic Cancellation: Refund Processed",
+					null,
+					null);
+
+		} catch (Exception e) {
+			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);
+		}
 	}
-
-
 }

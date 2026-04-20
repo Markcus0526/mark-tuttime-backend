@@ -20,11 +20,12 @@ public class PaymentGrpcClient {
 	@GrpcClient("payment-service")
 	private PaymentServiceGrpc.PaymentServiceBlockingStub paymentServiceBlockingStub;
 
-	public String getStripeUrl(UUID bookingId, UUID userId, BigDecimal amount) {
+	public String getStripeUrl(UUID bookingId, UUID userId, UUID branchId, BigDecimal amount) {
 		// 1. Build the Request
 		PaymentSessionRequest request = PaymentSessionRequest.newBuilder()
 				.setBookingId(bookingId.toString())
 				.setUserId(userId.toString())
+				.setBranchId(branchId.toString())
 				.setAmount(amount.doubleValue())
 				.setCurrency("USD")
 				.build();

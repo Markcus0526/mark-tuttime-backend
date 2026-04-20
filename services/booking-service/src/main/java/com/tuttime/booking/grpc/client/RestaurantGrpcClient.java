@@ -34,7 +34,7 @@ public class RestaurantGrpcClient {
 		}
 	}
 
-	public TableDetailResponse getTableDetails(UUID tableId) {
+	public TableDetailResponse getTableDetail(UUID tableId) {
 		TableDetailRequest request = TableDetailRequest.newBuilder()
 				.setTableId(tableId.toString())
 				.build();
