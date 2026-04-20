@@ -20,7 +20,21 @@ message CreateOrderRequest {
   string booking_id = 1;
   string user_id = 2;
   string branch_id = 3;
-  double total_amount = 4;
+  string table_id = 4;
+  // Use repeated to transfer a list of items
+  repeated OrderItemRequest items = 5;
+}
+
+message OrderItemRequest {
+  string menu_item_id = 1;
+  int32 quantity = 2;
+  string price = 3; // String to maintain BigDecimal precision
+  repeated ModifierRequest modifiers = 4;
+}
+
+message ModifierRequest {
+  string modifier_id = 1;
+  string price_adjustment = 2;
 }
 
 message CreateOrderResponse {

@@ -9,23 +9,11 @@ option java_outer_classname = "MenuServiceProto";
 // Menu Service gRPC
 service MenuService {
 
-  rpc getPriceForOrder (PriceRequest) returns (PriceResponse);
-
   rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
 
   rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
 
-}
-
-// rpc getPriceForOrder (PriceRequest) returns (PriceResponse);
-message PriceRequest {
-  string item_id = 1;
-  repeated string modifier_ids = 2;
-}
-
-message PriceResponse {
-  double base_price = 1;
-  double modifiers_total = 2;
+  rpc GetPriceForOrder (PriceRequest) returns (PriceResponse);
 }
 
 // rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
@@ -41,7 +29,7 @@ message MenuItemDetailResponse {
   string menu_item_id = 1;
   string name = 2;
   string description = 3;
-  double base_price = 4;
+  string base_price = 4;
   string category = 5;
   bool available = 6;
   repeated ModifierGroupResponse modifier_groups = 7;
@@ -58,7 +46,7 @@ message ModifierGroupResponse {
 message ModifierOptionResponse {
   string option_id = 1;
   string name = 2;
-  double extra_price = 3;
+  string extra_price = 3;
 }
 
 // rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
@@ -68,4 +56,14 @@ message MenuDetailsRequest {
 
 message MenuDetailsResponse {
   repeated MenuItemDetailResponse items = 1;
+}
+
+// rpc GetPriceForOrder (PriceRequest) returns (PriceResponse);
+message PriceRequest {
+  string menu_item_id = 1;
+  repeated string modifier_ids = 2; // List of selected modifiers
+}
+
+message PriceResponse {
+  string verified_total_price = 1; // Return as string for BigDecimal precision
 }

@@ -108,7 +108,7 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 				.filter(t -> !incomingIds.contains(t.getId()))
 				.peek(t -> {
 					if (t.getStatus() != TableStatus.ACTIVE) {
-						throw new IllegalStateException("Table " + t.getLabel() + " is currently busy and cannot be removed!");
+						throw new InvalidRequestException("Table " + t.getLabel() + " is currently busy and cannot be removed!");
 					}
 					t.setDeleted(true);
 				})

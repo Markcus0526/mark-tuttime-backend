@@ -21,6 +21,7 @@ import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.exception.*;
 import com.tuttime.common.proto.*;
+import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -130,14 +131,53 @@ public class BookingServiceImpl implements BookingService {
 					OffsetDateTime.now()));
 
 			// 7. Initialize Order in Order Service
-			// We do this BEFORE the return so the order exists before the user sees the payment screen
-			// Create the request using the Builder
-			orderGrpcClient.createOrder(CreateOrderRequest.newBuilder()
+			CreateOrderRequest.Builder orderRequestBuilder = CreateOrderRequest.newBuilder()
 					.setBookingId(savedBooking.getId().toString())
 					.setUserId(savedBooking.getUserId().toString())
 					.setBranchId(savedBooking.getBranchId().toString())
-					.setTotalAmount(savedBooking.getTotalAmount().doubleValue()) // This expects a double
-					.build());
+					.setTableId(savedBooking.getTableId().toString());
+
+			// Loop through the items in your BookingRequest
+			request.preOrderItems().forEach(itemDto -> {
+				OrderItemRequest.Builder itemEntry = OrderItemRequest.newBuilder()
+						.setMenuItemId(itemDto.menuItemId().toString())
+						.setQuantity(itemDto.quantity());
+
+				// We must provide the PRICE we validated in Step 3
+				// Find the item in our menuDetails list to get the server-verified price
+				BigDecimal verifiedBasePrice = menuDetails.stream()
+						.filter(m -> m.getMenuItemId().equals(itemDto.menuItemId().toString()))
+						.findFirst()
+						.map(m -> NumberUtil.stringToBigDecimal(m.getBasePrice())) // Convert String to BigDecimal here
+						.orElse(BigDecimal.ZERO);
+
+				itemEntry.setPrice(verifiedBasePrice.toString());
+
+				// Map Modifiers and their adjustments
+				if (itemDto.modifierIds() != null) {
+					itemDto.modifierIds().forEach(modId -> {
+						// 1. Correct the nesting: items -> modifier_groups -> options
+						BigDecimal adjustment = menuDetails.stream()
+								.flatMap(m -> m.getModifierGroupsList().stream())
+								.flatMap(group -> group.getOptionsList().stream())
+								.filter(option -> option.getOptionId().equals(modId.toString()))
+								.findFirst()
+								.map(option -> NumberUtil.stringToBigDecimal(option.getExtraPrice())) // String to BigDecimal
+								.orElse(BigDecimal.ZERO);
+
+						// 2. Add to your gRPC builder
+						itemEntry.addModifiers(ModifierRequest.newBuilder()
+								.setModifierId(modId.toString())
+								.setPriceAdjustment(adjustment.toString())
+								.build());
+					});
+				}
+
+				orderRequestBuilder.addItems(itemEntry.build());
+			});
+
+			// Final gRPC Call
+			orderGrpcClient.createOrder(orderRequestBuilder.build());
 
 			return bookingMapper.toResponse(savedBooking);
 
@@ -443,7 +483,7 @@ public class BookingServiceImpl implements BookingService {
 				.menuItemId(UUID.fromString(item.getMenuItemId()))
 				.name(item.getName())
 				.description(item.getDescription())
-				.price(BigDecimal.valueOf(item.getBasePrice()))
+				.price(NumberUtil.stringToBigDecimal(item.getBasePrice()))
 				.category(item.getCategory())
 				// Map the repeated modifier groups
 				.modifierGroups(item.getModifierGroupsList().stream()
@@ -454,7 +494,7 @@ public class BookingServiceImpl implements BookingService {
 								group.getOptionsList().stream() // Map nested options
 										.map(opt -> new BookingSetupDto.BookingSetupResponse.ModifierOptionDto(
 												opt.getName(),
-												BigDecimal.valueOf(opt.getExtraPrice())
+												NumberUtil.stringToBigDecimal(opt.getExtraPrice())
 										)).toList()
 						)).toList())
 				.build();
@@ -500,18 +540,18 @@ public class BookingServiceImpl implements BookingService {
 					.orElseThrow(() -> new BusinessException("Menu item mismatch"));
 
 			// Base Price from gRPC
-			BigDecimal itemPrice = BigDecimal.valueOf(menu.getBasePrice());
+			BigDecimal itemPrice = NumberUtil.stringToBigDecimal(menu.getBasePrice());
 
 			// Add Extra Prices for chosen modifiers
 			if (selection.modifierIds() != null) {
 				for (UUID modId : selection.modifierIds()) {
-					double extra = menu.getModifierGroupsList().stream()
+					BigDecimal extra = menu.getModifierGroupsList().stream()
 							.flatMap(g -> g.getOptionsList().stream())
 							.filter(o -> o.getOptionId().equals(modId.toString()))
-							.mapToDouble(ModifierOptionResponse::getExtraPrice)
 							.findFirst()
-							.orElse(0.0);
-					itemPrice = itemPrice.add(BigDecimal.valueOf(extra));
+							.map(o -> NumberUtil.stringToBigDecimal(o.getExtraPrice()))
+							.orElse(BigDecimal.ZERO);
+					itemPrice = itemPrice.add(extra);
 				}
 			}
 
@@ -534,17 +574,17 @@ public class BookingServiceImpl implements BookingService {
 					.orElseThrow(() -> new BusinessException("Item mismatch"));
 
 			// 2. Calculate the Unit Price (Base Price + all selected Modifier Prices)
-			BigDecimal unitPrice = BigDecimal.valueOf(menu.getBasePrice());
+			BigDecimal unitPrice = NumberUtil.stringToBigDecimal(menu.getBasePrice());
 
 			if (itemDto.modifierIds() != null) {
 				for (UUID modId : itemDto.modifierIds()) {
-					double extra = menu.getModifierGroupsList().stream()
+					BigDecimal extra = menu.getModifierGroupsList().stream()
 							.flatMap(g -> g.getOptionsList().stream())
 							.filter(o -> o.getOptionId().equals(modId.toString()))
-							.mapToDouble(ModifierOptionResponse::getExtraPrice)
 							.findFirst()
-							.orElse(0.0);
-					unitPrice = unitPrice.add(BigDecimal.valueOf(extra));
+							.map(o -> NumberUtil.stringToBigDecimal(o.getExtraPrice()))
+							.orElse(BigDecimal.ZERO);
+					unitPrice = unitPrice.add(extra);
 				}
 			}
 
