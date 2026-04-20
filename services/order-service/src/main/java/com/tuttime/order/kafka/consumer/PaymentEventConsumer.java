@@ -1,5 +1,8 @@
 package com.tuttime.order.kafka.consumer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuttime.common.enums.OrderStatus;
+import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.grpc.client.PosGrpcClient;
@@ -16,26 +19,31 @@ import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_COMPLETED;
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
 
+	private final ObjectMapper objectMapper;
 	private final OrderService orderService;
 	private final PosGrpcClient posGrpcClient; // To push to the kitchen
 
 	@KafkaListener(
 			topics = TOPIC_PAYMENT_COMPLETED,
 			groupId = "order-service-group")
-	public void handlePaymentSuccess(PaymentEvent.PaymentCompletedEvent event) {
-		log.info("Received payment success for booking: {}", event.bookingId());
-
+	public void handlePaymentSuccess(String eventString) {
 		try {
-			// 1. Mark the pre-order as PAID in the Order Service DB
-			Order updatedOrder = orderService.confirmOrderPayment(event.bookingId());
+			PaymentEvent.PaymentCompletedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
-			// 2. Send the order details to the restaurant's POS system (Kitchen)
-			posGrpcClient.pushToKitchen(updatedOrder);
+			// 1. Mark as PAID and get the full order (including items for the POS)
+			Order updatedOrder = orderService.confirmOrderPayment(event.bookingId(), event.userId(), event.branchId());
 
-			log.info("Order for booking {} successfully pushed to POS.", event.bookingId());
+			// 2. IDEMPOTENCY CHECK: Only push if it hasn't been sent yet
+			if (updatedOrder.getStatus() == OrderStatus.PAID) {
+				posGrpcClient.pushToKitchen(updatedOrder);
+
+				// 3. Move status to SENT_TO_RESTAURANT immediately after successful push
+				orderService.updateStatus(updatedOrder.getId(), OrderStatus.SENT_TO_RESTAURANT);
+				log.info("Order for booking {} pushed to POS.", event.bookingId());
+			}
+
 		} catch (Exception e) {
-			log.error("Failed to process order for booking: {}", event.bookingId(), e);
-			// In production, handle retries or move to a Dead Letter Queue (DLQ)
+			log.error("Payment Success Consumer Error: {}", e.getMessage());
 		}
 	}
 }
