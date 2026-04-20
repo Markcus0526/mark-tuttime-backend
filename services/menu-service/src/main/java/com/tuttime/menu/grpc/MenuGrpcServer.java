@@ -1,8 +1,10 @@
 package com.tuttime.menu.grpc;
 
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
+import com.tuttime.menu.entity.Modifier;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.ModifierRepository;
@@ -29,34 +31,41 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	@Override
 	public void getPriceForOrder(PriceRequest request, StreamObserver<PriceResponse> responseObserver) {
 		try {
+			UUID itemId = UUID.fromString(request.getMenuItemId());
+
 			// 1. Fetch Base Item Price
-			UUID itemId = UUID.fromString(request.getItemId());
-			BigDecimal basePrice = menuItemRepository.findById(itemId)
-					.map(item -> item.getPrice())
-					.orElse(BigDecimal.ZERO);
+			BigDecimal totalPrice = menuItemRepository.findById(itemId)
+					.map(MenuItem::getPrice)
+					.orElseThrow(() -> new InvalidRequestException("Menu item not found"));
 
-			// 2. Calculate Modifiers Total
-			double modifiersTotal = request.getModifierIdsList().stream()
-					.map(UUID::fromString)
-					.map(modId -> modifierRepository.findById(modId)
-							.map(m -> m.getPriceAdjustment())
-							.orElse(BigDecimal.ZERO))
-					.reduce(BigDecimal.ZERO, BigDecimal::add)
-					.doubleValue();
+			// 2. Fetch and Sum Modifier Adjustments
+			if (!request.getModifierIdsList().isEmpty()) {
+				BigDecimal modifiersTotal = request.getModifierIdsList().stream()
+						.map(UUID::fromString)
+						.map(id -> modifierRepository.findById(id)
+								.map(Modifier::getPriceAdjustment)
+								.orElse(BigDecimal.ZERO))
+						.reduce(BigDecimal.ZERO, BigDecimal::add);
 
-			// 3. Build and Send Response
+				totalPrice = totalPrice.add(modifiersTotal);
+			}
+
+			// 3. Build Response
 			PriceResponse response = PriceResponse.newBuilder()
-					.setBasePrice(basePrice.doubleValue())
-					.setModifiersTotal(modifiersTotal)
+					.setVerifiedTotalPrice(totalPrice.toString())
 					.build();
 
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
-
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid ID format").asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			// Handle parsing errors or missing data
-			responseObserver.onError(io.grpc.Status.INTERNAL
-					.withDescription("Error calculating price: " + e.getMessage())
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL
+					.withDescription("Price verification failed: " + e.getMessage())
 					.asRuntimeException());
 		}
 	}
@@ -81,7 +90,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 						.setMenuItemId(menuItem.getId().toString())
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
-						.setBasePrice(menuItem.getPrice().doubleValue())
+						.setBasePrice(menuItem.getPrice().toString())
 						.setCategory(category.getName())
 						.setAvailable(menuItem.getAvailable());
 
@@ -96,7 +105,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 						group.getModifiers().forEach(opt -> groupBuilder.addOptions(
 								ModifierOptionResponse.newBuilder()
 										.setName(opt.getName())
-										.setExtraPrice(opt.getPriceAdjustment().doubleValue())
+										.setExtraPrice(opt.getPriceAdjustment().toString())
 										.build()
 						));
 						itemBuilder.addModifierGroups(groupBuilder);
@@ -146,7 +155,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 				.setMenuItemId(entity.getId().toString())
 				.setName(entity.getName())
 				.setDescription(entity.getDescription() != null ? entity.getDescription() : "")
-				.setBasePrice(entity.getPrice().doubleValue()) // DB column is 'price'
+				.setBasePrice(entity.getPrice().toString()) // DB column is 'price'
 				.setAvailable(entity.getAvailable()); // DB column is 'available'
 
 		// Map through the join table: menu_item_modifier_groups
@@ -164,7 +173,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 						groupBuilder.addOptions(ModifierOptionResponse.newBuilder()
 								.setOptionId(modifier.getId().toString())
 								.setName(modifier.getName())
-								.setExtraPrice(modifier.getPriceAdjustment().doubleValue()) // DB column 'price_adjustment'
+								.setExtraPrice(modifier.getPriceAdjustment().toString()) // DB column 'price_adjustment'
 								.build());
 					});
 				}

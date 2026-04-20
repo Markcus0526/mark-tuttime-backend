@@ -30,7 +30,7 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 					UUID.fromString(request.getBookingId()),
 					UUID.fromString(request.getUserId()),
 					UUID.fromString(request.getBranchId()),
-					BigDecimal.valueOf(request.getAmount())
+					NumberUtil.stringToBigDecimal(request.getAmount())
 			);
 
 			// 2. Build Response
