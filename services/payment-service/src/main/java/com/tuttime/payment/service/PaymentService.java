@@ -5,7 +5,9 @@ import java.util.UUID;
 
 public interface PaymentService {
 	// Used by gRPC (Booking Service)
-	String createCheckoutSession(UUID bookingId, UUID userId, BigDecimal amount);
+	String createCheckoutSession(UUID bookingId, UUID userId, UUID branchId, BigDecimal amount);
 
 	void processRefund(UUID bookingId, BigDecimal amount, String reason);
+
+	void testManualPaymentSuccess(UUID bookingId, String stripePaymentIntentId);
 }

@@ -5,9 +5,8 @@ import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
-import com.tuttime.order.dto.OrderRequest;
-import com.tuttime.order.dto.OrderResponse;
-import com.tuttime.order.dto.OrderUpdateRequest;
+import com.tuttime.common.util.UuidUtil;
+import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,110 +30,105 @@ public class OrderController {
 
 	private final OrderService orderService;
 
-	@PostMapping
-	@Operation(summary = "Create a new order", description = "Initializes a pre-order linked to a specific booking")
-	@ApiResponses({
-			@ApiResponse(responseCode = "201", description = "Order created successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid request data")
-	})
-	public ResponseEntity<ApiRes<OrderResponse>> createOrder(@Valid @RequestBody OrderRequest request) {
-		OrderResponse response = orderService.createOrder(request);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiRes.success(response));
-	}
+	// --- USER ENDPOINTS ---
 
-	@GetMapping("/{id}")
-	@Operation(summary = "Get order details", description = "Retrieves full order details including items and modifiers")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Order found"),
-			@ApiResponse(responseCode = "404", description = "Order not found")
-	})
-	public ResponseEntity<ApiRes<OrderResponse>> getOrder(
-			@Parameter(description = "UUID of the order") @PathVariable UUID id) {
-		OrderResponse response = orderService.getOrderById(id);
+	@GetMapping("/{orderId}")
+	@Operation(summary = "Get order details", description = "Retrieves full order details. Users can only see their own orders.")
+	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> getOrder(@PathVariable UUID orderId) {
+
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		// The service should verify if the logged-in user owns this order
+		OrderDto.OrderResponse response = orderService.getOrderById(orderId, currentUserId);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	@PutMapping("/{id}")
-	@Operation(summary = "Modify order content", description = "Replaces existing items with the new list and recalculates totals")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Order updated"),
-			@ApiResponse(responseCode = "409", description = "Conflict (Concurrent update)"),
-			@ApiResponse(responseCode = "404", description = "Order not found")
-	})
-	public ResponseEntity<ApiRes<OrderResponse>> updateOrderContent(
-			@PathVariable UUID id,
-			@Valid @RequestBody OrderUpdateRequest request) {
+	@GetMapping("/my-orders")
+	@Operation(summary = "Get current user's orders", description = "Returns a paginated list of orders for the logged-in user")
+	public ResponseEntity<ApiRes<Page<OrderDto.OrderResponse>>> getMyOrders(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size) {
 
-		OrderResponse response = orderService.updateOrderContent(id, request);
-		return ResponseEntity.ok(ApiRes.success(response));
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		return ResponseEntity.ok(ApiRes.success(orderService.getOrdersByUserId(currentUserId, page, size)));
 	}
 
 	@GetMapping("/booking/{bookingId}")
 	@Operation(summary = "Get order by booking ID", description = "Retrieves the active order associated with a specific table booking")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Order found"),
-			@ApiResponse(responseCode = "404", description = "No order found for this booking")
-	})
-	public ResponseEntity<ApiRes<OrderResponse>> getOrderByBookingId(
-			@Parameter(description = "UUID of the booking") @PathVariable UUID bookingId) {
+	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> getOrderByBookingId(
+			@PathVariable UUID bookingId) {
 
-		OrderResponse response = orderService.getOrderByBookingId(bookingId);
+		validateLogin();
+
+		OrderDto.OrderResponse response = orderService.getOrderByBookingId(bookingId);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	@PatchMapping("/{id}/status")
-	@Operation(summary = "Update order status", description = "Transitions order through lifecycle (PAID, PREPARING, etc.)")
-	@ApiResponse(responseCode = "200", description = "Status updated")
-	public ResponseEntity<ApiRes<OrderResponse>> updateStatus(
-			@PathVariable UUID id,
-			@RequestParam OrderStatus status) {
-		OrderResponse response = orderService.updateStatus(id, status);
-		return ResponseEntity.ok(ApiRes.success(response));
-	}
-
-	@PostMapping("/{id}/checkout")
-	@Operation(summary = "Checkout and Pay", description = "Finalizes the order, processes payment, and sets status to PAID")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Payment successful, order marked as PAID"),
-			@ApiResponse(responseCode = "402", description = "Payment required/failed"),
-			@ApiResponse(responseCode = "404", description = "Order not found")
-	})
-	public ResponseEntity<ApiRes<OrderResponse>> checkout(@PathVariable UUID id) {
-		OrderResponse response = orderService.checkout(id);
-		return ResponseEntity.ok(ApiRes.success(response));
-	}
-
-	@PostMapping("/{id}/cancel")
-	@Operation(summary = "Cancel an order", description = "Transitions order status to CANCELED and triggers notifications")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Order cancelled successfully"),
-			@ApiResponse(responseCode = "400", description = "Order cannot be cancelled (e.g., already served)"),
-			@ApiResponse(responseCode = "404", description = "Order not found")
-	})
-	public ResponseEntity<ApiRes<OrderResponse>> cancelOrder(
-			@Parameter(description = "UUID of the order to cancel") @PathVariable UUID id) {
-
-		OrderResponse response = orderService.cancelOrder(id);
-		return ResponseEntity.ok(ApiRes.success(response));
-	}
-
-	@DeleteMapping("/{id}")
-	@Operation(summary = "Soft delete an order", description = "Marks the order as deleted in the database")
-	@ApiResponse(responseCode = "204", description = "Order deleted")
-	public ResponseEntity<ApiRes<Void>> deleteOrder(@PathVariable UUID id) {
-		orderService.deleteOrder(id);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT)
-				.body(ApiRes.success(null));
-	}
-
-	@DeleteMapping("/{orderId}/items/{itemId}")
-	@Operation(summary = "Remove a single item from an order")
-	public ResponseEntity<ApiRes<OrderResponse>> removeItem(
+	@PutMapping("/{orderId}")
+	@Operation(summary = "Modify order content", description = "Replaces items and recalculates totals. Allowed only while status is CREATED or PAID.")
+	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> updateOrderContent(
 			@PathVariable UUID orderId,
-			@PathVariable UUID itemId) {
+			@Valid @RequestBody OrderDto.OrderUpdateRequest request) {
 
-		OrderResponse response = orderService.removeItem(orderId, itemId);
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		OrderDto.OrderResponse response = orderService.updateOrderContent(orderId, request, currentUserId);
+		return ResponseEntity.ok(ApiRes.success(response));
+	}
+
+	@PostMapping("/{orderId}/cancel")
+	@Operation(summary = "Cancel an order", description = "Soft-cancels the order. Only allowed before SENT_TO_RESTAURANT.")
+	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> cancelOrder(
+			@PathVariable UUID orderId) {
+
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		OrderDto.OrderResponse response = orderService.cancelOrder(orderId, currentUserId);
+		return ResponseEntity.ok(ApiRes.success(response));
+	}
+
+	// --- STAFF & MANAGEMENT ENDPOINTS ---
+
+	@PatchMapping("/{orderId}/status")
+	@Operation(summary = "Update order status", description = "Transitions order through lifecycle. Restricted to Staff/Admin.")
+	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> updateStatus(
+			@PathVariable UUID orderId,
+			@RequestParam OrderStatus status) {
+
+		validateAdminOrOwnerOrManager();
+
+		OrderDto.OrderResponse response = orderService.updateStatus(orderId, status);
+		return ResponseEntity.ok(ApiRes.success(response));
+	}
+
+	@GetMapping("/search")
+	@Operation(summary = "Search orders (Admin)", description = "Filter by branch, status, or date range.")
+	public ResponseEntity<ApiRes<Page<OrderDto.OrderResponse>>> searchOrders(
+			@RequestParam(required = false) UUID branchId,
+			@RequestParam(required = false) OrderStatus status,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+
+		validateAdminOrOwnerOrManager();
+
+		return ResponseEntity.ok(ApiRes.success(orderService.searchOrders(branchId, status, page, size)));
+	}
+
+	// --- INTERNAL / POS SYNC ---
+
+	@PostMapping("/{orderId}/pos-sync")
+	@Operation(summary = "POS Kitchen Update", description = "Endpoint for POS Service to update status based on kitchen activity.")
+	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> syncFromPos(
+			@PathVariable UUID orderId,
+			@RequestBody OrderDto.PosSyncRequest syncRequest) {
+		
+		// In a real microservice, you'd validate an API Key or Service Token here
+		OrderDto.OrderResponse response = orderService.syncStatusFromPos(orderId, syncRequest);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 

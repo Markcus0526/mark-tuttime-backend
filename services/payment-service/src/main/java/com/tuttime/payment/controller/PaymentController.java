@@ -4,7 +4,7 @@ import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
-import com.tuttime.payment.dto.PaymentRequest;
+import com.tuttime.payment.dto.PaymentDto;
 import com.tuttime.payment.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,19 +29,34 @@ public class PaymentController {
 	 */
 	@PostMapping("/checkout")
 	@Operation(summary = "Create a Stripe Checkout Session via REST")
-	public ResponseEntity<ApiRes<String>> createSession(@Valid @RequestBody PaymentRequest request) {
+	public ResponseEntity<ApiRes<String>> createSession(
+			@Valid @RequestBody PaymentDto.PaymentRequest request) {
 		String url = paymentService.createCheckoutSession(
 				request.bookingId(),
 				request.userId(),
+				request.branchId(),
 				request.amount()
 		);
 		return ResponseEntity.ok(ApiRes.success(url));
 	}
 
-	@PostMapping("/{id}/refund")
-	public ResponseEntity<ApiRes<Void>> refund(@PathVariable UUID id, @RequestParam BigDecimal amount) {
-		paymentService.processRefund(id, amount, "Admin Request");
+	@PostMapping("/{bookingId}/refund")
+	public ResponseEntity<ApiRes<Void>> refund(
+			@PathVariable UUID bookingId,
+			@RequestParam BigDecimal amount) {
+		paymentService.processRefund(bookingId, amount, "Admin Request");
 		return ResponseEntity.ok(ApiRes.success(null));
+	}
+
+	@PostMapping("/test/confirm-booking/{bookingId}")
+	@Operation(summary = "FOR TESTING: Manually confirms a payment and triggers Kafka event")
+	public ResponseEntity<ApiRes<String>> testConfirmPayment(
+			@PathVariable UUID bookingId) {
+		// In dev mode, we skip Stripe and force the 'PAID' state
+		String mockStripeId = "test_pi_" + UUID.randomUUID().toString();
+		paymentService.testManualPaymentSuccess(bookingId, mockStripeId);
+
+		return ResponseEntity.ok(ApiRes.success("Success: Kafka event sent for booking " + bookingId));
 	}
 
 	/**

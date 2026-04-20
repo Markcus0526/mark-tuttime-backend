@@ -14,13 +14,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "order_items", schema = "order_service")
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @EntityListeners(AuditingEntityListener.class)
-@SQLDelete(sql = "UPDATE order_service.order_items SET deleted_at = now() WHERE id = ?")
 public class OrderItem extends BaseUuidAnDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)

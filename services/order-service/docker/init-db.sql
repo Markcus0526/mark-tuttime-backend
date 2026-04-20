@@ -41,6 +41,7 @@ CREATE TABLE orders
     id           UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
     booking_id   UUID           NOT NULL, -- Logical reference to Booking Service
     user_id      UUID           NOT NULL, -- Logical reference to User Service
+    branch_id    UUID           NOT NULL, -- Logical reference to Restaurant Service
     status       order_status   NOT NULL DEFAULT 'CREATED',
     total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
     created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
@@ -82,6 +83,7 @@ CREATE TABLE order_item_modifiers
 -- 5. Performance Indexes
 CREATE INDEX idx_orders_booking_status ON orders (booking_id, status) WHERE deleted_at IS NULL;
 CREATE INDEX idx_orders_user_id ON orders (user_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_orders_branch_id ON orders (branch_id) WHERE deleted_at IS NULL; -- Optimization for Search
 CREATE INDEX idx_order_items_order_id ON order_items (order_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_modifiers_item_id ON order_item_modifiers (order_item_id) WHERE deleted_at IS NULL;
 

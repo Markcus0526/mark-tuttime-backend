@@ -5,10 +5,7 @@ import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.OrderEvent;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.order.dto.OrderRequest;
-import com.tuttime.order.dto.OrderResponse;
-import com.tuttime.order.dto
-		.OrderUpdateRequest;
+import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.entity.OrderItem;
 import com.tuttime.order.entity.OrderItemModifier;
@@ -18,6 +15,8 @@ import com.tuttime.order.repository.OrderRepository;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,107 +36,55 @@ public class OrderServiceImpl implements OrderService {
 	private final MenuGrpcClient menuGrpcClient;
 
 	@Override
-	@Transactional
-	public OrderResponse createOrder(OrderRequest request) {
-		// 1. Initialize Order
-		Order order = Order.builder()
-				.bookingId(request.bookingId())
-				.userId(request.userId())
-				.status(OrderStatus.CREATED)
-				.build();
+	@Transactional(readOnly = true)
+	public OrderDto.OrderResponse getOrderById(UUID orderId, UUID requesterId) {
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
-		// 2. Map Request Records to Entities manually to ensure Business Rules
-		request.items().forEach(itemReq -> {
-			// gRPC Call: If this fails, the whole transaction rolls back
-			BigDecimal verifiedPrice = menuGrpcClient.getPriceForOrder(
-					itemReq.menuItemId(),
-					itemReq.modifiers().stream().map(m -> m.modifierId()).toList()
-			);
-
-			OrderItem item = OrderItem.builder()
-					.menuItemId(itemReq.menuItemId())
-					.quantity(itemReq.quantity())
-					.price(verifiedPrice)
-					.build();
-
-			itemReq.modifiers().forEach(mod -> {
-				item.getModifiers().add(OrderItemModifier.builder()
-						.modifierId(mod.modifierId())
-						.priceAdjustment(mod.priceAdjustment())
-						.orderItem(item)
-						.build());
-			});
-			order.addItem(item);
-		});
-
-		Order savedOrder = orderRepository.save(order);
-		return orderMapper.toResponse(savedOrder);
+		// Logical Security Check
+		if (!order.getUserId().equals(requesterId)) {
+			throw new RuntimeException("Access Denied");
+		}
+		return orderMapper.toResponse(order);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public OrderResponse getOrderById(UUID id) {
-		return orderRepository.findById(id)
-				.map(orderMapper::toResponse)
-				.orElseThrow(() -> new InvalidRequestException("Order not found: " + id));
+	public Page<OrderDto.OrderResponse> getOrdersByUserId(UUID userId, int page, int size) {
+		return orderRepository.findByUserIdAndDeletedAtIsNull(userId, PageRequest.of(page, size))
+				.map(orderMapper::toResponse);
 	}
 
 	@Override
-	@Transactional(readOnly = true)
-	public OrderResponse getOrderByBookingId(UUID bookingId) {
-		return orderRepository.findByBookingId(bookingId)
+	public OrderDto.OrderResponse getOrderByBookingId(UUID bookingId) {
+		return orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
 				.map(orderMapper::toResponse)
 				.orElseThrow(() -> new InvalidRequestException("No order found for booking: " + bookingId));
 	}
 
 	@Override
 	@Transactional
-	public OrderResponse updateOrderContent(UUID id, OrderUpdateRequest request) {
-		// 1. Fetch with Pessimistic Lock to prevent others from modifying while we recalculate
-		Order order = orderRepository.findByIdWithLock(id)
+	public OrderDto.OrderResponse updateOrderContent(UUID orderId, OrderDto.OrderUpdateRequest request, UUID userId) {
+		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
-		// 2. Business Rule: Cannot modify order if already being prepared
-		if (order.getStatus() != OrderStatus.CREATED && order.getStatus() != OrderStatus.ACCEPTED) {
-			throw new ConflictException("Order content cannot be modified once preparation has started.");
+		// Business Rule: Cannot edit if restaurant has already started (ACCEPTED/PREPARING)
+		if (order.getStatus().ordinal() >= OrderStatus.ACCEPTED.ordinal()) {
+			throw new IllegalStateException("Cannot modify order after it has been accepted by the restaurant");
 		}
 
-		// 3. Clear existing items (JPA orphanRemoval will delete them from DB)
-		order.getItems().clear();
+		// Map DTO to Entity (Clears old Items and adds new ones via Cascade)
+		orderMapper.updateEntityFromDto(request, order);
 
-		// 4. Add new/updated items
-		for (var itemReq : request.items()) {
-			List<UUID> modIds = itemReq.modifiers().stream().map(m -> m.modifierId()).toList();
+		// RECALCULATION: Crucial for your NUMERIC(12,2) total_amount column
+		recalculateTotal(order);
 
-			// Verified Price via gRPC
-			BigDecimal verifiedPrice = menuGrpcClient.getPriceForOrder(itemReq.menuItemId(), modIds);
-
-			OrderItem newItem = OrderItem.builder()
-					.menuItemId(itemReq.menuItemId())
-					.quantity(itemReq.quantity())
-					.price(verifiedPrice)
-					.order(order)
-					.build();
-
-			itemReq.modifiers().forEach(m -> {
-				newItem.getModifiers().add(OrderItemModifier.builder()
-						.modifierId(m.modifierId())
-						.priceAdjustment(m.priceAdjustment())
-						.orderItem(newItem)
-						.build());
-			});
-
-			order.addItem(newItem);
-		}
-
-		// 5. Total is automatically recalculated inside addItem()
-		Order updated = orderRepository.save(order);
-		return orderMapper.toResponse(updated);
+		return orderMapper.toResponse(orderRepository.save(order));
 	}
 
 	@Override
 	@Transactional // CRITICAL: Pessimistic lock only works inside a transaction
-	public OrderResponse updateStatus(UUID id, OrderStatus newStatus) {
+	public OrderDto.OrderResponse updateStatus(UUID id, OrderStatus newStatus) {
 		// 1. CALL THE LOCKING METHOD
 		// This executes "SELECT ... FOR UPDATE" in Postgres
 		Order order = orderRepository.findByIdWithLock(id)
@@ -166,110 +113,127 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
+	public OrderDto.OrderResponse cancelOrder(UUID orderId, UUID userId) {
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
+
+		if (order.getStatus() == OrderStatus.SENT_TO_RESTAURANT || order.getStatus().ordinal() > 2) {
+			throw new IllegalStateException("Order is already with the kitchen and cannot be canceled");
+		}
+
+		order.setStatus(OrderStatus.CANCELED);
+		return orderMapper.toResponse(orderRepository.save(order));
+	}
+
+	@Override
+	@Transactional
+	public OrderDto.OrderResponse syncStatusFromPos(UUID orderId, OrderDto.PosSyncRequest request) {
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
+
+		// Update status based on POS feedback
+		order.setStatus(request.posStatus());
+
+		// Save the update
+		Order updated = orderRepository.save(order);
+
+		// CRITICAL: Trigger Real-time notification (WebSocket)
+		// "Your order is READY at the kitchen!"
+//		notificationService.sendOrderStatusUpdate(updated.getUserId(), updated.getStatus());
+
+		return orderMapper.toResponse(updated);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Page<OrderDto.OrderResponse> searchOrders(UUID branchId, OrderStatus status, int page, int size) {
+		// Using a custom repository method for dynamic filtering
+		return orderRepository.searchOrders(branchId, status, PageRequest.of(page, size))
+				.map(orderMapper::toResponse);
+	}
+
+	@Override
+	@Transactional
 	public void deleteOrder(UUID id) {
 		orderRepository.deleteById(id); // Triggers soft delete via @SQLDelete
 	}
 
 	@Override
 	@Transactional
-	public OrderResponse cancelOrder(UUID id) {
-		Order order = orderRepository.findById(id)
-				.orElseThrow(() -> new InvalidRequestException("Order not found: " + id));
+	public Order confirmOrderPayment(UUID bookingId, UUID userId, UUID branchId) {
+		// 1. Try to find the existing order
+		return orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
+				.map(order -> {
+					// 2. If it's already PAID or further along, don't repeat the logic
+					if (order.getStatus().ordinal() >= OrderStatus.PAID.ordinal()) {
+						log.warn("Order for booking {} is already in status: {}", bookingId, order.getStatus());
+						return order;
+					}
 
-		// Business Rule: Cannot cancel if food is already being served
-		if (order.getStatus() == OrderStatus.SERVED || order.getStatus() == OrderStatus.COMPLETED) {
-			throw new ConflictException("Order cannot be canceled in its current state.");
+					// 3. Update status to PAID
+					order.setStatus(OrderStatus.PAID);
+					log.info("Transitioning order {} to PAID for booking {}", order.getId(), bookingId);
+					return orderRepository.save(order);
+				})
+				.orElseGet(() -> {
+					// 4. FALLBACK: If order doesn't exist yet (Race condition), create it.
+					// NOTE: You need to ensure the Payment event contains userId and branchId
+					log.info("Order not found for booking {}. Creating new PAID order.", bookingId);
+
+					Order newOrder = Order.builder()
+							.bookingId(bookingId)
+							// These must come from your event/context
+							.userId(userId)
+							.branchId(branchId)
+							.status(OrderStatus.PAID)
+							.totalAmount(BigDecimal.ZERO)
+							.build();
+
+					return orderRepository.save(newOrder);
+				});
+	}
+
+	@Override
+	@Transactional
+	public void cancelOrderByBookingId(UUID bookingId) {
+		log.info("Attempting to cancel order for booking: {}", bookingId);
+
+		// 1. Find the order by the logical booking ID
+		Order order = orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
+				.orElseThrow(() -> new InvalidRequestException("No active order found for booking: " + bookingId));
+
+		// 2. Business Rule: Safety Check
+		// If the order is already PREPARING, READY, or SERVED, don't allow auto-cancellation
+		if (order.getStatus().ordinal() >= OrderStatus.PREPARING.ordinal()) {
+			log.warn("Cannot auto-cancel order {}. It is already in status: {}", order.getId(), order.getStatus());
+			// You might want to trigger a manual alert for staff here
+			return;
 		}
 
-		OrderStatus oldStatus = order.getStatus();
+		// 3. Perform Cancellation
 		order.setStatus(OrderStatus.CANCELED);
-		Order updated = orderRepository.save(order);
+		orderRepository.save(order);
 
-		// Kafka Event
-		eventProducer.sendOrderStatusUpdatedEvent(new OrderEvent.OrderStatusEvent(
-				updated.getId(), updated.getBookingId(), oldStatus, OrderStatus.CANCELED, OffsetDateTime.now()
-		));
-
-		return orderMapper.toResponse(updated);
+		log.info("Order {} successfully canceled due to booking cancellation event.", order.getId());
 	}
 
-	@Override
-	@Transactional
-	public OrderResponse removeItem(UUID orderId, UUID itemId) {
-		Order order = orderRepository.findByIdWithLock(orderId)
-				.orElseThrow(() -> new InvalidRequestException("Order not found"));
+	/**
+	 * Logic to sum Items and their Modifiers to update the Order total_amount
+	 */
+	private void recalculateTotal(Order order) {
+		BigDecimal total = order.getItems().stream()
+				.map(item -> {
+					BigDecimal itemBase = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+					BigDecimal modifiersTotal = item.getModifiers().stream()
+							.map(m -> m.getPriceAdjustment().multiply(BigDecimal.valueOf(item.getQuantity())))
+							.reduce(BigDecimal.ZERO, BigDecimal::add);
+					return itemBase.add(modifiersTotal);
+				})
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
 
-		// Business Rule check
-		if (order.getStatus() != OrderStatus.CREATED) {
-			throw new ConflictException("Cannot remove items after order is accepted");
-		}
-
-		// Find and remove the specific item
-		boolean removed = order.getItems().removeIf(item -> item.getId().equals(itemId));
-
-		if (!removed) {
-			throw new InvalidRequestException("Item not found in this order");
-		}
-
-		// Recalculate total and save
-		order.recalculateTotal();
-		return orderMapper.toResponse(orderRepository.save(order));
+		order.setTotalAmount(total);
 	}
 
-	@Override
-	@Transactional
-	public OrderResponse checkout(UUID id) {
-		// 1. Lock the order to prevent concurrent modifications
-		Order order = orderRepository.findByIdWithLock(id)
-				.orElseThrow(() -> new InvalidRequestException("Order not found: " + id));
 
-		// 2. Validate State
-		if (order.getStatus() != OrderStatus.CREATED) {
-			throw new ConflictException("Order is in " + order.getStatus() + " state and cannot be paid.");
-		}
 
-		if (order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-			throw new ConflictException("Cannot checkout an empty or zero-amount order.");
-		}
-
-		// 3. Logic: Integrate with Payment Service here (e.g., via Stripe/Braintree)
-		// For now, we assume payment is successful.
-		OrderStatus oldStatus = order.getStatus();
-		order.setStatus(OrderStatus.PAID);
-
-		Order savedOrder = orderRepository.save(order);
-
-		// 4. Emit Kafka Event for POS and Analytics
-		eventProducer.sendOrderStatusUpdatedEvent(new OrderEvent.OrderStatusEvent(
-				savedOrder.getId(),
-				savedOrder.getBookingId(),
-				oldStatus,
-				OrderStatus.PAID,
-				OffsetDateTime.now()
-		));
-
-		return orderMapper.toResponse(savedOrder);
-	}
-
-	@Transactional
-	public Order confirmOrderPayment(UUID bookingId) {
-		// 1. Locate the specific order linked to this booking
-		Order order = orderRepository.findByBookingId(bookingId)
-				.orElseThrow(() -> new InvalidRequestException("No order found for booking: " + bookingId));
-
-		// 2. Validate current state (prevent redundant updates or illegal transitions)
-		if (order.getStatus() == OrderStatus.PAID) {
-			log.info("Order for booking {} is already marked as PAID.", bookingId);
-			return order;
-		}
-
-		// 3. Update status to PAID (or PLACED)
-		order.setStatus(OrderStatus.PAID);
-
-		// 4. Update audit fields (optional but recommended)
-		order.setUpdatedAt(OffsetDateTime.now());
-
-		// 5. Save and return for further processing (like pushing to POS)
-		return orderRepository.save(order);
-	}
 }

@@ -1,32 +1,28 @@
 package com.tuttime.order.service;
 
+import com.tuttime.order.dto.OrderDto;
 import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.order.dto.OrderRequest;
-import com.tuttime.order.dto.OrderResponse;
-import com.tuttime.order.dto.OrderUpdateRequest;
 import com.tuttime.order.entity.Order;
-
+import org.springframework.data.domain.Page;
 import java.util.UUID;
 
 public interface OrderService {
 
-	OrderResponse createOrder(OrderRequest request);
+	// User Operations
+	OrderDto.OrderResponse getOrderById(UUID orderId, UUID requesterId);
+	Page<OrderDto.OrderResponse> getOrdersByUserId(UUID userId, int page, int size);
+	OrderDto.OrderResponse getOrderByBookingId(UUID bookingId);
+	OrderDto.OrderResponse updateOrderContent(UUID orderId, OrderDto.OrderUpdateRequest request, UUID userId);
+	OrderDto.OrderResponse cancelOrder(UUID orderId, UUID userId);
 
-	OrderResponse updateOrderContent(UUID id, OrderUpdateRequest request);
+	// Management & POS Operations
+	OrderDto.OrderResponse updateStatus(UUID orderId, OrderStatus newStatus);
+	OrderDto.OrderResponse syncStatusFromPos(UUID orderId, OrderDto.PosSyncRequest syncRequest);
+	Page<OrderDto.OrderResponse> searchOrders(UUID branchId, OrderStatus status, int page, int size);
 
-	OrderResponse getOrderById(UUID id);
+	void deleteOrder(UUID orderId); // Soft delete
 
-	OrderResponse getOrderByBookingId(UUID bookingId);
+	Order confirmOrderPayment(UUID bookingId, UUID userId, UUID branchId);
 
-	OrderResponse updateStatus(UUID id, OrderStatus status);
-
-	void deleteOrder(UUID id);
-
-	OrderResponse cancelOrder(UUID id);
-
-	OrderResponse removeItem(UUID orderId, UUID itemId);
-
-	OrderResponse checkout(UUID id);
-
-	Order confirmOrderPayment(UUID bookingId);
+	void cancelOrderByBookingId(UUID bookingId);
 }

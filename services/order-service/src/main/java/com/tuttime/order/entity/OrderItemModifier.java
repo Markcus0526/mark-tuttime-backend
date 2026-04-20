@@ -11,13 +11,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "order_item_modifiers", schema = "order_service")
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @EntityListeners(AuditingEntityListener.class)
-@SQLDelete(sql = "UPDATE order_service.order_item_modifiers SET deleted_at = now() WHERE id = ?")
 public class OrderItemModifier extends BaseLockingEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)

@@ -25,6 +25,9 @@ public class Payment extends BaseUuidEntity {
 	@Column(name = "user_id", nullable = false)
 	private UUID userId;
 
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
+
 	@Column(name = "stripe_session_id", unique = true)
 	private String stripeSessionId;
 
