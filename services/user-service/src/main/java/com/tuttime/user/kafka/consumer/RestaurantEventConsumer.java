@@ -17,9 +17,9 @@ import java.util.Optional;
 
 import static com.tuttime.common.event.EventProducer.TOPIC_RESTAURANT_STAFF_UPDATED;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RestaurantEventConsumer {
 
 	private final UserRepository userRepository;
