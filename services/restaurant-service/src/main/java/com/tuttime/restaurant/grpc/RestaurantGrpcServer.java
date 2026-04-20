@@ -101,8 +101,12 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 
 		} catch (IllegalArgumentException e) {
 			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Table ID format").asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("An unexpected error occurred").asRuntimeException());
 		}
 	}
 
