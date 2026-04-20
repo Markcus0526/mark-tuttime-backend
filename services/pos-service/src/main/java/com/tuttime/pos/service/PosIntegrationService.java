@@ -2,7 +2,7 @@ package com.tuttime.pos.service;
 
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.mapper.PosProtoMapper;
-import com.tuttime.common.proto.OrderDetailsResponse;
+import com.tuttime.common.proto.OrderDetailResponse;
 import com.tuttime.pos.grpc.client.OrderGrpcClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class PosIntegrationService {
 	public void pushOrderToRestaurant(UUID orderId) {
 		try {
 			// 1. Fetch deep order details from Order Service
-			OrderDetailsResponse response = orderGrpcClient.fetchOrderDetails(orderId);
+			OrderDetailResponse response = orderGrpcClient.fetchOrderDetail(orderId);
 
 			// 2. Convert Protobuf to Map<String, Object> for POS Payload
 			Map<String, Object> posPayload = PosProtoMapper.toPosMap(response);
