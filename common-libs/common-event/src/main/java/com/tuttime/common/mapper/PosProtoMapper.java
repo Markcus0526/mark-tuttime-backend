@@ -3,7 +3,7 @@ package com.tuttime.common.mapper;
 import com.google.protobuf.util.JsonFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.tuttime.common.proto.OrderDetailsResponse;
+import com.tuttime.common.proto.OrderDetailResponse;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +13,7 @@ public class PosProtoMapper {
 
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
-	public static Map<String, Object> toPosMap(OrderDetailsResponse response) throws Exception {
+	public static Map<String, Object> toPosMap(OrderDetailResponse response) throws Exception {
 		// 1. Initial conversion from Proto to Map
 		String json = JsonFormat.printer()
 				.includingDefaultValueFields()

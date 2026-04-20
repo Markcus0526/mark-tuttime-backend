@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +21,10 @@ public class OrderItemDto {
 			@NotNull @Positive Integer quantity,
 			List<OrderModifierDto.OrderModifierRequest> modifiers
 	) {
+		// Compact constructor to ensure modifiers is never null
+		public OrderItemRequest {
+			if (modifiers == null) modifiers = Collections.emptyList();
+		}
 	}
 
 	public record OrderItemUpdateRequest(
@@ -29,6 +34,10 @@ public class OrderItemDto {
 			@NotNull Integer quantity,
 			List<OrderModifierDto.OrderModifierRequest> modifiers
 	) {
+		// Compact constructor to ensure modifiers is never null
+		public OrderItemUpdateRequest {
+			if (modifiers == null) modifiers = Collections.emptyList();
+		}
 	}
 
 	public record OrderItemResponse(

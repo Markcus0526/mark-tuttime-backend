@@ -38,20 +38,80 @@ public class OrderDto {
 	public record PosSyncRequest(
 			@NotNull(message = "POS Status is required")
 			OrderStatus posStatus,
-
 			String posOrderId,       // The ID from the physical system (e.g., iiko ID)
 			String kitchenNote,      // Optional notes from the chef
 			OffsetDateTime syncTime  // Timestamp from the restaurant hardware
 	) {}
 
 	public record OrderResponse(
+
 			UUID orderId,
+
 			UUID bookingId,
+
 			UUID userId,
+
 			OrderStatus status,
+
 			BigDecimal totalAmount,
+
 			List<OrderItemDto.OrderItemResponse> items,
+
+			OffsetDateTime createdAt
+	) {}
+
+	public record OrderDetailResponse(
+
+			UUID orderId,
+
+			UUID bookingId,
+
+			OrderStatus status,
+
+			BigDecimal totalAmount,
+
+			List<MenuItemResponse> items,
+
+			UserDetailResponse user,
+
+			TableDetailResponse table,
+
 			OffsetDateTime createdAt
 	) {
+		public record UserDetailResponse(
+				UUID userId,
+				String phoneNumber,
+				String email,
+				String fullName
+		) {}
+
+		public record TableDetailResponse(
+				UUID branchId,
+				UUID restaurantId,
+				UUID zoneId,
+				UUID tableId,
+				String restaurantName,
+				String branchName,
+				String branchAddress,
+				String branchPhone,
+				String zoneName,
+				String tableLabel
+		) {}
+
+		@Builder
+		public record MenuItemResponse(
+				UUID menuItemId,
+				String name,      // From Menu gRPC
+				Integer quantity,     // From local DB
+				BigDecimal price,
+				List<ModifierResponse> modifiers
+		) {}
+
+		@Builder
+		public record ModifierResponse(
+				UUID modifierId,
+				String name,           // Enriched from Menu Service
+				BigDecimal priceAdjustment // From Order Service DB
+		) {}
 	}
 }

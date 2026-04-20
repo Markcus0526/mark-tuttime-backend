@@ -1,8 +1,9 @@
 package com.tuttime.order.grpc.client;
 
-import com.tuttime.common.proto.MenuServiceGrpc;
-import com.tuttime.common.proto.PriceRequest;
-import com.tuttime.common.proto.PriceResponse;
+import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.common.proto.*;
+import com.tuttime.common.util.NumberUtil;
+import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -23,12 +24,28 @@ public class MenuGrpcClient {
 
 	public BigDecimal getPriceForOrder(UUID menuItemId, List<UUID> modifierIds) {
 		PriceRequest request = PriceRequest.newBuilder()
-				.setItemId(menuItemId.toString())
+				.setMenuItemId(menuItemId.toString())
 				.addAllModifierIds(modifierIds.stream().map(UUID::toString).toList())
 				.build();
 
 		// gRPC Call
 		PriceResponse response = menuServiceBlockingStub.getPriceForOrder(request);
-		return BigDecimal.valueOf(response.getBasePrice() + response.getModifiersTotal());
+		return NumberUtil.stringToBigDecimal(response.getVerifiedTotalPrice());
+	}
+
+	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
+		// 1. Build the request with repeated IDs
+		MenuDetailsRequest request = MenuDetailsRequest.newBuilder()
+				.addAllMenuItemIds(menuItemIds)
+				.build();
+
+		try {
+			// 2. Call the server and return the items list
+			MenuDetailsResponse response = menuServiceBlockingStub.getMenuDetails(request);
+			return response.getItemsList();
+		} catch (StatusRuntimeException e) {
+			log.error("Failed to fetch menu details: {}", e.getStatus());
+			throw new InvalidRequestException("Menu service is currently unavailable.");
+		}
 	}
 }

@@ -9,11 +9,15 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Slf4j
 @RestControllerAdvice
@@ -82,7 +86,7 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ErrorResponse> handleJsonParseError(HttpMessageNotReadableException ex, HttpServletRequest request) {
 		log.error(">>>>> HttpMessageNotReadableException: [{}]: {}", getCorrelationId(request), ex.getMessage());
 		return createErrorResponse(
-				HttpStatus.NOT_FOUND,
+				NOT_FOUND,
 				ErrorCodes.RESOURCE_NOT_FOUND,
 				ex.getMessage(),
 				request,
@@ -140,6 +144,38 @@ public class GlobalExceptionHandler {
 				HttpStatus.BAD_REQUEST,
 				ErrorCodes.VALIDATION_FAILED,
 				ex.getMessage(),
+				request,
+				null);
+	}
+
+	/**
+	 * Handle gRPC specific exceptions (e.g., from Restaurant or Order service)
+	 */
+	@ExceptionHandler(StatusRuntimeException.class)
+	public ResponseEntity<ErrorResponse> handleStatusRuntimeException(StatusRuntimeException ex, HttpServletRequest request) {
+		Status grpcStatus = ex.getStatus();
+
+		log.error(">>>>> gRPC External Error [{}]: {} - {}",
+				getCorrelationId(request),
+				grpcStatus.getCode(),
+				grpcStatus.getDescription());
+
+		// Map gRPC Status Codes to HTTP Status Codes
+		HttpStatus httpStatus = switch (grpcStatus.getCode()) {
+			case NOT_FOUND -> NOT_FOUND;         // 404
+			case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;  // 400
+			case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED; // 401
+			case PERMISSION_DENIED -> HttpStatus.FORBIDDEN;  // 403
+			case DEADLINE_EXCEEDED -> HttpStatus.GATEWAY_TIMEOUT; // 504
+			case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;   // 503
+			default -> HttpStatus.INTERNAL_SERVER_ERROR;      // 500
+		};
+
+		// Matches your existing createErrorResponse signature
+		return createErrorResponse(
+				httpStatus,
+				"EXTERNAL_SERVICE_ERROR_" + grpcStatus.getCode().name(),
+				grpcStatus.getDescription(),
 				request,
 				null);
 	}

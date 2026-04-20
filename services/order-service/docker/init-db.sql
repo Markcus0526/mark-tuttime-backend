@@ -41,7 +41,8 @@ CREATE TABLE orders
     id           UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
     booking_id   UUID           NOT NULL, -- Logical reference to Booking Service
     user_id      UUID           NOT NULL, -- Logical reference to User Service
-    branch_id    UUID           NOT NULL, -- Logical reference to Restaurant Service
+    branch_id    UUID           NOT NULL, -- Logical reference to Branch Service
+    table_id     UUID           NOT NULL, -- Logical reference to Table Service
     status       order_status   NOT NULL DEFAULT 'CREATED',
     total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
     created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,

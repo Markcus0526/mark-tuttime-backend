@@ -8,22 +8,39 @@ option java_outer_classname = "OrderServiceProto";
 
 // Order Service gRPC
 service OrderService {
-  rpc getOrderDetails (OrderRequest) returns (OrderDetailsResponse);
+
+  rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+
+  rpc GetOrderDetail (OrderDetailRequest) returns (OrderDetailResponse);
 
 }
 
-message OrderRequest {
+// rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
+message CreateOrderRequest {
+  string booking_id = 1;
+  string user_id = 2;
+  string branch_id = 3;
+  double total_amount = 4;
+}
+
+message CreateOrderResponse {
+  string order_id = 1;
+  string status = 2;
+}
+
+// rpc getOrderDetails (OrderRequest) returns (OrderDetailsResponse);
+message OrderDetailRequest {
   string order_id = 1;
 }
 
-message OrderDetailsResponse {
+message OrderDetailResponse {
   string order_id = 1 [json_name = "id"];
   string booking_id = 2;
   double total_amount = 3;
-  repeated OrderItemDetail items = 4;
+  repeated OrderItemDetailResponse items = 4;
 }
 
-message OrderItemDetail {
+message OrderItemDetailResponse {
   string menu_item_name = 1; // POS needs names for printing
   int32 quantity = 2;
   double price = 3;

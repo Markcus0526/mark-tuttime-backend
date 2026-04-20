@@ -34,36 +34,36 @@ public class OrderController {
 
 	@GetMapping("/{orderId}")
 	@Operation(summary = "Get order details", description = "Retrieves full order details. Users can only see their own orders.")
-	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> getOrder(@PathVariable UUID orderId) {
+	public ResponseEntity<ApiRes<OrderDto.OrderDetailResponse>> getOrder(@PathVariable UUID orderId) {
 
 		validateLogin();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 
 		// The service should verify if the logged-in user owns this order
-		OrderDto.OrderResponse response = orderService.getOrderById(orderId, currentUserId);
+		OrderDto.OrderDetailResponse response = orderService.getOrderById(orderId, currentUserId);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	@GetMapping("/my-orders")
+	@GetMapping("/user/{userId}")
 	@Operation(summary = "Get current user's orders", description = "Returns a paginated list of orders for the logged-in user")
-	public ResponseEntity<ApiRes<Page<OrderDto.OrderResponse>>> getMyOrders(
+	public ResponseEntity<ApiRes<Page<OrderDto.OrderDetailResponse>>> getOrdersByUserId(
+			@PathVariable UUID userId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size) {
 
 		validateLogin();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 
-		return ResponseEntity.ok(ApiRes.success(orderService.getOrdersByUserId(currentUserId, page, size)));
+		return ResponseEntity.ok(ApiRes.success(orderService.getOrdersByUserId(userId, page, size)));
 	}
 
 	@GetMapping("/booking/{bookingId}")
 	@Operation(summary = "Get order by booking ID", description = "Retrieves the active order associated with a specific table booking")
-	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> getOrderByBookingId(
+	public ResponseEntity<ApiRes<OrderDto.OrderDetailResponse>> getOrderByBookingId(
 			@PathVariable UUID bookingId) {
 
 		validateLogin();
 
-		OrderDto.OrderResponse response = orderService.getOrderByBookingId(bookingId);
+		OrderDto.OrderDetailResponse response = orderService.getOrderByBookingId(bookingId);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
@@ -106,10 +106,10 @@ public class OrderController {
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	@GetMapping("/search")
+	@GetMapping("/branch/{branchId}")
 	@Operation(summary = "Search orders (Admin)", description = "Filter by branch, status, or date range.")
-	public ResponseEntity<ApiRes<Page<OrderDto.OrderResponse>>> searchOrders(
-			@RequestParam(required = false) UUID branchId,
+	public ResponseEntity<ApiRes<Page<OrderDto.OrderDetailResponse>>> searchOrders(
+			@PathVariable(required = false) UUID branchId,
 			@RequestParam(required = false) OrderStatus status,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
