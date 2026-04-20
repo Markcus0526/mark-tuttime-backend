@@ -20,6 +20,7 @@ public class PaymentEventProducer {
 		PaymentEvent.PaymentCompletedEvent event = new PaymentEvent.PaymentCompletedEvent(
 				payment.getBookingId(),
 				payment.getUserId(),
+				payment.getBranchId(),
 				payment.getStripeSessionId(),
 				payment.getAmount(),
 				payment.getCurrency(),

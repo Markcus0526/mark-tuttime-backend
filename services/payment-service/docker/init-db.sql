@@ -17,6 +17,7 @@ CREATE TABLE payments
     id                  UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
     booking_id          UUID           NOT NULL, -- Matches Booking Service UUID
     user_id             UUID           NOT NULL, -- For cross-service verification
+    branch_id           UUID           NOT NULL, -- For cross-service verification
 
     -- Stripe Identifiers
     stripe_session_id   VARCHAR(255) UNIQUE,     -- ID from Checkout Session creation

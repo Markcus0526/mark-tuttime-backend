@@ -29,6 +29,7 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 			String checkoutUrl = paymentService.createCheckoutSession(
 					UUID.fromString(request.getBookingId()),
 					UUID.fromString(request.getUserId()),
+					UUID.fromString(request.getBranchId()),
 					BigDecimal.valueOf(request.getAmount())
 			);
 

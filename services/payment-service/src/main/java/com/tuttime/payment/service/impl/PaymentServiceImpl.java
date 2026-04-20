@@ -11,6 +11,7 @@ import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.Refund;
 import com.tuttime.payment.entity.enums.PaymentStatus;
+import com.tuttime.payment.kafka.PaymentEventProducer;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
 import com.tuttime.payment.service.PaymentService;
@@ -32,56 +33,58 @@ public class PaymentServiceImpl implements PaymentService {
 	private final PaymentRepository paymentRepository;
 	private final RefundRepository refundRepository;
 	private final EventProducer eventProducer;
+	private final PaymentEventProducer paymentEventProducer;
 
 	@Value("${stripe.webhook.secret}")
 	private String webhookSecret;
 
 	@Override
 	@Transactional
-	public String createCheckoutSession(UUID bookingId, UUID userId, BigDecimal amount) {
-		try {
-			// 1. Create Stripe Session
-			SessionCreateParams params = SessionCreateParams.builder()
-					// 1. Payment Methods (Stripe handles Apple Pay automatically if enabled in Dashboard)
-					.addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+	public String createCheckoutSession(UUID bookingId, UUID userId, UUID branchId, BigDecimal amount) {
+		// 1. Create Stripe Session
+//			SessionCreateParams params = SessionCreateParams.builder()
+//					// 1. Payment Methods (Stripe handles Apple Pay automatically if enabled in Dashboard)
+//					.addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+//
+//					// 2. Mode (Standard one-time payment)
+//					.setMode(SessionCreateParams.Mode.PAYMENT)
+//
+//					// 3. Redirect URLs (Where the user goes after paying in the Mobile App/Browser)
+//					.setSuccessUrl("https://tuttime.com" + bookingId)
+//					.setCancelUrl("https://tuttime.com")
+//
+//					// 4. Metadata (CRITICAL: This is how the Webhook knows which booking to confirm)
+//					.putMetadata("bookingId", bookingId.toString())
+//
+//					// 5. Line Items (The actual "Product" shown on the Apple Pay screen)
+//					.addLineItem(SessionCreateParams.LineItem.builder()
+//							.setQuantity(1L)
+//							.setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+//									.setCurrency("usd")
+//									// Stripe expects amounts in CENTS (e.g., $10.00 = 1000)
+//									.setUnitAmount(amount.multiply(new BigDecimal(100)).longValue())
+//									.setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+//											.setName("Table Reservation")
+//											.setDescription("Reservation for Booking #" + bookingId.toString().substring(0, 8))
+//											.build())
+//									.build())
+//							.build())
+//					.build();
+//
+//			Session session = Session.create(params);
 
-					// 2. Mode (Standard one-time payment)
-					.setMode(SessionCreateParams.Mode.PAYMENT)
+		// 2. Save PENDING record
+		paymentRepository.save(Payment.builder()
+				.bookingId(bookingId)
+				.userId(userId)
+				.branchId(branchId)
+				.amount(amount)
+//					.stripeSessionId(session.getId())
+				.status(PaymentStatus.PENDING)
+				.build());
 
-					// 3. Redirect URLs (Where the user goes after paying in the Mobile App/Browser)
-					.setSuccessUrl("https://tuttime.com" + bookingId)
-					.setCancelUrl("https://tuttime.com")
-
-					// 4. Metadata (CRITICAL: This is how the Webhook knows which booking to confirm)
-					.putMetadata("bookingId", bookingId.toString())
-
-					// 5. Line Items (The actual "Product" shown on the Apple Pay screen)
-					.addLineItem(SessionCreateParams.LineItem.builder()
-							.setQuantity(1L)
-							.setPriceData(SessionCreateParams.LineItem.PriceData.builder()
-									.setCurrency("usd")
-									// Stripe expects amounts in CENTS (e.g., $10.00 = 1000)
-									.setUnitAmount(amount.multiply(new BigDecimal(100)).longValue())
-									.setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
-											.setName("Table Reservation")
-											.setDescription("Reservation for Booking #" + bookingId.toString().substring(0, 8))
-											.build())
-									.build())
-							.build())
-					.build();
-
-			Session session = Session.create(params);
-
-			// 2. Save PENDING record
-			paymentRepository.save(Payment.builder()
-					.bookingId(bookingId).userId(userId).amount(amount)
-					.stripeSessionId(session.getId()).status(PaymentStatus.PENDING)
-					.build());
-
-			return session.getUrl();
-		} catch (StripeException e) {
-			throw new BusinessException("Stripe error", e);
-		}
+//			return session.getUrl();
+		return "test";
 	}
 
 	@Override
@@ -116,6 +119,33 @@ public class PaymentServiceImpl implements PaymentService {
 			throw new BusinessException("Stripe Refund Error", e);
 		}
 	}
+
+	/**
+	 * MANUAL TEST ENTRY POINT
+	 * This mimics the logic in processCheckoutCompleted without needing a Stripe Session object.
+	 */
+	@Transactional
+	public void testManualPaymentSuccess(UUID bookingId, String stripePaymentIntentId) {
+		// Try to find, or create a new one if missing
+		Payment payment = paymentRepository.findByBookingId(bookingId)
+				.orElseGet(() -> {
+					log.info("[TEST] Creating missing payment record for booking: {}", bookingId);
+					Payment newPayment = new Payment();
+					newPayment.setBookingId(bookingId);
+					newPayment.setUserId(UUID.randomUUID()); // Mock user
+					newPayment.setAmount(new BigDecimal("50.00")); // Mock amount
+					return newPayment;
+				});
+
+		payment.setStatus(PaymentStatus.COMPLETED);
+		payment.setPaymentIntentId(stripePaymentIntentId);
+		payment.setPaymentMethodType("manual_test_card");
+		paymentRepository.save(payment);
+
+		paymentEventProducer.sendPaymentSuccess(payment);
+		log.info("[TEST] Payment SUCCESS broadcasted for Booking ID: {}", bookingId);
+	}
+
 
 	/**
 	 * Builds the parameters for a Stripe Refund.
