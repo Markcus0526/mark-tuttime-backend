@@ -1,7 +1,7 @@
 package com.tuttime.pos.grpc.client;
 
-import com.tuttime.common.proto.OrderDetailsResponse;
-import com.tuttime.common.proto.OrderRequest;
+import com.tuttime.common.proto.OrderDetailRequest;
+import com.tuttime.common.proto.OrderDetailResponse;
 import com.tuttime.common.proto.OrderServiceGrpc;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +20,13 @@ public class OrderGrpcClient {
 	@GrpcClient("order-service") // Configuration name in application.yml
 	private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
 
-	public OrderDetailsResponse fetchOrderDetails(UUID orderId) {
+	public OrderDetailResponse fetchOrderDetail(UUID orderId) {
 		// 1. Fetch full details via gRPC
-		OrderRequest request = OrderRequest.newBuilder()
+		OrderDetailRequest request = OrderDetailRequest.newBuilder()
 				.setOrderId(orderId.toString())
 				.build();
 
-		return orderServiceBlockingStub.getOrderDetails(request);
+		return orderServiceBlockingStub.getOrderDetail(request);
 	}
 }
 
