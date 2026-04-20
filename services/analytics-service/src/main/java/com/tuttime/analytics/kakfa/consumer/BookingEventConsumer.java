@@ -1,7 +1,9 @@
 package com.tuttime.analytics.kakfa.consumer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.service.AnalyticsService;
 import com.tuttime.common.event.BookingEvent;
+import com.tuttime.common.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,6 +17,7 @@ import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATE
 @RequiredArgsConstructor
 public class BookingEventConsumer {
 
+	private final ObjectMapper objectMapper;
 	private final AnalyticsService analyticsService;
 
 	/**
@@ -24,26 +27,30 @@ public class BookingEventConsumer {
 	@KafkaListener(
 			topics = TOPIC_BOOKING_STATUS_UPDATED,
 			groupId = "analytics-service-group")
-	public void handleBookingStatusUpdated(BookingEvent.BookingStatusUpdatedEvent event, Acknowledgment ack) {
-		log.info("Analytics received Booking Event: {} for Restaurant: {}",
-				event.bookingId(), event.bookingId());
+	public void handleBookingStatusUpdated(String eventString) {
+		BookingEvent.BookingStatusUpdatedEvent event = null;
 
 		try {
+			if (org.apache.commons.lang3.StringUtils.isEmpty(eventString)) {
+				log.error("Received null event");
+				return;
+			}
+
+			event = objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+			BookingEvent.BookingStatusUpdatedEvent finalEvent = event;
+
+			log.info("Analytics received Booking Event: {} for Restaurant: {}",
+					finalEvent.bookingId(), finalEvent.bookingId());
+
 			// Mapping the specific event to the generic Analytics log
 			analyticsService.logEvent(
 					"BOOKING_SERVICE",   // service name
-					event.newStatus().name(),  // event type (used for Heatmap/Top 10 queries)
-					event.bookingId(),// entityId (linked to the restaurant)
-					event                // full payload (stored as JSONB)
+					finalEvent.newStatus().name(),  // event type (used for Heatmap/Top 10 queries)
+					finalEvent.bookingId(),// entityId (linked to the restaurant)
+					finalEvent                // full payload (stored as JSONB)
 			);
-
-			// Manual Acknowledgment ensures we don't lose data if DB is down
-			ack.acknowledge();
-
 		} catch (Exception e) {
-			log.error("Failed to log analytics for booking {}: {}",
-					event.bookingId(), e.getMessage());
-			// In production, you'd send this to a Dead Letter Queue (DLQ)
+			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);
 		}
 	}
 }

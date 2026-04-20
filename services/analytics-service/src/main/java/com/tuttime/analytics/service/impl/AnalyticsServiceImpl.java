@@ -1,5 +1,7 @@
 package com.tuttime.analytics.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.dto.EventResponse;
 import com.tuttime.analytics.dto.HourlyBookingProjection;
 import com.tuttime.analytics.dto.TopRestaurantProjection;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AnalyticsServiceImpl implements AnalyticsService {
 
+	private final ObjectMapper objectMapper;
 	private final EventRepository eventRepository;
 
 	/**
@@ -32,11 +35,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	public void logEvent(String service, String type, UUID entityId, Object payload) {
 		log.debug("Logging analytics event: {} from service: {}", type, service);
 
+		String jsonPayload = null;
+		try {
+			// Convert the Object to a JSON String so the DB can store it
+			jsonPayload = (payload instanceof String)
+					? (String) payload
+					: objectMapper.writeValueAsString(payload);
+		} catch (JsonProcessingException e) {
+			log.error("Failed to serialize analytics payload", e);
+			jsonPayload = "Serialization Error: " + e.getMessage();
+		}
+
 		SystemEvent event = SystemEvent.builder()
 				.serviceName(service)
 				.eventType(type)
 				.entityId(entityId)
-				.payload(payload)
+				.payload(jsonPayload) // Ensure SystemEvent.payload is a String field
 				.occurredAt(OffsetDateTime.now())
 				.build();
 
