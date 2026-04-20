@@ -1,6 +1,8 @@
 package com.tuttime.analytics.kakfa.consumer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.service.AnalyticsService;
+import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.ReviewEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import static com.tuttime.common.event.EventProducer.TOPIC_REVIEW_APPROVED;
 @RequiredArgsConstructor
 public class ReviewEventConsumer {
 
+	private final ObjectMapper objectMapper;
 	private final AnalyticsService analyticsService;
 
 	/**
@@ -26,24 +29,30 @@ public class ReviewEventConsumer {
 			groupId = "analytics-service-group",
 			containerFactory = "kafkaListenerContainerFactory"
 	)
-	public void handleReviewApproved(ReviewEvent.ReviewApprovedEvent event, Acknowledgment ack) {
-		log.info("Analytics received Review Approved: {} for Restaurant: {}",
-				event.reviewId(), event.restaurantId());
+	public void handleReviewApproved(String eventString) {
+		ReviewEvent.ReviewApprovedEvent event = null;
 
 		try {
+			if (org.apache.commons.lang3.StringUtils.isEmpty(eventString)) {
+				log.error("Received null event");
+				return;
+			}
+
+			event = objectMapper.readValue(eventString, ReviewEvent.ReviewApprovedEvent.class);
+			ReviewEvent.ReviewApprovedEvent finalEvent = event;
+
+			log.info("Analytics received Review Approved: {} for Restaurant: {}",
+					finalEvent.reviewId(), finalEvent.restaurantId());
+
 			// Mapping to generic Analytics log
 			analyticsService.logEvent(
 					"REVIEW_SERVICE",    // Source service
 					"REVIEW_APPROVED",   // Event type (for filtering in reports)
-					event.restaurantId(),// Linked entity ID
-					event                // JSONB Payload (Rating, Comment, etc.)
+					finalEvent.restaurantId(),// Linked entity ID
+					finalEvent                // JSONB Payload (Rating, Comment, etc.)
 			);
-
-			ack.acknowledge();
-
 		} catch (Exception e) {
-			log.error("Failed to log review analytics {}: {}",
-					event.reviewId(), e.getMessage());
+			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);
 		}
 	}
 }
