@@ -1,5 +1,6 @@
 package com.tuttime.pos.entity;
 
+import com.tuttime.common.entity.BaseSerialEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,10 +20,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class PosLog extends BaseTimeStampEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer id;
+public class PosLog extends BaseSerialEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "pos_system_id", nullable = false)

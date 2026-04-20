@@ -23,18 +23,21 @@ EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TYPE pos_direction AS ENUM ('TO_POS', 'FROM_POS');
 CREATE TYPE pos_status AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
 CREATE TYPE sync_task_status AS ENUM ('PENDING', 'PROCESSING', 'FAILED', 'COMPLETED');
+CREATE TYPE pos_provider AS ENUM ('IIKO', 'RKEEPER');
 
 -- Table: pos_system_configs
 CREATE TABLE pos_system_configs
 (
     id             SERIAL PRIMARY KEY,
-    pos_system     VARCHAR(50) UNIQUE NOT NULL,
+    pos_provider   pos_provider UNIQUE NOT NULL,
     api_endpoint   TEXT               NOT NULL,
     webhook_secret TEXT,
     enabled        BOOLEAN            NOT NULL DEFAULT TRUE,
     created_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_pos_configs_active ON pos_service.pos_system_configs (pos_provider) WHERE enabled = TRUE;
 
 -- Table: pos_logs
 CREATE TABLE pos_logs
@@ -85,7 +88,7 @@ CREATE TABLE sync_logs
 (
     id            SERIAL PRIMARY KEY,
     order_id      UUID        NOT NULL,
-    restaurant_id UUID        NOT NULL,
+    branch_id     UUID        NOT NULL,
     status        VARCHAR(50) NOT NULL,
     event_type    VARCHAR(100),
     metadata      JSONB,
@@ -95,7 +98,7 @@ CREATE TABLE sync_logs
 
 -- Add indexes for performance
 CREATE INDEX idx_sync_logs_order_id ON sync_logs (order_id);
-CREATE INDEX idx_sync_logs_restaurant_time ON sync_logs (restaurant_id, created_at DESC);
+CREATE INDEX idx_sync_logs_branch_time ON sync_logs (branch_id, created_at DESC);
 
 -- Comments
 COMMENT

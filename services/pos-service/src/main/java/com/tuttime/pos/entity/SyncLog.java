@@ -1,5 +1,6 @@
 package com.tuttime.pos.entity;
 
+import com.tuttime.common.entity.BaseSerialEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,11 +19,7 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class SyncLog extends BaseTimeStampEntity {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer id;
+public class SyncLog extends BaseSerialEntity {
 
 	@Column(name = "order_id", nullable = false)
 	private UUID orderId;
