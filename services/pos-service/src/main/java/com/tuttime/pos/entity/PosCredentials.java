@@ -1,5 +1,6 @@
 package com.tuttime.pos.entity;
 
+import com.tuttime.common.entity.BaseSerialEntity;
 import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,13 +16,9 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class PosCredentials extends BaseTimeStampEntity {
+public class PosCredentials extends BaseSerialEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-
-	private Long restaurantId;
+	private Long branchId;
 
 	@Enumerated(EnumType.STRING)
 	private PosSystem posSystem;

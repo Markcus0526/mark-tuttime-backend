@@ -12,10 +12,10 @@ public record PosCredentialsDto(
 		UUID restaurantId,
 
 		@NotNull @Schema(example = "IIKO")
-		String posSystem,
+		String provider,
 
 		@NotNull @Schema(example = "https://iiko.services")
-		String apiUrl,
+		String apiEndpoint,
 
 		String apiKey,
 
