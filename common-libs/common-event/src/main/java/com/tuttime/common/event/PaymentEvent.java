@@ -14,6 +14,7 @@ public class PaymentEvent {
 	public record PaymentCompletedEvent(
 			UUID bookingId,
 			UUID userId,
+			UUID branchId,
 			String stripePaymentIntentId,
 			BigDecimal amount,
 			String currency,
