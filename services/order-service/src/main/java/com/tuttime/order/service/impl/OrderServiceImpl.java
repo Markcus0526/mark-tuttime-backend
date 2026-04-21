@@ -150,6 +150,7 @@ public class OrderServiceImpl implements OrderService {
 		OrderEvent.OrderStatusEvent event = new OrderEvent.OrderStatusEvent(
 				updatedOrder.getId(),
 				updatedOrder.getBookingId(),
+				updatedOrder.getBranchId(),
 				oldStatus,
 				newStatus,
 				OffsetDateTime.now()
