@@ -214,6 +214,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 					.setFullName(user.getFullName() != null ? user.getFullName() : "")
 					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
 					.setEmail(user.getEmail() != null ? user.getEmail() : "")
+					.setProfilePicture((user.getProfilePicture() != null ? user.getProfilePicture() : ""))
 					.build();
 			responseBuilder.addProfiles(profile);
 		}

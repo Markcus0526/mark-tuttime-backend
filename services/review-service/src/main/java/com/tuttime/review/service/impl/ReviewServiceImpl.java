@@ -2,10 +2,15 @@ package com.tuttime.review.service.impl;
 
 import com.tuttime.common.event.ReviewEvent;
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.common.proto.MenuDetailsRequest;
+import com.tuttime.common.proto.UserDetailResponse;
+import com.tuttime.common.proto.UserDetailsRequest;
+import com.tuttime.common.proto.UserDetailsResponse;
 import com.tuttime.review.dto.*;
 import com.tuttime.review.entity.*;
 import com.tuttime.review.entity.enums.ReviewStatus;
 import com.tuttime.review.grpc.client.RestaurantGrpcClient;
+import com.tuttime.review.grpc.client.UserGrpcClient;
 import com.tuttime.review.kafka.ReviewEventProducer;
 import com.tuttime.review.mapper.ReviewMapper;
 import com.tuttime.review.repository.*;
@@ -20,8 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,6 +40,7 @@ public class ReviewServiceImpl implements ReviewService {
 	private final ModerationLogRepository moderationLogRepository;
 	private final ReviewMapper reviewMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
+	private final UserGrpcClient userGrpcClient;
 	private final ReviewEventProducer reviewEventProducer;
 
 	@Override
@@ -56,11 +64,32 @@ public class ReviewServiceImpl implements ReviewService {
 	public Page<ReviewDto.ReviewResponse> getReviewsByStatus(UUID branchId, ReviewStatus status, Pageable pageable) {
 		log.debug("Fetching reviews for branch {} with status {}", branchId, status);
 
-		// 1. Fetch from repository (Hits idx_reviews_restaurant_status)
+		// 1. Fetch reviews from DB
 		Page<Review> reviewPage = reviewRepository.findByBranchIdAndStatus(branchId, status, pageable);
+		if (reviewPage.isEmpty()) return Page.empty();
 
-		// 2. Map to DTOs using MapStruct
-		return reviewPage.map(reviewMapper::toReviewResponse);
+		// 2. Batch fetch user info via gRPC to avoid N+1
+
+		List<String> userIds = reviewPage.getContent().stream()
+				.map(review -> review.getUserId().toString())
+				.distinct()
+				.toList();
+		// Call User Service (Assuming a Batch RPC exists)
+		UserDetailsResponse usersResponse = userGrpcClient.getUserDetails(UserDetailsRequest.newBuilder()
+				.addAllUserIds(userIds)
+				.build());
+
+		Map<String, UserDetailResponse> userMap = usersResponse.getProfilesList().stream()
+				.collect(Collectors.toMap(UserDetailResponse::getUserId, user -> user));
+
+		// 3. Map to DTOs and enrich with User info
+		return reviewPage.map(review -> {
+			UserDetailResponse user = userMap.getOrDefault(
+					review.getUserId().toString(),
+					UserDetailResponse.newBuilder().setFullName("Unknown User").build()
+			);
+			return reviewMapper.toReviewDetailResponse(review, user);
+		});
 	}
 
 	@Override

@@ -69,15 +69,15 @@ public class OrderDto {
 
 			BigDecimal totalAmount,
 
-			List<MenuItemResponse> items,
+			List<MenuItemDto> items,
 
-			UserDetailResponse user,
+			UserDetailDto user,
 
-			TableDetailResponse table,
+			TableDetailDto table,
 
 			OffsetDateTime createdAt
 	) {
-		public record UserDetailResponse(
+		public record UserDetailDto(
 				UUID userId,
 				String phoneNumber,
 				String email,
@@ -85,7 +85,7 @@ public class OrderDto {
 		) {
 		}
 
-		public record TableDetailResponse(
+		public record TableDetailDto(
 				UUID branchId,
 				UUID restaurantId,
 				UUID zoneId,
@@ -100,17 +100,17 @@ public class OrderDto {
 		}
 
 		@Builder
-		public record MenuItemResponse(
+		public record MenuItemDto(
 				UUID menuItemId,
 				String name,      // From Menu gRPC
 				Integer quantity,     // From local DB
 				BigDecimal price,
-				List<ModifierResponse> modifiers
+				List<ModifierDto> modifiers
 		) {
 		}
 
 		@Builder
-		public record ModifierResponse(
+		public record ModifierDto(
 				UUID modifierId,
 				String name,           // Enriched from Menu Service
 				BigDecimal priceAdjustment // From Order Service DB

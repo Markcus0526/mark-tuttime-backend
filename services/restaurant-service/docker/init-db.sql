@@ -76,6 +76,8 @@ CREATE TABLE branches
     updated_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_branches_rating ON branches (rating DESC) WHERE deleted = FALSE;
+
 COMMENT
 ON TABLE branches IS 'Physical locations or outlets of a specific restaurant';
 

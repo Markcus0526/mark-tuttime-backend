@@ -42,13 +42,13 @@ public class ReviewEventConsumer {
 			ReviewEvent.ReviewApprovedEvent finalEvent = event;
 
 			log.info("Analytics received Review Approved: {} for Restaurant: {}",
-					finalEvent.reviewId(), finalEvent.restaurantId());
+					finalEvent.reviewId(), finalEvent.branchId());
 
 			// Mapping to generic Analytics log
 			analyticsService.logEvent(
 					"REVIEW_SERVICE",    // Source service
 					"REVIEW_APPROVED",   // Event type (for filtering in reports)
-					finalEvent.restaurantId(),// Linked entity ID
+					finalEvent.branchId(),// Linked entity ID
 					finalEvent                // JSONB Payload (Rating, Comment, etc.)
 			);
 		} catch (Exception e) {

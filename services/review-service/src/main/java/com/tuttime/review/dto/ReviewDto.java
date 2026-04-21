@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -51,8 +52,8 @@ public class ReviewDto {
 			@Schema(example = "uuid")
 			UUID reviewId,
 
-			@Schema(example = "uuid")
-			UUID userId,
+			@Schema(description = "Basic user info enriched via gRPC")
+			UserDetailDto user, // Nested DTO instead of just userId
 
 			@Schema(example = "5")
 			int rating,
@@ -66,5 +67,14 @@ public class ReviewDto {
 			@Schema(description = "ISO-8601 Timestamp")
 			OffsetDateTime createdAt
 	) {
+
+		@Builder
+		public record UserDetailDto(
+				UUID userId,
+				String phoneNumber,
+				String email,
+				String fullName,
+				String profilePicture
+		) {}
 	}
 }
