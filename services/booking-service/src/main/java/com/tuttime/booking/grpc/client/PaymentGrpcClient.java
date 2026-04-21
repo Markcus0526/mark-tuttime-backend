@@ -26,7 +26,7 @@ public class PaymentGrpcClient {
 				.setBookingId(bookingId.toString())
 				.setUserId(userId.toString())
 				.setBranchId(branchId.toString())
-				.setAmount(amount.doubleValue())
+				.setAmount(amount.toString())
 				.setCurrency("USD")
 				.build();
 
