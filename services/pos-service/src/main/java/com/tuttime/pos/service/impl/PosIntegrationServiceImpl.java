@@ -3,7 +3,7 @@ package com.tuttime.pos.service.impl;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.repository.PosConfigRepository;
-import com.tuttime.pos.service.PosSyncService;
+import com.tuttime.pos.service.PosIntegrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
@@ -15,7 +15,7 @@ import org.springframework.util.StringUtils;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PosSyncServiceImpl implements PosSyncService {
+public class PosIntegrationServiceImpl implements PosIntegrationService {
 
 	private final PosConfigRepository posConfigRepository;
 

@@ -6,10 +6,8 @@ import com.tuttime.common.proto.KitchenOrderResponse;
 import com.tuttime.common.proto.PosServiceGrpc;
 import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
-import com.tuttime.pos.adapter.PosAdapter;
-import com.tuttime.pos.adapter.impl.IikoPosAdapter;
-import com.tuttime.pos.adapter.impl.RKeeperPosAdapter;
-import com.tuttime.pos.dto.PosConfigDto;
+import com.tuttime.pos.adapter.IikoPosAdapter;
+import com.tuttime.pos.adapter.RKeeperPosAdapter;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.PosLog;
 import com.tuttime.pos.entity.PosSyncQueue;
@@ -69,7 +67,7 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 
 			// 4. Save Audit Log (The "Outbox")
 			PosLog logEntry = PosLog.builder()
-					.config(config)
+//					.config(config)
 					.entityType("ORDER")
 					.entityId(UuidUtil.toUuid(request.getOrderId()))
 					.status("PENDING")
@@ -80,7 +78,7 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 
 			// 5. Queue for Background Worker
 			PosSyncQueue queueEntry = PosSyncQueue.builder()
-					.posLog(savedLog)
+//					.posLog(savedLog)
 					.status("PENDING")
 					.nextRetryAt(OffsetDateTime.now())
 					.retryCount(0)

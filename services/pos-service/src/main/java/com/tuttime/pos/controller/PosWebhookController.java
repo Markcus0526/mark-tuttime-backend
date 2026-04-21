@@ -3,7 +3,7 @@ package com.tuttime.pos.controller;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
-import com.tuttime.pos.service.PosSyncService;
+import com.tuttime.pos.service.PosIntegrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PosWebhookController {
 
-	private final PosSyncService posSyncService;
+	private final PosIntegrationService posIntegrationService;
 
 	@PostMapping("/webhook/{posProvider}")
 	@Operation(summary = "POS Webhook Receiver", description = "Receives real-time status updates from IIKO/RKEEPER.")
@@ -24,7 +24,7 @@ public class PosWebhookController {
 			@RequestBody String payload) {
 
 		// Webhooks are usually authenticated via signature, not UserContext
-		posSyncService.processWebhook(posProvider, signature, payload);
+		posIntegrationService.processWebhook(posProvider, signature, payload);
 		return ResponseEntity.ok().build();
 	}
 

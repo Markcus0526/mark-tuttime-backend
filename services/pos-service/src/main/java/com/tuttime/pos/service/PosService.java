@@ -20,10 +20,5 @@ public interface PosService {
 	// Configuration
 	PosConfig saveConfig(PosConfigDto.PosConfigRequest request);
 
-	void markSuccess(int logId, Map<String, String> metadata);
-
-	void markFailed(int logId, String errorMessage, Map<String, String> metadata);
-
-	void markAsHardFailure(UUID orderId);
-
+	void saveLog(UUID branchId, UUID entityId, String entityType, String action, Object request, String response, String status);
 }

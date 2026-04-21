@@ -1,16 +1,16 @@
 package com.tuttime.pos.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.pos.dto.*;
 import com.tuttime.pos.entity.PosLog;
 import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.entity.PosConfig;
-import com.tuttime.pos.entity.SyncLog;
 import com.tuttime.pos.mapper.PosMapper;
 import com.tuttime.pos.repository.PosLogRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
 import com.tuttime.pos.repository.PosConfigRepository;
-import com.tuttime.pos.repository.SyncLogRepository;
 import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +30,9 @@ public class PosServiceImpl implements PosService {
 
 	private final PosConfigRepository posConfigRepository;
 	private final PosLogRepository posLogRepository;
-	private final SyncLogRepository syncLogRepository;
 	private final PosSyncQueueRepository posSyncQueueRepository;
 	private final PosMapper posMapper;
+	private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -76,33 +76,30 @@ public class PosServiceImpl implements PosService {
 		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
 				.orElseThrow(() -> new InvalidRequestException("POS Config not found for " + request.branchId()));
 
-		// 2. Prepare Payload (Critical for your JSONB indexing)
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("order_id", request.orderId());
 		payload.put("branch_id", request.branchId()); // Must be included!
 		payload.put("sync_type", "MANUAL");
 
-		// 3. Create Audit Log Entry
-		PosLog logEntry = PosLog.builder()
-				.config(config)
+		// 1. Log the initiation
+		posLogRepository.save(PosLog.builder()
+				.branchId(request.branchId())
 				.entityType("ORDER")
 				.entityId(request.orderId())
 				.status("PENDING")
-				.attemptCount(0) // 0 because no API call has been made yet
-				.requestPayload(payload) // Matches your JSONB column
-				.build();
+				.requestPayload(payload)
+				.build());
 
-		PosLog savedLog = posLogRepository.save(logEntry);
-
-		// 3. Create Queue Entry for the background worker/retry logic
-		PosSyncQueue queueEntry = PosSyncQueue.builder()
-				.posLog(savedLog)
+		// 2. Queue for processing (removed .posLog())
+		posSyncQueueRepository.save(PosSyncQueue.builder()
+				.branchId(request.branchId())
+				.orderId(request.orderId()) // Added direct reference
+				.action("SEND_ORDER")
+				.payload(payload)
 				.status("PENDING")
-				.nextRetryAt(OffsetDateTime.now()) // Try immediately
+				.nextRetryAt(OffsetDateTime.now())
 				.retryCount(0)
-				.build();
-
-		posSyncQueueRepository.save(queueEntry);
+				.build());
 	}
 
 	// Stubbed methods for Booking and Menu (similar patterns to syncOrder)
@@ -114,32 +111,27 @@ public class PosServiceImpl implements PosService {
 		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
 				.orElseThrow(() -> new InvalidRequestException("POS Config not found for " + request.branchId()));
 
-		// 1. Construct Payload for the background worker
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("booking_id", request.bookingId());
 		payload.put("branch_id", request.branchId());
-		payload.put("booking_time", request.bookingTime());
-		payload.put("sync_type", "MANUAL");
 
-		// 2. Create POS Log
-		PosLog logEntry = PosLog.builder()
-				.config(config)
+		posLogRepository.save(PosLog.builder()
+				.branchId(request.branchId())
 				.entityType("BOOKING")
 				.entityId(request.bookingId())
 				.status("PENDING")
-				.requestPayload(payload) // Critical for JSONB indexing
-				.attemptCount(0)
-				.build();
-		PosLog savedLog = posLogRepository.save(logEntry);
+				.requestPayload(payload)
+				.build());
 
-		// 3. Queue for the Scheduler
-		PosSyncQueue queueEntry = PosSyncQueue.builder()
-				.posLog(savedLog)
+		posSyncQueueRepository.save(PosSyncQueue.builder()
+				.branchId(request.branchId())
+				.bookingId(request.bookingId()) // Added direct reference
+				.action("RESERVE_TABLE")
+				.payload(payload)
 				.status("PENDING")
 				.nextRetryAt(OffsetDateTime.now())
 				.retryCount(0)
-				.build();
-		posSyncQueueRepository.save(queueEntry);
+				.build());
 	}
 
 	@Override
@@ -147,34 +139,39 @@ public class PosServiceImpl implements PosService {
 	public void syncMenu(PosSyncDto.MenuSyncRequest request) {
 		log.info("Initializing menu catalog pull for branch: {}", request.branchId());
 
-		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
+		// 1. Verify config exists before doing anything
+		posConfigRepository.findByBranchId(request.branchId())
 				.orElseThrow(() -> new InvalidRequestException("POS Config not found for " + request.branchId()));
 
+		// 2. Prepare Payload
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("branch_id", request.branchId());
-		payload.put("sync_mode", "FULL_PULL"); // To distinguish between incremental and full
+		payload.put("sync_mode", "FULL_PULL");
 
-		// 1. Create Log (Entity ID is the Branch ID here)
-		PosLog logEntry = PosLog.builder()
-				.config(config)
+		// 3. Create Log (Entity ID is the Branch ID)
+		// Note: We no longer save 'savedLog' to pass into the queue
+		posLogRepository.save(PosLog.builder()
+				.branchId(request.branchId())
+				.entityId(request.branchId()) // Branch is the entity for menu syncs
 				.entityType("MENU_CATALOG")
-				.entityId(request.branchId())
-				.status("PENDING")
+				.action("SYNC_MENU")
 				.requestPayload(payload)
+				.status("PENDING")
 				.attemptCount(0)
-				.build();
-		PosLog savedLog = posLogRepository.save(logEntry);
+				.build());
 
-		// 2. Queue for Scheduler
-		// Note: Menu sync might need a separate priority queue or longer retry backoff
-		PosSyncQueue queueEntry = PosSyncQueue.builder()
-				.posLog(savedLog)
+		// 4. Create Queue Entry (DECOUPLED)
+		// We pass branchId and action so the worker knows what to do
+		posSyncQueueRepository.save(PosSyncQueue.builder()
+				.branchId(request.branchId())
+				.action("SYNC_MENU")
+				.payload(payload)
 				.status("PENDING")
 				.nextRetryAt(OffsetDateTime.now())
 				.retryCount(0)
-				.build();
-		posSyncQueueRepository.save(queueEntry);
+				.build());
 	}
+
 
 	@Override
 	@Transactional
@@ -185,81 +182,43 @@ public class PosServiceImpl implements PosService {
 		// Note: Using the branch_id from your updated sync_logs or metadata in pos_logs
 		List<PosLog> failedLogs = posLogRepository.findAllFailedByBranch(branchId.toString());
 
-		if (failedLogs.isEmpty()) {
-			log.info("No failed tasks found for branch: {}", branchId);
-			return;
-		}
-
 		for (PosLog logEntry : failedLogs) {
-			// 2. Reset the Log Status
 			logEntry.setStatus("PENDING");
-			logEntry.setAttemptCount(0); // Reset attempts to give it a fresh start
 			posLogRepository.save(logEntry);
 
-			// 3. Upsert into the Sync Queue for immediate processing
-			PosSyncQueue queueItem = posSyncQueueRepository.findByPosLogId(logEntry.getId())
+			// Logic changed: find by branch and entity instead of logId
+			PosSyncQueue queueItem = posSyncQueueRepository
+					.findByBranchIdAndBookingId(branchId, logEntry.getEntityId())
 					.orElse(new PosSyncQueue());
 
-			queueItem.setPosLog(logEntry);
-			queueItem.setNextRetryAt(OffsetDateTime.now()); // Set to "Now" to trigger immediate retry
-			queueItem.setRetryCount(0);
+			queueItem.setBranchId(branchId);
+			queueItem.setBookingId(logEntry.getEntityId());
+			queueItem.setAction(logEntry.getEntityType().equals("ORDER") ? "SEND_ORDER" : "RESERVE_TABLE");
 			queueItem.setStatus("PENDING");
+			queueItem.setNextRetryAt(OffsetDateTime.now());
+			queueItem.setRetryCount(0);
 
 			posSyncQueueRepository.save(queueItem);
 		}
-
-		log.info("Successfully re-queued {} tasks for branch {}", failedLogs.size(), branchId);
 	}
 
 	@Transactional
-	public void markSuccess(int logId, Map<String, String> metadata) {
-		// 1. Fetch the existing log record
-		SyncLog log = syncLogRepository.findById(logId)
-				.orElseThrow(() -> new InvalidRequestException("Log not found for ID: " + logId));
+	public void saveLog(UUID branchId, UUID entityId, String entityType, String action, Object request, String response, String status) {
+		// 1. Convert payload to Map for the JSONB column
+		Map<String, Object> payload = objectMapper.convertValue(request, new TypeReference<>() {});
 
-		// 2. Update fields
-		log.setStatus("SUCCESS");
-		log.setMetadata(metadata); // Assuming this is a JSONB or Map column
-		log.setUpdatedAt(OffsetDateTime.now()); // Your preferred Java type!
+		// 2. Build and Save Log
+		PosLog logEntry = PosLog.builder()
+				.branchId(branchId)
+				.entityId(entityId)
+				.entityType(entityType)
+				.action(action)
+				.requestPayload(payload)
+				.responsePayload(response)
+				.status(status)
+				.attemptCount(1) // Or increment if you track retries
+				.build();
 
-		// 3. Save changes
-		syncLogRepository.save(log);
+		posLogRepository.save(logEntry);
 	}
-
-	@Transactional
-	public void markFailed(int logId, String errorMessage, Map<String, String> additionalDetails) {
-		// 1. Fetch the existing log record
-		SyncLog log = syncLogRepository.findById(logId)
-				.orElseThrow(() -> new InvalidRequestException("Log not found for ID: " + logId));
-
-		// 2. Set status to FAILED (or SOFT_FAILURE)
-		log.setStatus("FAILED");
-
-		// 3. Build and save error metadata
-		Map<String, String> metadata = new HashMap<>(additionalDetails != null ? additionalDetails : Map.of());
-		metadata.put("error_message", errorMessage);
-		log.setMetadata(metadata);
-
-		// updatedAt is handled automatically by BaseEntity @LastModifiedDate
-		syncLogRepository.save(log);
-	}
-
-	@Transactional
-	public void markAsHardFailure(UUID orderId) {
-		// 1. Find the log associated with this order
-		// Note: You might need a custom finder if orderId is not the Primary Key
-		SyncLog log = syncLogRepository.findByOrderId(orderId)
-				.orElseThrow(() -> new InvalidRequestException("Sync log not found for order: " + orderId));
-
-		// 2. Update to a terminal failure state
-		log.setStatus("HARD_FAILURE");
-
-		// 3. Optional: Clear or update metadata with failure details
-		log.setMetadata(Map.of("error_type", "TERMINAL", "reason", "Manual hard failure trigger"));
-
-		// Save is handled by @Transactional + Auditing for updatedAt
-		syncLogRepository.save(log);
-	}
-
-
 }

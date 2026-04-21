@@ -20,7 +20,7 @@ public class OrderGrpcClient {
 	@GrpcClient("order-service") // Configuration name in application.yml
 	private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
 
-	public OrderDetailResponse fetchOrderDetail(UUID orderId) {
+	public OrderDetailResponse getOrderDetail(UUID orderId) {
 		// 1. Fetch full details via gRPC
 		OrderDetailRequest request = OrderDetailRequest.newBuilder()
 				.setOrderId(orderId.toString())

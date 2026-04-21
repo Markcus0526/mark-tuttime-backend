@@ -292,6 +292,8 @@ app:
     quality: ${IMAGE_QUALITY:0.85} # JPEG quality (0.0 to 1.0)
   language:
     apple-user-id: ${APPLE_LANGUAGE_USER_ID:} # User ID that should receive apple language translations (empty = disabled)
+  pos:
+    menu-sync-cron: "0 0 2 * * *" # Runs at 2 AM
 
 # Map Query Configuration
 map:
