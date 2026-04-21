@@ -20,7 +20,7 @@ public class PosSyncQueue extends BaseSerialEntity {
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "pos_log_id", nullable = false)
-	private PosLog log;
+	private PosLog posLog;
 
 	@Column(name = "next_retry_at", nullable = false)
 	private OffsetDateTime nextRetryAt;

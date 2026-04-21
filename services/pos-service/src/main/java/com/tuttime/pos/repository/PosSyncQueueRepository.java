@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -31,5 +32,12 @@ public interface PosSyncQueueRepository extends JpaRepository<PosSyncQueue, Inte
 			"WHERE q.status = 'FAILED' " +
 			"AND l.entity_id = CAST(:restaurantId AS VARCHAR)",
 			nativeQuery = true)
-	List<PosSyncQueue> findAllFailedByRestaurantId(@Param("restaurantId") UUID restaurantId);
+	List<PosSyncQueue> findAllFailedByBranchId(@Param("branchId") UUID branchId);
+
+	// Matches the field name 'posLog' in your Entity
+	Optional<PosSyncQueue> findByPosLogId(Integer posLogId);
+
+	// Optimized for the Scheduler: Get tasks that are ready for retry
+	@Query("SELECT q FROM PosSyncQueue q WHERE q.status = 'PENDING' AND q.nextRetryAt <= :now")
+	List<PosSyncQueue> findReadyForProcessing(@Param("now") OffsetDateTime now);
 }

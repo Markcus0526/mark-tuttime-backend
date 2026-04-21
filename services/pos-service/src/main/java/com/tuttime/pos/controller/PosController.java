@@ -5,7 +5,7 @@ import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.pos.dto.*;
-import com.tuttime.pos.entity.PosSystemConfig;
+import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.service.PosService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,11 +30,22 @@ public class PosController {
 
 	private final PosService posService;
 
+	@PostMapping("/config")
+	@Operation(summary = "Set Branch POS Configuration")
+	public ResponseEntity<ApiRes<PosConfig>> configureBranchPos(@Valid @RequestBody PosConfigDto.PosConfigRequest request) {
+
+		validateAdminOrOwner(); // Security check
+
+		PosConfig saved = posService.saveConfig(request);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(ApiRes.success(saved));
+	}
+
 	@PostMapping("/sync/booking")
 	@Operation(summary = "Manual Booking Sync", description = "Triggers a manual push of a booking to the branch terminal.")
 	@ApiResponse(responseCode = "202", description = "Synchronization task accepted")
 	public ResponseEntity<ApiRes<Void>> syncBooking(
-			@Valid @RequestBody BookingSyncRequest request) {
+			@Valid @RequestBody PosSyncDto.BookingSyncRequest request) {
 
 		validateAdminOrOwnerOrManager();
 
@@ -46,7 +57,7 @@ public class PosController {
 	@Operation(summary = "Manual Order Sync", description = "Forces an order synchronization. Note: This usually happens automatically via Kafka.")
 	@ApiResponse(responseCode = "202", description = "Order synchronization task accepted")
 	public ResponseEntity<ApiRes<Void>> syncOrder(
-			@Valid @RequestBody OrderSyncRequest request) {
+			@Valid @RequestBody PosSyncDto.OrderSyncRequest request) {
 
 		validateAdminOrOwnerOrManager();
 
@@ -57,7 +68,7 @@ public class PosController {
 	@PostMapping("/sync/menu")
 	@Operation(summary = "Sync Menu Catalog", description = "Pulls latest items and prices from the physical POS (iiko/R-Keeper) to the cloud.")
 	public ResponseEntity<ApiRes<Void>> syncMenu(
-			@Valid @RequestBody MenuSyncRequest request) {
+			@Valid @RequestBody PosSyncDto.MenuSyncRequest request) {
 
 		validateAdminOrOwner();
 
@@ -69,27 +80,18 @@ public class PosController {
 	@Operation(summary = "Retrieve Entity Logs", description = "Fetches the full history of POS sync attempts for a specific Order or Booking UUID.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "Logs found",
-					content = @Content(schema = @Schema(implementation = PosSyncLogResponse.class))),
+					content = @Content(schema = @Schema(implementation = PosSyncLogDto.PosSyncLogResponse.class))),
 			@ApiResponse(responseCode = "404", description = "No logs found for this entity",
 					content = @Content(schema = @Schema(implementation = ApiRes.class)))
 	})
-	public ResponseEntity<ApiRes<PosSyncLogResponse>> getLogsByEntityId(
+	public ResponseEntity<ApiRes<PosSyncLogDto.PosSyncLogResponse>> getLogsByEntityId(
 			@Parameter(description = "UUID of the target entity", example = "550e8400-e29b-41d4-a716-446655440000")
 			@PathVariable UUID entityId) {
 
 		validateAdminOrOwnerOrManager();
 
-		PosSyncLogResponse response = posService.getSyncLogs(entityId);
+		PosSyncLogDto.PosSyncLogResponse response = posService.getSyncLogs(entityId);
 		return ResponseEntity.ok(ApiRes.success(response));
-	}
-
-	@PostMapping("/credentials")
-	@Operation(summary = "Configure POS Credentials", description = "Registers or updates API endpoints and secrets for a restaurant's POS system.")
-	@ApiResponse(responseCode = "201", description = "Configuration saved")
-	public ResponseEntity<ApiRes<PosSystemConfig>> saveCredentials(@Valid @RequestBody PosCredentialsDto credentialsDto) {
-		PosSystemConfig saved = posService.saveConfig(credentialsDto);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiRes.success(saved));
 	}
 
 	@PostMapping("/force-sync/{branchId}")

@@ -1,13 +1,14 @@
 package com.tuttime.pos.entity;
 
 import com.tuttime.common.entity.BaseSerialEntity;
-import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.pos.entity.enums.PosProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "pos_system_configs", schema = "pos_service")
@@ -17,7 +18,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class PosSystemConfig extends BaseSerialEntity {
+public class PosConfig extends BaseSerialEntity {
+
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
 
 	@Enumerated(EnumType.STRING)
 	@JdbcType(PostgreSQLEnumJdbcType.class) // Maps Java Enum to Postgres TYPE pos_provider
@@ -26,6 +30,9 @@ public class PosSystemConfig extends BaseSerialEntity {
 
 	@Column(name = "api_endpoint", nullable = false)
 	private String apiEndpoint;
+
+	@Column(name = "api_key", columnDefinition = "TEXT")
+	private String apiKey;
 
 	@Column(name = "webhook_secret", columnDefinition = "TEXT")
 	private String webhookSecret;

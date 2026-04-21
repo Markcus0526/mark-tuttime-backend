@@ -3,7 +3,7 @@ package com.tuttime.pos.scheduler;
 import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
 import com.tuttime.pos.service.PosIntegrationService;
-import com.tuttime.pos.service.PosSyncService;
+import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class PosSyncScheduler {
 
 	private final PosSyncQueueRepository queueRepository;
-	private final PosSyncService posSyncService;
+	private final PosService posService;
 	private final PosIntegrationService posIntegrationService;
 
 	/**
@@ -48,10 +48,10 @@ public class PosSyncScheduler {
 
 				// 3. Attempt physical sync to iiko/R-Keeper
 				// This uses the Logic/gRPC we built earlier
-				posIntegrationService.pushOrderToRestaurant(task.getLog().getEntityId());
+				posIntegrationService.pushOrderToRestaurant(task.getPosLog().getEntityId());
 
 				// 4. On Success: Log success and remove from queue
-				posSyncService.markSuccess(task.getLog().getId(), Map.of("status", "SUCCESS"));
+				posService.markSuccess(task.getPosLog().getId(), Map.of("status", "SUCCESS"));
 
 			} catch (Exception e) {
 				// 5. On Failure: Update retry count and schedule next attempt
@@ -64,9 +64,9 @@ public class PosSyncScheduler {
 		int newRetryCount = task.getRetryCount() + 1;
 
 		if (newRetryCount >= 5) { // Hard limit of 5 retries
-			log.error("Sync failed for Order {} after maximum retries.", task.getLog().getEntityId());
+			log.error("Sync failed for Order {} after maximum retries.", task.getPosLog().getEntityId());
 			task.setStatus("FAILED");
-			posSyncService.markFailed(task.getLog().getId(), "MAX_RETRIES_REACHED", Map.of("status", error));
+			posService.markFailed(task.getPosLog().getId(), "MAX_RETRIES_REACHED", Map.of("status", error));
 		} else {
 			task.setStatus("PENDING");
 			task.setRetryCount(newRetryCount);

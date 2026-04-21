@@ -1,16 +1,8 @@
 package com.tuttime.pos.service.impl;
 
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.pos.dto.*;
-import com.tuttime.pos.entity.PosLog;
-import com.tuttime.pos.entity.PosSyncQueue;
-import com.tuttime.pos.entity.PosSystemConfig;
-import com.tuttime.pos.entity.SyncLog;
-import com.tuttime.pos.mapper.PosMapper;
-import com.tuttime.pos.repository.PosLogRepository;
-import com.tuttime.pos.repository.PosSyncQueueRepository;
-import com.tuttime.pos.repository.PosSystemConfigRepository;
-import com.tuttime.pos.repository.SyncLogRepository;
+import com.tuttime.pos.entity.PosConfig;
+import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.service.PosSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,25 +10,18 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PosSyncServiceImpl implements PosSyncService {
 
-	private final PosSystemConfigRepository posSystemConfigRepository;
+	private final PosConfigRepository posConfigRepository;
 
 	@Override
 	public ResponseEntity<String> processWebhook(String posProvider, String payload, String signature) {
-		PosSystemConfig config = posSystemConfigRepository.findByPosSystemAndEnabledTrue(posProvider)
+		PosConfig config = posConfigRepository.findByPosSystemAndEnabledTrue(posProvider)
 				.orElseThrow(() -> new InvalidRequestException(
 						"Webhook received for unknown or disabled POS system: " + posProvider
 				));

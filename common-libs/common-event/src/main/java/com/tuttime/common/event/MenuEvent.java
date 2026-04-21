@@ -11,8 +11,7 @@ public class MenuEvent {
 
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record MenuUpdatedEvent(
-			UUID restaurantId,
-			String posSystem,
+			UUID branchId,
 			OffsetDateTime timestamp
 	)  implements BaseEvent {
 	}

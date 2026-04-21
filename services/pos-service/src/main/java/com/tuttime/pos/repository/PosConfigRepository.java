@@ -1,18 +1,22 @@
 package com.tuttime.pos.repository;
 
-import com.tuttime.pos.entity.PosSystemConfig;
+import com.tuttime.pos.entity.PosConfig;
+import com.tuttime.pos.entity.enums.PosProvider;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface PosSystemConfigRepository extends JpaRepository<PosSystemConfig, Integer> {
+public interface PosConfigRepository extends JpaRepository<PosConfig, Integer> {
+
+	Optional<PosConfig> findByBranchId(UUID branchId);
 
 	// Used to find if iiko or R-Keeper is configured
-	Optional<PosSystemConfig> findByPosSystem(String posSystem);
+	Optional<PosConfig> findByPosProvider(PosProvider provider);
 
 	// If you add restaurantId to the config table later:
 	// Optional<PosSystemConfig> findByRestaurantIdAndEnabledTrue(UUID restaurantId);
@@ -21,5 +25,5 @@ public interface PosSystemConfigRepository extends JpaRepository<PosSystemConfig
 			"WHERE pos_system = CAST(:posSystem AS VARCHAR) " +
 			"AND enabled = true",
 			nativeQuery = true)
-	Optional<PosSystemConfig> findByPosSystemAndEnabledTrue(@Param("posSystem") String posSystem);
+	Optional<PosConfig> findByPosSystemAndEnabledTrue(@Param("posProvider") String posSystem);
 }

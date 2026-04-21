@@ -6,9 +6,10 @@ import com.tuttime.common.event.MenuEvent;
 import com.tuttime.common.event.OrderEvent;
 import com.tuttime.common.mapper.PosProtoMapper;
 import com.tuttime.common.proto.OrderDetailResponse;
-import com.tuttime.pos.dto.OrderSyncRequest;
+import com.tuttime.pos.dto.PosSyncDto;
 import com.tuttime.pos.grpc.client.OrderGrpcClient;
 import com.tuttime.pos.service.PosIntegrationService;
+import com.tuttime.pos.service.PosService;
 import com.tuttime.pos.service.PosSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +34,7 @@ import static com.tuttime.common.event.EventProducer.TOPIC_ORDER_STATUS_UPDATED;
 public class OrderEventConsumer {
 
 	private final ObjectMapper objectMapper;
-	private final PosSyncService posSyncService;
+	private final PosService posService;
 	private final PosIntegrationService posIntegrationService;
 	private final OrderGrpcClient orderGrpcClient;
 
@@ -53,8 +54,8 @@ public class OrderEventConsumer {
 			event = objectMapper.readValue(eventString, OrderEvent.OrderCreatedEvent.class);
 			OrderEvent.OrderCreatedEvent finalEvent = event;
 
-			OrderSyncRequest request = new OrderSyncRequest(finalEvent.orderId(), finalEvent.posSystem());
-			posSyncService.syncOrder(request);
+			PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(finalEvent.orderId(), finalEvent.posSystem());
+			posService.syncOrder(request);
 		} catch (Exception e) {
 			// 5. Final safety net to prevent infinite retries of bad messages
 			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);

@@ -2,19 +2,11 @@ package com.tuttime.pos.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.exception.ForbiddenException;
-import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.exception.UnauthorizedException;
-import com.tuttime.pos.entity.PosSystemConfig;
-import com.tuttime.pos.repository.PosSystemConfigRepository;
 import com.tuttime.pos.service.PosSyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.codec.digest.HmacUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
