@@ -51,7 +51,9 @@ public class IikoPosAdapter implements PosAdapter {
 	}
 
 	@Override
-	public PosProvider getProvider() { return PosProvider.IIKO; }
+	public PosProvider getProvider() {
+		return PosProvider.IIKO;
+	}
 
 	@Override
 	public void occupyTable(PosConfig config, UUID tableId, UUID bookingId) {

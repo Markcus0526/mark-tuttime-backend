@@ -4,10 +4,7 @@ import com.tuttime.common.enums.OrderStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -41,7 +38,8 @@ public class OrderDto {
 			String posOrderId,       // The ID from the physical system (e.g., iiko ID)
 			String kitchenNote,      // Optional notes from the chef
 			OffsetDateTime syncTime  // Timestamp from the restaurant hardware
-	) {}
+	) {
+	}
 
 	public record OrderResponse(
 
@@ -58,7 +56,8 @@ public class OrderDto {
 			List<OrderItemDto.OrderItemResponse> items,
 
 			OffsetDateTime createdAt
-	) {}
+	) {
+	}
 
 	public record OrderDetailResponse(
 
@@ -83,7 +82,8 @@ public class OrderDto {
 				String phoneNumber,
 				String email,
 				String fullName
-		) {}
+		) {
+		}
 
 		public record TableDetailResponse(
 				UUID branchId,
@@ -96,7 +96,8 @@ public class OrderDto {
 				String branchPhone,
 				String zoneName,
 				String tableLabel
-		) {}
+		) {
+		}
 
 		@Builder
 		public record MenuItemResponse(
@@ -105,13 +106,15 @@ public class OrderDto {
 				Integer quantity,     // From local DB
 				BigDecimal price,
 				List<ModifierResponse> modifiers
-		) {}
+		) {
+		}
 
 		@Builder
 		public record ModifierResponse(
 				UUID modifierId,
 				String name,           // Enriched from Menu Service
 				BigDecimal priceAdjustment // From Order Service DB
-		) {}
+		) {
+		}
 	}
 }

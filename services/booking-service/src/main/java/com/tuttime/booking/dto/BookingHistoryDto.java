@@ -1,6 +1,5 @@
 package com.tuttime.booking.dto;
 
-import com.tuttime.booking.entity.BookingStatusHistory;
 import com.tuttime.common.enums.BookingStatus;
 
 import java.time.OffsetDateTime;
@@ -15,6 +14,7 @@ public class BookingHistoryDto {
 			UUID changedBy,
 			OffsetDateTime changedAt,
 			String reason
-	) {}
+	) {
+	}
 
 }

@@ -25,13 +25,13 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID
 			Sort sort);
 
 	@Query("""
-        SELECT DISTINCT c FROM MenuCategory c 
-        LEFT JOIN FETCH c.items i 
-        LEFT JOIN FETCH i.modifierGroups mg 
-        LEFT JOIN FETCH c.modifierGroups cmg
-        WHERE c.branchId = :branchId AND c.deleted = false
-        ORDER BY c.priority ASC, i.priority ASC
-    """)
+			    SELECT DISTINCT c FROM MenuCategory c 
+			    LEFT JOIN FETCH c.items i 
+			    LEFT JOIN FETCH i.modifierGroups mg 
+			    LEFT JOIN FETCH c.modifierGroups cmg
+			    WHERE c.branchId = :branchId AND c.deleted = false
+			    ORDER BY c.priority ASC, i.priority ASC
+			""")
 	List<MenuCategory> findFullMenuByBranchId(@Param("branchId") UUID branchId);
 
 	@EntityGraph(attributePaths = {

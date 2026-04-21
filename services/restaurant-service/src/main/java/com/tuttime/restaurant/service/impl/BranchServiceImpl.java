@@ -2,7 +2,6 @@ package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.BranchDto;
-import com.tuttime.restaurant.dto.RestaurantDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.mapper.BranchMapper;

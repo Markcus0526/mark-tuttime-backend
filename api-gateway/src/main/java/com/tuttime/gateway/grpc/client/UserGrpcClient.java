@@ -1,10 +1,9 @@
 package com.tuttime.gateway.grpc.client;
 
-import com.tuttime.common.proto.*;
+import com.tuttime.common.proto.UserServiceGrpc;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
-import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j

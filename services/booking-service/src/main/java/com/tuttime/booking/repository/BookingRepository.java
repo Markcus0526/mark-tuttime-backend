@@ -31,7 +31,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 //			@Param("startTime") OffsetDateTime startTime,
 //			@Param("endTime") OffsetDateTime endTime
 //	);
-
 	@Query(value = "SELECT EXISTS (" +
 			"SELECT 1 FROM bookings " +
 			"WHERE table_id = :tableId " +

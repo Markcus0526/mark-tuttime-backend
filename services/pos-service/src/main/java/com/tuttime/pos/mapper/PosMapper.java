@@ -1,6 +1,5 @@
 package com.tuttime.pos.mapper;
 
-import com.tuttime.pos.dto.PosSyncDto;
 import com.tuttime.pos.dto.PosSyncLogDto;
 import com.tuttime.pos.entity.PosLog;
 import org.mapstruct.Mapper;

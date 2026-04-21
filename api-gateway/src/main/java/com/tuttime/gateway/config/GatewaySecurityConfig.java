@@ -34,42 +34,42 @@ public class GatewaySecurityConfig {
 				.csrf(ServerHttpSecurity.CsrfSpec::disable)
 
 				.authorizeExchange(exchanges -> exchanges
-						// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
-						.pathMatchers(HttpMethod.GET, "/restaurant-medias/**").permitAll()
-						.pathMatchers(HttpMethod.GET, "/menu-medias/**").permitAll()
+								// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
+								.pathMatchers(HttpMethod.GET, "/restaurant-medias/**").permitAll()
+								.pathMatchers(HttpMethod.GET, "/menu-medias/**").permitAll()
 
-						.pathMatchers(
-								"/api/v1/**",
+								.pathMatchers(
+										"/api/v1/**",
 
-								"/swagger-ui.html",
-								"/swagger-ui/**",
-								"/v3/api-docs/**",
-								"/webjars/**",
-								"/user-docs",
-								"/user-docs/**",
-								"/restaurant-docs",
-								"/restaurant-docs/**",
-								"/menu-docs",
-								"/menu-docs/**",
-								"/booking-docs",
-								"/booking-docs/**",
-								"/order-docs",
-								"/order-docs/**",
-								"/payment-docs",
-								"/payment-docs/**",
-								"/pos-docs",
-								"/pos-docs/**",
-								"/review-docs",
-								"/review-docs/**",
-								"/analytics-docs",
-								"/analytics-docs/**"
-						).permitAll()
+										"/swagger-ui.html",
+										"/swagger-ui/**",
+										"/v3/api-docs/**",
+										"/webjars/**",
+										"/user-docs",
+										"/user-docs/**",
+										"/restaurant-docs",
+										"/restaurant-docs/**",
+										"/menu-docs",
+										"/menu-docs/**",
+										"/booking-docs",
+										"/booking-docs/**",
+										"/order-docs",
+										"/order-docs/**",
+										"/payment-docs",
+										"/payment-docs/**",
+										"/pos-docs",
+										"/pos-docs/**",
+										"/review-docs",
+										"/review-docs/**",
+										"/analytics-docs",
+										"/analytics-docs/**"
+								).permitAll()
 
-						// 4. Role-based matching (optional, coarse-grained gating)
+								// 4. Role-based matching (optional, coarse-grained gating)
 //						.pathMatchers("/api/v1/users/**").hasRole("ADMIN")
 
-						// 5. All other gateway traffic requires a valid login token
-						.anyExchange().authenticated()
+								// 5. All other gateway traffic requires a valid login token
+								.anyExchange().authenticated()
 				)
 
 				// 6. Tell the Gateway to act as an OAuth2 Resource Server

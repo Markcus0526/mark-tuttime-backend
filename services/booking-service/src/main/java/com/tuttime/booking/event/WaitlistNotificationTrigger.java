@@ -1,15 +1,15 @@
 package com.tuttime.booking.event;
 
-import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.entity.enums.WaitlistStatus;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.WaitlistRepository;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.event.BookingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.OffsetDateTime;

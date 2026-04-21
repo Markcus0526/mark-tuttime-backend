@@ -32,7 +32,8 @@ public class MenuItemDto {
 
 			@Schema(description = "Display order priority", example = "1")
 			Integer priority
-	) {}
+	) {
+	}
 
 
 	@Schema(description = "Menu Item response with full customization and pricing logic")
@@ -59,7 +60,8 @@ public class MenuItemDto {
 
 			@Schema(description = "URL for all images and videos from Media table")
 			List<MediaDto.MediaResponse> medias
-	) {}
+	) {
+	}
 
 	@Schema(description = "Compact summary response for category list views")
 	@Builder
@@ -71,5 +73,6 @@ public class MenuItemDto {
 			Boolean available,
 			Integer priority,
 			String imageUrl
-	) {}
+	) {
+	}
 }

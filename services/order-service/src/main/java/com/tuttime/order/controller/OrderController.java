@@ -9,14 +9,10 @@ import com.tuttime.common.util.UuidUtil;
 import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -126,7 +122,7 @@ public class OrderController {
 	public ResponseEntity<ApiRes<OrderDto.OrderResponse>> syncFromPos(
 			@PathVariable UUID orderId,
 			@RequestBody OrderDto.PosSyncRequest syncRequest) {
-		
+
 		// In a real microservice, you'd validate an API Key or Service Token here
 		OrderDto.OrderResponse response = orderService.syncStatusFromPos(orderId, syncRequest);
 		return ResponseEntity.ok(ApiRes.success(response));

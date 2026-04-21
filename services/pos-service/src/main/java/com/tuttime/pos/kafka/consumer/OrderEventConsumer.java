@@ -3,7 +3,6 @@ package com.tuttime.pos.kafka.consumer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.OrderEvent;
-import com.tuttime.common.mapper.PosProtoMapper;
 import com.tuttime.common.proto.OrderDetailResponse;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
@@ -13,21 +12,18 @@ import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.grpc.client.OrderGrpcClient;
 import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
-import com.tuttime.pos.service.PosIntegrationService;
 import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.annotation.RetryableTopic;
-import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
-import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import static com.tuttime.common.event.EventProducer.*;
+import static com.tuttime.common.event.EventProducer.TOPIC_ORDER_CREATED;
+import static com.tuttime.common.event.EventProducer.TOPIC_ORDER_STATUS_UPDATED;
 
 @Service
 @RequiredArgsConstructor

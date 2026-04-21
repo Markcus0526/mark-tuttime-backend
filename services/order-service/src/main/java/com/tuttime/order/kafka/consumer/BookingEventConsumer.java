@@ -2,16 +2,12 @@ package com.tuttime.order.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.BookingEvent;
-import com.tuttime.order.repository.OrderRepository;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
 

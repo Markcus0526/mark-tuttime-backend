@@ -3,7 +3,6 @@ package com.tuttime.restaurant.entity;
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;

@@ -1,7 +1,7 @@
 package com.tuttime.booking.entity;
 
-import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.entity.BaseUuidEntity;
+import com.tuttime.common.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

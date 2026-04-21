@@ -1,17 +1,7 @@
 package com.tuttime.menu.mapper;
 
-import com.tuttime.menu.dto.FullMenuDto;
-import com.tuttime.menu.entity.MenuCategory;
-import com.tuttime.menu.entity.MenuItem;
-import com.tuttime.menu.entity.Modifier;
-import com.tuttime.menu.entity.ModifierGroup;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
 		unmappedTargetPolicy = ReportingPolicy.IGNORE)

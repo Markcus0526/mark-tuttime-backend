@@ -1,7 +1,6 @@
 package com.tuttime.menu.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.PosEvent;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;

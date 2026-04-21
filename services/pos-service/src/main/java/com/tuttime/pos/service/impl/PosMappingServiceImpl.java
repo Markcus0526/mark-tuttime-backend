@@ -153,7 +153,8 @@ public class PosMappingServiceImpl implements PosMappingService {
 
 	/**
 	 * Resolves an internal TutTime UUID to an external POS String ID.
-	 * @param branchId The specific restaurant branch
+	 *
+	 * @param branchId   The specific restaurant branch
 	 * @param menuItemId The TutTime internal UUID
 	 * @return The iiko GUID or R-Keeper Ident
 	 */

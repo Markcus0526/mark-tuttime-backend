@@ -3,11 +3,9 @@ package com.tuttime.pos.grpc.client;
 import com.tuttime.common.proto.OrderDetailRequest;
 import com.tuttime.common.proto.OrderDetailResponse;
 import com.tuttime.common.proto.OrderServiceGrpc;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;

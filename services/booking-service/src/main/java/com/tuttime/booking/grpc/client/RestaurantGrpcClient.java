@@ -1,7 +1,5 @@
 package com.tuttime.booking.grpc.client;
 
-import com.tuttime.booking.dto.BookingDto;
-import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-
-import static com.tuttime.common.util.DatetimeUtil.convertOffsetDatetimeToProtobuf;
 
 @Service
 @Slf4j

@@ -1,6 +1,5 @@
 package com.tuttime.gateway.kafka.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.event.UserEvent;
 import lombok.RequiredArgsConstructor;

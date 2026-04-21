@@ -28,22 +28,22 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
 	@Query("""
-        SELECT new com.tuttime.restaurant.repository.record.TableDetailRecord(
-                 t.id,
-                 z.id,
-                 t.label,
-                 z.name,
-                 t.seats
-             )
-        FROM DishTable t
-        JOIN t.zone z
-        WHERE z.branch.id = :branchId 
-          AND t.deleted = false 
-          AND t.closed = false 
-          AND t.seats >= :partySize
-          AND z.deleted = false
-          AND z.closed = false
-    """)
+			    SELECT new com.tuttime.restaurant.repository.record.TableDetailRecord(
+			             t.id,
+			             z.id,
+			             t.label,
+			             z.name,
+			             t.seats
+			         )
+			    FROM DishTable t
+			    JOIN t.zone z
+			    WHERE z.branch.id = :branchId 
+			      AND t.deleted = false 
+			      AND t.closed = false 
+			      AND t.seats >= :partySize
+			      AND z.deleted = false
+			      AND z.closed = false
+			""")
 	List<TableDetailRecord> findTablesByBranchIdAndPartySize(
 			@Param("branchId") UUID branchId,
 			@Param("partySize") int partySize
@@ -55,24 +55,24 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	void deleteAllByZoneId(@Param("zoneId") UUID zoneId);
 
 	@Query("""
-	    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyRecord(
-		    t.id,
-			z.id,
-			z.branch.id,
-	        b.restaurant.id, 
-	        t.label,
-		    z.name, 
-	        b.name,
-		    b.address,
-			b.phone,
-			r.name
-	    )
-	    FROM DishTable t
-	    JOIN t.zone z
-	    JOIN z.branch b
-		JOIN b.restaurant r
-	    WHERE t.id = :tableId AND t.deleted = false
-	""")
+			    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyRecord(
+				    t.id,
+					z.id,
+					z.branch.id,
+			        b.restaurant.id, 
+			        t.label,
+				    z.name, 
+			        b.name,
+				    b.address,
+					b.phone,
+					r.name
+			    )
+			    FROM DishTable t
+			    JOIN t.zone z
+			    JOIN z.branch b
+				JOIN b.restaurant r
+			    WHERE t.id = :tableId AND t.deleted = false
+			""")
 	Optional<TableHierarchyRecord> findTableHierarchy(@Param("tableId") UUID tableId);
 
 }

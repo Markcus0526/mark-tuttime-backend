@@ -51,7 +51,7 @@ public class PosRetryScheduler {
 		// Use the action string to call the correct adapter method
 		switch (task.getAction()) {
 			case "RESERVE_TABLE" -> adapter.reserveTable(config, null, task.getBookingId());
-			case "OCCUPY_TABLE"  -> adapter.occupyTable(config, null, task.getBookingId());
+			case "OCCUPY_TABLE" -> adapter.occupyTable(config, null, task.getBookingId());
 			case "RELEASE_TABLE" -> adapter.releaseTable(config, null, task.getBookingId());
 			default -> log.error("Unknown action in queue: {}", task.getAction());
 		}

@@ -1,10 +1,12 @@
 package com.tuttime.booking.controller;
 
-import com.tuttime.booking.dto.*;
-import com.tuttime.common.enums.BookingStatus;
+import com.tuttime.booking.dto.BookingDto;
+import com.tuttime.booking.dto.BookingHistoryDto;
+import com.tuttime.booking.dto.BookingSetupDto;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
@@ -104,11 +106,11 @@ public class BookingController {
 	public ResponseEntity<ApiRes<List<BookingDto.BookingDetailResponse>>> getBranchBookings(
 			@PathVariable UUID branchId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date) {
-		
+
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
-		
+
 		List<BookingDto.BookingDetailResponse> data = bookingService.getBookingsByBranch(branchId, date, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}

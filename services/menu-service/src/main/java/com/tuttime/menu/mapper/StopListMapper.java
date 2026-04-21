@@ -1,9 +1,6 @@
 package com.tuttime.menu.mapper;
 
-import com.tuttime.menu.dto.ModifierDto;
 import com.tuttime.menu.dto.StopListDto;
-import com.tuttime.menu.entity.Modifier;
-import com.tuttime.menu.entity.ModifierGroup;
 import com.tuttime.menu.entity.StopList;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

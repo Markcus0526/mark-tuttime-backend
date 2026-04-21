@@ -33,7 +33,9 @@ public interface PosAdapter {
 	 * Uses the gRPC OrderDetailResponse for rich data.
 	 */
 	void sendOrder(PosConfig config, OrderDetailResponse order);
+
 	void cancelOrder(PosConfig config, UUID orderId, String reason);
+
 	void refundOrder(PosConfig config, UUID orderId, BigDecimal amount, String reason);
 
 	/**

@@ -26,7 +26,8 @@ public class StopListDto {
 
 			@Schema(description = "Reason for stopping (e.g., Out of avocado)", example = "Supplier delay")
 			String reason
-	) {}
+	) {
+	}
 
 	@Schema(description = "Response payload for stop list entries")
 	public record StopListResponse(
@@ -38,5 +39,6 @@ public class StopListDto {
 			LocalDate startDate,
 			LocalDate endDate,
 			String reason
-	) {}
+	) {
+	}
 }

@@ -48,7 +48,8 @@ public class WebConfig implements WebMvcConfigurer {
 	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
 		// Create a converter that supports octet-stream for JSON mapping
 		AbstractJackson2HttpMessageConverter octetStreamConverter =
-				new AbstractJackson2HttpMessageConverter(objectMapper, org.springframework.http.MediaType.APPLICATION_OCTET_STREAM) {};
+				new AbstractJackson2HttpMessageConverter(objectMapper, org.springframework.http.MediaType.APPLICATION_OCTET_STREAM) {
+				};
 
 		converters.add(octetStreamConverter);
 	}

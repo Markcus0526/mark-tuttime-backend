@@ -1,9 +1,7 @@
 package com.tuttime.payment.service.impl;
 
 import com.stripe.exception.StripeException;
-import com.stripe.model.checkout.Session;
 import com.stripe.param.RefundCreateParams;
-import com.stripe.param.checkout.SessionCreateParams;
 import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.common.exception.BusinessException;

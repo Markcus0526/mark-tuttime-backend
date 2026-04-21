@@ -9,12 +9,14 @@ public class ZoneLayoutDto {
 			CanvasDto canvas,
 			List<TableDto> tables,
 			List<FixtureDto> fixtures
-	) {}
+	) {
+	}
 
 	public record CanvasDto(
 			Integer width,
 			Integer height
-	) {}
+	) {
+	}
 
 	public record FixtureDto(
 			UUID id,
@@ -23,7 +25,8 @@ public class ZoneLayoutDto {
 			Double y,
 			Integer rotation,
 			String label
-	) {}
+	) {
+	}
 
 	public record TableDto(
 			UUID id,
@@ -34,6 +37,7 @@ public class ZoneLayoutDto {
 			String label,
 			String notes,
 			Integer seats
-	) {}
+	) {
+	}
 
 }

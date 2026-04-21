@@ -4,7 +4,6 @@ import com.tuttime.menu.dto.MediaDto;
 import com.tuttime.menu.entity.Media;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring",

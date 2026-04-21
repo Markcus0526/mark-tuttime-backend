@@ -1,9 +1,9 @@
 package com.tuttime.pos.scheduler;
 
+import com.tuttime.pos.adapter.PosAdapter;
+import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.repository.PosConfigRepository;
-import com.tuttime.pos.adapter.PosAdapterFactory;
-import com.tuttime.pos.adapter.PosAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

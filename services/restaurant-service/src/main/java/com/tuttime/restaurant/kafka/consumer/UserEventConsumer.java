@@ -1,12 +1,7 @@
 package com.tuttime.restaurant.kafka.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.auth.enums.UserRoleKind;
-import com.tuttime.common.event.RestaurantEvent;
 import com.tuttime.common.event.UserEvent;
-import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.restaurant.entity.Staff;
 import com.tuttime.restaurant.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

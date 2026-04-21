@@ -42,14 +42,10 @@ public class BookingEventConsumer {
 			UUID tableId = finalEvent.tableId();
 
 			switch (finalEvent.newStatus()) {
-				case PAID ->
-						updateTableStatus(tableId, TableStatus.RESERVED);
-				case ARRIVED ->
-						updateTableStatus(tableId, TableStatus.OCCUPIED);
-				case COMPLETED, CANCELED, NO_SHOW ->
-						updateTableStatus(tableId, TableStatus.ACTIVE);
-				default ->
-						log.debug("No table status update needed for {}", finalEvent.newStatus());
+				case PAID -> updateTableStatus(tableId, TableStatus.RESERVED);
+				case ARRIVED -> updateTableStatus(tableId, TableStatus.OCCUPIED);
+				case COMPLETED, CANCELED, NO_SHOW -> updateTableStatus(tableId, TableStatus.ACTIVE);
+				default -> log.debug("No table status update needed for {}", finalEvent.newStatus());
 			}
 
 		} catch (Exception e) {
