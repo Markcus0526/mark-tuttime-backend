@@ -1,8 +1,7 @@
 package com.tuttime.pos.service;
 
 import com.tuttime.pos.dto.*;
-import com.tuttime.pos.entity.PosSystemConfig;
-import org.springframework.http.ResponseEntity;
+import com.tuttime.pos.entity.PosConfig;
 
 import java.util.Map;
 import java.util.UUID;
@@ -10,16 +9,16 @@ import java.util.UUID;
 public interface PosService {
 
 	// Manual/On-demand Sync
-	void syncBooking(BookingSyncRequest request);
-	void syncOrder(OrderSyncRequest request);
-	void syncMenu(MenuSyncRequest request);
+	void syncBooking(PosSyncDto.BookingSyncRequest request);
+	void syncOrder(PosSyncDto.OrderSyncRequest request);
+	void syncMenu(PosSyncDto.MenuSyncRequest request);
 
 	// Maintenance & Recovery
 	void forceSyncByBranchId(UUID branchId);
-	PosSyncLogResponse getSyncLogs(UUID entityId);
+	PosSyncLogDto.PosSyncLogResponse getSyncLogs(UUID entityId);
 
 	// Configuration
-	PosSystemConfig saveConfig(PosCredentialsDto dto);
+	PosConfig saveConfig(PosConfigDto.PosConfigRequest request);
 
 	void markSuccess(int logId, Map<String, String> metadata);
 

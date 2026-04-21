@@ -25,25 +25,28 @@ CREATE TYPE pos_status AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
 CREATE TYPE sync_task_status AS ENUM ('PENDING', 'PROCESSING', 'FAILED', 'COMPLETED');
 CREATE TYPE pos_provider AS ENUM ('IIKO', 'RKEEPER');
 
--- Table: pos_system_configs
-CREATE TABLE pos_system_configs
+-- Table: pos_configs
+CREATE TABLE pos_configs
 (
     id             SERIAL PRIMARY KEY,
+    branch_id      UUID UNIQUE NOT NULL,
     pos_provider   pos_provider UNIQUE NOT NULL,
     api_endpoint   TEXT               NOT NULL,
+    api_key        TEXT,
     webhook_secret TEXT,
     enabled        BOOLEAN            NOT NULL DEFAULT TRUE,
     created_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_pos_configs_active ON pos_service.pos_system_configs (pos_provider) WHERE enabled = TRUE;
+CREATE INDEX idx_pos_config_branch ON pos_configs (branch_id) WHERE enabled = TRUE;
+CREATE INDEX idx_pos_configs_active ON pos_configs (pos_provider) WHERE enabled = TRUE;
 
 -- Table: pos_logs
 CREATE TABLE pos_logs
 (
     id               SERIAL PRIMARY KEY,
-    pos_system_id    INT         NOT NULL REFERENCES pos_system_configs (id),
+    config_id    INT         NOT NULL REFERENCES pos_configs (id),
     entity_type      VARCHAR(50) NOT NULL,
     entity_id        UUID        NOT NULL, -- Matched to Order/Booking UUIDs
     status           VARCHAR(20) NOT NULL,
@@ -57,6 +60,7 @@ CREATE TABLE pos_logs
 
 CREATE INDEX idx_pos_logs_entity ON pos_logs (entity_type, entity_id);
 CREATE INDEX idx_pos_logs_status ON pos_logs (status);
+CREATE INDEX idx_pos_logs_branch_json ON pos_logs USING GIN ((request_payload -> 'branch_id'));
 
 -- Table: pos_error_details
 CREATE TABLE pos_error_details
@@ -128,7 +132,7 @@ CREATE TRIGGER trg_update_pos_sync_queues_updated_at
     BEFORE UPDATE
     ON pos_sync_queues
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER trg_update_pos_system_configs_updated_at
+CREATE TRIGGER trg_update_pos_configs_updated_at
     BEFORE UPDATE
-    ON pos_system_configs
+    ON pos_configs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -1,7 +1,6 @@
 package com.tuttime.pos.entity;
 
 import com.tuttime.common.entity.BaseSerialEntity;
-import com.tuttime.common.entity.BaseTimeStampEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -24,7 +23,7 @@ public class PosLog extends BaseSerialEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "pos_system_id", nullable = false)
-	private PosSystemConfig config;
+	private PosConfig config;
 
 	@Column(name = "entity_type", nullable = false)
 	private String entityType;

@@ -9,17 +9,20 @@ option java_outer_classname = "PosServiceProto";
 
 // Pos Service gRPC
 service PosService {
-  rpc pushToKitchen (PosOrderRequest) returns (PosOrderResponse);
+
+  rpc pushToKitchen (KitchenOrderRequest) returns (KitchenOrderResponse);
 
 }
 
-message PosOrderRequest {
+// rpc pushToKitchen (PosOrderRequest) returns (PosOrderResponse);
+message KitchenOrderRequest {
   string order_id = 1;
   string booking_id = 2;
-  string table_label = 3;
-  string zone_name = 4;
-  repeated PosOrderItem items = 5;
+  string branch_id = 3;
+  string table_label = 4;
+  string zone_name = 5;
   string customer_name = 6;
+  repeated PosOrderItem items = 7;
 }
 
 message PosOrderItem {

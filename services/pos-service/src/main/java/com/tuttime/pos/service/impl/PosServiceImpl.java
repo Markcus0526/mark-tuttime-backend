@@ -4,23 +4,18 @@ import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.pos.dto.*;
 import com.tuttime.pos.entity.PosLog;
 import com.tuttime.pos.entity.PosSyncQueue;
-import com.tuttime.pos.entity.PosSystemConfig;
+import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.SyncLog;
 import com.tuttime.pos.mapper.PosMapper;
 import com.tuttime.pos.repository.PosLogRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
-import com.tuttime.pos.repository.PosSystemConfigRepository;
+import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.repository.SyncLogRepository;
 import com.tuttime.pos.service.PosService;
-import com.tuttime.pos.service.PosSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.codec.digest.HmacUtils;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -33,18 +28,17 @@ import java.util.UUID;
 @Slf4j
 public class PosServiceImpl implements PosService {
 
-	private final PosSystemConfigRepository posSystemConfigRepository;
-	private final PosLogRepository logRepository;
+	private final PosConfigRepository posConfigRepository;
+	private final PosLogRepository posLogRepository;
 	private final SyncLogRepository syncLogRepository;
-	private final PosSystemConfigRepository configRepository;
-	private final PosSyncQueueRepository queueRepository;
+	private final PosSyncQueueRepository posSyncQueueRepository;
 	private final PosMapper posMapper;
 
 	@Override
 	@Transactional(readOnly = true)
-	public PosSyncLogResponse getSyncLogs(UUID entityId) {
+	public PosSyncLogDto.PosSyncLogResponse getSyncLogs(UUID entityId) {
 		// Fetch all logs for this entity (Order or Booking)
-		List<PosLog> logs = logRepository.findAllByEntityIdOrderByCreatedAtDesc(entityId);
+		List<PosLog> logs = posLogRepository.findAllByEntityIdOrderByCreatedAtDesc(entityId);
 		if (logs.isEmpty()) {
 			throw new InvalidRequestException("No sync history found for entity: " + entityId);
 		}
@@ -53,59 +47,144 @@ public class PosServiceImpl implements PosService {
 
 	@Override
 	@Transactional
-	public PosSystemConfig saveConfig(PosCredentialsDto dto) {
-		// Implementation for your pos_system_configs table
-		PosSystemConfig config = configRepository.findByPosProvider(dto.provider())
-				.orElse(new PosSystemConfig());
+	public PosConfig saveConfig(PosConfigDto.PosConfigRequest request) {
+		// 1. Find existing or create a new instance (The Upsert pattern)
+		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
+				.orElseGet(() -> {
+					PosConfig newConfig = new PosConfig();
+					newConfig.setBranchId(request.branchId()); // Only set on creation
+					return newConfig;
+				});
 
-		config.setPosProvider(dto.provider());
-		config.setApiEndpoint(dto.apiEndpoint());
-		config.setWebhookSecret(dto.webhookSecret()); // Encrypt this in a real app!
-		config.setEnabled(true);
+		// 2. Update fields from the request
+		config.setPosProvider(request.provider());
+		config.setApiEndpoint(request.apiEndpoint());
+		config.setApiKey(request.apiKey()); // Added based on v1.2 Schema
+		config.setWebhookSecret(request.webhookSecret());
+		config.setEnabled(request.enabled());
 
-		return configRepository.save(config);
+		// 3. Save (JPA will either UPDATE or INSERT automatically)
+		return posConfigRepository.save(config);
 	}
 
 	@Override
 	@Transactional
-	public void syncOrder(OrderSyncRequest request) {
+	public void syncOrder(PosSyncDto.OrderSyncRequest request) {
 		log.info("Manually triggering sync for order: {}", request.orderId());
 
 		// 1. Get POS Config based on the request (dynamic lookup)
-		PosSystemConfig config = configRepository.findByPosSystem(request.posSystem())
-				.orElseThrow(() -> new InvalidRequestException("POS System not configured: " + request.posSystem()));
+		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
+				.orElseThrow(() -> new InvalidRequestException("POS Config not found for " + request.branchId()));
 
-		// 2. Create Audit Log Entry
+		// 2. Prepare Payload (Critical for your JSONB indexing)
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("order_id", request.orderId());
+		payload.put("branch_id", request.branchId()); // Must be included!
+		payload.put("sync_type", "MANUAL");
+
+		// 3. Create Audit Log Entry
 		PosLog logEntry = PosLog.builder()
 				.config(config)
 				.entityType("ORDER")
 				.entityId(request.orderId())
 				.status("PENDING")
-				.attemptCount(1)
-				.lastAttempt(OffsetDateTime.now())
+				.attemptCount(0) // 0 because no API call has been made yet
+				.requestPayload(payload) // Matches your JSONB column
 				.build();
 
-		PosLog savedLog = logRepository.save(logEntry);
+		PosLog savedLog = posLogRepository.save(logEntry);
 
 		// 3. Create Queue Entry for the background worker/retry logic
 		PosSyncQueue queueEntry = PosSyncQueue.builder()
-				.log(savedLog)
+				.posLog(savedLog)
 				.status("PENDING")
 				.nextRetryAt(OffsetDateTime.now()) // Try immediately
 				.retryCount(0)
 				.build();
 
-		queueRepository.save(queueEntry);
+		posSyncQueueRepository.save(queueEntry);
+	}
+
+	// Stubbed methods for Booking and Menu (similar patterns to syncOrder)
+	@Override
+	@Transactional
+	public void syncBooking(PosSyncDto.BookingSyncRequest request) {
+		log.info("Queuing booking sync for ID: {} at branch: {}", request.bookingId(), request.branchId());
+
+		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
+				.orElseThrow(() -> new InvalidRequestException("POS Config not found for " + request.branchId()));
+
+		// 1. Construct Payload for the background worker
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("booking_id", request.bookingId());
+		payload.put("branch_id", request.branchId());
+		payload.put("booking_time", request.bookingTime());
+		payload.put("sync_type", "MANUAL");
+
+		// 2. Create POS Log
+		PosLog logEntry = PosLog.builder()
+				.config(config)
+				.entityType("BOOKING")
+				.entityId(request.bookingId())
+				.status("PENDING")
+				.requestPayload(payload) // Critical for JSONB indexing
+				.attemptCount(0)
+				.build();
+		PosLog savedLog = posLogRepository.save(logEntry);
+
+		// 3. Queue for the Scheduler
+		PosSyncQueue queueEntry = PosSyncQueue.builder()
+				.posLog(savedLog)
+				.status("PENDING")
+				.nextRetryAt(OffsetDateTime.now())
+				.retryCount(0)
+				.build();
+		posSyncQueueRepository.save(queueEntry);
 	}
 
 	@Override
 	@Transactional
-	public void forceSyncByRestaurantId(UUID branchId) {
+	public void syncMenu(PosSyncDto.MenuSyncRequest request) {
+		log.info("Initializing menu catalog pull for branch: {}", request.branchId());
+
+		PosConfig config = posConfigRepository.findByBranchId(request.branchId())
+				.orElseThrow(() -> new InvalidRequestException("POS Config not found for " + request.branchId()));
+
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("branch_id", request.branchId());
+		payload.put("sync_type", "MANUAL");
+		payload.put("sync_mode", "FULL_PULL"); // To distinguish between incremental and full
+
+		// 1. Create Log (Entity ID is the Branch ID here)
+		PosLog logEntry = PosLog.builder()
+				.config(config)
+				.entityType("MENU_CATALOG")
+				.entityId(request.branchId())
+				.status("PENDING")
+				.requestPayload(payload)
+				.attemptCount(0)
+				.build();
+		PosLog savedLog = posLogRepository.save(logEntry);
+
+		// 2. Queue for Scheduler
+		// Note: Menu sync might need a separate priority queue or longer retry backoff
+		PosSyncQueue queueEntry = PosSyncQueue.builder()
+				.posLog(savedLog)
+				.status("PENDING")
+				.nextRetryAt(OffsetDateTime.now())
+				.retryCount(0)
+				.build();
+		posSyncQueueRepository.save(queueEntry);
+	}
+
+	@Override
+	@Transactional
+	public void forceSyncByBranchId(UUID branchId) {
 		log.info("Starting bulk force-sync for branch: {}", branchId);
 
 		// 1. Find all FAILED logs for this specific branch
 		// Note: Using the branch_id from your updated sync_logs or metadata in pos_logs
-		List<PosLog> failedLogs = posLogRepository.findAllFailedByBranch(branchId);
+		List<PosLog> failedLogs = posLogRepository.findAllFailedByBranch(branchId.toString());
 
 		if (failedLogs.isEmpty()) {
 			log.info("No failed tasks found for branch: {}", branchId);
@@ -119,7 +198,7 @@ public class PosServiceImpl implements PosService {
 			posLogRepository.save(logEntry);
 
 			// 3. Upsert into the Sync Queue for immediate processing
-			PosSyncQueue queueItem = syncQueueRepository.findByPosLogId(logEntry.getId())
+			PosSyncQueue queueItem = posSyncQueueRepository.findByPosLogId(logEntry.getId())
 					.orElse(new PosSyncQueue());
 
 			queueItem.setPosLog(logEntry);
@@ -127,7 +206,7 @@ public class PosServiceImpl implements PosService {
 			queueItem.setRetryCount(0);
 			queueItem.setStatus("PENDING");
 
-			syncQueueRepository.save(queueItem);
+			posSyncQueueRepository.save(queueItem);
 		}
 
 		log.info("Successfully re-queued {} tasks for branch {}", failedLogs.size(), branchId);
@@ -183,11 +262,5 @@ public class PosServiceImpl implements PosService {
 		syncLogRepository.save(log);
 	}
 
-	// Stubbed methods for Booking and Menu (similar patterns to syncOrder)
-	@Override
-	public void syncBooking(BookingSyncRequest request) { /* Implementation */ }
-
-	@Override
-	public void syncMenu(MenuSyncRequest request) { /* Implementation */ }
 
 }

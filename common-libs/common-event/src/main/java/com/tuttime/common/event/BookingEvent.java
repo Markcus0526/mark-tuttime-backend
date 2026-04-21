@@ -13,8 +13,7 @@ public class BookingEvent {
 
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record BookingConfirmedEvent(
-			UUID restaurantId,
-			String posSystem,
+			UUID branchId,
 			OffsetDateTime timestamp
 	)  implements BaseEvent {
 	}

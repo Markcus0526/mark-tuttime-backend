@@ -2,9 +2,8 @@ package com.tuttime.pos.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.event.BookingEvent;
-import com.tuttime.common.event.RestaurantEvent;
-import com.tuttime.pos.dto.BookingSyncRequest;
-import com.tuttime.pos.service.PosSyncService;
+import com.tuttime.pos.dto.PosSyncDto;
+import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -23,7 +22,7 @@ import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATE
 public class BookingEventConsumer {
 
 	private final ObjectMapper objectMapper;
-	private final PosSyncService posSyncService;
+	private final PosService posService;
 
 	@KafkaListener(
 			topics = TOPIC_BOOKING_STATUS_UPDATED,
@@ -41,8 +40,8 @@ public class BookingEventConsumer {
 			event = objectMapper.readValue(eventString, BookingEvent.BookingConfirmedEvent.class);
 			BookingEvent.BookingConfirmedEvent finalEvent = event;
 
-			BookingSyncRequest request = new BookingSyncRequest(finalEvent.restaurantId(), finalEvent.posSystem());
-			posSyncService.syncBooking(request);
+			PosSyncDto.BookingSyncRequest request = new PosSyncDto.BookingSyncRequest(finalEvent.branchId());
+			posService.syncBooking(request);
 
 		} catch (Exception e) {
 			// 5. Final safety net to prevent infinite retries of bad messages

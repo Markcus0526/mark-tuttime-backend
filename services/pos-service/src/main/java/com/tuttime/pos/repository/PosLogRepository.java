@@ -2,6 +2,8 @@ package com.tuttime.pos.repository;
 
 import com.tuttime.pos.entity.PosLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,4 +17,11 @@ public interface PosLogRepository extends JpaRepository<PosLog, Integer> {
 
 	// Used to check if an order was already successfully synced (Idempotency)
 	boolean existsByEntityIdAndStatus(UUID entityId, String status);
+
+	@Query(value = """
+        SELECT * FROM pos_service.pos_logs 
+        WHERE status = 'FAILED' 
+        AND request_payload ->> 'branch_id' = :branchId
+        """, nativeQuery = true)
+	List<PosLog> findAllFailedByBranch(@Param("branchId") String branchId);
 }

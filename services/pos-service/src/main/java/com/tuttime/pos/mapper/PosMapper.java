@@ -1,6 +1,7 @@
 package com.tuttime.pos.mapper;
 
-import com.tuttime.pos.dto.PosSyncLogResponse;
+import com.tuttime.pos.dto.PosSyncDto;
+import com.tuttime.pos.dto.PosSyncLogDto;
 import com.tuttime.pos.entity.PosLog;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -14,6 +15,6 @@ public interface PosMapper {
 
 	@Mapping(target = "entityId", source = "entityId")
 	@Mapping(target = "logs", source = "logs")
-	PosSyncLogResponse toResponse(UUID entityId, List<PosLog> logs);
+	PosSyncLogDto.PosSyncLogResponse toResponse(UUID entityId, List<PosLog> logs);
 
 }
