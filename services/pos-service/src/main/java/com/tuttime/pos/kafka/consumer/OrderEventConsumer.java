@@ -2,19 +2,21 @@ package com.tuttime.pos.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.common.event.MenuEvent;
 import com.tuttime.common.event.OrderEvent;
 import com.tuttime.common.mapper.PosProtoMapper;
 import com.tuttime.common.proto.OrderDetailResponse;
+import com.tuttime.pos.adapter.PosAdapter;
+import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.dto.PosSyncDto;
+import com.tuttime.pos.entity.PosConfig;
+import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.grpc.client.OrderGrpcClient;
+import com.tuttime.pos.repository.PosConfigRepository;
+import com.tuttime.pos.repository.PosSyncQueueRepository;
 import com.tuttime.pos.service.PosIntegrationService;
 import com.tuttime.pos.service.PosService;
-import com.tuttime.pos.service.PosSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
@@ -22,11 +24,10 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
-import java.util.UUID;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_ORDER_CREATED;
-import static com.tuttime.common.event.EventProducer.TOPIC_ORDER_STATUS_UPDATED;
+import static com.tuttime.common.event.EventProducer.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +35,10 @@ import static com.tuttime.common.event.EventProducer.TOPIC_ORDER_STATUS_UPDATED;
 public class OrderEventConsumer {
 
 	private final ObjectMapper objectMapper;
+	private final PosConfigRepository posConfigRepository;
+	private final PosSyncQueueRepository posSyncQueueRepository;
+	private final PosAdapterFactory posAdapterFactory;
 	private final PosService posService;
-	private final PosIntegrationService posIntegrationService;
 	private final OrderGrpcClient orderGrpcClient;
 
 	@KafkaListener(
@@ -66,54 +69,62 @@ public class OrderEventConsumer {
 			topics = TOPIC_ORDER_STATUS_UPDATED,
 			groupId = "pos-service-group")
 	public void handleOrderStatusChange(String eventString) {
-		OrderEvent.OrderStatusEvent event = null;
-
 		try {
-			// 1. Handle Null Event
-			if (!StringUtils.hasText(eventString)) {
-				log.error("Received null event");
-				return;
+			if (!StringUtils.hasText(eventString)) return;
+
+			OrderEvent.OrderStatusEvent event = objectMapper.readValue(eventString, OrderEvent.OrderStatusEvent.class);
+
+			// Logic: Only process when the order is PAID
+			if (event.newStatus() == OrderStatus.PAID) {
+				log.info("Processing PAID Order {} for POS sync", event.orderId());
+
+				// 1. Fetch rich data via gRPC
+				OrderDetailResponse details = orderGrpcClient.getOrderDetail(event.orderId());
+
+				// 2. Fetch POS Config
+				var config = posConfigRepository.findByBranchIdAndEnabledTrue(event.branchId())
+						.orElseGet(() -> {
+							log.warn("No active POS config found for branch {}", event.branchId());
+							return null;
+						});
+				if (config == null) return;
+
+				// 3. Get the correct Provider (iiko/R-Keeper)
+				PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
+
+				try {
+					// 4. Try real-time sync immediately
+					adapter.sendOrder(config, details);
+					log.info("Order {} successfully sent to {} POS", event.orderId(), config.getPosProvider());
+
+				} catch (Exception e) {
+					log.error("Real-time sync failed for Order {}. Moving to Queue.", event.orderId());
+
+					// 5. Failover: Save to pos_sync_queues for the background worker
+					posSyncQueueRepository.save(PosSyncQueue.builder()
+							.branchId(event.branchId())
+							.orderId(event.orderId())
+							.action("SEND_ORDER")
+							.payload(Map.of("order_id", event.orderId())) // Minimal payload, worker will re-fetch if needed
+							.status("PENDING")
+							.nextRetryAt(OffsetDateTime.now().plusMinutes(1))
+							.retryCount(0)
+							.lastError(e.getMessage())
+							.build());
+				}
 			}
 
-			event = objectMapper.readValue(eventString, OrderEvent.OrderStatusEvent.class);
-			OrderEvent.OrderStatusEvent finalEvent = event;
+			if (event.newStatus() == OrderStatus.CANCELED) {
+				log.info("Order {} canceled. Notifying POS...", event.orderId());
 
-			log.info("Received status update for Order {}: {} -> {}",
-					finalEvent.orderId(), finalEvent.oldStatus(), finalEvent.newStatus());
+				PosConfig config = posConfigRepository.findByBranchId(event.branchId())
+						.orElseThrow(() -> new RuntimeException("Config not found"));
 
-			// Logic: Only send to physical POS if the order has been PAID
-			if (finalEvent.newStatus() == OrderStatus.PAID) {
-				log.info("Order {} is PAID. Pushing to restaurant POS system...", finalEvent.orderId());
-
-				OrderDetailResponse details = orderGrpcClient.fetchOrderDetail(finalEvent.orderId());
-
-				Map<String, Object> posPayload = PosProtoMapper.toPosMap(details);
-
-				// Example: Dynamically accessing fields for a generic POS API
-				log.info("Processing Order Map for POS: {}", posPayload.get("order_id"));
-				// 2. Logic: Print or push to iiko/R-Keeper
-				System.out.println("Printing Ticket for Order: " + details.getOrderId());
-				details.getItemsList().forEach(item ->
-						System.out.println(item.getQuantity() + "x " + item.getMenuItemName())
-				);
-
-				posIntegrationService.pushOrderToRestaurant(finalEvent.orderId());
+				PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
+				adapter.cancelOrder(config, event.orderId(), "User requested cancellation");
 			}
 		} catch (Exception e) {
-			// 5. Final safety net to prevent infinite retries of bad messages
 			log.error("Fatal error in Kafka Consumer: {}", e.getMessage(), e);
 		}
 	}
-
-	@RetryableTopic(
-			attempts = "4",                          // 1 initial + 3 retries
-			backoff = @Backoff(delay = 5000, multiplier = 2.0), // Exponential backoff
-			topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE)
-	@KafkaListener(
-			topics = TOPIC_ORDER_STATUS_UPDATED,
-			groupId = "pos-service-group")
-	public void handleWithRetry(String eventString) {
-		OrderEvent.OrderStatusEvent event = null;
-	}
-
 }

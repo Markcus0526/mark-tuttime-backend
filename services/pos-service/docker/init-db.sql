@@ -20,119 +20,89 @@ CREATE
 EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Enums
-CREATE TYPE pos_direction AS ENUM ('TO_POS', 'FROM_POS');
-CREATE TYPE pos_status AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
-CREATE TYPE sync_task_status AS ENUM ('PENDING', 'PROCESSING', 'FAILED', 'COMPLETED');
 CREATE TYPE pos_provider AS ENUM ('IIKO', 'RKEEPER');
 
--- Table: pos_configs
-CREATE TABLE pos_configs
-(
-    id             SERIAL PRIMARY KEY,
-    branch_id      UUID UNIQUE NOT NULL,
-    pos_provider   pos_provider UNIQUE NOT NULL,
-    api_endpoint   TEXT               NOT NULL,
-    api_key        TEXT,
-    webhook_secret TEXT,
-    enabled        BOOLEAN            NOT NULL DEFAULT TRUE,
-    created_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMPTZ                 DEFAULT CURRENT_TIMESTAMP
+-- 2. POS Configuration Table (The "Source of Truth" for Credentials)
+-- Updated with organization_id and terminal_group_id
+CREATE TABLE pos_configs (
+                             id                SERIAL PRIMARY KEY,
+                             branch_id         UUID UNIQUE NOT NULL,
+                             pos_provider      pos_provider NOT NULL,
+                             api_endpoint      TEXT NOT NULL,
+                             api_key           TEXT,
+                             webhook_secret    TEXT,
+                             organization_id   TEXT, -- For iiko
+                             terminal_group_id TEXT, -- For iiko
+                             enabled           BOOLEAN NOT NULL DEFAULT TRUE,
+                             created_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                             updated_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_pos_config_branch ON pos_configs (branch_id) WHERE enabled = TRUE;
-CREATE INDEX idx_pos_configs_active ON pos_configs (pos_provider) WHERE enabled = TRUE;
 
--- Table: pos_logs
-CREATE TABLE pos_logs
-(
-    id               SERIAL PRIMARY KEY,
-    config_id    INT         NOT NULL REFERENCES pos_configs (id),
-    entity_type      VARCHAR(50) NOT NULL,
-    entity_id        UUID        NOT NULL, -- Matched to Order/Booking UUIDs
-    status           VARCHAR(20) NOT NULL,
-    attempt_count    INT         NOT NULL DEFAULT 0,
-    last_attempt     TIMESTAMPTZ,
-    request_payload  JSONB,                -- Added to store Map<String, Object>
-    response_payload JSONB,                -- Added to store POS API response
-    created_at       TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP
+-- 3. POS Logs Table (The "Black Box" Audit Trail)
+-- Tracks every individual request/response
+CREATE TABLE pos_logs (
+                          id                SERIAL PRIMARY KEY,
+                          branch_id         UUID NOT NULL,
+                          entity_id         UUID NOT NULL, -- booking_id or order_id
+                          entity_type       TEXT NOT NULL, -- 'BOOKING', 'ORDER', 'MENU'
+                          action            TEXT NOT NULL, -- 'RESERVE_TABLE', 'SEND_ORDER'
+                          request_payload   JSONB,
+                          response_payload  TEXT,
+                          status            TEXT NOT NULL, -- 'SUCCESS', 'FAILED', 'SUCCESS_ALREADY_SET'
+                          attempt_count     INTEGER DEFAULT 1,
+                          created_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_pos_logs_entity ON pos_logs (entity_type, entity_id);
-CREATE INDEX idx_pos_logs_status ON pos_logs (status);
-CREATE INDEX idx_pos_logs_branch_json ON pos_logs USING GIN ((request_payload -> 'branch_id'));
+CREATE INDEX idx_pos_logs_entity ON pos_logs (entity_id);
 
--- Table: pos_error_details
-CREATE TABLE pos_error_details
-(
-    id               SERIAL PRIMARY KEY,
-    pos_log_id       INT NOT NULL REFERENCES pos_logs (id) ON DELETE CASCADE,
-    error_code       VARCHAR(100),
-    error_stacktrace TEXT,
-    created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+-- 4. POS Sync Queues Table (The "To-Do" Retry List)
+-- Decoupled from logs to handle asynchronous retries
+CREATE TABLE pos_sync_queues (
+                                 id                SERIAL PRIMARY KEY,
+                                 branch_id         UUID NOT NULL,
+                                 booking_id        UUID,
+                                 order_id          UUID,
+                                 action            TEXT NOT NULL,
+                                 payload           JSONB,         -- Original event snapshot
+                                 status            TEXT NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'FAILED_PERMANENTLY'
+                                 retry_count       INTEGER DEFAULT 0,
+                                 next_retry_at     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                                 last_error        TEXT,
+                                 created_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                                 updated_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table: pos_sync_queues
-CREATE TABLE pos_sync_queues
-(
-    id            SERIAL PRIMARY KEY,
-    pos_log_id    INT         NOT NULL REFERENCES pos_logs (id) ON DELETE CASCADE,
-    next_retry_at TIMESTAMPTZ NOT NULL,
-    retry_count   INT         NOT NULL DEFAULT 0,
-    status        VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    created_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP
+CREATE INDEX idx_pos_sync_pending ON pos_sync_queues (status, next_retry_at)
+    WHERE status = 'PENDING';
+
+-- Table to link TutTime Menu Items to External POS IDs
+CREATE TABLE pos_menu_mappings (
+                                               id                SERIAL PRIMARY KEY,
+                                               branch_id         UUID NOT NULL REFERENCES pos_configs(branch_id),
+                                               menu_item_id      UUID NOT NULL, -- Logical ID from Menu Service
+                                               external_pos_id   TEXT NOT NULL, -- The iiko/R-Keeper GUID or Code
+                                               external_name     TEXT,          -- Name as it appears in the POS
+                                               external_price    DECIMAL(10,2), -- Price as it appears in the POS
+                                               last_synced_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                                               UNIQUE(branch_id, menu_item_id)
 );
 
-CREATE INDEX idx_pos_sync_queues_status ON pos_sync_queues (status);
-CREATE INDEX idx_pos_sync_queues_next_retry ON pos_sync_queues (next_retry_at);
+CREATE INDEX idx_pos_mapping_lookup ON pos_menu_mappings (branch_id, menu_item_id);
 
-CREATE TABLE sync_logs
-(
-    id            SERIAL PRIMARY KEY,
-    order_id      UUID        NOT NULL,
-    branch_id     UUID        NOT NULL,
-    status        VARCHAR(50) NOT NULL,
-    event_type    VARCHAR(100),
-    metadata      JSONB,
-    created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
 
--- Add indexes for performance
-CREATE INDEX idx_sync_logs_order_id ON sync_logs (order_id);
-CREATE INDEX idx_sync_logs_branch_time ON sync_logs (branch_id, created_at DESC);
-
--- Comments
-COMMENT
-ON TABLE pos_sync_queues IS 'Queue for managing retry tasks for POS synchronization.';
-COMMENT
-ON COLUMN pos_sync_queues.pos_log_id IS 'Foreign key linking to pos_logs entry';
-COMMENT
-ON COLUMN pos_sync_queues.next_retry_at IS 'Scheduled time for next retry attempt';
-
--- Triggers
-CREATE
-OR REPLACE FUNCTION update_updated_at_column()
+-- 5. Triggers for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-   NEW.updated_at
-= now();
+    NEW.updated_at = CURRENT_TIMESTAMP;
 RETURN NEW;
 END;
-$$
-LANGUAGE plpgsql;
+$$ language 'plpgsql';
 
-CREATE TRIGGER trg_update_pos_logs_updated_at
-    BEFORE UPDATE
-    ON pos_logs
+CREATE TRIGGER trg_pos_configs_updated BEFORE UPDATE ON pos_configs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER trg_update_pos_sync_queues_updated_at
-    BEFORE UPDATE
-    ON pos_sync_queues
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER trg_update_pos_configs_updated_at
-    BEFORE UPDATE
-    ON pos_configs
+
+CREATE TRIGGER trg_pos_sync_queues_updated BEFORE UPDATE ON pos_sync_queues
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -21,31 +21,29 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class PosLog extends BaseSerialEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "pos_system_id", nullable = false)
-	private PosConfig config;
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
+
+	@Column(name = "entity_id", nullable = false)
+	private UUID entityId; // Can be bookingId or orderId
 
 	@Column(name = "entity_type", nullable = false)
-	private String entityType;
-
-	@Column(name = "entity_id", nullable = false, length = 100)
-	private UUID entityId;
+	private String entityType; // "BOOKING", "ORDER", "MENU"
 
 	@Column(nullable = false)
-	private String status; // Uses values from pos_status enum
-
-	@Column(name = "attempt_count")
-	@Builder.Default
-	private Integer attemptCount = 0;
-
-	@Column(name = "last_attempt")
-	private OffsetDateTime lastAttempt;
+	private String action; // "RESERVE_TABLE", "SEND_ORDER"
 
 	@JdbcTypeCode(SqlTypes.JSON)
 	@Column(name = "request_payload")
 	private Map<String, Object> requestPayload;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "response_payload")
-	private Map<String, Object> responsePayload;
+	@Column(name = "response_payload", columnDefinition = "TEXT")
+	private String responsePayload;
+
+	@Column(nullable = false)
+	private String status; // "SUCCESS", "FAILED", "SUCCESS_ALREADY_SET"
+
+	@Column(name = "attempt_count")
+	@Builder.Default
+	private Integer attemptCount = 1;
 }
