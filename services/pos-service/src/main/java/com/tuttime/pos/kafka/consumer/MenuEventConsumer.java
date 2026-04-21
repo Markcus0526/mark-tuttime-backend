@@ -37,8 +37,8 @@ public class MenuEventConsumer {
 			event = objectMapper.readValue(eventString, MenuEvent.MenuUpdatedEvent.class);
 			MenuEvent.MenuUpdatedEvent finalEvent = event;
 
-			PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(finalEvent.branchId(), finalEvent.posProvider());
-			posService.syncOrder(request);
+			PosSyncDto.MenuSyncRequest request = new PosSyncDto.MenuSyncRequest(finalEvent.branchId());
+			posService.syncMenu(request);
 
 		} catch (Exception e) {
 			// 5. Final safety net to prevent infinite retries of bad messages

@@ -40,7 +40,7 @@ public class BookingEventConsumer {
 			event = objectMapper.readValue(eventString, BookingEvent.BookingConfirmedEvent.class);
 			BookingEvent.BookingConfirmedEvent finalEvent = event;
 
-			PosSyncDto.BookingSyncRequest request = new PosSyncDto.BookingSyncRequest(finalEvent.branchId());
+			PosSyncDto.BookingSyncRequest request = new PosSyncDto.BookingSyncRequest(finalEvent.bookingId(), finalEvent.branchId(), finalEvent.bookingTime());
 			posService.syncBooking(request);
 
 		} catch (Exception e) {

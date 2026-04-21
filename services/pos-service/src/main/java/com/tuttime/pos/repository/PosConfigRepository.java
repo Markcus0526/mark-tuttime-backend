@@ -23,8 +23,8 @@ public interface PosConfigRepository extends JpaRepository<PosConfig, Integer> {
 	// If you add restaurantId to the config table later:
 	// Optional<PosSystemConfig> findByRestaurantIdAndEnabledTrue(UUID restaurantId);
 
-	@Query(value = "SELECT * FROM pos_system_configs " +
-			"WHERE pos_system = CAST(:posSystem AS VARCHAR) " +
+	@Query(value = "SELECT * FROM pos_configs " +
+			"WHERE posProvider = CAST(:posProvider AS VARCHAR) " +
 			"AND enabled = true",
 			nativeQuery = true)
 	Optional<PosConfig> findByPosSystemAndEnabledTrue(@Param("posProvider") String posSystem);

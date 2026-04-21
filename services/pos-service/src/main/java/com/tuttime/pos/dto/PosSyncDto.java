@@ -15,17 +15,17 @@ public class PosSyncDto {
 			@NotNull @Schema(example = "550e8400-e29b-41d4-a716-446655440000")
 			UUID bookingId,
 
+			@NotNull(message = "Branch ID is required")
+			@NotNull @Schema(example = "88e7b8a0-2f3b-4c5d-ae6f-7890abcd1234")
+			UUID branchId,
+
 			@Schema(
 					type = "string",
 					format = "date-time",
 					example = "2026-04-21T14:30:00Z", // Provide a concrete example
 					description = "ISO-8601 formatted booking time"
 			)
-			OffsetDateTime bookingTime,
-
-			@NotNull(message = "Branch ID is required")
-			@NotNull @Schema(example = "88e7b8a0-2f3b-4c5d-ae6f-7890abcd1234")
-			UUID branchId
+			OffsetDateTime bookingTime
 	) {
 	}
 
