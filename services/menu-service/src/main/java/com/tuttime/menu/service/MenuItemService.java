@@ -19,4 +19,8 @@ public interface MenuItemService {
 	void linkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles);
 
 	void unlinkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles);
+
+	void updateAvailabilityFromPos(List<UUID> itemIds, boolean isAvailable, UUID branchId);
+
+	void updatePriceFromPos(UUID itemId, java.math.BigDecimal newPrice, UUID branchId);
 }
