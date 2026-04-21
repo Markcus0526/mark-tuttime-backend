@@ -124,6 +124,7 @@ public class BookingServiceImpl implements BookingService {
 			eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
 					savedBooking.getId(),
 					savedBooking.getTableId(),
+					savedBooking.getBranchId(),
 					null,
 					BookingStatus.CREATED,
 					request.userId(),
@@ -244,6 +245,7 @@ public class BookingServiceImpl implements BookingService {
 		eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
 				booking.getId(),
 				booking.getTableId(),
+				booking.getBranchId(),
 				oldStatus,
 				newStatus,
 				currentUserId,
@@ -303,6 +305,7 @@ public class BookingServiceImpl implements BookingService {
 		eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
 				bookingId,
 				booking.getTableId(),
+				booking.getBranchId(),
 				oldStatus,
 				BookingStatus.CANCELED,
 				userId,
@@ -378,6 +381,7 @@ public class BookingServiceImpl implements BookingService {
 				eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
 						booking.getId(),
 						booking.getTableId(),
+						booking.getBranchId(),
 						oldStatus,
 						BookingStatus.PAID,
 						staffOrSystemId,

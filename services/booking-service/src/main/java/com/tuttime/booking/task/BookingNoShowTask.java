@@ -53,6 +53,7 @@ public class BookingNoShowTask {
 			eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
 					booking.getId(),
 					booking.getTableId(),
+					booking.getBranchId(),
 					oldStatus,
 					BookingStatus.NO_SHOW,
 					null,
