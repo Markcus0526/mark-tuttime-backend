@@ -1,6 +1,7 @@
 package com.tuttime.review.entity;
 
 import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -11,15 +12,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "review_moderation_logs", schema = "review_service")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
 @Builder
-public class ReviewModerationLog extends BaseTimeStampEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	private UUID id;
+public class ReviewModerationLog extends BaseUuidEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "review_id", nullable = false)
@@ -29,7 +25,7 @@ public class ReviewModerationLog extends BaseTimeStampEntity {
 	private UUID moderatorId;
 
 	@Column(nullable = false, length = 50)
-	private String action;
+	private String action; // e.g., "APPROVE", "REJECT"
 
 	@Column(columnDefinition = "TEXT")
 	private String reason;

@@ -10,7 +10,7 @@ option java_outer_classname = "PosServiceProto";
 // Pos Service gRPC
 service PosService {
 
-  rpc pushToKitchen (KitchenOrderRequest) returns (KitchenOrderResponse);
+  rpc PushToKitchen (KitchenOrderRequest) returns (KitchenOrderResponse);
 
 }
 

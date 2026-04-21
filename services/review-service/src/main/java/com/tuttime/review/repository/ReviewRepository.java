@@ -15,14 +15,14 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
 	// Spring generates the SQL:
 	// SELECT * FROM reviews WHERE restaurant_id = ? AND status = ?
-	List<Review> findByRestaurantIdAndStatus(UUID restaurantId, ReviewStatus status);
+	Page<Review> findByBranchIdAndStatus(UUID restaurantId, ReviewStatus status, Pageable pageable);
 
 	/**
 	 * Fetches approved reviews for a restaurant with Pagination.
 	 * Perfect for infinite scroll on the Mobile App.
 	 */
-	Page<Review> findByRestaurantIdAndStatusOrderByCreatedAtDesc(
-			UUID restaurantId,
+	Page<Review> findByBranchIdAndStatusOrderByCreatedAtDesc(
+			UUID branchId,
 			ReviewStatus status,
 			Pageable pageable
 	);
@@ -35,5 +35,5 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 	/**
 	 * Prevents a user from spamming multiple reviews for the same restaurant.
 	 */
-	boolean existsByUserIdAndRestaurantId(UUID userId, UUID restaurantId);
+	boolean existsByUserIdAndBranchId(UUID userId, UUID branchId);
 }

@@ -24,6 +24,8 @@ service RestaurantService {
 
   rpc GetTableHierarchyDetail (TableHierarchyRequest) returns (TableHierarchyResponse);
 
+  rpc ValidateBranch (BranchValidRequest) returns (BranchValidResponse);
+
 }
 
 // rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
@@ -131,4 +133,15 @@ message TableHierarchyResponse {
   string branch_address = 8;
   string branch_phone = 9;
   string restaurant_name = 10;
+}
+
+// rpc ValidateBranch (BranchValidRequest) returns (BranchValidResponse);
+message BranchValidRequest {
+  string branch_id = 1;
+}
+
+message BranchValidResponse {
+  bool exists = 1;
+  string name = 2;
+  bool active = 3;
 }

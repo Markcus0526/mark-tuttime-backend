@@ -1,33 +1,17 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.RatingStatsResponse;
-import com.tuttime.review.dto.ReviewRequest;
-import com.tuttime.review.dto.ReviewResponse;
-
+import com.tuttime.review.dto.*;
+import com.tuttime.review.entity.enums.ReviewStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
-/**
- * Service interface for managing restaurant reviews and aggregate ratings.
- */
 public interface ReviewService {
+	ReviewDto.ReviewResponse createReview(UUID userId, ReviewDto.ReviewRequest request);
 
-	/**
-	 * Creates a new review in PENDING status.
-	 */
-	ReviewResponse createReview(UUID userId, ReviewRequest request);
+	Page<ReviewDto.ReviewResponse> getReviewsByStatus(UUID branchId, ReviewStatus status, Pageable pageable);
 
-	/**
-	 * Approves a review and updates the restaurant's aggregate rating.
-	 */
-	void approveReview(UUID reviewId, UUID moderatorId, String reason);
+	ReviewDto.ReviewResponse moderateReview(UUID reviewId, UUID moderatorId, ReviewDto.ReviewModerationRequest request);
 
-	/**
-	 * Rejects a review for policy violations.
-	 */
-	void rejectReview(UUID reviewId, UUID moderatorId, String reason);
-
-	/**
-	 * Retrieves aggregated ratings for a specific restaurant.
-	 */
-	RatingStatsResponse getRestaurantStats(UUID restaurantId);
+	RatingDto.RatingAggregateResponse getAggregateStats(UUID branchId);
 }

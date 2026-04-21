@@ -363,36 +363,6 @@ spring:
                 name: reviewServiceCircuitBreaker
                 fallbackUri: forward:/fallback/review-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/moderation-logs/**
-        - id: review-service-moderation-log
-          order: 82
-          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
-          predicates:
-            - Path=/api/v1/moderation-logs/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: reviewServiceCircuitBreaker
-                fallbackUri: forward:/fallback/review-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/rating-aggregates/**
-        - id: review-service-/api/v1/rating-aggregates
-          order: 83
-          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
-          predicates:
-            - Path=/api/v1/rating-aggregates/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: reviewServiceCircuitBreaker
-                fallbackUri: forward:/fallback/review-service
-
         ################# Analytics Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE

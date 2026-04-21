@@ -6,14 +6,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-@Slf4j
+
 @Service
 @RequiredArgsConstructor
-public class RatingEventProducer {
+@Slf4j
+public class ReviewEventProducer {
 
-	EventProducer eventProducer;
+	private final EventProducer eventProducer;
 
-	public void sendReviewApproved(ReviewEvent.ReviewApprovedEvent event) {
+	public void sendReviewApprovedEvent(ReviewEvent.ReviewApprovedEvent event) {
 
 		// Use restaurantId as the message key to ensure ordered processing in Kafka partitions
 		eventProducer.sendReviewApprovedEvent(event);

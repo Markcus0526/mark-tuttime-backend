@@ -87,7 +87,7 @@ public class EventProducer {
 
 	// Review Events Publisher
 	public void sendReviewApprovedEvent(ReviewEvent.ReviewApprovedEvent event) {
-		sendEvent(TOPIC_REVIEW_APPROVED, event.restaurantId().toString(), event);
+		sendEvent(TOPIC_REVIEW_APPROVED, event.eventId().toString(), event);
 	}
 
 	private void sendEvent(String topic, String key, Object event) {

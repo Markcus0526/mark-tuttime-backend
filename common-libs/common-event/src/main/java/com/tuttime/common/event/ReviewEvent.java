@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public class ReviewEvent {
@@ -13,12 +14,12 @@ public class ReviewEvent {
 	 */
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record ReviewApprovedEvent(
+			UUID eventId,
 			UUID reviewId,
-			UUID restaurantId,
+			UUID branchId,
 			UUID userId,
 			int rating,
-			String comment,
-			String approvedAt
+			OffsetDateTime timestamp
 	)  implements BaseEvent {
 	}
 }

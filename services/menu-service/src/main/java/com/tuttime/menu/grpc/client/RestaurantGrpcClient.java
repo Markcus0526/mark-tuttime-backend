@@ -29,7 +29,7 @@ public class RestaurantGrpcClient {
 		BranchPermissionResponse response = restaurantServiceBlockingStub.validateBranchPermission(request);
 
 		if (!response.getValid()) {
-			throw new InvalidRequestException("You do not manage this specific menu");
+			throw new InvalidRequestException("You do not manage this specific branch");
 		}
 	}
 }
