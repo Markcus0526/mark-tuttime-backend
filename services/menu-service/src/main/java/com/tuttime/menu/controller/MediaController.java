@@ -11,7 +11,6 @@ import com.tuttime.menu.service.MediaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,7 +54,8 @@ public class MediaController {
 	})
 	@PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> addMedia(
-			@Parameter(content = @Content(mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)) // Forces Swagger to send as JSON
+			@Parameter(content = @Content(mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE))
+			// Forces Swagger to send as JSON
 			@RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
 			@RequestPart("file") MultipartFile file) {
 

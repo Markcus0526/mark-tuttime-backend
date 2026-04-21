@@ -15,15 +15,17 @@ public class FullMenuDto {
 			String description,
 			Integer priority,
 			List<MenuItemDto.MenuItemResponseSummary> items
-	) {}
+	) {
+	}
 
 	@Schema(description = "Master response for the entire branch menu")
 	public record FullMenuBranchMenuResponse(
 			UUID branchId,
 			List<CategoryWithItemsResponse> categories
-	) {}
+	) {
+	}
 
-	////////////////////////////////////////////////////////////
+	/// /////////////////////////////////////////////////////////
 	// 2. Category Level
 	public record FullMenuCategoryResponse(
 			UUID categoryId,
@@ -31,7 +33,8 @@ public class FullMenuDto {
 			String description,
 			Integer priority,
 			List<FullMenuItemResponse> items
-	) {}
+	) {
+	}
 
 	// 3. Item Level
 	public record FullMenuItemResponse(
@@ -41,7 +44,8 @@ public class FullMenuDto {
 			BigDecimal price,
 			Boolean available,
 			List<FullMenuModifierGroupResponse> modifierGroups
-	) {}
+	) {
+	}
 
 	// 4. Modifier Group Level
 	public record FullMenuModifierGroupResponse(
@@ -50,12 +54,14 @@ public class FullMenuDto {
 			Integer minSelect,
 			Integer maxSelect,
 			List<FullMenuModifierResponse> modifiers
-	) {}
+	) {
+	}
 
 	// 5. Leaf Level: Individual Modifier
 	public record FullMenuModifierResponse(
 			UUID modifierId,
 			String name,
 			BigDecimal priceAdjustment
-	) {}
+	) {
+	}
 }

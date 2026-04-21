@@ -1,8 +1,6 @@
 package com.tuttime.menu.entity;
 
-import com.tuttime.common.entity.BaseDeleteEntity;
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
-import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -10,7 +8,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "menu_items")

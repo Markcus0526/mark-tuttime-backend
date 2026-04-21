@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +23,8 @@ public class MenuCategoryDto {
 			String description,
 
 			Integer priority
-	) {}
+	) {
+	}
 
 	// Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
 	@Schema(description = "Category response details")
@@ -36,5 +36,6 @@ public class MenuCategoryDto {
 			Integer priority,
 			String imageUrl,
 			List<MenuItemDto.MenuItemResponseSummary> items
-	) {}
+	) {
+	}
 }

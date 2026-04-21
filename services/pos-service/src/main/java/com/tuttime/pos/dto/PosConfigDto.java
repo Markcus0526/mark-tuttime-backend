@@ -23,5 +23,6 @@ public class PosConfigDto {
 			String webhookSecret,
 
 			Boolean enabled
-	) {}
+	) {
+	}
 }

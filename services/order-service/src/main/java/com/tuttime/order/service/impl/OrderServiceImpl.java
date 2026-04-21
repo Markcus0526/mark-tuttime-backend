@@ -339,8 +339,11 @@ public class OrderServiceImpl implements OrderService {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
-					try { return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build()); }
-					catch (Exception e) { return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build(); }
+					try {
+						return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build());
+					} catch (Exception e) {
+						return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build();
+					}
 				}
 		));
 	}
@@ -349,19 +352,22 @@ public class OrderServiceImpl implements OrderService {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
-					try { return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build()); }
-					catch (Exception e) { return TableHierarchyResponse.newBuilder()
-							.setTableId(NIL_UUID)      // Result: "00000000..."
-							.setZoneId(NIL_UUID)       // Result: "00000000..."
-							.setBranchId(NIL_UUID)     // Result: "00000000..."
-							.setRestaurantId(NIL_UUID) // Result: "00000000..."
-							.setTableLabel("N/A")
-							.setZoneName("Unknown")
-							.setRestaurantName("Unknown")
-							.setBranchName("Unknown")
-							.setBranchAddress("N/A")
-							.setBranchPhone("N/A")
-							.build(); }
+					try {
+						return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build());
+					} catch (Exception e) {
+						return TableHierarchyResponse.newBuilder()
+								.setTableId(NIL_UUID)      // Result: "00000000..."
+								.setZoneId(NIL_UUID)       // Result: "00000000..."
+								.setBranchId(NIL_UUID)     // Result: "00000000..."
+								.setRestaurantId(NIL_UUID) // Result: "00000000..."
+								.setTableLabel("N/A")
+								.setZoneName("Unknown")
+								.setRestaurantName("Unknown")
+								.setBranchName("Unknown")
+								.setBranchAddress("N/A")
+								.setBranchPhone("N/A")
+								.build();
+					}
 				}
 		));
 	}

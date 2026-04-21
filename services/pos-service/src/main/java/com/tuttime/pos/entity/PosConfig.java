@@ -4,9 +4,7 @@ import com.tuttime.common.entity.BaseSerialEntity;
 import com.tuttime.pos.entity.enums.PosProvider;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 

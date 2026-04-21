@@ -1,10 +1,7 @@
 package com.tuttime.order.grpc.client;
 
-import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.proto.*;
 import com.tuttime.order.entity.Order;
-import com.tuttime.order.entity.OrderItemModifier;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

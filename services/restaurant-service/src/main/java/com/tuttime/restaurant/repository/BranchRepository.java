@@ -1,7 +1,6 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.Branch;
-import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.repository.record.BranchDetailRecord;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,18 +32,18 @@ public interface BranchRepository extends JpaRepository<Branch, UUID>, JpaSpecif
 	void deleteAllByRestaurantId(@Param("restaurantId") UUID restaurantId);
 
 	@Query("""
-	    SELECT new com.tuttime.restaurant.repository.record.BranchDetailRecord(
-	        b.id, 
-	        r.id, 
-	        b.name, 
-	        b.address, 
-	        b.phone, 
-	        r.name
-	    )
-	    FROM Branch b
-		LEFT JOIN b.restaurant r
-		WHERE b.id = :branchId
-	""")
+			    SELECT new com.tuttime.restaurant.repository.record.BranchDetailRecord(
+			        b.id, 
+			        r.id, 
+			        b.name, 
+			        b.address, 
+			        b.phone, 
+			        r.name
+			    )
+			    FROM Branch b
+				LEFT JOIN b.restaurant r
+				WHERE b.id = :branchId
+			""")
 	Optional<BranchDetailRecord> findRestaurantDetailByBranchId(@Param("branchId") UUID branchId);
 
 	@Query(value = "SELECT * FROM branches b " +
@@ -56,7 +55,7 @@ public interface BranchRepository extends JpaRepository<Branch, UUID>, JpaSpecif
 					"ST_DWithin(b.location, ST_MakePoint(:lng, :lat)::geography, :radius)",
 			nativeQuery = true)
 	Page<Branch> findPagesByLocationNear(@Param("lat") double latitude,
-	                                         @Param("lng") double longitude,
-	                                         @Param("radius") double radiusMeters,
-	                                         Pageable pageable);
+	                                     @Param("lng") double longitude,
+	                                     @Param("radius") double radiusMeters,
+	                                     Pageable pageable);
 }

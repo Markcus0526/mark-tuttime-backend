@@ -13,7 +13,6 @@ import com.tuttime.restaurant.repository.MediaRepository;
 import com.tuttime.restaurant.repository.TableRepository;
 import com.tuttime.restaurant.repository.ZoneRepository;
 import com.tuttime.restaurant.service.StaffService;
-import com.tuttime.restaurant.service.TableService;
 import com.tuttime.restaurant.service.ZoneLayoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -52,7 +51,8 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 
 		List<ZoneLayoutDto.FixtureDto> fixtures = objectMapper.convertValue(
 				config.get("fixtures"),
-				new TypeReference<List<ZoneLayoutDto.FixtureDto>>() {}
+				new TypeReference<List<ZoneLayoutDto.FixtureDto>>() {
+				}
 		);
 
 		// 4. Map TableEntities to DTOs (Merging DB status/coords with UI format)

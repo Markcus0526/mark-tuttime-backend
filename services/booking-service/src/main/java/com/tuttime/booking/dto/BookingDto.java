@@ -49,7 +49,8 @@ public class BookingDto {
 				@Min(1) Integer quantity,
 				List<UUID> modifierIds, // For extras like "extra cheese"
 				String notes
-		) {}
+		) {
+		}
 
 		// Compact constructor for default values
 		public BookingRequest {
@@ -77,7 +78,8 @@ public class BookingDto {
 				String phoneNumber,
 				String email,
 				String fullName
-		) {}
+		) {
+		}
 	}
 
 	public record BookingDetailResponse(
@@ -98,7 +100,8 @@ public class BookingDto {
 				String phoneNumber,
 				String email,
 				String fullName
-		) {}
+		) {
+		}
 
 		public record TableDetailResponse(
 				UUID branchId,
@@ -111,7 +114,8 @@ public class BookingDto {
 				String branchPhone,
 				String zoneName,
 				String tableLabel
-		) {}
+		) {
+		}
 
 		public record MenuItemResponse(
 				UUID menuItemId,
@@ -120,7 +124,8 @@ public class BookingDto {
 				BigDecimal unitPrice, // From local DB (historical price)
 				BigDecimal totalPrice,// Calculated (quantity * unitPrice)
 				String notes          // From local DB
-		) {}
+		) {
+		}
 	}
 
 }

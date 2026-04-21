@@ -17,14 +17,16 @@ public class BookingSetupDto {
 		public record AvailableSlot(
 				OffsetDateTime time,
 				List<BookingSetupResponse.TableInfoDto> tables
-		) {}
+		) {
+		}
 
 		public record TableInfoDto(
 				UUID tableId,
 				String tableLabel,
 				String zoneName,
 				int capacity
-		) {}
+		) {
+		}
 
 		@Builder
 		public record MenuItemDto(
@@ -34,18 +36,21 @@ public class BookingSetupDto {
 				String category,
 				String description,
 				List<ModifierGroupDto> modifierGroups
-		) {}
+		) {
+		}
 
 		public record ModifierGroupDto(
 				String name,
 				int minSelect,
 				int maxSelect,
 				List<ModifierOptionDto> options
-		) {}
+		) {
+		}
 
 		public record ModifierOptionDto(
 				String name,
 				BigDecimal extraPrice
-		) {}
+		) {
+		}
 	}
 }

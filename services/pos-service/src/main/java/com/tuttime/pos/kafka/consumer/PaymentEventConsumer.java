@@ -2,16 +2,13 @@ package com.tuttime.pos.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.event.PaymentEvent;
-import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
-import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.repository.PosConfigRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_COMPLETED;
 import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_REFUND;
 
 @Slf4j

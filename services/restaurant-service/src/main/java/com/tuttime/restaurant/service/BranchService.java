@@ -1,7 +1,6 @@
 package com.tuttime.restaurant.service;
 
 import com.tuttime.restaurant.dto.BranchDto;
-import com.tuttime.restaurant.dto.RestaurantDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

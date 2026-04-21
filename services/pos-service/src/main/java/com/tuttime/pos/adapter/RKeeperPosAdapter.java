@@ -1,6 +1,5 @@
 package com.tuttime.pos.adapter;
 
-import ch.qos.logback.core.util.StringUtil;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.tuttime.common.exception.PosSyncException;
 import com.tuttime.common.proto.OrderDetailResponse;
@@ -50,7 +49,9 @@ public class RKeeperPosAdapter implements PosAdapter {
 	}
 
 	@Override
-	public PosProvider getProvider() { return PosProvider.RKEEPER; }
+	public PosProvider getProvider() {
+		return PosProvider.RKEEPER;
+	}
 
 	@Override
 	public void occupyTable(PosConfig config, UUID tableId, UUID bookingId) {
@@ -219,8 +220,7 @@ public class RKeeperPosAdapter implements PosAdapter {
 				log.warn("R-Keeper: Table already in state {} for branch {}", action, config.getBranchId());
 				// FIX: Added entityId and entityType
 				posService.saveLog(config.getBranchId(), entityId, entityType, action, xmlPayload, rawResponse, "SUCCESS_ALREADY_SET");
-			}
-			else {
+			} else {
 				// FIX: Added entityId and entityType
 				posService.saveLog(config.getBranchId(), entityId, entityType, action, xmlPayload, rawResponse, "FAILED");
 				throw new PosSyncException("R-Keeper Error: " + response.getErrorText());

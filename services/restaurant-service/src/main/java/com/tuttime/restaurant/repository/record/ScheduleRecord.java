@@ -10,4 +10,5 @@ public record ScheduleRecord(
 		LocalTime openTime,
 		LocalTime closeTime,
 		boolean closed
-) {}
+) {
+}

@@ -4,7 +4,6 @@ import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.MediaDto;
 import com.tuttime.menu.entity.Media;
 import com.tuttime.menu.entity.MenuCategory;
-import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.enums.MediaType;
 import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
 import com.tuttime.menu.mapper.MediaMapper;
@@ -26,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 

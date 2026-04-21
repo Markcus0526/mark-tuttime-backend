@@ -4,7 +4,6 @@ import com.tuttime.common.auth.enums.UserRoleKind;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.RestaurantDto;
-import com.tuttime.restaurant.dto.StaffDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.Staff;

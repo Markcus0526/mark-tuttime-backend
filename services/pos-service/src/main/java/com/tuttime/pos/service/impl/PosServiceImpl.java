@@ -3,14 +3,16 @@ package com.tuttime.pos.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.pos.dto.*;
+import com.tuttime.pos.dto.PosConfigDto;
+import com.tuttime.pos.dto.PosSyncDto;
+import com.tuttime.pos.dto.PosSyncLogDto;
+import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.PosLog;
 import com.tuttime.pos.entity.PosSyncQueue;
-import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.mapper.PosMapper;
+import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.repository.PosLogRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
-import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -205,7 +207,8 @@ public class PosServiceImpl implements PosService {
 	@Transactional
 	public void saveLog(UUID branchId, UUID entityId, String entityType, String action, Object request, String response, String status) {
 		// 1. Convert payload to Map for the JSONB column
-		Map<String, Object> payload = objectMapper.convertValue(request, new TypeReference<>() {});
+		Map<String, Object> payload = objectMapper.convertValue(request, new TypeReference<>() {
+		});
 
 		// 2. Build and Save Log
 		PosLog logEntry = PosLog.builder()

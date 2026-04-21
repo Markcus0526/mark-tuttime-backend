@@ -2,16 +2,13 @@ package com.tuttime.pos.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.event.BookingEvent;
-import com.tuttime.common.event.OrderEvent;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
-import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.errors.InvalidRequestException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -53,17 +50,14 @@ public class BookingEventConsumer {
 			// 3. Execute the corresponding POS action
 			try {
 				switch (event.newStatus()) {
-					case PAID ->
-							adapter.reserveTable(config, event.tableId(), event.bookingId());
+					case PAID -> adapter.reserveTable(config, event.tableId(), event.bookingId());
 
-					case ARRIVED ->
-							adapter.occupyTable(config, event.tableId(), event.bookingId());
+					case ARRIVED -> adapter.occupyTable(config, event.tableId(), event.bookingId());
 
 					case COMPLETED, CANCELED, NO_SHOW ->
 							adapter.releaseTable(config, event.tableId(), event.bookingId());
 
-					default ->
-							log.debug("No POS action mapped for status {}", event.newStatus());
+					default -> log.debug("No POS action mapped for status {}", event.newStatus());
 				}
 			} catch (Exception e) {
 				// Log is already saved inside the adapter; here we handle the application-level failure

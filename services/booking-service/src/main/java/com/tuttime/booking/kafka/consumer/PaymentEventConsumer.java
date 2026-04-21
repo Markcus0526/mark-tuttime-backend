@@ -1,17 +1,13 @@
 package com.tuttime.booking.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.booking.service.BookingService;
-import com.tuttime.common.event.BookingEvent;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_COMPLETED;
 import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_REFUND;
@@ -31,7 +27,7 @@ public class PaymentEventConsumer {
 			topics = TOPIC_PAYMENT_COMPLETED,
 			groupId = "booking-service-group")
 	public void handlePaymentCompleted(String eventString) {
-		PaymentEvent.PaymentCompletedEvent  event = null;
+		PaymentEvent.PaymentCompletedEvent event = null;
 
 		try {
 			if (org.apache.commons.lang3.StringUtils.isEmpty(eventString)) {

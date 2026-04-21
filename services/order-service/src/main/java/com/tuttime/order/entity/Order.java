@@ -1,14 +1,10 @@
 package com.tuttime.order.entity;
 
-import com.tuttime.common.entity.BaseLockingEntity;
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
@@ -18,7 +14,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "orders", schema = "order_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Order extends BaseUuidAnDeleteEntity {
 

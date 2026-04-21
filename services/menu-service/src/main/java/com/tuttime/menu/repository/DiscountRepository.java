@@ -15,11 +15,11 @@ public interface DiscountRepository extends JpaRepository<Discount, UUID> {
 	List<Discount> findByReferenceIdAndActiveTrue(UUID referenceId);
 
 	@Query("""
-        SELECT d FROM Discount d 
-        WHERE d.active = true 
-        AND d.referenceId IN (:itemAndCategoryId)
-        AND (d.startDate IS NULL OR d.startDate <= CURRENT_TIMESTAMP)
-        AND (d.endDate IS NULL OR d.endDate >= CURRENT_TIMESTAMP)
-    """)
+			    SELECT d FROM Discount d 
+			    WHERE d.active = true 
+			    AND d.referenceId IN (:itemAndCategoryId)
+			    AND (d.startDate IS NULL OR d.startDate <= CURRENT_TIMESTAMP)
+			    AND (d.endDate IS NULL OR d.endDate >= CURRENT_TIMESTAMP)
+			""")
 	List<Discount> findActiveDiscounts(@Param("itemAndCategoryId") List<UUID> ids);
 }

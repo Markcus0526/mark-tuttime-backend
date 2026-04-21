@@ -19,9 +19,9 @@ public interface PosLogRepository extends JpaRepository<PosLog, Integer> {
 	boolean existsByEntityIdAndStatus(UUID entityId, String status);
 
 	@Query(value = """
-        SELECT * FROM pos_service.pos_logs 
-        WHERE status = 'FAILED' 
-        AND request_payload ->> 'branch_id' = :branchId
-        """, nativeQuery = true)
+			SELECT * FROM pos_service.pos_logs 
+			WHERE status = 'FAILED' 
+			AND request_payload ->> 'branch_id' = :branchId
+			""", nativeQuery = true)
 	List<PosLog> findAllFailedByBranch(@Param("branchId") String branchId);
 }

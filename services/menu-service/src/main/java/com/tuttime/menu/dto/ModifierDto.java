@@ -22,7 +22,8 @@ public class ModifierDto {
 
 			@Min(1)
 			Integer maxSelect
-	) {}
+	) {
+	}
 
 	@Schema(description = "Modifier Group response details")
 	public record ModifierGroupResponse(
@@ -32,7 +33,8 @@ public class ModifierDto {
 			Integer minSelect,
 			Integer maxSelect,
 			List<ModifierResponse> modifiers
-	) {}
+	) {
+	}
 
 	@Schema(description = "Modifier request details")
 	public record ModifierRequest(
@@ -43,7 +45,8 @@ public class ModifierDto {
 			String description,
 
 			BigDecimal priceAdjustment
-	) {}
+	) {
+	}
 
 	@Schema(description = "Modifier response details")
 	public record ModifierResponse(
@@ -51,5 +54,6 @@ public class ModifierDto {
 			String name,
 			String description,
 			BigDecimal priceAdjustment
-	) {}
+	) {
+	}
 }

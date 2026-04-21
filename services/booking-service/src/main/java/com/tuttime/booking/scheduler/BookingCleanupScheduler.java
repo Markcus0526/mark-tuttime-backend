@@ -2,9 +2,9 @@ package com.tuttime.booking.scheduler;
 
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingStatusHistory;
+import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.booking.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

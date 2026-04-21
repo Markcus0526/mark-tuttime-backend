@@ -2,7 +2,6 @@ package com.tuttime.order.kafka.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.grpc.client.PosGrpcClient;

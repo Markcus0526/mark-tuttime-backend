@@ -8,4 +8,5 @@ public record TableDetailRecord(
 		String tableLabel,
 		String zoneName,
 		Integer seats
-) {}
+) {
+}

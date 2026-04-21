@@ -6,20 +6,23 @@ import com.tuttime.booking.dto.BookingSetupDto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingItem;
 import com.tuttime.booking.entity.BookingStatusHistory;
+import com.tuttime.booking.grpc.client.MenuGrpcClient;
 import com.tuttime.booking.grpc.client.OrderGrpcClient;
+import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
 import com.tuttime.booking.grpc.client.UserGrpcClient;
 import com.tuttime.booking.mapper.BookingHistoryMapper;
-import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.booking.grpc.client.MenuGrpcClient;
-import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
 import com.tuttime.booking.mapper.BookingMapper;
 import com.tuttime.booking.repository.BookingItemRepository;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.booking.service.BookingService;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.event.BookingEvent;
 import com.tuttime.common.event.EventProducer;
-import com.tuttime.common.exception.*;
+import com.tuttime.common.exception.BusinessException;
+import com.tuttime.common.exception.ConflictException;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
@@ -655,8 +658,11 @@ public class BookingServiceImpl implements BookingService {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
-					try { return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build()); }
-					catch (Exception e) { return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build(); }
+					try {
+						return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build());
+					} catch (Exception e) {
+						return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build();
+					}
 				}
 		));
 	}
@@ -665,19 +671,22 @@ public class BookingServiceImpl implements BookingService {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
-					try { return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build()); }
-					catch (Exception e) { return TableHierarchyResponse.newBuilder()
-							.setTableId(NIL_UUID)      // Result: "00000000..."
-							.setZoneId(NIL_UUID)       // Result: "00000000..."
-							.setBranchId(NIL_UUID)     // Result: "00000000..."
-							.setRestaurantId(NIL_UUID) // Result: "00000000..."
-							.setTableLabel("N/A")
-							.setZoneName("Unknown")
-							.setRestaurantName("Unknown")
-							.setBranchName("Unknown")
-							.setBranchAddress("N/A")
-							.setBranchPhone("N/A")
-							.build(); }
+					try {
+						return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build());
+					} catch (Exception e) {
+						return TableHierarchyResponse.newBuilder()
+								.setTableId(NIL_UUID)      // Result: "00000000..."
+								.setZoneId(NIL_UUID)       // Result: "00000000..."
+								.setBranchId(NIL_UUID)     // Result: "00000000..."
+								.setRestaurantId(NIL_UUID) // Result: "00000000..."
+								.setTableLabel("N/A")
+								.setZoneName("Unknown")
+								.setRestaurantName("Unknown")
+								.setBranchName("Unknown")
+								.setBranchAddress("N/A")
+								.setBranchPhone("N/A")
+								.build();
+					}
 				}
 		));
 	}
