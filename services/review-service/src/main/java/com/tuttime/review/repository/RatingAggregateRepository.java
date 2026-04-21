@@ -14,10 +14,10 @@ public interface RatingAggregateRepository extends JpaRepository<RatingAggregate
 	 * Finds aggregate data for a specific restaurant.
 	 * Used for the 'Restaurant Service' map-based search results.
 	 */
-	Optional<RatingAggregate> findByRestaurantId(UUID restaurantId);
+	Optional<RatingAggregate> findByBranchId(UUID branchId);
 
 	/**
 	 * Efficiently checks if an aggregate record exists before recalculating.
 	 */
-	boolean existsByRestaurantId(UUID restaurantId);
+	boolean existsByBranchId(UUID branchId);
 }

@@ -279,4 +279,29 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onError(Status.INTERNAL.withDescription("An unexpected error occurred").asRuntimeException());
 		}
 	}
+
+	@Override
+	public void validateBranch(BranchValidRequest request, StreamObserver<BranchValidResponse> responseObserver) {
+		try {
+			UUID branchId = UUID.fromString(request.getBranchId());
+
+			// Query your branch table (assuming you have an 'active' status)
+			BranchValidResponse response = branchRepository.findById(branchId)
+					.map(branch -> BranchValidResponse.newBuilder()
+							.setExists(true)
+							.setName(branch.getName())
+							.setActive(!branch.isDeleted()) // Business logic check
+							.build())
+					.orElse(BranchValidResponse.newBuilder()
+							.setExists(false)
+							.build());
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			// Handle invalid UUID string format
+			responseObserver.onNext(BranchValidResponse.newBuilder().setExists(false).build());
+			responseObserver.onCompleted();
+		}
+	}
 }

@@ -9,7 +9,8 @@ option java_outer_classname = "PaymentServiceProto";
 
 // Payment Service gRPC
 service PaymentService {
-  rpc createCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
+
+  rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
 
 }
 

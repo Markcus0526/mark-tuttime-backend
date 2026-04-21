@@ -9,7 +9,7 @@ option java_outer_classname = "MenuServiceProto";
 // Menu Service gRPC
 service MenuService {
 
-  rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
+  rpc GetPreOrderMenu (MenuRequest) returns (MenuResponse);
 
   rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
 
