@@ -4,10 +4,13 @@ import com.tuttime.menu.entity.MenuItem;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +33,24 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 	List<MenuItem> findByCategoryAndSearch(@Param("categoryId") UUID categoryId,
 	                                       @Param("search") String search,
 	                                       Sort sort);
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE MenuItem m SET m.available = true, m.updatedAt = CURRENT_TIMESTAMP " +
+			"WHERE m.id IN :itemIds")
+	int activateItemsFromPos(@Param("itemIds") List<UUID> itemIds);
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE MenuItem m SET m.available = false, m.updatedAt = CURRENT_TIMESTAMP " +
+			"WHERE m.id IN :itemIds")
+	int deactivateItemsFromPos(@Param("itemIds") List<UUID> itemIds);
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE MenuItem m SET m.price = :newPrice, m.updatedAt = CURRENT_TIMESTAMP " +
+			"WHERE m.id = :itemId")
+	int updateItemPrice(@Param("itemId") UUID itemId, @Param("newPrice") BigDecimal newPrice);
 
 	/**
 	 * Efficiently fetches a single menu item with all its modifier groups

@@ -11,6 +11,7 @@ import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;
 import com.tuttime.menu.service.ModifierService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MenuItemServiceImpl implements MenuItemService {
 
 	private final MenuItemRepository menuItemRepository;
@@ -165,5 +167,37 @@ public class MenuItemServiceImpl implements MenuItemService {
 		return menuCategoryRepository.findById(categoryId)
 				.map(MenuCategory::getBranchId)
 				.orElse(null);
+	}
+
+	@Override
+	@Transactional
+	public void updateAvailabilityFromPos(List<UUID> itemIds, boolean isAvailable, UUID branchId) {
+		log.info("POS Sync: Setting availability to {} for {} items in branch {}",
+				isAvailable, itemIds.size(), branchId);
+
+		// Bulk update using the repository method we created earlier
+		if (isAvailable) {
+			menuItemRepository.activateItemsFromPos(itemIds);
+		} else {
+			menuItemRepository.deactivateItemsFromPos(itemIds);
+		}
+
+		// IMPORTANT: Evict cache so customers see the change immediately
+		evictCacheByBranch(branchId);
+	}
+
+	@Override
+	@Transactional
+	public void updatePriceFromPos(UUID itemId, java.math.BigDecimal newPrice, UUID branchId) {
+		log.info("POS Sync: Updating price for item {} to {}", itemId, newPrice);
+
+		MenuItem item = menuItemRepository.findById(itemId)
+				.orElseThrow(() -> new InvalidRequestException("Item not found for price sync: " + itemId));
+
+		item.setPrice(newPrice);
+		menuItemRepository.save(item);
+
+		// Evict cache to reflect the new price in the app
+		evictCacheByBranch(branchId);
 	}
 }
