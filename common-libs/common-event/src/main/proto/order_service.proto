@@ -42,21 +42,25 @@ message CreateOrderResponse {
   string status = 2;
 }
 
-// rpc getOrderDetails (OrderRequest) returns (OrderDetailsResponse);
+// rpc getOrderDetail (OrderRequest) returns (OrderDetailsResponse);
 message OrderDetailRequest {
   string order_id = 1;
 }
 
 message OrderDetailResponse {
   string order_id = 1 [json_name = "id"];
-  string booking_id = 2;
-  double total_amount = 3;
-  repeated OrderItemDetailResponse items = 4;
+  string branch_id = 2; // REQUIRED: For POS Config lookup
+  string table_id = 3;  // REQUIRED: For R-Keeper table layout
+  string booking_id = 4;
+  double total_amount = 5;
+  repeated OrderItemDetailResponse items = 6;
 }
 
 message OrderItemDetailResponse {
-  string menu_item_name = 1; // POS needs names for printing
-  int32 quantity = 2;
-  double price = 3;
-  repeated string modifiers = 4;
+  string menu_item_id = 1;   // For mapping lookup
+  string pos_id = 2;         // External POS ID (if already known)
+  string menu_item_name = 3;
+  int32 quantity = 4;
+  double price = 5;
+  repeated string modifiers = 6;
 }

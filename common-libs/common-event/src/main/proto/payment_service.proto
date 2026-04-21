@@ -18,7 +18,7 @@ message PaymentSessionRequest {
   string booking_id = 1;
   string user_id = 2;
   string branch_id = 3;
-  double amount = 4;
+  string amount = 4;
   string currency = 5;
 }
 

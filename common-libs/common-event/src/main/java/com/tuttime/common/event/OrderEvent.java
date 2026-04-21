@@ -21,6 +21,7 @@ public class OrderEvent {
 	public record OrderStatusEvent(
 			UUID orderId,
 			UUID bookingId,
+			UUID branchId,
 			OrderStatus oldStatus,
 			OrderStatus newStatus,
 			OffsetDateTime timestamp

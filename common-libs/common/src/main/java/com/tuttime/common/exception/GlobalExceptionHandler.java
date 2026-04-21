@@ -181,6 +181,20 @@ public class GlobalExceptionHandler {
 	}
 
 	/**
+	 * POS-specific
+	 */
+	@ExceptionHandler(PosSyncException.class)
+	public ResponseEntity<ErrorResponse> handlePosSyncException(PosSyncException ex, HttpServletRequest request) {
+		log.error(">>>>> PosSyncException: [{}]: {}", getCorrelationId(request), ex.getMessage());
+		return createErrorResponse(
+				HttpStatus.BAD_REQUEST,
+				ErrorCodes.VALIDATION_FAILED,
+				ex.getMessage(),
+				request,
+				null);
+	}
+
+	/**
 	 * Business Logic Conflict (Your BusinessException fix)
 	 */
 	@ExceptionHandler(BusinessException.class)
