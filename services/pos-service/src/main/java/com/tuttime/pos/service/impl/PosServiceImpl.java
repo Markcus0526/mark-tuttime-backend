@@ -152,7 +152,6 @@ public class PosServiceImpl implements PosService {
 
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("branch_id", request.branchId());
-		payload.put("sync_type", "MANUAL");
 		payload.put("sync_mode", "FULL_PULL"); // To distinguish between incremental and full
 
 		// 1. Create Log (Entity ID is the Branch ID here)

@@ -54,7 +54,7 @@ public class OrderEventConsumer {
 			event = objectMapper.readValue(eventString, OrderEvent.OrderCreatedEvent.class);
 			OrderEvent.OrderCreatedEvent finalEvent = event;
 
-			PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(finalEvent.orderId(), finalEvent.posSystem());
+			PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(finalEvent.orderId(), finalEvent.branchId());
 			posService.syncOrder(request);
 		} catch (Exception e) {
 			// 5. Final safety net to prevent infinite retries of bad messages

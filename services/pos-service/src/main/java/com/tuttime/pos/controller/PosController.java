@@ -94,7 +94,7 @@ public class PosController {
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
-	@PostMapping("/force-sync/{branchId}")
+	@PostMapping("/sync/{branchId}")
 	@Operation(summary = "Force Resync Branch", description = "Bulk retries all failed sync tasks for a specific branch ID.")
 	public ResponseEntity<ApiRes<String>> forceSync(
 			@Parameter(description = "Branch UUID") @PathVariable UUID branchId) {

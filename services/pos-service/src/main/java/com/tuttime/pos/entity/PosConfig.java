@@ -11,7 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.util.UUID;
 
 @Entity
-@Table(name = "pos_system_configs", schema = "pos_service")
+@Table(name = "pos_configs", schema = "pos_service")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
