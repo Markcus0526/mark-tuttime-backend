@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/pos")
+@RequestMapping("/api/v1/poses")
 @RequiredArgsConstructor
 @Tag(name = "POS Management", description = "Operations for branch terminal configuration and synchronization audit")
 public class PosController {

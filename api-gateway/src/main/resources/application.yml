@@ -270,7 +270,7 @@ spring:
 
         # Methods: GET, POST, PUT, PATCH, DELETE
         # Endpoints include: /media/**
-        - id: restaurant-service-media-files
+        - id: menu-service-media-files
           order: 37
           uri: http://173.249.29.61:28003
           predicates:
@@ -331,6 +331,20 @@ spring:
 
         ################# Pos Service Routes #######################
 
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/poses/**
+        - id: pos-service-pos
+          order: 71
+          uri: http://${POS_SERVICE:localhost}:${POS_SERVICE_PORT:28007}
+          predicates:
+            - Path=/api/v1/poses/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: posServiceCircuitBreaker
+                fallbackUri: forward:/fallback/pos-service
 
         ################# Review Service Routes #######################
 
