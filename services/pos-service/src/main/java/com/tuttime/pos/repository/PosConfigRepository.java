@@ -15,6 +15,8 @@ public interface PosConfigRepository extends JpaRepository<PosConfig, Integer> {
 
 	Optional<PosConfig> findByBranchId(UUID branchId);
 
+	Optional<PosConfig> findByBranchIdAndEnabledTrue(UUID branchId);
+
 	// Used to find if iiko or R-Keeper is configured
 	Optional<PosConfig> findByPosProvider(PosProvider provider);
 
