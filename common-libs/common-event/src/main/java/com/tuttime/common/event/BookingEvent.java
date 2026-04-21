@@ -11,15 +11,6 @@ import java.util.UUID;
 
 public class BookingEvent {
 
-	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-	public record BookingConfirmedEvent(
-			UUID bookingId,
-			UUID branchId,
-			OffsetDateTime bookingTime,
-			OffsetDateTime timestamp
-	)  implements BaseEvent {
-	}
-
 	/**
 	 * Shared Record: Must match the JSON structure sent by Booking Service
 	 */
@@ -27,6 +18,7 @@ public class BookingEvent {
 	public record BookingStatusUpdatedEvent(
 			UUID bookingId,
 			UUID tableId,
+			UUID branchId,
 			BookingStatus oldStatus,
 			BookingStatus newStatus,
 			UUID changedBy,

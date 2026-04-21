@@ -6,10 +6,7 @@ public sealed interface BaseEvent permits
 
 		RestaurantEvent.StaffUpdatedEvent,
 
-		MenuEvent.MenuUpdatedEvent,
-
 		BookingEvent.BookingStatusUpdatedEvent,
-		BookingEvent.BookingConfirmedEvent,
 
 		OrderEvent.OrderCreatedEvent,
 		OrderEvent.OrderStatusEvent,
@@ -17,7 +14,8 @@ public sealed interface BaseEvent permits
 		PaymentEvent.PaymentCompletedEvent,
 		PaymentEvent.PaymentRefundedEvent,
 
-		PosEvent.PosSyncedEvent,
+		PosEvent.PosMenuUpdatedEvent,
+		PosEvent.PosPriceUpdatedEvent,
 
 		ReviewEvent.ReviewApprovedEvent
 {}
