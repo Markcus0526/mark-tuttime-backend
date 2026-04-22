@@ -1,7 +1,7 @@
 package com.tuttime.pos.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.BookingEvent;
+import com.tuttime.common.event.kafka.BookingEvent;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.entity.PosSyncQueue;
@@ -15,7 +15,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS_UPDATED;
 
 @Service
 @RequiredArgsConstructor

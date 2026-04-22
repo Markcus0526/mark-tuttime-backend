@@ -1,6 +1,7 @@
 package com.tuttime.gateway.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuttime.common.exception.StackTraceUtil;
 import com.tuttime.common.exception.ErrorCodes;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
@@ -85,7 +86,7 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 		String correlationId = getCorrelationId(exchange);
 
 		// Log error with shortened stack trace (first 5 lines for unexpected errors)
-		String stackTraceSummary = com.tuttime.common.exception.StackTraceUtil.getStackTraceSummary(ex, 5);
+		String stackTraceSummary = StackTraceUtil.getStackTraceSummary(ex, 5);
 		log.error("Global exception handler: correlationId={}, errorCode={}, message={}, path={}, stackTrace={}",
 				correlationId, errorCode, message, path, stackTraceSummary);
 
@@ -116,7 +117,7 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 			return exchange.getResponse().writeWith(Mono.just(buffer));
 		} catch (Exception e) {
 			// Critical error - include shortened stack trace
-			String errorStackTrace = com.tuttime.common.exception.StackTraceUtil.getStackTraceSummary(e, 3);
+			String errorStackTrace = StackTraceUtil.getStackTraceSummary(e, 3);
 			log.error("Failed to serialize error response, stackTrace={}", errorStackTrace);
 			return Mono.empty();
 		}

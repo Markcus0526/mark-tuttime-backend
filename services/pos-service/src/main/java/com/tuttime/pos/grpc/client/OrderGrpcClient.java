@@ -1,9 +1,9 @@
 package com.tuttime.pos.grpc.client;
 
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.OrderDetailRequest;
-import com.tuttime.common.proto.OrderDetailResponse;
-import com.tuttime.common.proto.OrderServiceGrpc;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.OrderDetailRequest;
+import com.tuttime.common.event.proto.OrderDetailResponse;
+import com.tuttime.common.event.proto.OrderServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;

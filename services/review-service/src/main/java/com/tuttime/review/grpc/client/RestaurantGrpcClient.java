@@ -1,8 +1,10 @@
 package com.tuttime.review.grpc.client;
 
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.BranchValidRequest;
+import com.tuttime.common.event.proto.BranchValidResponse;
+import com.tuttime.common.event.proto.RestaurantServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;

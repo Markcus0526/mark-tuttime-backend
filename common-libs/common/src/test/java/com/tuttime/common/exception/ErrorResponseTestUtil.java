@@ -1,5 +1,6 @@
 package com.tuttime.common.exception;
 
+import com.tuttime.common.exception.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 

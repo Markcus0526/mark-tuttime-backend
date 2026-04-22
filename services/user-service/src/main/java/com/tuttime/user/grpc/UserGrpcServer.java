@@ -1,14 +1,13 @@
 package com.tuttime.user.grpc;
 
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.user.entity.*;
 import com.tuttime.common.enums.UserStatus;
 import com.tuttime.user.repository.UserRepository;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.TokenBlacklistService;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.tuttime.common.util.DatetimeUtil.convertOffsetDatetimeToProtobuf;
+import static com.tuttime.common.event.util.ProtoUtil.convertOffsetDatetimeToProtobuf;
 
 @Slf4j
 @GrpcService

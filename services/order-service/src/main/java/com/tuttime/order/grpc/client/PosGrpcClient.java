@@ -1,7 +1,7 @@
 package com.tuttime.order.grpc.client;
 
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
 import static com.tuttime.common.constants.ServiceNames.POS_SERVICE;
 
 @Service

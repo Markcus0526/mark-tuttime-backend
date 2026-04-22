@@ -1,10 +1,10 @@
 package com.tuttime.user.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.StaffUserRequest;
-import com.tuttime.common.proto.StaffUserResponse;
+import com.tuttime.common.event.proto.StaffUserRequest;
+import com.tuttime.common.event.proto.StaffUserResponse;
 import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;

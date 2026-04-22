@@ -1,9 +1,9 @@
 package com.tuttime.payment.grpc;
 
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.PaymentServiceGrpc;
-import com.tuttime.common.proto.PaymentSessionRequest;
-import com.tuttime.common.proto.PaymentSessionResponse;
+import com.tuttime.common.event.proto.PaymentServiceGrpc;
+import com.tuttime.common.event.proto.PaymentSessionRequest;
+import com.tuttime.common.event.proto.PaymentSessionResponse;
 import com.tuttime.common.util.NumberUtil;
 import com.tuttime.payment.service.PaymentService;
 import io.grpc.Status;

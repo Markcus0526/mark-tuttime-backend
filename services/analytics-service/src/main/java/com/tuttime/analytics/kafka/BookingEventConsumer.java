@@ -3,7 +3,7 @@ package com.tuttime.analytics.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.service.AnalyticsService;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.event.BookingEvent;
+import com.tuttime.common.event.kafka.BookingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import static com.tuttime.analytics.constants.AnalyticsConstants.*;
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS_UPDATED;
 
 @Slf4j
 @Service

@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.ReviewEvent;
+import com.tuttime.common.event.kafka.ReviewEvent;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
@@ -17,7 +17,8 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_REVIEW_APPROVED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_APPROVED;
+
 
 @Component
 @RequiredArgsConstructor

@@ -2,7 +2,7 @@ package com.tuttime.gateway.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.UserStatusEvent;
-import com.tuttime.common.event.UserEvent;
+import com.tuttime.common.event.kafka.UserEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -12,8 +12,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
-import static com.tuttime.common.event.EventProducer.TOPIC_USER_SECURITY_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_USER_SECURITY_UPDATED;
 
 @Service
 @RequiredArgsConstructor

@@ -1,11 +1,9 @@
 package com.tuttime.booking.grpc.client;
 
-import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.CreateOrderRequest;
-import com.tuttime.common.proto.OrderServiceGrpc;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.CreateOrderRequest;
+import com.tuttime.common.event.proto.OrderServiceGrpc;
 import com.tuttime.common.util.UuidUtil;
-import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
 import static com.tuttime.common.constants.ServiceNames.ORDER_SERVICE;
 
 @Service

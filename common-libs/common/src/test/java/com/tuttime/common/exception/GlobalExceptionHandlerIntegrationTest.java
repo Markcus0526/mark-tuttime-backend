@@ -1,5 +1,6 @@
 package com.tuttime.common.exception;
 
+import com.tuttime.common.exception.GlobalExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

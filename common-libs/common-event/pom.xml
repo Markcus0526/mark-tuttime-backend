@@ -74,11 +74,7 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
-        <!-- Redis Cache (for config) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
+
 
         <!-- JPA (for Saga entities) -->
         <dependency>
@@ -107,12 +103,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-
-        <!-- Micrometer for Metrics -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
         </dependency>
 
         <!-- Actuator -->

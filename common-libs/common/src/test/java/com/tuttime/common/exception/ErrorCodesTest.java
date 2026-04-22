@@ -1,5 +1,6 @@
 package com.tuttime.common.exception;
 
+import com.tuttime.common.exception.ErrorCodes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

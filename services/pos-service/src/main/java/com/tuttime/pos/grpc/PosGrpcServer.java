@@ -1,9 +1,9 @@
 package com.tuttime.pos.grpc;
 
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.KitchenOrderRequest;
-import com.tuttime.common.proto.KitchenOrderResponse;
-import com.tuttime.common.proto.PosServiceGrpc;
+import com.tuttime.common.event.proto.KitchenOrderRequest;
+import com.tuttime.common.event.proto.KitchenOrderResponse;
+import com.tuttime.common.event.proto.PosServiceGrpc;
 import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.pos.adapter.IikoPosAdapter;

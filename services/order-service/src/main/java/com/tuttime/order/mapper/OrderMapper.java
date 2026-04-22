@@ -1,8 +1,8 @@
 package com.tuttime.order.mapper;
 
-import com.tuttime.common.proto.MenuItemDetailResponse;
-import com.tuttime.common.proto.TableHierarchyResponse;
-import com.tuttime.common.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.MenuItemDetailResponse;
+import com.tuttime.common.event.proto.TableHierarchyResponse;
+import com.tuttime.common.event.proto.UserDetailResponse;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.dto.OrderItemDto;
