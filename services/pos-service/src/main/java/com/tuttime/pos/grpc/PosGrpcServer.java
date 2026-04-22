@@ -14,6 +14,7 @@ import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.repository.PosLogRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,6 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 	@Override
 	@Transactional
 	public void pushToKitchen(KitchenOrderRequest request, StreamObserver<KitchenOrderResponse> responseObserver) {
-		log.info("Incoming gRPC push for Order: {} (Branch: {})", request.getOrderId(), request.getBranchId());
-
 		try {
 			// 1. Lookup the Branch Configuration
 			PosConfig config = posConfigRepository.findByBranchIdAndEnabledTrue(UuidUtil.toUuid(request.getBranchId()))
@@ -90,15 +89,16 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 					.setSuccess(true)
 					.setPosTransactionId(savedQueue.getId().toString())
 					.build());
-
-		} catch (Exception e) {
-			log.error("Failed to stage order for POS: {}", e.getMessage());
-			responseObserver.onNext(KitchenOrderResponse.newBuilder()
-					.setSuccess(false)
-					.setErrorMessage("POS Staging Failed: " + e.getMessage())
-					.build());
-		} finally {
 			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 }

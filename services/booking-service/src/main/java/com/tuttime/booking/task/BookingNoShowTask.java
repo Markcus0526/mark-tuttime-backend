@@ -41,7 +41,7 @@ public class BookingNoShowTask {
 
 			BookingStatus oldStatus = booking.getStatus();
 			booking.setStatus(BookingStatus.NO_SHOW);
-			booking.setAutoCancelled(true);
+			booking.setAutoCanceled(true);
 			bookingRepository.save(booking);
 
 			// 2. Audit Trail
@@ -54,8 +54,10 @@ public class BookingNoShowTask {
 					booking.getId(),
 					booking.getTableId(),
 					booking.getBranchId(),
+					booking.getUserId(),
 					oldStatus,
 					BookingStatus.NO_SHOW,
+					booking.getBookingDatetime(),
 					null,
 					"System auto-canceled due to guest no-show",
 					OffsetDateTime.now()));

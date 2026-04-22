@@ -66,9 +66,9 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "cancellation_reason")
 	private String cancellationReason;
 
-	@Column(name = "auto_cancelled")
+	@Column(name = "auto_canceled")
 	@Builder.Default
-	private Boolean autoCancelled = false;
+	private Boolean autoCanceled = false;
 
 	@OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default

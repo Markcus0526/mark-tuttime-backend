@@ -48,9 +48,9 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "bookingStatus": "CANCELLED",
+  "bookingStatus": "CANCELED",
   "cancellationReason": "Change of plans",
-  "autoCancelled": false
+  "autoCanceled": false
 }
 
 ### Cancel/delete a booking
@@ -78,7 +78,7 @@ Content-Type: application/json
 
 {
   "oldStatus": "CONFIRMED",
-  "newStatus": "CANCELLED",
+  "newStatus": "CANCELED",
   "changedBy": "uuid-user-admin",
   "reason": "User requested cancellation"
 }

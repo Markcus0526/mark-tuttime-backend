@@ -33,7 +33,7 @@ public class BookingCleanupScheduler {
 		String reason = "System automatic cancellation: Unpaid after 24 hours";
 		String systemUser = "SYSTEM";
 
-		// 1. Fetch bookings that are about to be cancelled
+		// 1. Fetch bookings that are about to be canceled
 		List<Booking> expiredBookings = bookingRepository.findAllByStatusAndCreatedAtBefore(
 				BookingStatus.CREATED,
 				cutoff
@@ -59,7 +59,7 @@ public class BookingCleanupScheduler {
 		});
 
 		// 3. Save all changes (JPA handles the updates automatically via Dirty Checking)
-		log.info("Cleanup task: Cancelled {} expired unpaid bookings.", expiredBookings.size());
+		log.info("Cleanup task: Canceled {} expired unpaid bookings.", expiredBookings.size());
 	}
 
 }

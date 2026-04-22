@@ -8,8 +8,7 @@ import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.Refund;
-import com.tuttime.payment.entity.enums.PaymentStatus;
-import com.tuttime.payment.kafka.PaymentEventProducer;
+import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
 import com.tuttime.payment.service.PaymentService;
@@ -31,7 +30,6 @@ public class PaymentServiceImpl implements PaymentService {
 	private final PaymentRepository paymentRepository;
 	private final RefundRepository refundRepository;
 	private final EventProducer eventProducer;
-	private final PaymentEventProducer paymentEventProducer;
 
 	@Value("${stripe.webhook.secret}")
 	private String webhookSecret;
@@ -108,8 +106,14 @@ public class PaymentServiceImpl implements PaymentService {
 					.build());
 
 			PaymentEvent.PaymentRefundedEvent event = new PaymentEvent.PaymentRefundedEvent(
+					payment.getId(),
 					bookingId,
+					payment.getUserId(),
+					payment.getBranchId(),
 					amount,
+					payment.getCurrency(),
+					payment.getStripeSessionId(),
+					reason,
 					OffsetDateTime.now()
 			);
 			eventProducer.sendPaymentRefundEvent(event);
@@ -140,8 +144,15 @@ public class PaymentServiceImpl implements PaymentService {
 		payment.setPaymentMethodType("manual_test_card");
 		paymentRepository.save(payment);
 
-		paymentEventProducer.sendPaymentSuccess(payment);
-		log.info("[TEST] Payment SUCCESS broadcasted for Booking ID: {}", bookingId);
+		eventProducer.sendPaymentCompletedEvent(new PaymentEvent.PaymentCompletedEvent(
+				payment.getBookingId(),
+				payment.getUserId(),
+				payment.getBranchId(),
+				payment.getStripeSessionId(),
+				payment.getAmount(),
+				BigDecimal.valueOf(0),
+				payment.getCurrency(),
+				OffsetDateTime.now()));
 	}
 
 

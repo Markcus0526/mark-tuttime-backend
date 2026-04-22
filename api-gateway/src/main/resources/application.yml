@@ -204,7 +204,7 @@ spring:
           order: 32
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
           predicates:
-            - Path=/api/v1/menus-items/**
+            - Path=/api/v1/menu-items/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             - name: CircuitBreaker
@@ -366,27 +366,12 @@ spring:
         ################# Analytics Service Routes #######################
 
         # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/event-logs/**
-        - id: analytics-service-event-logs
+        # Endpoints include: /api/v1/analytics/**
+        - id: analytics-service-analytics
           order: 91
           uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
           predicates:
-            - Path=/api/v1/event-logs/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
-          filters:
-            #            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: analyticsServiceCircuitBreaker
-                fallbackUri: forward:/fallback/analytics-service
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/aggregated-metrics/**
-        - id: analytics-service-aggregated-metric
-          order: 92
-          uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
-          predicates:
-            - Path=/api/v1/aggregated-metrics/**
+            - Path=/api/v1/analytics/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
           filters:
             #            - name: JwtAuthentication

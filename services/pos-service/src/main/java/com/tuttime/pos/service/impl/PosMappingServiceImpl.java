@@ -1,9 +1,10 @@
 package com.tuttime.pos.service.impl;
 
+import com.tuttime.common.event.EventProducer;
+import com.tuttime.common.event.PosEvent;
 import com.tuttime.pos.dto.liko.IikoProduct;
 import com.tuttime.pos.dto.rkeeper.RK7MenuItem;
 import com.tuttime.pos.entity.PosMenuMapping;
-import com.tuttime.pos.kafka.PosEventProducer;
 import com.tuttime.pos.repository.PosMenuMappingRepository;
 import com.tuttime.pos.service.PosMappingService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ import java.util.UUID;
 public class PosMappingServiceImpl implements PosMappingService {
 
 	private final PosMenuMappingRepository posMenuMappingRepository;
-	private final PosEventProducer posEventProducer;
+	private final EventProducer eventProducer;
 
 	@Override
 	@Transactional
@@ -53,7 +54,11 @@ public class PosMappingServiceImpl implements PosMappingService {
 				log.info("Price change detected for item {}: {} -> {}",
 						mapping.getMenuItemId(), mapping.getExternalPrice(), newPrice);
 
-				posEventProducer.sendPriceUpdatedEvent(branchId, mapping.getMenuItemId(), newPrice);
+				eventProducer.sendPosPriceUpdatedEvent(new PosEvent.PosPriceUpdatedEvent(
+						branchId,
+						mapping.getMenuItemId(),
+						newPrice,
+						OffsetDateTime.now()));
 			}
 
 			// 2. RE-ACTIVATION LOGIC
@@ -71,7 +76,11 @@ public class PosMappingServiceImpl implements PosMappingService {
 
 		// 3. Notify Menu Service for Activations
 		if (!reactivatedIds.isEmpty()) {
-			posEventProducer.sendActivationEvent(branchId, reactivatedIds);
+			eventProducer.sendPosMenuUpdatedEvent(new PosEvent.PosMenuUpdatedEvent(
+					branchId,
+					reactivatedIds,
+					"ACTIVATION", // Type discriminator
+					syncStartTime));
 		}
 
 		// 4. Handle DEACTIVATION (Sweep)
@@ -80,7 +89,12 @@ public class PosMappingServiceImpl implements PosMappingService {
 
 		if (!missingItemIds.isEmpty()) {
 			posMenuMappingRepository.deactivateOldMappings(branchId, syncStartTime);
-			posEventProducer.sendDeactivationEvent(branchId, missingItemIds);
+
+			eventProducer.sendPosMenuUpdatedEvent(new PosEvent.PosMenuUpdatedEvent(
+					branchId,
+					missingItemIds,
+					"DEACTIVATION", // Type discriminator
+					syncStartTime));
 		}
 	}
 
@@ -117,7 +131,11 @@ public class PosMappingServiceImpl implements PosMappingService {
 					log.info("Price change detected for R-Keeper item {}: {} -> {}",
 							mapping.getMenuItemId(), mapping.getExternalPrice(), newPrice);
 
-					posEventProducer.sendPriceUpdatedEvent(branchId, mapping.getMenuItemId(), newPrice);
+					eventProducer.sendPosPriceUpdatedEvent(new PosEvent.PosPriceUpdatedEvent(
+							branchId,
+							mapping.getMenuItemId(),
+							newPrice,
+							OffsetDateTime.now()));
 				}
 				mapping.setExternalPrice(newPrice);
 			}
@@ -137,7 +155,11 @@ public class PosMappingServiceImpl implements PosMappingService {
 
 		// 5. Notify Menu Service to SHOW items that reappeared
 		if (!reactivatedIds.isEmpty()) {
-			posEventProducer.sendActivationEvent(branchId, reactivatedIds);
+			eventProducer.sendPosMenuUpdatedEvent(new PosEvent.PosMenuUpdatedEvent(
+					branchId,
+					reactivatedIds,
+					"ACTIVATION", // Type discriminator
+					syncStartTime));
 		}
 
 		// 6. DEACTIVATION (Sweep): Find items that didn't receive the "heartbeat"
@@ -147,7 +169,12 @@ public class PosMappingServiceImpl implements PosMappingService {
 		if (!missingItemIds.isEmpty()) {
 			log.warn("Detected {} items removed from R-Keeper for branch {}", missingItemIds.size(), branchId);
 			posMenuMappingRepository.deactivateOldMappings(branchId, syncStartTime);
-			posEventProducer.sendDeactivationEvent(branchId, missingItemIds);
+
+			eventProducer.sendPosMenuUpdatedEvent(new PosEvent.PosMenuUpdatedEvent(
+					branchId,
+					missingItemIds,
+					"DEACTIVATION", // Type discriminator
+					syncStartTime));
 		}
 	}
 

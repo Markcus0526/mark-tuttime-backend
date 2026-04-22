@@ -17,6 +17,7 @@ public class PaymentEvent {
 			UUID branchId,
 			String stripePaymentIntentId,
 			BigDecimal amount,
+			BigDecimal commissionRate,  // Add this: e.g., 0.10 for 10%
 			String currency,
 			OffsetDateTime timestamp // Changed from long to Instant
 	) implements BaseEvent {
@@ -28,17 +29,15 @@ public class PaymentEvent {
 	 */
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record PaymentRefundedEvent(
-			UUID bookingId,         // To identify which reservation to cancel
 			UUID paymentId,         // For internal payment tracking
+			UUID bookingId,         // To identify which reservation to cancel
+			UUID userId,
+			UUID branchId,
 			BigDecimal amount,      // The amount refunded (Full or Partial)
 			String currency,        // e.g., "USD"
 			String stripeRefundId,  // For audit matching with Stripe
 			String reason,          // Why the refund happened (e.g., "Customer Cancellation")
 			OffsetDateTime timestamp       // When the refund was processed
 	) implements BaseEvent {
-		// Convenience constructor for minimal data
-		public PaymentRefundedEvent(UUID bookingId, BigDecimal amount, OffsetDateTime timestamp) {
-			this(bookingId, null, amount, "USD", null, "User Request", timestamp);
-		}
 	}
 }

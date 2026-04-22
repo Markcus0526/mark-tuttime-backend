@@ -90,8 +90,6 @@ spring:
         mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
-    topics:
-      restaurant-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.restaurant-blocks}
     consumer:
       group-id: restaurant-service-group
       auto-offset-reset: earliest

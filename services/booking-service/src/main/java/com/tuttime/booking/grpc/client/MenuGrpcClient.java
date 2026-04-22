@@ -1,6 +1,7 @@
 package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.common.grpc.GrpcExecutor;
 import com.tuttime.common.proto.*;
 import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
 
 @Service
 @RequiredArgsConstructor
@@ -21,25 +25,30 @@ public class MenuGrpcClient {
 
 
 	public List<MenuItemDetailResponse> getPreOrderMenu(UUID branchId) {
-		MenuRequest req = MenuRequest.newBuilder()
+		MenuRequest request = MenuRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
-		return menuServiceBlockingStub.getPreOrderMenu(req).getItemsList();
+		return GrpcExecutor.execute(MENU_SERVICE, "getPreOrderMenu", () ->
+				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+						.getPreOrderMenu(request).getItemsList());
+//		return menuServiceBlockingStub.getPreOrderMenu(req).getItemsList();
 	}
 
 	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
-		// 1. Build the request with repeated IDs
 		MenuDetailsRequest request = MenuDetailsRequest.newBuilder()
 				.addAllMenuItemIds(menuItemIds)
 				.build();
 
-		try {
-			// 2. Call the server and return the items list
-			MenuDetailsResponse response = menuServiceBlockingStub.getMenuDetails(request);
-			return response.getItemsList();
-		} catch (StatusRuntimeException e) {
-			log.error("Failed to fetch menu details: {}", e.getStatus());
-			throw new InvalidRequestException("Menu service is currently unavailable.");
-		}
+		return GrpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
+				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+						.getMenuDetails(request).getItemsList());
+//		try {
+//			// 2. Call the server and return the items list
+//			MenuDetailsResponse response = menuServiceBlockingStub.getMenuDetails(request);
+//			return response.getItemsList();
+//		} catch (StatusRuntimeException e) {
+//			log.error("Failed to fetch menu details: {}", e.getStatus());
+//			throw new InvalidRequestException("Menu service is currently unavailable.");
+//		}
 	}
 }

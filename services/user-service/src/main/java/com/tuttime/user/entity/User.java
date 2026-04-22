@@ -1,7 +1,7 @@
 package com.tuttime.user.entity;
 
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
-import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.common.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;

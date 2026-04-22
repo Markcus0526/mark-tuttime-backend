@@ -1,5 +1,6 @@
 package com.tuttime.payment.grpc;
 
+import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.PaymentServiceGrpc;
 import com.tuttime.common.proto.PaymentSessionRequest;
 import com.tuttime.common.proto.PaymentSessionResponse;
@@ -43,11 +44,14 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			// Map Java exceptions to gRPC status codes
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("Failed to initiate Stripe session: " + e.getMessage())
-					.asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 }

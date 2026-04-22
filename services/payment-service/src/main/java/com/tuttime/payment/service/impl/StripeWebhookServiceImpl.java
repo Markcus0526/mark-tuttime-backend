@@ -4,11 +4,12 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import com.tuttime.common.event.EventProducer;
+import com.tuttime.common.event.PaymentEvent;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
-import com.tuttime.payment.entity.enums.PaymentStatus;
-import com.tuttime.payment.kafka.PaymentEventProducer;
+import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.service.StripeWebhookService;
@@ -18,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 
@@ -28,7 +31,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 
 	private final PaymentRepository paymentRepository;
 	private final PaymentAuditLogRepository auditLogRepository;
-	private final PaymentEventProducer paymentEventProducer;
+	private final EventProducer eventProducer;
 
 	@Value("${stripe.webhook.secret}")
 	private String webhookSecret; // Found in Stripe Dashboard -> Developers -> Webhooks
@@ -77,13 +80,21 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 		if (payment.getStatus() != PaymentStatus.COMPLETED) {
 			payment.setStatus(PaymentStatus.COMPLETED);
 			payment.setPaymentIntentId(session.getPaymentIntent());
-			payment.setPaymentMethodType(session.getPaymentMethodTypes().get(0));
+			payment.setPaymentMethodType(session.getPaymentMethodTypes().getFirst());
 			paymentRepository.save(payment);
 
 			// Trigger internal and external confirmation (e.g. Kafka/Email)
 			// Notify Kafka/Events
 			// BROADCAST TO KAFKA
-			paymentEventProducer.sendPaymentSuccess(payment);
+			eventProducer.sendPaymentCompletedEvent(new PaymentEvent.PaymentCompletedEvent(
+					payment.getBookingId(),
+					payment.getUserId(),
+					payment.getBranchId(),
+					payment.getStripeSessionId(),
+					payment.getAmount(),
+					BigDecimal.valueOf(0),
+					payment.getCurrency(),
+					OffsetDateTime.now()));
 
 			log.info("Payment SUCCESS confirmed for Booking ID: {}", bookingId);
 		}

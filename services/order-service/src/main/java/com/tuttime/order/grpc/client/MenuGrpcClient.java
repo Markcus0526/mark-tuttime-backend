@@ -1,6 +1,7 @@
 package com.tuttime.order.grpc.client;
 
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.common.grpc.GrpcExecutor;
 import com.tuttime.common.proto.*;
 import com.tuttime.common.util.NumberUtil;
 import io.grpc.StatusRuntimeException;
@@ -12,6 +13,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
+import static com.tuttime.common.constants.ServiceNames.RESTAURANT_SERVICE;
 
 @Service
 @Slf4j
@@ -27,9 +32,11 @@ public class MenuGrpcClient {
 				.addAllModifierIds(modifierIds.stream().map(UUID::toString).toList())
 				.build();
 
-		// gRPC Call
-		PriceResponse response = menuServiceBlockingStub.getPriceForOrder(request);
-		return NumberUtil.stringToBigDecimal(response.getVerifiedTotalPrice());
+		String priceString = GrpcExecutor.execute(MENU_SERVICE, "getPriceForOrder", () ->
+				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+						.getPriceForOrder(request).getVerifiedTotalPrice());
+
+		return NumberUtil.stringToBigDecimal(priceString);
 	}
 
 	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
@@ -38,13 +45,8 @@ public class MenuGrpcClient {
 				.addAllMenuItemIds(menuItemIds)
 				.build();
 
-		try {
-			// 2. Call the server and return the items list
-			MenuDetailsResponse response = menuServiceBlockingStub.getMenuDetails(request);
-			return response.getItemsList();
-		} catch (StatusRuntimeException e) {
-			log.error("Failed to fetch menu details: {}", e.getStatus());
-			throw new InvalidRequestException("Menu service is currently unavailable.");
-		}
+		return GrpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
+				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+						.getMenuDetails(request).getItemsList());
 	}
 }

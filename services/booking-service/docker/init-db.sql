@@ -27,7 +27,7 @@ CREATE TABLE bookings
     lead_time_minutes   INT                          DEFAULT 0,
     grace_period_mins   INT                          DEFAULT 15,
     cancellation_reason VARCHAR(255),
-    auto_cancelled      BOOLEAN                      DEFAULT FALSE,
+    auto_canceled       BOOLEAN                      DEFAULT FALSE,
     created_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,8 +1,8 @@
 package com.tuttime.review.service.impl;
 
+import com.tuttime.common.event.EventProducer;
 import com.tuttime.common.event.ReviewEvent;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.MenuDetailsRequest;
 import com.tuttime.common.proto.UserDetailResponse;
 import com.tuttime.common.proto.UserDetailsRequest;
 import com.tuttime.common.proto.UserDetailsResponse;
@@ -11,7 +11,6 @@ import com.tuttime.review.entity.*;
 import com.tuttime.review.entity.enums.ReviewStatus;
 import com.tuttime.review.grpc.client.RestaurantGrpcClient;
 import com.tuttime.review.grpc.client.UserGrpcClient;
-import com.tuttime.review.kafka.ReviewEventProducer;
 import com.tuttime.review.mapper.ReviewMapper;
 import com.tuttime.review.repository.*;
 import com.tuttime.review.service.ReviewService;
@@ -41,7 +40,7 @@ public class ReviewServiceImpl implements ReviewService {
 	private final ReviewMapper reviewMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final UserGrpcClient userGrpcClient;
-	private final ReviewEventProducer reviewEventProducer;
+	private final EventProducer eventProducer;
 
 	@Override
 	@Transactional
@@ -138,7 +137,7 @@ public class ReviewServiceImpl implements ReviewService {
 					review.getRating(),
 					OffsetDateTime.now()
 			);
-			reviewEventProducer.sendReviewApprovedEvent(event);
+			eventProducer.sendReviewApprovedEvent(event);
 		}
 
 		return reviewMapper.toReviewResponse(updatedReview);
