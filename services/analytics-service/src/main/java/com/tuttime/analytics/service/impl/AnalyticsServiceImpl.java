@@ -2,7 +2,10 @@ package com.tuttime.analytics.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.dto.AdminDto;
+import com.tuttime.analytics.dto.RestaurantDto;
 import com.tuttime.analytics.entity.*;
+import com.tuttime.analytics.mapper.AdminMapper;
+import com.tuttime.analytics.mapper.RestaurantMapper;
 import com.tuttime.analytics.repository.*;
 import com.tuttime.analytics.service.AnalyticsService;
 import com.tuttime.common.event.kafka.BookingEvent;
@@ -32,27 +35,17 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	private final BranchYieldManagementRepository yieldRepository;
 	private final FinancialLedgerRepository financialLedgerRepository;
 	private final BranchPerformanceStatRepository branchPerformanceStatRepository;
+	private final AdminMapper adminMapper;
+	private final RestaurantMapper restaurantMapper;
 	private final ObjectMapper objectMapper;
 
 	@Override
-	public List<BranchYieldManagement> getWeeklyHeatmap(UUID branchId) {
-		// Queries the branch_yield_managements table for the next 7 days
-		return yieldRepository.findAllByIdBranchIdOrderByIdTimeSlotAsc(branchId);
-	}
-
-	@Override
-	public FinancialLedger getDailyFinancials(UUID branchId, LocalDate date) {
-		return financialLedgerRepository.findByBranchIdAndReportDate(branchId, date)
-				.orElseThrow(() -> new InvalidRequestException("No data for this date"));
-	}
-
-	@Override
-	public AdminDto.GlobalMetricsDto calculateGlobalMetrics() {
+	public AdminDto.GlobalMetricsResponse getPlatformSummary() {
 		BigDecimal gmv = financialLedgerRepository.sumTotalGmv();
 		BigDecimal commission = financialLedgerRepository.sumTotalCommission();
 		Double yield = yieldRepository.calculateAveragePlatformOccupancy();
 
-		return AdminDto.GlobalMetricsDto.builder()
+		return AdminDto.GlobalMetricsResponse.builder()
 				.totalGmv(gmv != null ? gmv : BigDecimal.ZERO)
 				.totalCommission(commission != null ? commission : BigDecimal.ZERO)
 				.activeBranchesCount(financialLedgerRepository.countDistinctBranchId())
@@ -61,8 +54,23 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	}
 
 	@Override
-	public BranchPerformanceStat getBranchStats(UUID branchId) {
-		return branchPerformanceStatRepository.findById(branchId)
+	public AdminDto.UserReliabilityResponse getUserRiskProfile(UUID userId) {
+		return reliabilityRepository.findById(userId)
+				.map(adminMapper::toResponse)
+				.orElseThrow(() -> new InvalidRequestException("User reliability data not found"));
+	}
+
+	@Override
+	public List<RestaurantDto.YieldHeatmapResponse> getWeeklyHeatmap(UUID branchId) {
+		// Queries the branch_yield_managements table for the next 7 days
+		List<BranchYieldManagement> entities = yieldRepository.findAllByIdBranchIdOrderByIdTimeSlotAsc(branchId);
+
+		return restaurantMapper.toHeatmapListResponse(entities);
+	}
+
+	@Override
+	public RestaurantDto.BranchPerformanceResponse getBranchStats(UUID branchId) {
+		BranchPerformanceStat entity = branchPerformanceStatRepository.findById(branchId)
 				.orElseGet(() -> {
 					// If no stats exist yet, return a default empty object
 					return BranchPerformanceStat.builder()
@@ -72,6 +80,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 							.avgGuestRating(BigDecimal.ZERO)
 							.build();
 				});
+
+		return restaurantMapper.toPerformanceResponse(entity);
+	}
+
+	@Override
+	public RestaurantDto.DailyLedgerResponse getDailyFinancials(UUID branchId, LocalDate date) {
+		FinancialLedger entity = financialLedgerRepository.findByBranchIdAndReportDate(branchId, date)
+				.orElseThrow(() -> new InvalidRequestException("Ledger not found for this date"));
+
+		return restaurantMapper.toLedgerResponse(entity);
+	}
+
+
+	@Override
+	public UserReliabilityIndex getUserReliability(UUID userId) {
+		return reliabilityRepository.findById(userId).orElse(null);
 	}
 
 	@Override
@@ -296,11 +320,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
 		log.info("Financials updated for Branch {}: GMV +{}, Commission +{}",
 				branchId, amount, commission);
-	}
-
-	@Override
-	public UserReliabilityIndex getUserReliability(UUID userId) {
-		return reliabilityRepository.findById(userId).orElse(null);
 	}
 
 	/**

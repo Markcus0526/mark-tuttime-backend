@@ -1,27 +1,31 @@
 package com.tuttime.analytics.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.tuttime.analytics.dto.AdminDto;
+import com.tuttime.analytics.dto.RestaurantDto;
 import com.tuttime.analytics.entity.BranchPerformanceStat;
 import com.tuttime.analytics.entity.BranchYieldManagement;
 import com.tuttime.analytics.entity.FinancialLedger;
 import com.tuttime.analytics.entity.UserReliabilityIndex;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public interface AnalyticsService {
 
-	List<BranchYieldManagement> getWeeklyHeatmap(UUID branchId);
+	// Admin Analytics
+	AdminDto.GlobalMetricsResponse getPlatformSummary();
 
-	FinancialLedger getDailyFinancials(UUID branchId, LocalDate date);
+	AdminDto.UserReliabilityResponse getUserRiskProfile(UUID userId);
 
-	AdminDto.GlobalMetricsDto calculateGlobalMetrics();
+	// Restaurant Analytics
+	List<RestaurantDto.YieldHeatmapResponse> getWeeklyHeatmap(UUID branchId);
 
-	BranchPerformanceStat getBranchStats(UUID branchId);
+	RestaurantDto.DailyLedgerResponse getDailyFinancials(UUID branchId, LocalDate date);
 
+	RestaurantDto.BranchPerformanceResponse getBranchStats(UUID branchId);
+
+	// Used by Kafka Consumer
 	void processEvent(String source, String type, UUID branchId, Object payload);
 
 	// Used by gRPC Provider
