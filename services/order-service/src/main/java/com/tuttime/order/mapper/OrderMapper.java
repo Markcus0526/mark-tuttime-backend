@@ -47,7 +47,7 @@ public abstract class OrderMapper {
 	/**
 	 * Enhanced mapping to include Item Names and Modifiers
 	 */
-	protected List<OrderDto.OrderDetailResponse.MenuItemResponse> mapItemsWithDetails(
+	protected List<OrderDto.OrderDetailResponse.MenuItemDto> mapItemsWithDetails(
 			List<OrderItem> items,
 			List<MenuItemDetailResponse> details) {
 
@@ -60,7 +60,7 @@ public abstract class OrderMapper {
 					.findFirst()
 					.orElse(null);
 
-			return OrderDto.OrderDetailResponse.MenuItemResponse.builder()
+			return OrderDto.OrderDetailResponse.MenuItemDto.builder()
 					.menuItemId(item.getMenuItemId())
 					.name(detail != null ? detail.getName() : "Unknown Item")
 					.quantity(item.getQuantity())
@@ -71,7 +71,7 @@ public abstract class OrderMapper {
 		}).toList();
 	}
 
-	protected List<OrderDto.OrderDetailResponse.ModifierResponse> mapModifiersWithDetails(
+	protected List<OrderDto.OrderDetailResponse.ModifierDto> mapModifiersWithDetails(
 			List<OrderItemModifier> selectedModifiers,
 			MenuItemDetailResponse menuDetail) {
 
@@ -87,7 +87,7 @@ public abstract class OrderMapper {
 					.findFirst()
 					.orElse(null);
 
-			return OrderDto.OrderDetailResponse.ModifierResponse.builder()
+			return OrderDto.OrderDetailResponse.ModifierDto.builder()
 					.modifierId(mod.getModifierId())
 					.name(modOption != null ? modOption.getName() : "Extra Option")
 					.priceAdjustment(mod.getPriceAdjustment())

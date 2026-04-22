@@ -1,6 +1,8 @@
 package com.tuttime.analytics.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.tuttime.common.entity.BaseTimeStampEntity;
+import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -18,24 +20,24 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class SystemEvent extends BaseTimeStampEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	private UUID id;
+public class SystemEvent extends BaseUuidEntity {
 
-	@Column(name = "service_name")
-	private String serviceName;
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
 
-	@Column(name = "event_type")
+	@Column(name = "user_id")
+	private UUID userId;
+
+	@Column(name = "event_type", length = 100, nullable = false)
 	private String eventType;
 
-	@Column(name = "entity_id")
-	private UUID entityId;
+	@Column(name = "service_source", length = 50)
+	private String serviceSource;
 
 	@JdbcTypeCode(SqlTypes.JSON)
-	private Object payload; // Flexible payload storage
+	@Column(name = "payload", nullable = false)
+	private JsonNode payload;
 
-	@Column(name = "occurred_at")
-	@Builder.Default
-	private OffsetDateTime occurredAt = OffsetDateTime.now();
+	@Column(name = "occurred_at", nullable = false)
+	private OffsetDateTime occurredAt;
 }

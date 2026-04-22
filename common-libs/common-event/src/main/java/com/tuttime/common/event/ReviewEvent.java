@@ -18,7 +18,7 @@ public class ReviewEvent {
 			UUID reviewId,
 			UUID branchId,
 			UUID userId,
-			int rating,
+			Integer rating,
 			OffsetDateTime timestamp
 	)  implements BaseEvent {
 	}

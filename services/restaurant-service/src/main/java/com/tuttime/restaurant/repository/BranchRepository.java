@@ -58,4 +58,7 @@ public interface BranchRepository extends JpaRepository<Branch, UUID>, JpaSpecif
 	                                     @Param("lng") double longitude,
 	                                     @Param("radius") double radiusMeters,
 	                                     Pageable pageable);
+
+	@Query("SELECT AVG(b.rating) FROM Branch b WHERE b.restaurant.id = :restaurantId AND b.deleted = false")
+	Double getAverageRatingForRestaurant(@Param("restaurantId") UUID restaurantId);
 }
