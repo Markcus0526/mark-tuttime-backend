@@ -1,8 +1,6 @@
 package com.tuttime.analytics.controller;
 
-import com.tuttime.analytics.entity.BranchPerformanceStat;
-import com.tuttime.analytics.entity.BranchYieldManagement;
-import com.tuttime.analytics.entity.FinancialLedger;
+import com.tuttime.analytics.dto.RestaurantDto;
 import com.tuttime.analytics.service.AnalyticsService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
@@ -23,39 +21,39 @@ import java.util.UUID;
 @RequestMapping("/api/v1/analytics/restaurant")
 @Tag(name = "2.Restaurant Analytics", description = "Endpoints for restaurant owners to monitor branch performance")
 @RequiredArgsConstructor
-public class RestaurantAnalyticsController {
+public class RestaurantController {
 
 	private final AnalyticsService analyticsService;
 
 	@GetMapping("/{branchId}/heatmap")
 	@Operation(summary = "Get 15-minute occupancy heatmap for yield management")
-	public ResponseEntity<ApiRes<List<BranchYieldManagement>>> getHeatmap(@PathVariable UUID branchId) {
+	public ResponseEntity<ApiRes<List<RestaurantDto.YieldHeatmapResponse>>> getHeatmap(@PathVariable UUID branchId) {
 
 		validateAdminOrOwner();
 
-		List<BranchYieldManagement> data = analyticsService.getWeeklyHeatmap(branchId);
+		List<RestaurantDto.YieldHeatmapResponse> data = analyticsService.getWeeklyHeatmap(branchId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
 	@GetMapping("/{branchId}/daily-ledger")
 	@Operation(summary = "Get financial summary (GMV, Commission, Payouts) for a specific date")
-	public ResponseEntity<ApiRes<FinancialLedger>> getDailyLedger(
+	public ResponseEntity<ApiRes<RestaurantDto.DailyLedgerResponse>> getDailyLedger(
 			@PathVariable UUID branchId,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
 		validateAdminOrOwner();
 
-		FinancialLedger ledger = analyticsService.getDailyFinancials(branchId, date);
+		RestaurantDto.DailyLedgerResponse ledger = analyticsService.getDailyFinancials(branchId, date);
 		return ResponseEntity.ok(ApiRes.success(ledger));
 	}
 
 	@GetMapping("/{branchId}/performance")
 	@Operation(summary = "Get kitchen speed and POS sync health metrics")
-	public ResponseEntity<ApiRes<BranchPerformanceStat>> getPerformance(@PathVariable UUID branchId) {
+	public ResponseEntity<ApiRes<RestaurantDto.BranchPerformanceResponse>> getPerformance(@PathVariable UUID branchId) {
 
 		validateAdminOrOwner();
 
-		BranchPerformanceStat stats = analyticsService.getBranchStats(branchId);
+		RestaurantDto.BranchPerformanceResponse stats = analyticsService.getBranchStats(branchId);
 		return ResponseEntity.ok(ApiRes.success(stats));
 	}
 

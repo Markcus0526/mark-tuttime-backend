@@ -1,7 +1,6 @@
 package com.tuttime.analytics.controller;
 
 import com.tuttime.analytics.dto.AdminDto;
-import com.tuttime.analytics.entity.UserReliabilityIndex;
 import com.tuttime.analytics.service.AnalyticsService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
@@ -19,27 +18,27 @@ import java.util.UUID;
 @RequestMapping("/api/v1/analytics/admin")
 @Tag(name = "1.Admin Analytics", description = "Global platform metrics and user risk profiling")
 @RequiredArgsConstructor
-public class AdminAnalyticsController {
+public class AdminController {
 
 	private final AnalyticsService analyticsService;
 
 	@GetMapping("/platform-summary")
 	@Operation(summary = "Get global GMV and TutTime commission totals")
-	public ResponseEntity<ApiRes<AdminDto.GlobalMetricsDto>> getPlatformSummary() {
+	public ResponseEntity<ApiRes<AdminDto.GlobalMetricsResponse>> getPlatformSummary() {
 
 		validateAdmin();
 
-		AdminDto.GlobalMetricsDto metrics = analyticsService.calculateGlobalMetrics();
+		AdminDto.GlobalMetricsResponse metrics = analyticsService.getPlatformSummary();
 		return ResponseEntity.ok(ApiRes.success(metrics));
 	}
 
 	@GetMapping("/users/{userId}/risk-profile")
 	@Operation(summary = "Check user reliability score and no-show history")
-	public ResponseEntity<ApiRes<UserReliabilityIndex>> getUserRiskProfile(@PathVariable UUID userId) {
+	public ResponseEntity<ApiRes<AdminDto.UserReliabilityResponse>> getUserRiskProfile(@PathVariable UUID userId) {
 
 		validateAdmin();
 
-		UserReliabilityIndex profile = analyticsService.getUserReliability(userId);
+		AdminDto.UserReliabilityResponse profile = analyticsService.getUserRiskProfile(userId);
 		return ResponseEntity.ok(ApiRes.success(profile));
 	}
 
