@@ -128,9 +128,11 @@ public class BookingServiceImpl implements BookingService {
 					savedBooking.getId(),
 					savedBooking.getTableId(),
 					savedBooking.getBranchId(),
+					savedBooking.getUserId(),
 					null,
 					BookingStatus.CREATED,
-					request.userId(),
+					savedBooking.getBookingDatetime(),
+					currentUserId,
 					"Created",
 					OffsetDateTime.now()));
 
@@ -249,8 +251,10 @@ public class BookingServiceImpl implements BookingService {
 				booking.getId(),
 				booking.getTableId(),
 				booking.getBranchId(),
+				booking.getUserId(),
 				oldStatus,
 				newStatus,
+				booking.getBookingDatetime(),
 				currentUserId,
 				reason,
 				OffsetDateTime.now()));
@@ -292,12 +296,12 @@ public class BookingServiceImpl implements BookingService {
 
 		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED
 		if (booking.getStatus() == BookingStatus.COMPLETED || booking.getStatus() == BookingStatus.CANCELED) {
-			throw new InvalidRequestException("Booking cannot be cancelled in its current state");
+			throw new InvalidRequestException("Booking cannot be canceled in its current state");
 		}
 
 		BookingStatus oldStatus = booking.getStatus();
 		booking.setStatus(BookingStatus.CANCELED);
-		booking.setCancellationReason(reason != null ? reason : "Cancelled by user");
+		booking.setCancellationReason(reason != null ? reason : "Canceled by user");
 
 		bookingRepository.save(booking);
 
@@ -309,9 +313,11 @@ public class BookingServiceImpl implements BookingService {
 				bookingId,
 				booking.getTableId(),
 				booking.getBranchId(),
+				booking.getUserId(),
 				oldStatus,
 				BookingStatus.CANCELED,
-				userId,
+				booking.getBookingDatetime(),
+				currentUserId,
 				reason,
 				OffsetDateTime.now()));
 	}
@@ -385,8 +391,10 @@ public class BookingServiceImpl implements BookingService {
 						booking.getId(),
 						booking.getTableId(),
 						booking.getBranchId(),
+						booking.getUserId(),
 						oldStatus,
 						BookingStatus.PAID,
+						booking.getBookingDatetime(),
 						staffOrSystemId,
 						"Payment confirmed. Ref: " + paymentRef,
 						OffsetDateTime.now()));
@@ -413,7 +421,7 @@ public class BookingServiceImpl implements BookingService {
 //	@Override
 //	@Transactional
 //	public void cancelUnpaidBooking(UUID bookingId) {
-//		updateStatus(bookingId, BookingStatus.CANCELED, null, "Cancelled due to payment timeout");
+//		updateStatus(bookingId, BookingStatus.CANCELED, null, "Canceled due to payment timeout");
 //	}
 
 

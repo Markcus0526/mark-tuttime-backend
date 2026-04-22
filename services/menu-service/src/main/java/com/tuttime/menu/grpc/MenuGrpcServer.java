@@ -58,66 +58,75 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid ID format").asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
 		} catch (InvalidRequestException e) {
 			// Map your custom business exception to NOT_FOUND instead of INTERNAL
-			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
 			// Keep this for actual system failures (DB down, etc.)
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("Price verification failed: " + e.getMessage())
-					.asRuntimeException());
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
 	@Override
 	@Transactional
 	public void getPreOrderMenu(MenuRequest request, StreamObserver<MenuResponse> responseObserver) {
-		UUID branchId = UUID.fromString(request.getBranchId());
+		try {
+			UUID branchId = UUID.fromString(request.getBranchId());
 
-		// 1. Fetch categories for the branch (MenuCategoryRepository)
-		List<MenuCategory> categories = menuCategoryRepository.findAllByBranchIdOrderByPriorityAsc(branchId);
+			// 1. Fetch categories for the branch (MenuCategoryRepository)
+			List<MenuCategory> categories = menuCategoryRepository.findAllByBranchIdOrderByPriorityAsc(branchId);
 
-		MenuResponse.Builder responseBuilder = MenuResponse.newBuilder();
+			MenuResponse.Builder responseBuilder = MenuResponse.newBuilder();
 
-		for (MenuCategory category : categories) {
-			// 2. Access the MenuItemCategory relationships
-			for (MenuItem menuItem : category.getItems()) {
-				// Skip if the item is not available
-				if (!menuItem.getAvailable()) continue;
+			for (MenuCategory category : categories) {
+				// 2. Access the MenuItemCategory relationships
+				for (MenuItem menuItem : category.getItems()) {
+					// Skip if the item is not available
+					if (!menuItem.getAvailable()) continue;
 
-				MenuItemDetailResponse.Builder itemBuilder = MenuItemDetailResponse.newBuilder()
-						.setMenuItemId(menuItem.getId().toString())
-						.setName(menuItem.getName())
-						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
-						.setBasePrice(menuItem.getPrice().toString())
-						.setCategory(category.getName())
-						.setAvailable(menuItem.getAvailable());
+					MenuItemDetailResponse.Builder itemBuilder = MenuItemDetailResponse.newBuilder()
+							.setMenuItemId(menuItem.getId().toString())
+							.setName(menuItem.getName())
+							.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
+							.setBasePrice(menuItem.getPrice().toString())
+							.setCategory(category.getName())
+							.setAvailable(menuItem.getAvailable());
 
-				// 3. Map Modifiers (from MenuItem entity)
-				if (menuItem.getModifierGroups() != null) {
-					menuItem.getModifierGroups().forEach(group -> {
-						ModifierGroupResponse.Builder groupBuilder = ModifierGroupResponse.newBuilder()
-								.setGroupName(group.getName())
-								.setMinSelect(group.getMinSelect())
-								.setMaxSelect(group.getMaxSelect());
+					// 3. Map Modifiers (from MenuItem entity)
+					if (menuItem.getModifierGroups() != null) {
+						menuItem.getModifierGroups().forEach(group -> {
+							ModifierGroupResponse.Builder groupBuilder = ModifierGroupResponse.newBuilder()
+									.setGroupName(group.getName())
+									.setMinSelect(group.getMinSelect())
+									.setMaxSelect(group.getMaxSelect());
 
-						group.getModifiers().forEach(opt -> groupBuilder.addOptions(
-								ModifierOptionResponse.newBuilder()
-										.setName(opt.getName())
-										.setExtraPrice(opt.getPriceAdjustment().toString())
-										.build()
-						));
-						itemBuilder.addModifierGroups(groupBuilder);
-					});
+							group.getModifiers().forEach(opt -> groupBuilder.addOptions(
+									ModifierOptionResponse.newBuilder()
+											.setName(opt.getName())
+											.setExtraPrice(opt.getPriceAdjustment().toString())
+											.build()
+							));
+							itemBuilder.addModifierGroups(groupBuilder);
+						});
+					}
+
+					responseBuilder.addItems(itemBuilder);
 				}
-
-				responseBuilder.addItems(itemBuilder);
 			}
-		}
 
-		responseObserver.onNext(responseBuilder.build());
-		responseObserver.onCompleted();
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+		}
 	}
 
 	@Override
@@ -142,11 +151,14 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 			responseObserver.onNext(responseBuilder.build());
 			responseObserver.onCompleted();
 
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			log.error("Error fetching menu details: ", e);
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("Internal error fetching menu items")
-					.asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 

@@ -95,36 +95,47 @@ public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid ID format").asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
 		} catch (InvalidRequestException e) {
 			// Map your custom business exception to NOT_FOUND instead of INTERNAL
-			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
 			// Keep this for actual system failures (DB down, etc.)
-			responseObserver.onError(Status.INTERNAL.withDescription("Order creation failed").asRuntimeException());
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
 	@Override
 	public void getOrderDetail(OrderDetailRequest request, StreamObserver<OrderDetailResponse> responseObserver) {
-		Order order = orderRepository.findById(UUID.fromString(request.getOrderId()))
-				.orElseThrow(() -> new InvalidRequestException("Order not found"));
+		try {
+			Order order = orderRepository.findById(UUID.fromString(request.getOrderId()))
+					.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
-		OrderDetailResponse.Builder responseBuilder = OrderDetailResponse.newBuilder()
-				.setOrderId(order.getId().toString())
-				.setBookingId(order.getBookingId().toString())
-				.setTotalAmount(order.getTotalAmount().doubleValue());
+			OrderDetailResponse.Builder responseBuilder = OrderDetailResponse.newBuilder()
+					.setOrderId(order.getId().toString())
+					.setBookingId(order.getBookingId().toString())
+					.setTotalAmount(order.getTotalAmount().doubleValue());
 
-		// Map items to Proto format
-		order.getItems().forEach(item -> {
-			responseBuilder.addItems(OrderItemDetailResponse.newBuilder()
-					.setMenuItemName("Burger") // Ideally fetched from Menu Service
-					.setQuantity(item.getQuantity())
-					.setPrice(item.getPrice().doubleValue())
-					.build());
-		});
+			// Map items to Proto format
+			order.getItems().forEach(item -> {
+				responseBuilder.addItems(OrderItemDetailResponse.newBuilder()
+						.setMenuItemName("Burger") // Ideally fetched from Menu Service
+						.setQuantity(item.getQuantity())
+						.setPrice(item.getPrice().doubleValue())
+						.build());
+			});
 
-		responseObserver.onNext(responseBuilder.build());
-		responseObserver.onCompleted();
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+		}
 	}
 }

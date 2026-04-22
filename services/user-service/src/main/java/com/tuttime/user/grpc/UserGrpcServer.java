@@ -3,7 +3,7 @@ package com.tuttime.user.grpc;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.proto.*;
 import com.tuttime.user.entity.*;
-import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.common.enums.UserStatus;
 import com.tuttime.user.repository.UserRepository;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.TokenBlacklistService;
@@ -76,13 +76,13 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Malformed token claims").asRuntimeException());
-		} catch (StatusRuntimeException e) {
-			responseObserver.onError(e);
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			log.error("Token validation system error: ", e);
-			// Do not leak e.getMessage() to the client for security reasons
-			responseObserver.onError(Status.INTERNAL.withDescription("Authentication service error").asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
@@ -148,12 +148,13 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid UUID format").asRuntimeException());
-		} catch (StatusRuntimeException e) {
-			responseObserver.onError(e);
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			log.error("CRITICAL: getUserDetail failed", e); // Now it shows in logs
-			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
@@ -185,43 +186,54 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			// Only return an actual gRPC Error for bad input formats
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription("Invalid UUID format")
-					.asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			log.error("System error during user validation: ", e);
-			responseObserver.onError(Status.INTERNAL.asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
 	@Override
 	public void getUserDetails(UserDetailsRequest request, StreamObserver<UserDetailsResponse> responseObserver) {
-		// 1. Extract and convert User IDs from Request
-		List<UUID> userIds = request.getUserIdsList().stream()
-				.map(UUID::fromString)
-				.toList();
+		try {
+			// 1. Extract and convert User IDs from Request
+			List<UUID> userIds = request.getUserIdsList().stream()
+					.map(UUID::fromString)
+					.toList();
 
-		// 2. Fetch users from Database
-		List<User> users = userRepository.findAllByIdInAndDeletedFalse(userIds);
+			// 2. Fetch users from Database
+			List<User> users = userRepository.findAllByIdInAndDeletedFalse(userIds);
 
-		// 3. Build the Response
-		UserDetailsResponse.Builder responseBuilder = UserDetailsResponse.newBuilder();
+			// 3. Build the Response
+			UserDetailsResponse.Builder responseBuilder = UserDetailsResponse.newBuilder();
 
-		for (User user : users) {
-			UserDetailResponse profile = UserDetailResponse.newBuilder()
-					.setUserId(user.getId().toString())
-					.setFullName(user.getFullName() != null ? user.getFullName() : "")
-					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
-					.setEmail(user.getEmail() != null ? user.getEmail() : "")
-					.setProfilePicture((user.getProfilePicture() != null ? user.getProfilePicture() : ""))
-					.build();
-			responseBuilder.addProfiles(profile);
+			for (User user : users) {
+				UserDetailResponse profile = UserDetailResponse.newBuilder()
+						.setUserId(user.getId().toString())
+						.setFullName(user.getFullName() != null ? user.getFullName() : "")
+						.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+						.setEmail(user.getEmail() != null ? user.getEmail() : "")
+						.setProfilePicture((user.getProfilePicture() != null ? user.getProfilePicture() : ""))
+						.build();
+				responseBuilder.addProfiles(profile);
+			}
+
+			// 4. Send response and close the stream
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
-
-		// 4. Send response and close the stream
-		responseObserver.onNext(responseBuilder.build());
-		responseObserver.onCompleted();
 	}
 
 	/**

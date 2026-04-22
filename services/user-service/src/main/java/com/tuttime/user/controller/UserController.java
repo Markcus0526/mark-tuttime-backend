@@ -6,7 +6,7 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.user.dto.UserDto;
-import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.common.enums.UserStatus;
 import com.tuttime.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

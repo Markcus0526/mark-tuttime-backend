@@ -71,12 +71,18 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 					}
 				}
 			}
-		} catch (Exception e) {
-			log.error("Validation failed for entity: {}", request.getBranchId(), e);
-			// finalValid remains false
-		} finally {
+
 			responseObserver.onNext(BranchPermissionResponse.newBuilder().setValid(finalValid).build());
 			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
@@ -100,40 +106,51 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Table ID format").asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
 		} catch (InvalidRequestException e) {
 			// Map your custom business exception to NOT_FOUND instead of INTERNAL
-			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
 			// Keep this for actual system failures (DB down, etc.)
-			responseObserver.onError(Status.INTERNAL.withDescription("An unexpected error occurred").asRuntimeException());
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
 	@Override
 	public void getBranchSlots(BranchSlotsRequest request, StreamObserver<BranchSlotsResponse> responseObserver) {
-		UUID branchId = UUID.fromString(request.getBranchId());
-		int partySize = request.getPartySize();
+		try {
+			UUID branchId = UUID.fromString(request.getBranchId());
+			int partySize = request.getPartySize();
 
-		// Fetch using the type-safe projection
-		List<TableDetailRecord> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
+			// Fetch using the type-safe projection
+			List<TableDetailRecord> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
 
-		BranchSlotsResponse.Builder responseBuilder = BranchSlotsResponse.newBuilder();
+			BranchSlotsResponse.Builder responseBuilder = BranchSlotsResponse.newBuilder();
 
-		for (TableDetailRecord table : tables) {
-			TableSlotResponse info = TableSlotResponse.newBuilder()
-					.setTableId(table.tableId().toString())      // Record style: table.id() instead of getId()
-					.setZoneId(table.zoneId().toString())      // Record style: table.id() instead of getId()
-					.setTableLabel(table.tableLabel() != null ? table.tableLabel() : "Standard")
-					.setZoneName(table.zoneName() != null ? table.zoneName() : "Standard")
-					.setMaxCapacity(table.seats())
-					.build();
-			responseBuilder.addTables(info);
+			for (TableDetailRecord table : tables) {
+				TableSlotResponse info = TableSlotResponse.newBuilder()
+						.setTableId(table.tableId().toString())      // Record style: table.id() instead of getId()
+						.setZoneId(table.zoneId().toString())      // Record style: table.id() instead of getId()
+						.setTableLabel(table.tableLabel() != null ? table.tableLabel() : "Standard")
+						.setZoneName(table.zoneName() != null ? table.zoneName() : "Standard")
+						.setMaxCapacity(table.seats())
+						.build();
+				responseBuilder.addTables(info);
+			}
+
+			// 3. Send back to the Booking Service
+			responseObserver.onNext(responseBuilder.build());
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
-
-		// 3. Send back to the Booking Service
-		responseObserver.onNext(responseBuilder.build());
-		responseObserver.onCompleted();
 	}
 
 	@Override
@@ -167,51 +184,56 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription("The provided branch ID is not a valid UUID")
-					.asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			// 1. Log the context (IDs and Params) so you can find the bad data in the DB
-			log.error("Failed to fetch schedule for branch {} on day {}: {}",
-					request.getBranchId(), request.getDayOfWeek(), e.getMessage(), e);
-
-			// 2. Return a status with a description so the Booking Service knows it's not a network error
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("Database error occurred while fetching branch schedule")
-					.withCause(e) // This is for internal interceptors, not sent to client
-					.asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
 	@Override
 	public void getStaffForUser(StaffUserRequest request, StreamObserver<StaffUserResponse> responseObserver) {
-		UUID userId = UUID.fromString(request.getUserId());
+		try {
+			UUID userId = UUID.fromString(request.getUserId());
 
-		staffRepository.findByUserId(userId).ifPresentOrElse(staff -> {
-			StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder()
-					.setRestaurantId(staff.getRestaurant().getId().toString());
-			responseBuilder.setActive(staff.getActive());
+			staffRepository.findByUserId(userId).ifPresentOrElse(staff -> {
+				StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder()
+						.setRestaurantId(staff.getRestaurant().getId().toString());
+				responseBuilder.setActive(staff.getActive());
 
-			if (staff.getBranch() != null && staff.getBranch().getId() != null) {
-				// Case 1: Fetch Branch Name
-				UUID branchId = staff.getBranch().getId();
-				responseBuilder.setBranchId(branchId.toString());
+				if (staff.getBranch() != null && staff.getBranch().getId() != null) {
+					// Case 1: Fetch Branch Name
+					UUID branchId = staff.getBranch().getId();
+					responseBuilder.setBranchId(branchId.toString());
 
-				branchRepository.findByIdAndDeletedFalse(branchId)
-						.ifPresent(branch -> responseBuilder.setEntityName(branch.getName()));
-			} else {
-				// Case 2: Fetch Restaurant Name
-				restaurantRepository.findByIdAndDeletedFalse(staff.getRestaurant().getId())
-						.ifPresent(restaurant -> responseBuilder.setEntityName(restaurant.getName()));
-			}
+					branchRepository.findByIdAndDeletedFalse(branchId)
+							.ifPresent(branch -> responseBuilder.setEntityName(branch.getName()));
+				} else {
+					// Case 2: Fetch Restaurant Name
+					restaurantRepository.findByIdAndDeletedFalse(staff.getRestaurant().getId())
+							.ifPresent(restaurant -> responseBuilder.setEntityName(restaurant.getName()));
+				}
 
-			responseObserver.onNext(responseBuilder.build());
-		}, () -> {
-			// Case 3: No staff record found - return empty response or error
-			responseObserver.onNext(StaffUserResponse.newBuilder().build());
-		});
+				responseObserver.onNext(responseBuilder.build());
+			}, () -> {
+				// Case 3: No staff record found - return empty response or error
+				responseObserver.onNext(StaffUserResponse.newBuilder().build());
+			});
 
-		responseObserver.onCompleted();
+			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+		}
 	}
 
 	@Override
@@ -234,14 +256,15 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
+
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
 		} catch (InvalidRequestException e) {
-			responseObserver.onError(Status.NOT_FOUND
-					.withDescription(e.getMessage())
-					.asRuntimeException());
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("Internal provider error")
-					.asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
@@ -270,13 +293,13 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onCompleted();
 
 		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid Table ID format").asRuntimeException());
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
 		} catch (InvalidRequestException e) {
-			// Change this to NOT_FOUND so the Booking Service knows it's just a missing record
-			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
 		} catch (Exception e) {
-			// Only actual code crashes (NPEs, DB down) should end up here
-			responseObserver.onError(Status.INTERNAL.withDescription("An unexpected error occurred").asRuntimeException());
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 
@@ -298,10 +321,15 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
+
 		} catch (IllegalArgumentException e) {
-			// Handle invalid UUID string format
-			responseObserver.onNext(BranchValidResponse.newBuilder().setExists(false).build());
-			responseObserver.onCompleted();
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			// Map your custom business exception to NOT_FOUND instead of INTERNAL
+			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			// Keep this for actual system failures (DB down, etc.)
+			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
 	}
 }

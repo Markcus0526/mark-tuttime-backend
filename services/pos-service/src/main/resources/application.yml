@@ -90,8 +90,6 @@ spring:
         mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
-    topics:
-      pos-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.pos-blocks}
     consumer:
       group-id: pos-service-group
       auto-offset-reset: earliest

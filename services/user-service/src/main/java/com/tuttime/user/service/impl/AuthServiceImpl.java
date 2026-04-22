@@ -8,7 +8,7 @@ import com.tuttime.common.proto.StaffUserResponse;
 import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
-import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.common.enums.UserStatus;
 import com.tuttime.user.entity.enums.VerificationType;
 import com.tuttime.user.grpc.client.RestaurantGrpcClient;
 import com.tuttime.user.mapper.AuthMapper;

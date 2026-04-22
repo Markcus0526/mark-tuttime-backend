@@ -1,14 +1,16 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.enums.UserStatusEvent;
+import com.tuttime.common.event.EventProducer;
+import com.tuttime.common.event.UserEvent;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
-import com.tuttime.user.entity.enums.UserStatus;
+import com.tuttime.common.enums.UserStatus;
 import com.tuttime.user.entity.enums.VerificationType;
-import com.tuttime.user.kafka.UserEventProducer;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.service.EmailService;
@@ -47,7 +49,7 @@ public class UserServiceImpl implements UserService {
 	private final UserLocationRepository userLocationRepository;
 	private final UserMapper userMapper;
 	private final PasswordEncoder passwordEncoder;
-	private final UserEventProducer userEventProducer;
+	private final EventProducer eventProducer;
 	private final TokenUtil tokenUtil;
 
 	@Override
@@ -160,7 +162,10 @@ public class UserServiceImpl implements UserService {
 		}
 		user = userRepository.save(user);
 
-		userEventProducer.sendUserUpdated(user);
+		eventProducer.sendUserUpdatedEvent(new UserEvent.ProfileUpdatedEvent(user.getId(),
+				user.getFullName(),
+				user.getProfilePicture(),
+				user.getUpdatedAt()));
 
 		return userMapper.toResponse(user);
 	}
@@ -175,7 +180,11 @@ public class UserServiceImpl implements UserService {
 
 		// 2. Broadcast to Kafka
 		// This tells the Gateway and Redis to block this ID permanently
-		userEventProducer.sendUserDeleted(userId);
+		eventProducer.sendUserSecurityEvent(new UserEvent.SecurityEvent(
+				userId,
+				UserStatusEvent.USER_DELETED,
+				null,
+				0));
 
 		log.info("User {} soft deleted and broadcasted to security topic", userId);
 	}
@@ -303,7 +312,11 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// Broadcast to Kafka topic so Gateway updates Redis immediately
-		userEventProducer.sendUserBlocked(userId);
+		eventProducer.sendUserSecurityEvent(new UserEvent.SecurityEvent(
+				userId,
+				UserStatusEvent.USER_BLOCKED,
+				null,
+				0));
 
 		return userMapper.toResponse(user);
 	}
@@ -317,7 +330,11 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// Broadcast to Kafka to remove from Redis blocklist
-		userEventProducer.sendUserUnblocked(userId);
+		eventProducer.sendUserSecurityEvent(new UserEvent.SecurityEvent(
+				userId,
+				UserStatusEvent.USER_UNBLOCKED,
+				null,
+				0));
 
 		return userMapper.toResponse(user);
 	}

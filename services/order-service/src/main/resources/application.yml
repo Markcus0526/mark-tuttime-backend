@@ -93,8 +93,6 @@ spring:
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
       spring.json.add.type.headers: false # Cleaner headers for cross-service compatibilit
-    topics:
-      order-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.order-blocks}
     consumer:
       group-id: order-service-group
       auto-offset-reset: earliest

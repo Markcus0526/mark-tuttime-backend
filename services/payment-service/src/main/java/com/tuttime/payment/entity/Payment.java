@@ -1,7 +1,7 @@
 package com.tuttime.payment.entity;
 
 import com.tuttime.common.entity.BaseUuidEntity;
-import com.tuttime.payment.entity.enums.PaymentStatus;
+import com.tuttime.common.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

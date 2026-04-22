@@ -95,8 +95,6 @@ spring:
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
       spring.json.add.type.headers: true
-    topics:
-      user-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.user-blocks}
     consumer:
       group-id: user-service-group
       auto-offset-reset: earliest

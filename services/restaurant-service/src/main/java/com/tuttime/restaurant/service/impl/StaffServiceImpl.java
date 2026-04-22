@@ -1,6 +1,8 @@
 package com.tuttime.restaurant.service.impl;
 
 import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.event.EventProducer;
+import com.tuttime.common.event.RestaurantEvent;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
@@ -10,7 +12,6 @@ import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
 import com.tuttime.restaurant.entity.Staff;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
-import com.tuttime.restaurant.kafka.RestaurantEventProducer;
 import com.tuttime.restaurant.mapper.StaffMapper;
 import com.tuttime.restaurant.repository.BranchRepository;
 import com.tuttime.restaurant.repository.RestaurantRepository;
@@ -39,7 +40,7 @@ public class StaffServiceImpl implements StaffService {
 	private final BranchRepository branchRepository;
 	private final StaffMapper staffMapper;
 	private final UserGrpcClient userGrpClient;
-	private final RestaurantEventProducer restaurantEventProducer;
+	private final EventProducer eventProducer;
 
 	@Override
 	@Transactional
@@ -76,7 +77,17 @@ public class StaffServiceImpl implements StaffService {
 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 			@Override
 			public void afterCommit() {
-				restaurantEventProducer.sendStaffUpdated(savedStaff);
+				UUID restaurantId = (staff.getRestaurant() != null) ? staff.getRestaurant().getId() : null;
+				UUID branchId = (staff.getBranch() != null) ? staff.getBranch().getId() : null;
+
+				eventProducer.sendRestaurantStaffUpdatedEvent(new RestaurantEvent.StaffUpdatedEvent(
+						staff.getId(),
+						staff.getUserId(),
+						restaurantId,
+						branchId,
+						staff.getRoleName(),
+						staff.getActive(),
+						staff.getUpdatedAt()));
 			}
 		});
 
@@ -147,7 +158,17 @@ public class StaffServiceImpl implements StaffService {
 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 			@Override
 			public void afterCommit() {
-				restaurantEventProducer.sendStaffUpdated(savedStaff);
+				UUID restaurantId = (savedStaff.getRestaurant() != null) ? savedStaff.getRestaurant().getId() : null;
+				UUID branchId = (savedStaff.getBranch() != null) ? savedStaff.getBranch().getId() : null;
+
+				eventProducer.sendRestaurantStaffUpdatedEvent(new RestaurantEvent.StaffUpdatedEvent(
+						savedStaff.getId(),
+						savedStaff.getUserId(),
+						restaurantId,
+						branchId,
+						savedStaff.getRoleName(),
+						savedStaff.getActive(),
+						savedStaff.getUpdatedAt()));
 			}
 		});
 
@@ -178,7 +199,17 @@ public class StaffServiceImpl implements StaffService {
 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 			@Override
 			public void afterCommit() {
-				restaurantEventProducer.sendStaffUpdated(staff);
+				UUID restaurantId = (staff.getRestaurant() != null) ? staff.getRestaurant().getId() : null;
+				UUID branchId = (staff.getBranch() != null) ? staff.getBranch().getId() : null;
+
+				eventProducer.sendRestaurantStaffUpdatedEvent(new RestaurantEvent.StaffUpdatedEvent(
+						staff.getId(),
+						staff.getUserId(),
+						restaurantId,
+						branchId,
+						staff.getRoleName(),
+						staff.getActive(),
+						staff.getUpdatedAt()));
 			}
 		});
 

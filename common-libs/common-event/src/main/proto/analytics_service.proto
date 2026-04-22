@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+package com.tuttime.common.proto;
+
+option java_multiple_files = true;
+option java_package = "com.tuttime.common.proto";
+option java_outer_classname = "AnalyticsServiceProto";
+
+// Analytics Service gRPC
+service AnalyticsService {
+
+  rpc GetUserScore (UserScoreRequest) returns (UserScoreResponse);
+
+}
+
+// rpc GetUserScore (UserScoreRequest) returns (UserScoreResponse);
+message UserScoreRequest {
+  string user_id = 1;      // UUID as string
+}
+
+// The Response containing the "Brain" logic for the Booking Service
+message UserScoreResponse {
+  string user_id = 1;
+  int32 score = 2;              // 0 to 100
+  string risk_level = 3;        // e.g., "STANDARD", "CRITICAL"
+  bool requires_full_prepay = 4; // True if score is too low
+  int32 total_bookings = 5;
+  int32 no_show_count = 6;
+}

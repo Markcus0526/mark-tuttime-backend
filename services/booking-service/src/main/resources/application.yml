@@ -93,8 +93,6 @@ spring:
         mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
-    topics:
-      booking-blocks: ${KAFKA_TOPIC_USER_BLOCKS:tuttime.booking-blocks}
     consumer:
       group-id: booking-service-group
       auto-offset-reset: earliest

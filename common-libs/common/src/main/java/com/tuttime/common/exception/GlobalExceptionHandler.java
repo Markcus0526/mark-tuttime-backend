@@ -160,21 +160,27 @@ public class GlobalExceptionHandler {
 				grpcStatus.getCode(),
 				grpcStatus.getDescription());
 
+		// Map gRPC codes to your specific business ErrorCodes
+		String customErrorCode = switch (grpcStatus.getCode()) {
+			case UNAVAILABLE -> "SERVICE_OFFLINE";   // Specific to TutTime
+			case DEADLINE_EXCEEDED -> "SERVICE_RESPONSE_TIMEOUT";
+			case NOT_FOUND -> "SERVICE_NOT_FOUND";
+			default -> "EXTERNAL_SERVICE_ERROR_" + grpcStatus.getCode().name();
+		};
+
 		// Map gRPC Status Codes to HTTP Status Codes
 		HttpStatus httpStatus = switch (grpcStatus.getCode()) {
-			case NOT_FOUND -> NOT_FOUND;         // 404
-			case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;  // 400
-			case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED; // 401
-			case PERMISSION_DENIED -> HttpStatus.FORBIDDEN;  // 403
-			case DEADLINE_EXCEEDED -> HttpStatus.GATEWAY_TIMEOUT; // 504
-			case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;   // 503
-			default -> HttpStatus.INTERNAL_SERVER_ERROR;      // 500
+			case NOT_FOUND -> HttpStatus.NOT_FOUND;
+			case INVALID_ARGUMENT -> HttpStatus.BAD_REQUEST;
+			case DEADLINE_EXCEEDED -> HttpStatus.GATEWAY_TIMEOUT;
+			case UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+			default -> HttpStatus.INTERNAL_SERVER_ERROR;
 		};
 
 		// Matches your existing createErrorResponse signature
 		return createErrorResponse(
 				httpStatus,
-				"EXTERNAL_SERVICE_ERROR_" + grpcStatus.getCode().name(),
+				customErrorCode,
 				grpcStatus.getDescription(),
 				request,
 				null);

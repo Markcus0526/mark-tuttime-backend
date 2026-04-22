@@ -19,8 +19,10 @@ public class BookingEvent {
 			UUID bookingId,
 			UUID tableId,
 			UUID branchId,
+			UUID userId,
 			BookingStatus oldStatus,
 			BookingStatus newStatus,
+			OffsetDateTime bookingTime,
 			UUID changedBy,
 			String reason,
 			OffsetDateTime timestamp

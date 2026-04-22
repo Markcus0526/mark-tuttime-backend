@@ -100,14 +100,15 @@ public class EventProducer {
 				recordMetrics(topic, success, ex);
 
 				if (success) {
-					log.info("Published {} to {}: key={}", event.getClass().getSimpleName(), topic, key);
+					log.info("<<< KAFKA[{}] >>> Published {}: event={}", topic, event.getClass().getSimpleName(), event);
 				} else {
-					log.error("Failed to publish to {}: {}, stack={}", topic, ex.getMessage(), getStackTraceSummary(ex, 3));
+					log.error("<<< KAFKA[{}] >>> Failed to publish {}: error={}, stack={}",
+							topic, event.getClass().getSimpleName(), ex.getMessage(), getStackTraceSummary(ex, 3));
 				}
 			});
 
 		} catch (Exception e) {
-			log.error("Processing error for topic {}: {}", topic, e.getMessage(), e);
+			log.error("<<< KAFKA[{}] >>> Processing error: {}", topic, e.getMessage(), e);
 			if (kafkaMetrics != null) kafkaMetrics.recordProducerError(topic, e.getClass().getSimpleName());
 		}
 	}
