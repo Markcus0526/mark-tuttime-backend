@@ -1,45 +1,46 @@
 package com.tuttime.analytics.controller;
 
-import com.tuttime.analytics.dto.EventResponse;
+import com.tuttime.analytics.dto.AdminDto;
+import com.tuttime.analytics.entity.UserReliabilityIndex;
 import com.tuttime.analytics.service.AnalyticsService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/analytics")
+@RequestMapping("/api/v1/analytics/admin")
+@Tag(name = "1.Admin Analytics", description = "Global platform metrics and user risk profiling")
 @RequiredArgsConstructor
-@Tag(name = "Analytics Management", description = "Endpoints for retrieving system-wide event logs")
-public class AnalyticsController {
+public class AdminAnalyticsController {
 
 	private final AnalyticsService analyticsService;
 
-	@GetMapping("/history/{restaurantId}")
-	@Operation(summary = "Get restaurant history", description = "Retrieves all logged events for a specific restaurant")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "History retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Restaurant not found")
-	})
-	public ResponseEntity<ApiRes<List<EventResponse>>> getHistory(@PathVariable UUID restaurantId) {
-		// Example: Tracking which admin is requesting the data
-		String requesterId = UserContext.getUserId();
+	@GetMapping("/platform-summary")
+	@Operation(summary = "Get global GMV and TutTime commission totals")
+	public ResponseEntity<ApiRes<AdminDto.GlobalMetricsDto>> getPlatformSummary() {
 
-		List<EventResponse> response = analyticsService.getRestaurantHistory(restaurantId);
-		return ResponseEntity.ok(ApiRes.success(response));
+		validateAdmin();
+
+		AdminDto.GlobalMetricsDto metrics = analyticsService.calculateGlobalMetrics();
+		return ResponseEntity.ok(ApiRes.success(metrics));
+	}
+
+	@GetMapping("/users/{userId}/risk-profile")
+	@Operation(summary = "Check user reliability score and no-show history")
+	public ResponseEntity<ApiRes<UserReliabilityIndex>> getUserRiskProfile(@PathVariable UUID userId) {
+
+		validateAdmin();
+
+		UserReliabilityIndex profile = analyticsService.getUserReliability(userId);
+		return ResponseEntity.ok(ApiRes.success(profile));
 	}
 
 	/**

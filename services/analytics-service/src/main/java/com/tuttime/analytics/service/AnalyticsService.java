@@ -1,32 +1,30 @@
 package com.tuttime.analytics.service;
 
-import com.tuttime.analytics.dto.EventResponse;
-import com.tuttime.analytics.dto.HourlyBookingProjection;
-import com.tuttime.analytics.dto.TopRestaurantProjection;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.tuttime.analytics.dto.AdminDto;
+import com.tuttime.analytics.entity.BranchPerformanceStat;
+import com.tuttime.analytics.entity.BranchYieldManagement;
+import com.tuttime.analytics.entity.FinancialLedger;
+import com.tuttime.analytics.entity.UserReliabilityIndex;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public interface AnalyticsService {
 
-	/**
-	 * Internal logic used by Kafka Consumers to persist incoming events.
-	 */
-	void logEvent(String service, String type, UUID entityId, Object payload);
+	List<BranchYieldManagement> getWeeklyHeatmap(UUID branchId);
 
-	/**
-	 * Used by AnalyticsController to show a restaurant's activity feed.
-	 */
-	List<EventResponse> getRestaurantHistory(UUID restaurantId);
+	FinancialLedger getDailyFinancials(UUID branchId, LocalDate date);
 
-	/**
-	 * Used by AnalyticsReportController for the Top 10 dashboard.
-	 */
-	List<TopRestaurantProjection> getTopRestaurants(int days);
+	AdminDto.GlobalMetricsDto calculateGlobalMetrics();
 
-	/**
-	 * Used by AnalyticsReportController for the hourly distribution chart.
-	 */
-	List<HourlyBookingProjection> getBookingHeatmap(int days);
+	BranchPerformanceStat getBranchStats(UUID branchId);
+
+	void processEvent(String source, String type, UUID branchId, Object payload);
+
+	// Used by gRPC Provider
+	UserReliabilityIndex getUserReliability(UUID userId);
 
 }
