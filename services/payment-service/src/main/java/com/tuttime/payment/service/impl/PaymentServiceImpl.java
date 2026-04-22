@@ -2,8 +2,8 @@ package com.tuttime.payment.service.impl;
 
 import com.stripe.exception.StripeException;
 import com.stripe.param.RefundCreateParams;
-import com.tuttime.common.event.EventProducer;
-import com.tuttime.common.event.PaymentEvent;
+import com.tuttime.common.event.kafka.EventProducer;
+import com.tuttime.common.event.kafka.PaymentEvent;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;

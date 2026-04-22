@@ -1,12 +1,11 @@
 package com.tuttime.common.auth.security;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.util.UuidUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserContext {

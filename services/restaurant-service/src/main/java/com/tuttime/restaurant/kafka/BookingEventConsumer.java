@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.BookingEvent;
+import com.tuttime.common.event.kafka.BookingEvent;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_BOOKING_STATUS_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS_UPDATED;
 
 @Service
 @RequiredArgsConstructor

@@ -2,7 +2,7 @@ package com.tuttime.order.grpc;
 
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.entity.OrderItem;

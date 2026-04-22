@@ -1,8 +1,8 @@
 package com.tuttime.restaurant.grpc;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.*;
 import com.tuttime.restaurant.repository.record.BranchDetailRecord;

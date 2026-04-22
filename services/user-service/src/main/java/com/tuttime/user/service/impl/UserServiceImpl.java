@@ -1,8 +1,8 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.common.enums.UserStatusEvent;
-import com.tuttime.common.event.EventProducer;
-import com.tuttime.common.event.UserEvent;
+import com.tuttime.common.event.kafka.EventProducer;
+import com.tuttime.common.event.kafka.UserEvent;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;

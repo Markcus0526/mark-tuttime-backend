@@ -1,6 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
-import com.tuttime.common.auth.enums.UserRoleKind;
+import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.RestaurantDto;

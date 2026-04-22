@@ -1,9 +1,10 @@
 package com.tuttime.booking.grpc.client;
 
-import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.*;
-import io.grpc.StatusRuntimeException;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.MenuDetailsRequest;
+import com.tuttime.common.event.proto.MenuItemDetailResponse;
+import com.tuttime.common.event.proto.MenuRequest;
+import com.tuttime.common.event.proto.MenuServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;

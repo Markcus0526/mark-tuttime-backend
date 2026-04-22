@@ -1,10 +1,11 @@
 package com.tuttime.order.grpc.client;
 
-import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.MenuDetailsRequest;
+import com.tuttime.common.event.proto.MenuItemDetailResponse;
+import com.tuttime.common.event.proto.MenuServiceGrpc;
+import com.tuttime.common.event.proto.PriceRequest;
 import com.tuttime.common.util.NumberUtil;
-import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -16,7 +17,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
-import static com.tuttime.common.constants.ServiceNames.RESTAURANT_SERVICE;
 
 @Service
 @Slf4j

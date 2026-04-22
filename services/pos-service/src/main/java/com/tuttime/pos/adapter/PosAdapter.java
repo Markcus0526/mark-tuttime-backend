@@ -1,6 +1,6 @@
 package com.tuttime.pos.adapter;
 
-import com.tuttime.common.proto.OrderDetailResponse;
+import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.enums.PosProvider;
 

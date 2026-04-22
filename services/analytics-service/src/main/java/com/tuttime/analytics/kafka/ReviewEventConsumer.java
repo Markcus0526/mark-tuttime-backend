@@ -2,7 +2,7 @@ package com.tuttime.analytics.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.event.ReviewEvent;
+import com.tuttime.common.event.kafka.ReviewEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -11,7 +11,7 @@ import org.springframework.util.StringUtils;
 
 import static com.tuttime.analytics.constants.AnalyticsConstants.EVENT_REVIEW_APPROVED;
 import static com.tuttime.analytics.constants.AnalyticsConstants.SOURCE_REVIEW_SERVICE;
-import static com.tuttime.common.event.EventProducer.TOPIC_REVIEW_APPROVED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_APPROVED;
 
 @Slf4j
 @Service

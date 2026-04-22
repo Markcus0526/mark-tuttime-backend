@@ -1,7 +1,7 @@
 package com.tuttime.user.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.RestaurantEvent;
+import com.tuttime.common.event.kafka.RestaurantEvent;
 import com.tuttime.user.entity.UserRole;
 import com.tuttime.user.repository.RoleRepository;
 import com.tuttime.user.repository.UserRepository;
@@ -15,7 +15,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_RESTAURANT_STAFF_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_RESTAURANT_STAFF_UPDATED;
+
 
 @Service
 @RequiredArgsConstructor

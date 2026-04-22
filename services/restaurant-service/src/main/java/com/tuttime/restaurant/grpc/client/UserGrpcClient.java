@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.grpc.client;
 
-import com.tuttime.common.grpc.GrpcExecutor;
-import com.tuttime.common.proto.*;
+import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.*;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Service;

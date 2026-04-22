@@ -1,9 +1,7 @@
 package com.tuttime.review.mapper;
 
-import com.tuttime.common.proto.UserDetailRequest;
-import com.tuttime.common.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.UserDetailResponse;
 import com.tuttime.review.dto.RatingDto.RatingAggregateResponse;
-import com.tuttime.review.dto.ReviewDto;
 import com.tuttime.review.dto.ReviewDto.ReviewResponse;
 import com.tuttime.review.entity.RatingAggregate;
 import com.tuttime.review.entity.Review;

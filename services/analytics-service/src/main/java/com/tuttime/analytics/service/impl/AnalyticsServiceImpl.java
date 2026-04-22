@@ -1,13 +1,12 @@
 package com.tuttime.analytics.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.dto.AdminDto;
 import com.tuttime.analytics.entity.*;
 import com.tuttime.analytics.repository.*;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.event.BookingEvent;
-import com.tuttime.common.event.PaymentEvent;
+import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.PaymentEvent;
 import com.tuttime.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

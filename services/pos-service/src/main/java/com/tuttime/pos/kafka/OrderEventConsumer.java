@@ -2,8 +2,8 @@ package com.tuttime.pos.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.common.event.OrderEvent;
-import com.tuttime.common.proto.OrderDetailResponse;
+import com.tuttime.common.event.kafka.OrderEvent;
+import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.dto.PosSyncDto;
@@ -22,7 +22,8 @@ import org.springframework.util.StringUtils;
 import java.time.OffsetDateTime;
 import java.util.Map;
 
-import static com.tuttime.common.event.EventProducer.*;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_ORDER_CREATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_ORDER_STATUS_UPDATED;
 
 @Service
 @RequiredArgsConstructor

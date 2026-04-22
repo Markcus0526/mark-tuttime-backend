@@ -2,7 +2,7 @@ package com.tuttime.analytics.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.event.PaymentEvent;
+import com.tuttime.common.event.kafka.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -10,7 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import static com.tuttime.analytics.constants.AnalyticsConstants.*;
-import static com.tuttime.common.event.EventProducer.*;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_COMPLETED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_REFUND;
 
 @Slf4j
 @Service

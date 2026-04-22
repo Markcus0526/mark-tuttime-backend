@@ -1,7 +1,7 @@
 package com.tuttime.pos.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.PaymentEvent;
+import com.tuttime.common.event.kafka.PaymentEvent;
 import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.repository.PosConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_PAYMENT_REFUND;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_REFUND;
 
 @Slf4j
 @Service

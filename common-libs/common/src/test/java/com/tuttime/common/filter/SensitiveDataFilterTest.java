@@ -1,5 +1,6 @@
 package com.tuttime.common.filter;
 
+import com.tuttime.common.filter.SensitiveDataFilter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,7 +1,7 @@
 package com.tuttime.menu.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.PosEvent;
+import com.tuttime.common.event.kafka.PosEvent;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import static com.tuttime.common.event.EventProducer.*;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_POS_ITEMS_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_POS_PRICE_UPDATED;
 
 @Service
 @RequiredArgsConstructor

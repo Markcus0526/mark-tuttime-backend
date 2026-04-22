@@ -2,7 +2,7 @@ package com.tuttime.pos.adapter;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.tuttime.common.exception.PosSyncException;
-import com.tuttime.common.proto.OrderDetailResponse;
+import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.dto.rkeeper.RK7MenuResponse;
 import com.tuttime.pos.dto.rkeeper.RK7Response;
 import com.tuttime.pos.entity.PosConfig;

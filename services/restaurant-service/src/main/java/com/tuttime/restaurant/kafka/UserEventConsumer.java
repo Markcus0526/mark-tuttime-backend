@@ -2,7 +2,7 @@ package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.UserStatusEvent;
-import com.tuttime.common.event.UserEvent;
+import com.tuttime.common.event.kafka.UserEvent;
 import com.tuttime.restaurant.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import static com.tuttime.common.event.EventProducer.TOPIC_USER_SECURITY_UPDATED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_USER_SECURITY_UPDATED;
 
 @Service
 @RequiredArgsConstructor

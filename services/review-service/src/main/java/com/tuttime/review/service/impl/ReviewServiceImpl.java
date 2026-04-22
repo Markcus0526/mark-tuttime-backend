@@ -1,11 +1,11 @@
 package com.tuttime.review.service.impl;
 
-import com.tuttime.common.event.EventProducer;
-import com.tuttime.common.event.ReviewEvent;
+import com.tuttime.common.event.kafka.EventProducer;
+import com.tuttime.common.event.kafka.ReviewEvent;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.proto.UserDetailResponse;
-import com.tuttime.common.proto.UserDetailsRequest;
-import com.tuttime.common.proto.UserDetailsResponse;
+import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.UserDetailsRequest;
+import com.tuttime.common.event.proto.UserDetailsResponse;
 import com.tuttime.review.dto.*;
 import com.tuttime.review.entity.*;
 import com.tuttime.review.entity.enums.ReviewStatus;

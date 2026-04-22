@@ -1,8 +1,8 @@
 package com.tuttime.booking.grpc.client;
 
-import com.tuttime.common.proto.PaymentServiceGrpc;
-import com.tuttime.common.proto.PaymentSessionRequest;
-import com.tuttime.common.proto.PaymentSessionResponse;
+import com.tuttime.common.event.proto.PaymentServiceGrpc;
+import com.tuttime.common.event.proto.PaymentSessionRequest;
+import com.tuttime.common.event.proto.PaymentSessionResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;

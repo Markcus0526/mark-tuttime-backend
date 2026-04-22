@@ -1,7 +1,6 @@
 package com.tuttime.analytics.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.tuttime.common.entity.BaseTimeStampEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import jakarta.persistence.*;
 import lombok.*;
