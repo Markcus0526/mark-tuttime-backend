@@ -72,11 +72,13 @@ CREATE TABLE user_auth_methods (
                                    id         SERIAL        PRIMARY KEY,
                                    user_id    UUID          NOT NULL REFERENCES users (id) ON DELETE CASCADE,
                                    auth_type  auth_provider NOT NULL,
-                                   credential TEXT, -- Hashed password or OAuth ID
+                                   credential TEXT, -- Hashed password (NULL for OAuth)
+                                   provider_id TEXT, -- Google/Apple Subject ID (NULL for Email)
                                    verified   BOOLEAN       NOT NULL DEFAULT FALSE,
                                    created_at TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                    updated_at TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                   UNIQUE (user_id, auth_type)
+                                   UNIQUE (user_id, auth_type),
+                                   CONSTRAINT unique_provider_id UNIQUE (auth_type, provider_id)
 );
 
 -- Verification Codes Table

@@ -19,4 +19,6 @@ public interface UserAuthMethodRepository extends JpaRepository<UserAuthMethod, 
 
 	// Check if a specific auth type is already registered for a user
 	boolean existsByUserIdAndAuthType(UUID userId, AuthProvider authType);
+
+	Optional<UserAuthMethod> findByAuthTypeAndProviderId(AuthProvider authType, String providerId);
 }

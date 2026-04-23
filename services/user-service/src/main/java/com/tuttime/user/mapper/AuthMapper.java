@@ -26,7 +26,7 @@ public interface AuthMapper {
 			String accessToken,
 			String refreshToken,
 			long expiry,
-			AuthDto.AuthResponse.RestaurantStaff staff);
+			AuthDto.AuthResponse.RestaurantStaffDto staff);
 
 	@Named("mapRoles")
 	default List<String> mapRoles(java.util.Set<UserRole> roles) {

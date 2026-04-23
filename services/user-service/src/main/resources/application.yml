@@ -430,6 +430,18 @@ app:
   language:
     apple-user-id: ${APPLE_LANGUAGE_USER_ID:} # User ID that should receive apple language translations (empty = disabled)
 
+# Google Oauth login
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID}
+    secret: ${GOOGLE_CLIENT_SECRET}
+
+# Apple Oauth login
+apple:
+  client:
+    id: ${APPLE_CLIENT_ID}
+    public-key: ${APPLE_PUBLIC_KEY}
+
 # Map Query Configuration
 map:
   query:
