@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(name = "user_auth_methods", uniqueConstraints = {
-		@UniqueConstraint(columnNames = {"user_id", "auth_type"})
+		@UniqueConstraint(name = "unique_provider_id", columnNames = {"auth_type", "provider_id"})
 })
 @Getter
 @Setter
@@ -32,6 +32,9 @@ public class UserAuthMethod extends BaseTimeStampEntity {
 	@JdbcType(PostgreSQLEnumJdbcType.class) // Maps Java Enum to PG ENUM type
 	@Column(name = "auth_type", nullable = false, columnDefinition = "auth_provider")
 	private AuthProvider authType;
+
+	@Column(name = "provider_id", columnDefinition = "TEXT")
+	private String providerId;
 
 	@Column(name = "credential", columnDefinition = "TEXT")
 	private String credential;

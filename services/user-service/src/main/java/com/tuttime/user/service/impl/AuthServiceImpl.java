@@ -1,5 +1,12 @@
 package com.tuttime.user.service.impl;
 
+import com.auth0.jwk.Jwk;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.UrlJwkProvider;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
@@ -18,6 +25,9 @@ import com.tuttime.user.service.AuthService;
 import com.tuttime.user.service.EmailService;
 import com.tuttime.user.service.SmsService;
 import com.tuttime.user.util.TokenUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,7 +35,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.net.URL;
+import java.security.PublicKey;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -163,16 +176,13 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	public AuthDto.AuthResponse authenticateOAuthUser(AuthDto.OAuthLoginRequest request) {
-		// Validate provider and token (pseudo-code)
-		boolean valid = validateOAuthToken(request.provider(), request.oauthToken());
-		if (!valid) {
-			throw new ForbiddenException("Invalid OAuth token");
-		}
+		// 1. Validate and get user info from Provider
+		AuthDto.AuthResponse.OAuthUserInfo userInfo = validateOAuthToken(request.provider(), request.oauthToken());
 
-		// Retrieve or create user based on OAuth ID (implementation depends on your OAuth linkage)
-		User user = findOrCreateUserByOAuth(request);
+		// 2. Sync with local Database
+		User user = findOrCreateUserByOAuth(request, userInfo);
 
-		// Generate tokens
+		// 3. Generate internal tokens
 		String accessToken = jwtTokenProvider.generateAccessToken(user);
 		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
 
@@ -281,7 +291,7 @@ public class AuthServiceImpl implements AuthService {
 		}
 
 		// 4. Fetch Management Context (gRPC) if applicable
-		AuthDto.AuthResponse.RestaurantStaff staffContext = null;
+		AuthDto.AuthResponse.RestaurantStaffDto staffContext = null;
 		List<String> roleNames = user.getRoles().stream()
 				.map(ur -> ur.getRole().getName())
 				.toList();
@@ -294,7 +304,7 @@ public class AuthServiceImpl implements AuthService {
 
 				if (!grpcResponse.getRestaurantId().isEmpty()) {
 					// Since RestaurantStaff is a Record, use the constructor
-					staffContext = new AuthDto.AuthResponse.RestaurantStaff(
+					staffContext = new AuthDto.AuthResponse.RestaurantStaffDto(
 							UUID.fromString(grpcResponse.getRestaurantId()),
 							grpcResponse.getBranchId().isEmpty() ? null : UUID.fromString(grpcResponse.getBranchId()),
 							grpcResponse.getEntityName(),
@@ -386,13 +396,114 @@ public class AuthServiceImpl implements AuthService {
 
 	// Helper stubs - implement these appropriately
 
-	private boolean validateOAuthToken(String provider, String oauthToken) {
-		// Validate with external OAuth provider
-		return true;
+	private AuthDto.AuthResponse.OAuthUserInfo validateOAuthToken(AuthProvider provider, String token) {
+		return switch (provider) {
+			case GOOGLE -> verifyGoogleToken(token);
+			case APPLE -> verifyAppleToken(token);
+			default -> throw new InvalidRequestException("Unsupported OAuth provider: " + provider);
+		};
 	}
 
-	private User findOrCreateUserByOAuth(AuthDto.OAuthLoginRequest request) {
-		// Find or create user based on OAuth provider data
-		return new User(); // stub
+	private AuthDto.AuthResponse.OAuthUserInfo verifyGoogleToken(String token) {
+		GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+				.setAudience(Collections.singletonList("${google.client.id}")) // Ensure this matches your Client ID
+				.build();
+
+		try {
+			GoogleIdToken idToken = verifier.verify(token);
+			if (idToken == null) throw new ForbiddenException("Invalid Google Token");
+
+			GoogleIdToken.Payload payload = idToken.getPayload();
+			return new AuthDto.AuthResponse.OAuthUserInfo(
+					payload.getSubject(),    // providerId
+					payload.getEmail(),      // email
+					(String) payload.get("name")); // name
+		} catch (Exception e) {
+			throw new ForbiddenException("Google verification failed");
+		}
+	}
+
+	private AuthDto.AuthResponse.OAuthUserInfo verifyAppleToken(String token) {
+		PublicKey applePublicKey = getApplePublicKey(token);
+		Claims claims = Jwts.parser()
+				.verifyWith(applePublicKey)
+				.requireIssuer("https://appleid.apple.com")
+				.requireAudience("${apple.client.id}")
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
+
+		return new AuthDto.AuthResponse.OAuthUserInfo(
+				claims.getSubject(),     // providerId
+				claims.get("email", String.class), // email
+				null); // Apple often doesn't send the name in the token
+	}
+
+	private User findOrCreateUserByOAuth(AuthDto.OAuthLoginRequest request, AuthDto.AuthResponse.OAuthUserInfo userInfo) {
+		AuthProvider provider = request.provider();
+
+		// 1. Check if this specific OAuth account is already linked
+		return userAuthMethodRepository.findByAuthTypeAndProviderId(provider, userInfo.providerId())
+				.map(UserAuthMethod::getUser)
+				.orElseGet(() -> {
+					// 2. If not, check if a user with this email already exists
+					return userRepository.findByEmailAndDeletedFalse(userInfo.email())
+							.map(existingUser -> {
+								// Link new OAuth method to existing account
+								linkOAuthMethod(existingUser, request.provider(), userInfo.providerId());
+								return existingUser;
+							})
+							.orElseGet(() -> {
+								// 3. Create a brand new User
+								return createNewOAuthUser(request.provider(), userInfo);
+							});
+				});
+	}
+
+	private User createNewOAuthUser(AuthProvider provider, AuthDto.AuthResponse.OAuthUserInfo userInfo) {
+		User newUser = User.builder()
+				.email(userInfo.email())
+				.fullName(userInfo.fullName())
+				.status(UserStatus.ACTIVE) // OAuth users are usually pre-verified
+				.build();
+
+		linkOAuthMethod(newUser, provider, userInfo.providerId());
+
+		// Add default role
+		// UserRole role = UserRole.builder().user(newUser).role(Role.USER).build();
+		// newUser.getRoles().add(role);
+
+		return userRepository.save(newUser);
+	}
+
+	private void linkOAuthMethod(User user, AuthProvider provider, String oauthId) {
+		UserAuthMethod method = UserAuthMethod.builder()
+				.user(user)
+				.authType(provider)
+				.credential(oauthId) // Store the 'sub' ID here
+				.verified(true)      // OAuth providers are pre-verified
+				.build();
+		user.addAuthMethod(method);
+	}
+
+	public PublicKey getApplePublicKey(String token) {
+		try {
+			// 1. Parse the token without verification to extract 'kid' from header
+//			String kid = Jwts.parser()
+//					.build()
+//					.parse(token)
+////					.accept(Jws.class)
+//					.getHeader()
+//					.getKeyId();
+
+			var jwt = Jwts.parser().build().parse(token);
+			String kid = ((io.jsonwebtoken.JwsHeader) jwt.getHeader()).getKeyId();
+
+			// 2. Use the Auth0 library to fetch Apple's keys and find the match
+			UrlJwkProvider provider = new UrlJwkProvider(new URL("https://apple.com"));
+			return provider.get(kid).getPublicKey();
+		} catch (Exception e) {
+			throw new ForbiddenException("Unable to retrieve Apple public key: " + e.getMessage());
+		}
 	}
 }

@@ -1,8 +1,10 @@
 package com.tuttime.user.dto;
 
+import com.tuttime.user.entity.enums.AuthProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -86,8 +88,8 @@ public class AuthDto {
 
 	public record OAuthLoginRequest(
 			@Schema(description = "OAuth provider name (e.g., GOOGLE, APPLE)", example = "GOOGLE")
-			@NotBlank
-			String provider,
+			@NotNull(message = "Provider is required")
+			AuthProvider provider,
 
 			@Schema(description = "OAuth access token from provider")
 			@NotBlank
@@ -140,7 +142,7 @@ public class AuthDto {
 			java.util.List<String> roles,// Added: Essential for frontend routing
 
 			@Schema(description = "Restaurant/Branch management details", nullable = true)
-			RestaurantStaff staff, // Added: Tells the app which entity they manage
+			RestaurantStaffDto staff, // Added: Tells the app which entity they manage
 
 			@Schema(description = "Full name of the user")
 			String fullName,
@@ -152,13 +154,20 @@ public class AuthDto {
 			String phoneNumber
 	) {
 		// Nested Record for immutability and cleaner code
-		public record RestaurantStaff(
+		public record RestaurantStaffDto(
 				UUID restaurantId,
 				UUID branchId,
 				String entityName,
 				boolean active
 		) {
 		}
+
+		// Using a Java Record (cleanest way)
+		public record OAuthUserInfo(
+				String providerId, // The unique ID from Google/Apple (usually 'sub')
+				String email,      // The user's email
+				String fullName        // Optional: user's name
+		) {}
 	}
 
 }
