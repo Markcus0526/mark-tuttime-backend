@@ -86,15 +86,16 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 			// Trigger internal and external confirmation (e.g. Kafka/Email)
 			// Notify Kafka/Events
 			// BROADCAST TO KAFKA
-			eventProducer.sendPaymentCompletedEvent(new PaymentEvent.PaymentCompletedEvent(
-					payment.getBookingId(),
-					payment.getUserId(),
-					payment.getBranchId(),
-					payment.getStripeSessionId(),
-					payment.getAmount(),
-					BigDecimal.valueOf(0),
-					payment.getCurrency(),
-					OffsetDateTime.now()));
+			PaymentEvent.PaymentCompletedEvent event = PaymentEvent.PaymentCompletedEvent.builder()
+					.bookingId(payment.getBookingId())
+					.userId(payment.getUserId())
+					.branchId(payment.getBranchId())
+					.stripePaymentIntentId(payment.getStripeSessionId())
+					.amount(payment.getAmount())
+					.commissionRate(BigDecimal.valueOf(0.01))
+					.currency(payment.getCurrency())
+					.build();
+			eventProducer.sendPaymentCompletedEvent(event);
 
 			log.info("Payment SUCCESS confirmed for Booking ID: {}", bookingId);
 		}
