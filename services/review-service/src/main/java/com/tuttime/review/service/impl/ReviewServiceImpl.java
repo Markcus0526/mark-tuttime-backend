@@ -129,14 +129,12 @@ public class ReviewServiceImpl implements ReviewService {
 		log.info("Review {} moderated to {} by moderator {}", reviewId, request.status(), moderatorId);
 
 		if (updatedReview.getStatus() == ReviewStatus.APPROVED) {
-			ReviewEvent.ReviewApprovedEvent event = new ReviewEvent.ReviewApprovedEvent(
-					UUID.randomUUID(),
-					review.getId(),
-					review.getBranchId(),
-					review.getUserId(),
-					review.getRating(),
-					OffsetDateTime.now()
-			);
+			ReviewEvent.ReviewApprovedEvent event = ReviewEvent.ReviewApprovedEvent.builder()
+					.reviewId(review.getId())
+					.branchId(review.getBranchId())
+					.userId(review.getUserId())
+					.rating(review.getRating())
+					.build();
 			eventProducer.sendReviewApprovedEvent(event);
 		}
 
