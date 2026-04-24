@@ -50,17 +50,18 @@ public class BookingNoShowTask {
 			));
 
 			// 3. Notify Restaurant Service via Kafka (to free up the table)
-			eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
-					booking.getId(),
-					booking.getTableId(),
-					booking.getBranchId(),
-					booking.getUserId(),
-					oldStatus,
-					BookingStatus.NO_SHOW,
-					booking.getBookingDatetime(),
-					null,
-					"System auto-canceled due to guest no-show",
-					OffsetDateTime.now()));
+			BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
+					.bookingId(booking.getId())
+					.tableId(booking.getTableId())
+					.branchId(booking.getBranchId())
+					.userId(booking.getUserId())
+					.oldStatus(oldStatus)
+					.newStatus(BookingStatus.NO_SHOW)
+					.bookingTime(booking.getBookingDatetime())
+					.changedBy(null)
+					.reason("System auto-canceled due to guest no-show")
+					.build();
+			eventProducer.sendBookingStatusUpdatedEvent(event);
 		}
 	}
 }
