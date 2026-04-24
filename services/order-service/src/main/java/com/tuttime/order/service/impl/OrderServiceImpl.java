@@ -147,14 +147,13 @@ public class OrderServiceImpl implements OrderService {
 		Order updatedOrder = orderRepository.save(order);
 
 		// Publish Event to Kafka
-		OrderEvent.OrderStatusEvent event = new OrderEvent.OrderStatusEvent(
-				updatedOrder.getId(),
-				updatedOrder.getBookingId(),
-				updatedOrder.getBranchId(),
-				oldStatus,
-				newStatus,
-				OffsetDateTime.now()
-		);
+		OrderEvent.OrderStatusEvent event = OrderEvent.OrderStatusEvent.builder()
+				.orderId(updatedOrder.getId())
+				.bookingId(updatedOrder.getBookingId())
+				.branchId(updatedOrder.getBranchId())
+				.oldStatus(oldStatus)
+				.newStatus(newStatus)
+				.build();
 		eventProducer.sendOrderStatusUpdatedEvent(event);
 
 		return orderMapper.toResponse(orderRepository.save(order));
