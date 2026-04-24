@@ -80,14 +80,15 @@ public class StaffServiceImpl implements StaffService {
 				UUID restaurantId = (staff.getRestaurant() != null) ? staff.getRestaurant().getId() : null;
 				UUID branchId = (staff.getBranch() != null) ? staff.getBranch().getId() : null;
 
-				eventProducer.sendRestaurantStaffUpdatedEvent(new RestaurantEvent.StaffUpdatedEvent(
-						staff.getId(),
-						staff.getUserId(),
-						restaurantId,
-						branchId,
-						staff.getRoleName(),
-						staff.getActive(),
-						staff.getUpdatedAt()));
+				RestaurantEvent.StaffUpdatedEvent event = RestaurantEvent.StaffUpdatedEvent.builder()
+						.staffId(staff.getId())
+						.userId(staff.getUserId())
+						.restaurantId(restaurantId)
+						.branchId(branchId)
+						.roleName(staff.getRoleName())
+						.active(staff.getActive())
+						.build();
+				eventProducer.sendRestaurantStaffUpdatedEvent(event);
 			}
 		});
 
@@ -161,14 +162,15 @@ public class StaffServiceImpl implements StaffService {
 				UUID restaurantId = (savedStaff.getRestaurant() != null) ? savedStaff.getRestaurant().getId() : null;
 				UUID branchId = (savedStaff.getBranch() != null) ? savedStaff.getBranch().getId() : null;
 
-				eventProducer.sendRestaurantStaffUpdatedEvent(new RestaurantEvent.StaffUpdatedEvent(
-						savedStaff.getId(),
-						savedStaff.getUserId(),
-						restaurantId,
-						branchId,
-						savedStaff.getRoleName(),
-						savedStaff.getActive(),
-						savedStaff.getUpdatedAt()));
+				RestaurantEvent.StaffUpdatedEvent event = RestaurantEvent.StaffUpdatedEvent.builder()
+						.staffId(staff.getId())
+						.userId(staff.getUserId())
+						.restaurantId(restaurantId)
+						.branchId(branchId)
+						.roleName(staff.getRoleName())
+						.active(staff.getActive())
+						.build();
+				eventProducer.sendRestaurantStaffUpdatedEvent(event);
 			}
 		});
 
@@ -202,14 +204,15 @@ public class StaffServiceImpl implements StaffService {
 				UUID restaurantId = (staff.getRestaurant() != null) ? staff.getRestaurant().getId() : null;
 				UUID branchId = (staff.getBranch() != null) ? staff.getBranch().getId() : null;
 
-				eventProducer.sendRestaurantStaffUpdatedEvent(new RestaurantEvent.StaffUpdatedEvent(
-						staff.getId(),
-						staff.getUserId(),
-						restaurantId,
-						branchId,
-						staff.getRoleName(),
-						staff.getActive(),
-						staff.getUpdatedAt()));
+				RestaurantEvent.StaffUpdatedEvent event = RestaurantEvent.StaffUpdatedEvent.builder()
+						.staffId(staff.getId())
+						.userId(staff.getUserId())
+						.restaurantId(restaurantId)
+						.branchId(branchId)
+						.roleName(staff.getRoleName())
+						.active(staff.getActive())
+						.build();
+				eventProducer.sendRestaurantStaffUpdatedEvent(event);
 			}
 		});
 
