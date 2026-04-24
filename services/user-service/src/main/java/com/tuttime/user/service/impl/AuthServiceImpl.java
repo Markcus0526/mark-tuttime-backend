@@ -1,13 +1,14 @@
 package com.tuttime.user.service.impl;
 
-import com.auth0.jwk.Jwk;
-import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.enums.UserRoleKind;
+import com.tuttime.common.event.kafka.EventProducer;
+import com.tuttime.common.event.kafka.UserEvent;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.event.proto.StaffUserRequest;
@@ -16,17 +17,14 @@ import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.common.enums.UserStatus;
-import com.tuttime.user.entity.enums.VerificationType;
+import com.tuttime.common.enums.VerificationType;
 import com.tuttime.user.grpc.client.RestaurantGrpcClient;
 import com.tuttime.user.mapper.AuthMapper;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.AuthService;
-import com.tuttime.user.service.EmailService;
-import com.tuttime.user.service.SmsService;
 import com.tuttime.user.util.TokenUtil;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,11 +53,10 @@ public class AuthServiceImpl implements AuthService {
 	private final RoleRepository roleRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
-	private final EmailService emailService;
-	private final SmsService smsService;
 	private final AuthMapper authMapper;
 	private final TokenUtil tokenUtil;
 	private final RestaurantGrpcClient restaurantGrpcClient;
+	private final EventProducer eventProducer;
 
 	@Override
 	@Transactional // CRITICAL: Ensure both saves happen in one transaction
@@ -118,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Send verification (email or phone)
 		AuthDto.OtpVerificationRequest optRequest = new AuthDto.OtpVerificationRequest(phoneNumber, email);
-		sendOtpVerificationCode(optRequest);
+		sendOtpVerificationCode(optRequest, NotificationTemplateKey.USER_REGISTER);
 	}
 
 	@Override
@@ -171,7 +168,7 @@ public class AuthServiceImpl implements AuthService {
 
 		// Send verification (email or phone)
 		AuthDto.OtpVerificationRequest optRequest = new AuthDto.OtpVerificationRequest(phoneNumber, email);
-		sendOtpVerificationCode(optRequest);
+		sendOtpVerificationCode(optRequest, NotificationTemplateKey.USER_LOGIN);
 	}
 
 	@Override
@@ -223,55 +220,75 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	@Transactional
-	public void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request) {
+	public void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request, NotificationTemplateKey templateKey) {
 		String phoneNumber = request.phoneNumber();
 		String email = request.email();
 
-		// Validate phone/email presence
+		// 1. Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
 			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
 
-		// Check if user already exists by phone or email
-		if (StringUtils.hasText(phoneNumber) &&
-				!userRepository.existsByPhoneNumberAndDeletedFalse(phoneNumber)) {
-			throw new InvalidRequestException("Phone number not registered");
-		}
+		// 2. Fetch User and Validate Registration
+		User user = (StringUtils.hasText(phoneNumber))
+				? userRepository.findByPhoneNumberAndDeletedFalse(phoneNumber)
+				.orElseThrow(() -> new InvalidRequestException("Phone number not registered"))
+				: userRepository.findByEmailAndDeletedFalse(email)
+				.orElseThrow(() -> new InvalidRequestException("Email not registered"));
 
-		if (StringUtils.hasText(email) &&
-				!userRepository.existsByEmailAndDeletedFalse(email)) {
-			throw new InvalidRequestException("Email not registered");
-		}
-
-		// Generate code and save
+		// 3. Generate and Save Verification Code
 		String code = tokenUtil.generateRandomCode();
-		VerificationCode verificationCode = new VerificationCode();
-		verificationCode.setType(StringUtils.hasText(phoneNumber) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY);
-		verificationCode.setTarget(StringUtils.hasText(phoneNumber) ? phoneNumber : email);
-		verificationCode.setCodeHash(code);
-		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(300)); // 5 min expiry
-		verificationCode.setUsed(false);
-		verificationCodeRepository.saveAndFlush(verificationCode);
+		VerificationType type = StringUtils.hasText(phoneNumber) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY;
 
-		if (StringUtils.hasText(phoneNumber)) {
-			smsService.sendVerificationCode(phoneNumber, code);
-		} else {
-			emailService.sendVerificationEmail(email, code);
-		}
+		VerificationCode verificationCode = new VerificationCode();
+		verificationCode.setType(type);
+		verificationCode.setTarget(StringUtils.hasText(phoneNumber) ? phoneNumber : email);
+		verificationCode.setCodeHash(passwordEncoder.encode(code)); // Security: Hash the code in DB
+		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(600));
+		verificationCode.setUsed(false);
+		verificationCodeRepository.save(verificationCode);
+
+		// 4. Send Event to Notification Service via Kafka
+		// We send a single event; the Notification Service routes via 'type'
+		UserEvent.VerificationEvent event = UserEvent.VerificationEvent.builder()
+				.userId(user.getId())
+				.email(user.getEmail())
+				.phoneNumber(user.getPhoneNumber())
+				.verificationCode(code) // Plain code sent ONLY to Kafka
+				.templateKey(templateKey)
+				.type(type)
+				.build();
+
+		eventProducer.sendUserVerificationRequestedEvent(event);
+
+		log.info("Verification event sent for user {} via {}", user.getId(), type);
 	}
 
 	@Transactional
 	public AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request) {
 		String target = StringUtils.hasText(request.phoneNumber()) ? request.phoneNumber() : request.email();
 
-		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(target, request.code())
+		// 1. Find the latest unused code for the specific target (email or phone)
+		VerificationCode verificationCode = verificationCodeRepository
+				.findTopByTargetAndUsedFalseOrderByCreatedAtDesc(target)
 				.orElseThrow(() -> new InvalidRequestException("Invalid or expired OTP code"));
 
-		otpCode.setUsed(true);
-		verificationCodeRepository.save(otpCode);
+		// 2. Security Check: Use .matches() to compare raw input with DB Hash
+		// NEVER use passwordEncoder.encode() in a query; it generates a new salt every time.
+		if (!passwordEncoder.matches(request.code(), verificationCode.getCodeHash())) {
+			throw new InvalidRequestException("Invalid or expired OTP code");
+		}
+
+		// 3. Expiration Check: Compare against the expiresAt field you saved
+		if (verificationCode.getExpiresAt().isBefore(OffsetDateTime.now())) {
+			throw new InvalidRequestException("Invalid or expired OTP code");
+		}
+
+		verificationCode.setUsed(true);
+		verificationCodeRepository.save(verificationCode);
 
 		// 2. Find User
-		User user = (otpCode.getType() == VerificationType.PHONE_VERIFY)
+		User user = (verificationCode.getType() == VerificationType.PHONE_VERIFY)
 				? userRepository.findByPhoneNumberAndDeletedFalse(target)
 				.orElseThrow(() -> new InvalidRequestException("User not found"))
 				: userRepository.findByEmailAndDeletedFalse(target)
@@ -283,7 +300,7 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 
 		// Optional: If you want to ensure the user has an auth method for EMAIL_PASS
-		if (otpCode.getType() == VerificationType.EMAIL_VERIFY) {
+		if (verificationCode.getType() == VerificationType.EMAIL_VERIFY) {
 			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
 					.orElseThrow(() -> new InvalidRequestException("Authentication method not found"));
 			authMethod.setVerified(true);
@@ -336,19 +353,35 @@ public class AuthServiceImpl implements AuthService {
 			throw new InvalidRequestException("Email must be provided");
 		}
 
-		Optional<User> userOpt = userRepository.findByEmailAndDeletedFalse(email);
-		User user = userOpt.orElseThrow(() -> new InvalidRequestException("User not found"));
+		// 1. Fetch User
+		User user = userRepository.findByEmailAndDeletedFalse(email)
+				.orElseThrow(() -> new InvalidRequestException("User with this email not found"));
 
-		// Generate code and save
+		// 2. Generate and Save Verification Code
 		String code = tokenUtil.generateRandomCode();
+
 		VerificationCode verificationCode = new VerificationCode();
-		verificationCode.setType(VerificationType.EMAIL_VERIFY);
+		verificationCode.setType(VerificationType.PASSWORD_RESET); // Use a specific type for password resets
 		verificationCode.setTarget(email);
-		verificationCode.setCodeHash(code);
-		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(300)); // 5 min expiry
+		verificationCode.setCodeHash(passwordEncoder.encode(code)); // Recommended: Hash the code
+		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(600)); // 10 min for reset is better
 		verificationCode.setUsed(false);
 		verificationCodeRepository.save(verificationCode);
-		emailService.sendVerificationEmail(email, code);
+
+		// 3. Send Event to Notification Service
+		// We use a specific template key like 'PASSWORD_RESET' so the
+		// Notification Service can use a different HTML template than OTP.
+		UserEvent.VerificationEvent event = UserEvent.VerificationEvent.builder()
+				.userId(user.getId())
+				.email(email)
+				.verificationCode(code)
+				.type(VerificationType.EMAIL_VERIFY)
+				.templateKey(NotificationTemplateKey.PASSWORD_RESET) // Explicitly set the template to use
+				.build();
+
+		eventProducer.sendUserVerificationRequestedEvent(event);
+
+		log.info("Password reset event sent to Kafka for user: {}", email);
 	}
 
 	@Override
@@ -369,13 +402,25 @@ public class AuthServiceImpl implements AuthService {
 			throw new InvalidRequestException("OTP code must be provided");
 		}
 
-		// Step 1: Verify OTP
-		VerificationCode otpCode = verificationCodeRepository.findTopByTargetAndCodeHashAndUsedFalseOrderByCreatedAtDesc(email, code)
+		// 1. Find the latest unused code for the specific target (email or phone)
+		VerificationCode verificationCode = verificationCodeRepository
+				.findTopByTargetAndUsedFalseOrderByCreatedAtDesc(email)
 				.orElseThrow(() -> new InvalidRequestException("Invalid or expired OTP code"));
 
+		// 2. Security Check: Use .matches() to compare raw input with DB Hash
+		// NEVER use passwordEncoder.encode() in a query; it generates a new salt every time.
+		if (!passwordEncoder.matches(request.code(), verificationCode.getCodeHash())) {
+			throw new InvalidRequestException("Invalid or expired OTP code");
+		}
+
+		// 3. Expiration Check: Compare against the expiresAt field you saved
+		if (verificationCode.getExpiresAt().isBefore(OffsetDateTime.now())) {
+			throw new InvalidRequestException("Invalid or expired OTP code");
+		}
+
 		// Step 2: Mark OTP as used
-		otpCode.setUsed(true);
-		verificationCodeRepository.save(otpCode);
+		verificationCode.setUsed(true);
+		verificationCodeRepository.save(verificationCode);
 
 		// Step 3: Find or create user by phone number
 		User user = userRepository.findByEmailAndDeletedFalse(email)

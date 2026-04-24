@@ -1,5 +1,6 @@
 package com.tuttime.user.service.impl;
 
+import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.enums.UserStatusEvent;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.UserEvent;
@@ -10,11 +11,9 @@ import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.common.enums.UserStatus;
-import com.tuttime.user.entity.enums.VerificationType;
+import com.tuttime.common.enums.VerificationType;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.repository.*;
-import com.tuttime.user.service.EmailService;
-import com.tuttime.user.service.SmsService;
 import com.tuttime.user.service.UserService;
 import com.tuttime.user.util.TokenUtil;
 import jakarta.persistence.criteria.Predicate;
@@ -29,9 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
@@ -39,8 +36,6 @@ import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-	private final EmailService emailService;
-	private final SmsService smsService;
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final UserRoleRepository userRoleRepository;
@@ -58,72 +53,71 @@ public class UserServiceImpl implements UserService {
 		String identifier = request.emailOrPhone();
 		String roleName = request.roleName();
 
+		// 1. Basic Validation
 		if (!StringUtils.hasText(identifier)) {
 			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
-		if (!StringUtils.hasText(roleName)) {
-			throw new InvalidRequestException("Role must be provided");
-		}
 
-		String phoneNumber = null;
-		String email = null;
-		if (identifier.contains("@"))
-			email = identifier;
-		else
-			phoneNumber = identifier;
+		String email = identifier.contains("@") ? identifier : null;
+		String phoneNumber = (email == null) ? identifier : null;
 
-		// Check if user already exists by phone or email
+		// 2. Conflict Check
 		userRepository.findByPhoneNumberOrEmail(phoneNumber, email)
-				.ifPresent(u -> {
-					throw new ConflictException("Either phone number or email already in use");
-				});
+				.ifPresent(u -> { throw new ConflictException("Phone number or email already in use"); });
 
-		// 1. Create and populate User first
+		// 3. Persist User Entity
 		User user = new User();
 		user.setPhoneNumber(phoneNumber);
 		user.setEmail(email);
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
 		user = userRepository.saveAndFlush(user);
 
+		// 4. Assign Role
 		Role role = roleRepository.findByName(roleName)
 				.orElseThrow(() -> new InvalidRequestException("Role " + roleName + " not found"));
-		UserRole userRole = UserRole.builder()
+		user.getRoles().add(UserRole.builder().user(user).role(role).build());
+
+		// 5. Setup Password & Auth Method
+		String rawPassword = tokenUtil.generateRandomPassword();
+		UserAuthMethod authMethod = UserAuthMethod.builder()
 				.user(user)
-				.role(role)
+				.credential(passwordEncoder.encode(rawPassword))
+				.authType(email != null ? AuthProvider.EMAIL_PASS : AuthProvider.PHONE_SMS)
+				.verified(false)
 				.build();
-		user.getRoles().add(userRole);
-
-		// 2. Create and link AuthMethod to the SAVED user
-		String password = tokenUtil.generateRandomPassword();
-		UserAuthMethod authMethod = new UserAuthMethod();
-		authMethod.setUser(user); // Now 'user' has an ID!
-		authMethod.setCredential(passwordEncoder.encode(password));
-		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
-		authMethod.setVerified(false);
-
 		user.addAuthMethod(authMethod);
-
 		authMethodRepository.save(authMethod);
-		user = userRepository.save(user);
 
-		// Send verification (email or phone)
-		// Generate code and save
+		// 6. Generate Verification Code
 		String code = tokenUtil.generateRandomCode();
+		VerificationType type = (phoneNumber != null) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY;
+
 		VerificationCode verificationCode = new VerificationCode();
-		verificationCode.setType(StringUtils.hasText(phoneNumber) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY);
-		verificationCode.setTarget(StringUtils.hasText(phoneNumber) ? phoneNumber : email);
-		verificationCode.setCodeHash(code);
-		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(3600)); // 5 min expiry
+		verificationCode.setType(type);
+		verificationCode.setTarget(identifier);
+		verificationCode.setCodeHash(passwordEncoder.encode(code));
+		verificationCode.setExpiresAt(OffsetDateTime.now().plusHours(1)); // Extended for manual creation
 		verificationCode.setUsed(false);
 		verificationCodeRepository.save(verificationCode);
 
-		if (StringUtils.hasText(phoneNumber)) {
-			smsService.sendVerificationCode(phoneNumber, code);
-		} else {
-			emailService.sendVerificationPasswordEmail(email, code, password);
-		}
+		// 7. Fire Kafka Event to Notification Service
+		// We include the 'password' in params so the user knows how to log in
+		Map<String, Object> params = new HashMap<>();
+		params.put("verificationCode", code);
+		params.put("temporaryPassword", rawPassword);
 
-		return userMapper.toResponse(user);
+		UserEvent.VerificationEvent event = UserEvent.VerificationEvent.builder()
+				.userId(user.getId())
+				.email(email)
+				.phoneNumber(phoneNumber)
+				.type(type)
+				.templateKey(NotificationTemplateKey.ADMIN_USER_CREATED) // Specific template for admin-created users
+				.parameters(params)
+				.build();
+
+		eventProducer.sendUserVerificationRequestedEvent(event);
+
+		return userMapper.toResponse(userRepository.save(user));
 	}
 
 	@Override
@@ -162,10 +156,13 @@ public class UserServiceImpl implements UserService {
 		}
 		user = userRepository.save(user);
 
-		eventProducer.sendUserUpdatedEvent(new UserEvent.ProfileUpdatedEvent(user.getId(),
-				user.getFullName(),
-				user.getProfilePicture(),
-				user.getUpdatedAt()));
+		UserEvent.ProfileUpdatedEvent event = UserEvent.ProfileUpdatedEvent.builder()
+				.userId(user.getId())
+				.fullName(user.getFullName())
+				.profilePicture(user.getProfilePicture())
+				.updatedAt(user.getUpdatedAt())
+				.build();
+		eventProducer.sendUserUpdatedEvent(event);
 
 		return userMapper.toResponse(user);
 	}
@@ -180,11 +177,13 @@ public class UserServiceImpl implements UserService {
 
 		// 2. Broadcast to Kafka
 		// This tells the Gateway and Redis to block this ID permanently
-		eventProducer.sendUserSecurityEvent(new UserEvent.SecurityEvent(
-				userId,
-				UserStatusEvent.USER_DELETED,
-				null,
-				0));
+		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
+				.userId(userId)
+				.type(UserStatusEvent.USER_DELETED)
+				.jti(null)
+				.ttlMillis(0)
+				.build();
+		eventProducer.sendUserSecurityEvent(event);
 
 		log.info("User {} soft deleted and broadcasted to security topic", userId);
 	}
@@ -312,11 +311,13 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// Broadcast to Kafka topic so Gateway updates Redis immediately
-		eventProducer.sendUserSecurityEvent(new UserEvent.SecurityEvent(
-				userId,
-				UserStatusEvent.USER_BLOCKED,
-				null,
-				0));
+		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
+				.userId(userId)
+				.type(UserStatusEvent.USER_BLOCKED)
+				.jti(null)
+				.ttlMillis(0)
+				.build();
+		eventProducer.sendUserSecurityEvent(event);
 
 		return userMapper.toResponse(user);
 	}
@@ -330,11 +331,13 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// Broadcast to Kafka to remove from Redis blocklist
-		eventProducer.sendUserSecurityEvent(new UserEvent.SecurityEvent(
-				userId,
-				UserStatusEvent.USER_UNBLOCKED,
-				null,
-				0));
+		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
+				.userId(userId)
+				.type(UserStatusEvent.USER_UNBLOCKED)
+				.jti(null)
+				.ttlMillis(0)
+				.build();
+		eventProducer.sendUserSecurityEvent(event);
 
 		return userMapper.toResponse(user);
 	}

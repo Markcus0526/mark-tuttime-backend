@@ -1,6 +1,7 @@
 package com.tuttime.user.controller;
 
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -136,7 +137,7 @@ public class AuthController {
 			@Parameter(description = "Phone number to receive OTP code", required = true)
 			@Valid @RequestBody AuthDto.OtpVerificationRequest request) {
 
-		authService.sendOtpVerificationCode(request);
+		authService.sendOtpVerificationCode(request, NotificationTemplateKey.USER_VERIFICATION);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 

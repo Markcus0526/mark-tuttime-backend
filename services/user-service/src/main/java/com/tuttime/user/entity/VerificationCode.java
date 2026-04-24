@@ -1,7 +1,7 @@
 package com.tuttime.user.entity;
 
 import com.tuttime.common.entity.BaseUuidEntity;
-import com.tuttime.user.entity.enums.VerificationType;
+import com.tuttime.common.enums.VerificationType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;

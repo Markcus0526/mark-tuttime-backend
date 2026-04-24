@@ -61,12 +61,6 @@
             <artifactId>hibernate-spatial</artifactId>
         </dependency>
 
-        <!-- Spring WebSocket -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-
         <!-- Spring Data JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -198,19 +192,7 @@
             <version>5.0.0</version>
         </dependency>
 
-        <!-- Spring Mail for SMTP -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
-        <!-- Twilio SMS service -->
-        <dependency>
-            <groupId>com.twilio.sdk</groupId>
-            <artifactId>twilio</artifactId>
-            <version>10.1.0</version> <!-- Or latest -->
-        </dependency>
-
+        <!-- Google Oauth -->
         <dependency>
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>

@@ -44,6 +44,7 @@ spring:
     show-sql: false  # Disable SQL logging
     properties:
       hibernate:
+        default_schema: user_service
         dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect  # PostGIS dialect for geospatial support
         format_sql: false  # Disable SQL formatting
         jdbc:
@@ -128,30 +129,6 @@ spring:
       max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:10MB}
       max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:10MB}
       file-size-threshold: ${SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD:2KB}
-
-  # Mail SMTP Configuration
-  mail:
-    host: ${EMAIL_SMTP_HOST:smtp.yandex.ru}
-    port: ${EMAIL_SMTP_PORT:465}
-    username: ${EMAIL_SMTP_USERNAME:}
-    password: ${EMAIL_SMTP_PASSWORD:}
-    protocol: smtps
-    properties:
-      mail:
-        debug: true
-        smtp:
-          # Enable SMTP authentication
-          auth: ${EMAIL_SMTP_AUTH:true}
-          ssl:
-            enable: ${EMAIL_SMTP_SSL_ENABLE:true}
-            trust: ${EMAIL_SMTP_SSL_TRUST:smtp.yandex.ru}
-          from: ${EMAIL_SMTP_FROM_EMAIL:}
-          starttls:
-            enable: ${EMAIL_SMTP_STARTTLS_ENABLE:false}
-            required: ${EMAIL_SMTP_STARTTLS_REQUIRED:false}
-          connectiontimeout: ${EMAIL_SMTP_CONNECTION_TIMEOUT:5000} # Connection timeout in ms
-          timeout: ${EMAIL_SMTP_TIMEOUT:5000} # Read timeout in ms
-          writetimeout: ${EMAIL_SMTP_WRITE_TIMEOUT:5000} # Write timeout in ms
 
   threads:
     virtual:
@@ -304,6 +281,9 @@ grpc:
     analytics-service:
       address: static://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_GRPC_PORT:29009}
       negotiation-type: plaintext
+    notification-service:
+      address: static://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_GRPC_PORT:29010}
+      negotiation-type: plaintext
 
 management:
   endpoints:
@@ -382,6 +362,9 @@ resilience4j:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
 logging:
+  pattern:
+    # This pattern removes the empty MDC brackets and extra padding
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   level:
     root: ${LOG_LEVEL:INFO}
     com.tuttime: DEBUG
@@ -434,13 +417,11 @@ app:
 google:
   client:
     id: ${GOOGLE_CLIENT_ID}
-    secret: ${GOOGLE_CLIENT_SECRET}
 
 # Apple Oauth login
 apple:
   client:
     id: ${APPLE_CLIENT_ID}
-    public-key: ${APPLE_PUBLIC_KEY}
 
 # Map Query Configuration
 map:
