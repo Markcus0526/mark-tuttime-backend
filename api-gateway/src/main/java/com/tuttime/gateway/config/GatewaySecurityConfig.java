@@ -62,7 +62,9 @@ public class GatewaySecurityConfig {
 										"/review-docs",
 										"/review-docs/**",
 										"/analytics-docs",
-										"/analytics-docs/**"
+										"/analytics-docs/**",
+										"/notification-docs",
+										"/notification-docs/**"
 								).permitAll()
 
 								// 4. Role-based matching (optional, coarse-grained gating)

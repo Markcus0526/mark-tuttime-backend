@@ -25,6 +25,7 @@
         <module>services/pos-service</module>
         <module>services/review-service</module>
         <module>services/analytics-service</module>
+        <module>services/notification-service</module>
 
     </modules>
 

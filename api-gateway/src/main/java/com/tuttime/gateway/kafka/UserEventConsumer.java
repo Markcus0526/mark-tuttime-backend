@@ -70,7 +70,7 @@ public class UserEventConsumer {
 					log.warn("Unknown event type: {}", event.type());
 			}
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}", TOPIC_USER_SECURITY_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[api-gateway], Error: {}", TOPIC_USER_SECURITY_UPDATED, e.getMessage());
 		}
 	}
 }

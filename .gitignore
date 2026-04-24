@@ -9,6 +9,7 @@ services/payment-service/target
 services/restaurant-service/target
 services/review-service/target
 services/user-service/target
+services/notification-service/target
 api-gateway/target
 admin-gateway/target
 common-libs/common-auth/target

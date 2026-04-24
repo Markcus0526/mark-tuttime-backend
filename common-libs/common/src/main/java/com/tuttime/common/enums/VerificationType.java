@@ -1,4 +1,4 @@
-package com.tuttime.user.entity.enums;
+package com.tuttime.common.enums;
 
 public enum VerificationType {
 	EMAIL_VERIFY,

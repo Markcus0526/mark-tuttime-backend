@@ -380,6 +380,23 @@ spring:
                 name: analyticsServiceCircuitBreaker
                 fallbackUri: forward:/fallback/analytics-service
 
+        ################# Notification Service Routes #######################
+
+        # Methods: GET, POST, PUT, PATCH, DELETE
+        # Endpoints include: /api/v1/notifications/**
+        - id: notification-service-notification
+          order: 101
+          uri: http://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
+          predicates:
+            - Path=/api/v1/notifications/**
+            - Method=GET,POST,PUT,PATCH,DELETE,OPTION
+          filters:
+            #            - name: JwtAuthentication
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCircuitBreaker
+                fallbackUri: forward:/fallback/notification-service
+
         ################# OpenAPI(Swagger UI) Routes #######################
         - id: user-openapi
           uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
@@ -443,6 +460,13 @@ spring:
             - Path=/analytics-docs/**
           filters:
             - RewritePath=/analytics-docs/(?<segment>.*), /$\{segment}
+
+        - id: notification-openapi
+          uri: http://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
+          predicates:
+            - Path=/notification-docs/**
+          filters:
+            - RewritePath=/notification-docs/(?<segment>.*), /$\{segment}
 
 
   # Redis Configuration for token blacklist
@@ -680,6 +704,8 @@ springdoc:
         url: /review-docs/v3/api-docs
       - name: Analytics Service
         url: /analytics-docs/v3/api-docs
+      - name: Notification Service
+        url: /notification-docs/v3/api-docs
 
   writer-with-default-pretty-printer: true
   use-fqn: true # Uses Fully Qualified Names to prevent collisions
