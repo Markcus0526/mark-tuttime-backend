@@ -58,10 +58,10 @@ public class BookingEventConsumer {
 				// 3. Trigger the Orchestrator
 				// userId comes from the event; orchestrator handles gRPC lookup
 				notificationOrchestrator.handleNotification(
+						event.eventId(),
 						event.userId(),
 						key,
-						params,
-						event.bookingId().toString());
+						params);
 			}
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());

@@ -50,10 +50,10 @@ public class ReviewEventConsumer {
 			// 2. Trigger Orchestrator
 			// We use 'REVIEW_APPROVED' as the template_key in our database
 			notificationOrchestrator.handleNotification(
+					event.eventId(),
 					event.userId(),  // The ID of the person being notified (e.g., the Tutor)
 					NotificationTemplateKey.REVIEW_APPROVED,      // The Template Key
-					params,
-					event.reviewId().toString());
+					params);
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_REVIEW_APPROVED, e.getMessage());
 		}
