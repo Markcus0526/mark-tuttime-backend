@@ -1,5 +1,6 @@
 package com.tuttime.user.service;
 
+import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.user.dto.AuthDto;
 
 /**
@@ -57,7 +58,7 @@ public interface AuthService {
 	 *
 	 * @param request to verify
 	 */
-	void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request);
+	void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request, NotificationTemplateKey templateKey);
 
 	/**
 	 * Initiates password reset by sending an email or SMS code depending on user contact.
