@@ -4,6 +4,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.param.RefundCreateParams;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.PaymentEvent;
+import com.tuttime.common.event.kafka.UserEvent;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
@@ -105,17 +106,16 @@ public class PaymentServiceImpl implements PaymentService {
 					.reason(reason)
 					.build());
 
-			PaymentEvent.PaymentRefundedEvent event = new PaymentEvent.PaymentRefundedEvent(
-					payment.getId(),
-					bookingId,
-					payment.getUserId(),
-					payment.getBranchId(),
-					amount,
-					payment.getCurrency(),
-					payment.getStripeSessionId(),
-					reason,
-					OffsetDateTime.now()
-			);
+			PaymentEvent.PaymentRefundedEvent event = PaymentEvent.PaymentRefundedEvent.builder()
+					.paymentId(payment.getId())
+					.bookingId(bookingId)
+					.userId(payment.getUserId())
+					.branchId(payment.getBranchId())
+					.amount(amount)
+					.currency(payment.getCurrency())
+					.stripeRefundId(payment.getStripeSessionId())
+					.reason(reason)
+					.build();
 			eventProducer.sendPaymentRefundEvent(event);
 		} catch (StripeException e) {
 			throw new BusinessException("Stripe Refund Error", e);
@@ -144,15 +144,16 @@ public class PaymentServiceImpl implements PaymentService {
 		payment.setPaymentMethodType("manual_test_card");
 		paymentRepository.save(payment);
 
-		eventProducer.sendPaymentCompletedEvent(new PaymentEvent.PaymentCompletedEvent(
-				payment.getBookingId(),
-				payment.getUserId(),
-				payment.getBranchId(),
-				payment.getStripeSessionId(),
-				payment.getAmount(),
-				BigDecimal.valueOf(0),
-				payment.getCurrency(),
-				OffsetDateTime.now()));
+		PaymentEvent.PaymentCompletedEvent event = PaymentEvent.PaymentCompletedEvent.builder()
+				.bookingId(payment.getBookingId())
+				.userId(payment.getUserId())
+				.branchId(payment.getBranchId())
+				.stripePaymentIntentId(payment.getStripeSessionId())
+				.amount(payment.getAmount())
+				.commissionRate(BigDecimal.valueOf(0.01))
+				.currency(payment.getCurrency())
+				.build();
+		eventProducer.sendPaymentCompletedEvent(event);
 	}
 
 
