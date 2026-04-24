@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://thymeleaf.org">
+<body>
+<div style="font-family: Arial, sans-serif; border: 1px solid #ddd; padding: 20px;">
+    <h2 style="color: #4CAF50;">Payment Confirmed!</h2>
+    <p>Hello <span th:text="${userName}">User</span>,</p>
+    <p>Your payment for Booking <strong>#<span th:text="${bookingId}">000</span></strong> was successful.</p>
+    <p><strong>Amount:</strong> <span th:text="${amount}">0.00</span></p>
+    <p>Thank you for choosing TutTime!</p>
+</div>
+</body>
+</html>

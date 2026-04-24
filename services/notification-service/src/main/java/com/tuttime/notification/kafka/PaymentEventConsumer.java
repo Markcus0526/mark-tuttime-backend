@@ -47,11 +47,10 @@ public class PaymentEventConsumer {
 			// 3. Delegate to Notification Service
 			// We assume your event contains the userId who should receive the alert
 			notificationOrchestrator.handleNotification(
+					event.eventId(),
 					event.userId(),
 					NotificationTemplateKey.PAYMENT_SUCCESS,  // The key in your notification_templates table
-					params,
-					event.stripePaymentIntentId()
-			);
+					params);
 
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_PAYMENT_COMPLETED, e.getMessage());
@@ -80,10 +79,10 @@ public class PaymentEventConsumer {
 
 			// 2. Trigger Orchestrator
 			notificationOrchestrator.handleNotification(
+					event.eventId(),
 					event.userId(),
 					NotificationTemplateKey.PAYMENT_REFUNDED,
-					params,
-					event.paymentId().toString());
+					params);
 
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}",

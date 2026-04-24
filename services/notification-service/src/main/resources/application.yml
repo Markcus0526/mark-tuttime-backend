@@ -44,6 +44,7 @@ spring:
     show-sql: false  # Disable SQL logging
     properties:
       hibernate:
+        default_schema: notification_service
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false  # Disable SQL formatting
         jdbc:
@@ -272,6 +273,9 @@ resilience4j:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
 logging:
+  pattern:
+    # This pattern removes the empty MDC brackets and extra padding
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   level:
     root: ${LOG_LEVEL:INFO}
     com.tuttime: DEBUG

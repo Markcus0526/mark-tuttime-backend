@@ -38,7 +38,7 @@ public class OpenApiConfig {
 	public OpenAPI customOpenAPI() {
 		// Force Swagger UI to make calls to the Gateway port (8080) instead of 28001!
 		Server gatewayServer = new Server();
-		gatewayServer.setUrl("http://173.249.29.61:8080/analytics-docs");
+		gatewayServer.setUrl("http://173.249.29.61:8080/notification-docs");
 		gatewayServer.setDescription("Gateway Route");
 
 		// Create a security requirement pointing to the name used in your annotation above
@@ -50,9 +50,9 @@ public class OpenApiConfig {
 				.servers(List.of(gatewayServer)) // Apply the server mapping
 				.addSecurityItem(securityRequirement) // <-- THIS TELLS SWAGGER TO SEND THE TOKEN ON REQUESTS!
 				.info(new Info()
-						.title("Analytics Service API")
+						.title("Notification Service API")
 						.version("1.0")
-						.description("API for Analytics Management"));
+						.description("API for Notification Management"));
 	}
 
 	@Bean

@@ -30,7 +30,7 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				)
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/v1/analytics/**").permitAll() // Add /v1
+						.requestMatchers("/api/v1/notifications/**").permitAll() // Add /v1
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
 				)
 				.addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
