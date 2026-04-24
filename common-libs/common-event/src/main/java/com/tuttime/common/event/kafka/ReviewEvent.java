@@ -2,6 +2,7 @@ package com.tuttime.common.event.kafka;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.Builder;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -11,6 +12,7 @@ public class ReviewEvent {
 	/**
 	 * Shared Record: Triggered when a moderator approves a review
 	 */
+	@Builder(toBuilder = true)
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record ReviewApprovedEvent(
 			UUID eventId,
@@ -18,7 +20,23 @@ public class ReviewEvent {
 			UUID branchId,
 			UUID userId,
 			Integer rating,
-			OffsetDateTime timestamp
-	)  implements BaseEvent {
+			OffsetDateTime occurredAt
+	) implements BaseEvent {
+
+		// Canonical Constructor to handle default values manually
+		public ReviewApprovedEvent {
+			if (eventId == null) eventId = UUID.randomUUID();
+			if (occurredAt == null) occurredAt = OffsetDateTime.now();
+		}
+
+		@Override
+		public UUID eventId() {
+			return eventId;
+		}
+
+		@Override
+		public OffsetDateTime occurredAt() {
+			return occurredAt;
+		}
 	}
 }

@@ -1,6 +1,10 @@
 package com.tuttime.common.event.kafka;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 public sealed interface BaseEvent permits
+		UserEvent.VerificationEvent,
 		UserEvent.ProfileUpdatedEvent,
 		UserEvent.SecurityEvent,
 
@@ -18,6 +22,10 @@ public sealed interface BaseEvent permits
 		PosEvent.PosPriceUpdatedEvent,
 
 		ReviewEvent.ReviewApprovedEvent
-{}
+{
+	// Unique ID for idempotency (Critical for NotificationLog)
+	UUID eventId();
 
+	OffsetDateTime occurredAt();
+}
 

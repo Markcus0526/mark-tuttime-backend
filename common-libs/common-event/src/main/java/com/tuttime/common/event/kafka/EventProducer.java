@@ -22,6 +22,14 @@ public class EventProducer {
 	private final KafkaMetrics kafkaMetrics;
 
 	// User Events Publisher
+	public void sendUserRegisteredEvent(UserEvent.VerificationEvent event) {
+		sendEvent(TOPIC_USER_REGISTERED, event.userId().toString(), event);
+	}
+
+	public void sendUserVerificationRequestedEvent(UserEvent.VerificationEvent event) {
+		sendEvent(TOPIC_USER_VERIFICATION_REQUESTED, event.userId().toString(), event);
+	}
+
 	public void sendUserUpdatedEvent(UserEvent.ProfileUpdatedEvent event) {
 		sendEvent(TOPIC_USER_PROFILE_UPDATED, event.userId().toString(), event);
 	}

@@ -4,6 +4,7 @@
     <file url="file://$PROJECT_DIR$/services/analytics-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/booking-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/menu-service/docker/init-db.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/services/notification-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/order-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/payment-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/pos-service/docker/init-db.sql" dialect="GenericSQL" />

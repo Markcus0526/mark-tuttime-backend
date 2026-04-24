@@ -5,6 +5,8 @@ public class TopicConstants {
 	private TopicConstants() {}
 
 	// Topics
+	public static final String TOPIC_USER_REGISTERED = "tuttime.user.registered";
+	public static final String TOPIC_USER_VERIFICATION_REQUESTED = "tuttime.user.verification.requested";
 	public static final String TOPIC_USER_PROFILE_UPDATED = "tuttime.user.profile.updated";
 	public static final String TOPIC_USER_SECURITY_UPDATED = "tuttime.user.security.updated";
 
