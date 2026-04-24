@@ -124,17 +124,19 @@ public class BookingServiceImpl implements BookingService {
 
 			// 6. Audit & Events
 			historyRepository.save(BookingStatusHistory.of(savedBooking, null, request.userId(), "Initial creation"));
-			eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
-					savedBooking.getId(),
-					savedBooking.getTableId(),
-					savedBooking.getBranchId(),
-					savedBooking.getUserId(),
-					null,
-					BookingStatus.CREATED,
-					savedBooking.getBookingDatetime(),
-					currentUserId,
-					"Created",
-					OffsetDateTime.now()));
+
+			BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
+					.bookingId(savedBooking.getId())
+					.tableId(savedBooking.getTableId())
+					.branchId(savedBooking.getBranchId())
+					.userId(savedBooking.getUserId())
+					.oldStatus(null)
+					.newStatus(BookingStatus.CREATED)
+					.bookingTime(savedBooking.getBookingDatetime())
+					.changedBy(currentUserId)
+					.reason("Created")
+					.build();
+			eventProducer.sendBookingStatusUpdatedEvent(event);
 
 			// 7. Initialize Order in Order Service
 			CreateOrderRequest.Builder orderRequestBuilder = CreateOrderRequest.newBuilder()
@@ -247,17 +249,18 @@ public class BookingServiceImpl implements BookingService {
 
 		// 4. Publish Event for Microservices (Kafka)
 		// This notifies the Restaurant Service to mark the table as OCCUPIED or ACTIVE
-		eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
-				booking.getId(),
-				booking.getTableId(),
-				booking.getBranchId(),
-				booking.getUserId(),
-				oldStatus,
-				newStatus,
-				booking.getBookingDatetime(),
-				currentUserId,
-				reason,
-				OffsetDateTime.now()));
+		BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
+				.bookingId(booking.getId())
+				.tableId(booking.getTableId())
+				.branchId(booking.getBranchId())
+				.userId(booking.getUserId())
+				.oldStatus(oldStatus)
+				.newStatus(newStatus)
+				.bookingTime(booking.getBookingDatetime())
+				.changedBy(currentUserId)
+				.reason(reason)
+				.build();
+		eventProducer.sendBookingStatusUpdatedEvent(event);
 
 		return bookingMapper.toResponse(booking);
 	}
@@ -309,17 +312,18 @@ public class BookingServiceImpl implements BookingService {
 		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, currentUserId, reason));
 
 		// 3. Trigger the Audit and Waitlist Notification logic automatically
-		eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
-				bookingId,
-				booking.getTableId(),
-				booking.getBranchId(),
-				booking.getUserId(),
-				oldStatus,
-				BookingStatus.CANCELED,
-				booking.getBookingDatetime(),
-				currentUserId,
-				reason,
-				OffsetDateTime.now()));
+		BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
+				.bookingId(booking.getId())
+				.tableId(booking.getTableId())
+				.branchId(booking.getBranchId())
+				.userId(booking.getUserId())
+				.oldStatus(oldStatus)
+				.newStatus(BookingStatus.CANCELED)
+				.bookingTime(booking.getBookingDatetime())
+				.changedBy(currentUserId)
+				.reason(reason)
+				.build();
+		eventProducer.sendBookingStatusUpdatedEvent(event);
 	}
 
 	@Override
@@ -387,17 +391,18 @@ public class BookingServiceImpl implements BookingService {
 			@Override
 			public void afterCommit() {
 				// Send Kafka message ONLY after DB is updated
-				eventProducer.sendBookingStatusUpdatedEvent(new BookingEvent.BookingStatusUpdatedEvent(
-						booking.getId(),
-						booking.getTableId(),
-						booking.getBranchId(),
-						booking.getUserId(),
-						oldStatus,
-						BookingStatus.PAID,
-						booking.getBookingDatetime(),
-						staffOrSystemId,
-						"Payment confirmed. Ref: " + paymentRef,
-						OffsetDateTime.now()));
+				BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
+						.bookingId(booking.getId())
+						.tableId(booking.getTableId())
+						.branchId(booking.getBranchId())
+						.userId(booking.getUserId())
+						.oldStatus(oldStatus)
+						.newStatus(BookingStatus.PAID)
+						.bookingTime(booking.getBookingDatetime())
+						.changedBy(staffOrSystemId)
+						.reason("Payment confirmed. Ref: " + paymentRef)
+						.build();
+				eventProducer.sendBookingStatusUpdatedEvent(event);
 
 				// Release lock ONLY after data is visible to other threads/services
 				String lockKey = "lock:table:" + booking.getTableId();

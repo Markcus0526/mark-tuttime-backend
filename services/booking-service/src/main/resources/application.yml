@@ -168,6 +168,9 @@ grpc:
     analytics-service:
       address: static://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_GRPC_PORT:29009}
       negotiation-type: plaintext
+    notification-service:
+      address: static://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_GRPC_PORT:29010}
+      negotiation-type: plaintext
 
 management:
   endpoints:
@@ -246,6 +249,9 @@ resilience4j:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
 logging:
+  pattern:
+    # This pattern removes the empty MDC brackets and extra padding
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   level:
     root: ${LOG_LEVEL:INFO}
     com.tuttime: DEBUG
