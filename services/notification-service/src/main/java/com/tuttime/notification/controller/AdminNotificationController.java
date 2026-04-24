@@ -1,6 +1,9 @@
 package com.tuttime.notification.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes; // Assuming common location
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.notification.dto.AdminNotificationDto;
 import com.tuttime.notification.entity.NotificationTemplate;
 import com.tuttime.notification.service.AdminNotificationService;
@@ -33,6 +36,8 @@ public class AdminNotificationController {
 	public ResponseEntity<ApiRes<NotificationTemplate>> create(
 			@Valid @RequestBody AdminNotificationDto.TemplateRequest request) {
 
+		validateAdmin();
+
 		NotificationTemplate template = adminNotificationService.createTemplate(request);
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiRes.success("Template created successfully", template));
@@ -44,6 +49,8 @@ public class AdminNotificationController {
 			@PathVariable Integer templateId,
 			@Valid @RequestBody AdminNotificationDto.TemplateRequest request) {
 
+		validateAdmin();
+
 		NotificationTemplate updated = adminNotificationService.updateTemplate(templateId, request);
 		return ResponseEntity.ok(ApiRes.success("Template updated successfully", updated));
 	}
@@ -53,6 +60,8 @@ public class AdminNotificationController {
 	public ResponseEntity<ApiRes<String>> preview(
 			@Valid @RequestBody AdminNotificationDto.PreviewRequest request) {
 
+		validateAdmin();
+
 		String rendered = adminNotificationService.renderPreview(request.content(), request.mockParams());
 		return ResponseEntity.ok(ApiRes.success("Preview rendered successfully", rendered));
 	}
@@ -60,7 +69,38 @@ public class AdminNotificationController {
 	@Operation(summary = "Get all templates", description = "Retrieves a list of all defined notification templates.")
 	@GetMapping
 	public ResponseEntity<ApiRes<List<NotificationTemplate>>> list() {
+
+		validateAdmin();
+
 		return ResponseEntity.ok(ApiRes.success("Templates retrieved", adminNotificationService.getAllTemplates()));
 	}
 
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
+	}
 }
