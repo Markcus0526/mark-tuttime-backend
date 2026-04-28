@@ -1,8 +1,6 @@
 services:
   # ============================================================================
   # Infrastructure Services
-  # Note: PostgreSQL databases are defined in each service's docker-compose.yml
-  # Each service manages its own PostgreSQL instance independently
   # ============================================================================
 
   # Redis Cache
@@ -13,8 +11,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    # Docker Compose automatically reads .env file from same directory
-    # env_file is for loading into container, .env is for variable substitution
     env_file:
       - .env.docker
     environment:
@@ -28,65 +24,42 @@ services:
       fi
       "
     healthcheck:
-      test: >
-        sh -c "
-        if [ -n \"$$REDIS_PASSWORD\" ]; then
-          redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG
-        else
-          redis-cli ping | grep -q PONG
-        fi
-        "
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - tuttime-network
 
-  # Kafka 4.0 - KRaft mode (no Zookeeper needed)
-  # Kafka 4.0 runs exclusively in KRaft mode, eliminating Zookeeper dependency
-  # Using Bitnami Kafka 4.0.0-debian-12-r10 (matches production Kubernetes deployment)
+  # Kafka 4.0 - KRaft mode
   kafka:
     image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
     container_name: tuttime-kafka
     ports:
-      - "29092:9092"  # External port for localhost connections
-      - "9093:9093"   # Internal listener port
-      - "9094:9094"   # Controller port
+      - "29092:9092"  # Host access (localhost:29092)
+      - "9093:9093"   # Container access (tuttime-kafka:9093)
+    env_file:
+      - .env.docker
     environment:
-      # KRaft mode configuration (no Zookeeper)
-      # Bitnami Kafka uses KAFKA_CFG_ prefix which maps to server.properties settings
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_NODE_ID: 1
-      # Cluster ID is required for KRaft mode (22 characters)
-      KAFKA_KRAFT_CLUSTER_ID: ${KAFKA_CLUSTER_ID:-e9hKOjhvRvyeLAlnqZQpFw}
-      # Controller quorum voters (single node for local dev)
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9094
-      # Configure listeners: Support both internal (Docker network) and external (localhost) connections
-      # PLAINTEXT: For external connections via localhost:29092
-      # INTERNAL: For Docker services connecting via tuttime-kafka:9093
-      # CONTROLLER: For KRaft controller communication
-      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094,INTERNAL://0.0.0.0:9093
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT
-      # Controller listener names (required for KRaft mode when controller role is enabled)
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      # Advertised listeners: Different addresses for different connection types
-      # PLAINTEXT: localhost:29092 for host machine clients
-      # INTERNAL: tuttime-kafka:9093 for Docker network services (microservices)
+      KAFKA_KRAFT_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      # FIXED: Changed localhost to tuttime-kafka for internal quorum
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@tuttime-kafka:9094
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:29092,INTERNAL://tuttime-kafka:9093
-      # Use INTERNAL listener for broker-to-broker communication
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      # Log directories (Bitnami default path)
       KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
-      # Disable SASL for local development (production uses SASL_PLAINTEXT)
-      # Note: Production uses SASL authentication, but local dev can use PLAINTEXT
     volumes:
       - kafka-data:/bitnami/kafka/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9093 || exit 1"]
+      test: [ "CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -99,9 +72,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: tuttime-kafka-ui
     ports:
-      - "9001:8080" # Change 9001 to whatever port you prefer
-    env_file:
-      - .env.docker
+      - "9001:8080"
     environment:
       - KAFKA_CLUSTERS_0_NAME=tuttime-local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=tuttime-kafka:9093
@@ -122,18 +93,8 @@ services:
       - "9411:9411"
     environment:
       - STORAGE_TYPE=mem
-    #   # JVM heap size configuration to prevent OutOfMemoryError
-    #   - JAVA_OPTS=-Xms512m -Xmx1g
-    # # Memory limits to prevent container from consuming too much memory
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 1.5G
-    #     reservations:
-    #       memory: 512M
-    # restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9411/health"]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9411/health" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -159,7 +120,7 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - "bootstrap.memory_lock=true"
       - "discovery.type=single-node"
-      - "action.auto_create_index=false"
+      - "action.auto_create_index=true" # FIXED: Graylog needs to create indices
       - "plugins.security.disabled=true"
     ulimits:
       memlock:
@@ -177,13 +138,15 @@ services:
       - mongodb
       - opensearch
     ports:
-      - "9002:9002/tcp"   # Web UI
-      - "12203:12203/udp" # GELF UDP Input for your Java App
+      - "9002:9002/tcp"
+      - "12201:12201/udp" # Standard GELF UDP port
+    env_file:
+      - .env.docker
     environment:
-      - GRAYLOG_PASSWORD_SECRET=***REMOVED***
-      - GRAYLOG_ROOT_PASSWORD_SHA2=***REMOVED*** # admin
+      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_SECRET}
+      - GRAYLOG_ROOT_PASSWORD_SHA2=***REMOVED***
       - GRAYLOG_HTTP_BIND_ADDRESS=0.0.0.0:9002
-      - GRAYLOG_HTTP_EXTERNAL_URI=http://173.249.29.61/
+      - GRAYLOG_HTTP_EXTERNAL_URI=http://localhost:9002/ # FIXED: For local dev access
       - GRAYLOG_MONGODB_URI=mongodb://mongodb:27017/graylog
       - GRAYLOG_ELASTICSEARCH_HOSTS=http://opensearch:9200
     networks:
@@ -198,8 +161,5 @@ volumes:
 networks:
   tuttime-network:
     name: tuttime-network
-    # Network configuration:
-    # - external: true  - Network must exist (created by infra-start.ps1 script)
-    # Script creates network before starting compose, so external: true is required
-    # external: true  # Network is created by infra-start.ps1 script before compose starts
-    # driver: bridge
+    # Set to 'external: true' if your .ps1 script creates this network manually
+    external: false
