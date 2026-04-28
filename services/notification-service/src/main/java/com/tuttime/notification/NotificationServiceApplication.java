@@ -2,14 +2,26 @@ package com.tuttime.notification;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
+@SpringBootApplication(
+		scanBasePackages = "com.tuttime",
+		exclude = {
+				RedisAutoConfiguration.class,
+				RedisRepositoriesAutoConfiguration.class,
+				RedisReactiveHealthContributorAutoConfiguration.class,
+				RedisHealthContributorAutoConfiguration.class
+		}
+)
 @Slf4j
-@SpringBootApplication(scanBasePackages = "com.tuttime")
 public class NotificationServiceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(NotificationServiceApplication.class, args);
