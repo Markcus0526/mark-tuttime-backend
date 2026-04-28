@@ -32,7 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
 	private final RefundRepository refundRepository;
 	private final EventProducer eventProducer;
 
-	@Value("${stripe.webhook.secret}")
+//	@Value("${stripe.webhook.secret}")
 	private String webhookSecret;
 
 	@Override
