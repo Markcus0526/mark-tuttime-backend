@@ -172,7 +172,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.tuttime.analytics.NotificationServiceApplication</mainClass>
+                    <mainClass>com.tuttime.analytics.AnalyticsServiceApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

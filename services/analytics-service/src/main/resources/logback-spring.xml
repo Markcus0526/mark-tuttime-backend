@@ -1,137 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Enable status listener to see logback initialization details -->
-    <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
+    <!-- Force the property into the context immediately -->
+    <property name="HOSTNAME" value="analytics-service" />
+    <contextName>analytics-service</contextName>
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-
-    <!-- Spring Profile Properties -->
-    <!-- Always include CONSOLE appender for local development -->
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
-    <!-- GELF Appender Configuration Properties -->
     <springProperty scope="context" name="graylogHost" source="graylog.host" defaultValue="173.249.29.61"/>
     <springProperty scope="context" name="graylogPort" source="graylog.port" defaultValue="12203"/>
-    <springProperty scope="context" name="graylogOriginHost" source="graylog.origin-host"
-                    defaultValue="${spring.application.name}"/>
-    <springProperty scope="context" name="graylogFacility" source="graylog.facility" defaultValue="analytics-service"/>
-    <springProperty scope="context" name="graylogIncludeSource" source="graylog.include-source" defaultValue="true"/>
-    <springProperty scope="context" name="graylogIncludeMdc" source="graylog.include-mdc" defaultValue="true"/>
-    <springProperty scope="context" name="graylogIncludeMarker" source="graylog.include-marker" defaultValue="true"/>
-    <springProperty scope="context" name="graylogIncludeCallerData" source="graylog.include-caller-data"
-                    defaultValue="false"/>
-    <springProperty scope="context" name="graylogMaxMessageSize" source="graylog.maximum-message-size"
-                    defaultValue="8192"/>
-    <springProperty scope="context" name="graylogCompressionType" source="graylog.compression-type"
-                    defaultValue="GZIP"/>
 
-    <!-- GELF UDP Appender (enabled via Spring profile: graylog-enabled) -->
-    <!-- To enable: Add 'graylog-enabled' to spring.profiles.active -->
-    <!-- Example: SPRING_PROFILES_ACTIVE=local,graylog-enabled -->
     <springProfile name="graylog-enabled">
         <appender name="GELF_UDP" class="de.siegmar.logbackgelf.GelfUdpAppender">
             <graylogHost>${graylogHost}</graylogHost>
             <graylogPort>${graylogPort}</graylogPort>
-            <maxChunkSize>${graylogMaxMessageSize}</maxChunkSize>
-            <!-- useCompression: true for GZIP compression, false for no compression -->
-            <!-- In logback-gelf 5.0.0, useCompression should be boolean (true/false) -->
-            <!-- Compression is enabled by default (GZIP). Set graylog.compression-type=NONE to disable -->
             <useCompression>true</useCompression>
-            <originHost>${graylogOriginHost}</originHost>
-            <includeSource>${graylogIncludeSource}</includeSource>
-            <includeMdc>${graylogIncludeMdc}</includeMdc>
-            <includeMarker>${graylogIncludeMarker}</includeMarker>
-            <includeCallerData>${graylogIncludeCallerData}</includeCallerData>
-            <facility>${graylogFacility}</facility>
+            <originHost>analytics-service</originHost>
+            <facility>analytics-service</facility>
 
-            <!-- Filter to exclude DEBUG level logs from Graylog (only send INFO and above) -->
-            <!-- This prevents DEBUG logs from cluttering Graylog while keeping them in console for local development -->
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>INFO</level>
-            </filter>
-
-            <!-- Filter to exclude health check logs from graylog -->
-            <filter class="com.tuttime.analytics.config.HealthCheckLogFilter"/>
-
-            <!-- Additional Static Fields -->
-            <additionalField>
-                <key>service</key>
-                <value>${spring.application.name}</value>
-            </additionalField>
-            <additionalField>
-                <key>environment</key>
-                <value>${spring.profiles.active:local}</value>
-            </additionalField>
-
-            <!-- GELF Encoder Configuration -->
             <encoder class="de.siegmar.logbackgelf.GelfEncoder">
+                <!-- HARDCODED: This prevents the UnknownHostException -->
+                <originHost>analytics-service</originHost>
                 <includeRawMessage>false</includeRawMessage>
-                <!-- Include MDC fields as additional GELF fields -->
                 <includeMdcKeyName>correlationId</includeMdcKeyName>
-                <includeMdcKeyName>userId</includeMdcKeyName>
-                <includeMdcKeyName>requestId</includeMdcKeyName>
-                <includeMdcKeyName>deviceId</includeMdcKeyName>
-                <includeMdcKeyName>ipAddress</includeMdcKeyName>
             </encoder>
         </appender>
 
-        <!-- Async Appender wrapper for GELF_UDP to prevent blocking API threads -->
-        <!-- Buffers logs asynchronously to avoid network delays affecting API performance -->
         <appender name="ASYNC_GELF_UDP" class="ch.qos.logback.classic.AsyncAppender">
-            <queueSize>512</queueSize>
-            <discardingThreshold>0</discardingThreshold>
-            <includeCallerData>false</includeCallerData>
-            <neverBlock>false</neverBlock>
             <appender-ref ref="GELF_UDP"/>
         </appender>
     </springProfile>
 
-    <!-- Root Logger Configuration -->
-    <!-- When graylog-enabled profile is active: send to both console and Graylog -->
-    <springProfile name="graylog-enabled">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <springProfile name="graylog-enabled">
             <appender-ref ref="ASYNC_GELF_UDP"/>
-        </root>
-    </springProfile>
-
-    <!-- When graylog-enabled profile is NOT active: send to console only -->
-    <springProfile name="!graylog-enabled">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
-    </springProfile>
-
-    <!-- Application-specific Logger Levels -->
-    <!-- DEBUG level for console (local development), INFO level for Graylog (via ThresholdFilter) -->
-    <logger name="com.tuttime" level="DEBUG" additivity="true"/>
-    <logger name="org.springframework" level="INFO" additivity="true"/>
-    <!-- Reduce Spring Security logging to reduce noise from health checks -->
-    <logger name="org.springframework.security" level="INFO" additivity="true"/>
-    <logger name="org.springframework.security.web.authentication.AnonymousAuthenticationFilter" level="WARN"
-            additivity="true"/>
-    <logger name="org.hibernate" level="INFO" additivity="true"/>
-    <logger name="org.apache.kafka" level="INFO" additivity="true"/>
-    <logger name="org.springframework.data.redis" level="INFO" additivity="true"/>
-    <logger name="com.netflix.discovery" level="INFO" additivity="true"/>
-    <logger name="org.springframework.cloud.netflix" level="INFO" additivity="true"/>
-
-    <!-- Exclude health check related loggers from graylog (but allow console) -->
-    <!-- This prevents health check logs from being sent to Graylog -->
-    <!-- additivity="false" prevents logs from propagating to root logger (and thus to GELF_UDP) -->
-    <springProfile name="graylog-enabled">
-        <logger name="org.springframework.boot.actuate.health" level="WARN" additivity="false">
-            <appender-ref ref="CONSOLE"/>
-        </logger>
-    </springProfile>
-
-    <!-- SQL Logging disabled -->
-    <!-- Uncomment below to enable SQL logging in development -->
-    <!--
-    <springProfile name="local,dev">
-        <logger name="org.hibernate.SQL" level="DEBUG"/>
-        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
-    </springProfile>
-    -->
+        </springProfile>
+    </root>
 </configuration>
-
