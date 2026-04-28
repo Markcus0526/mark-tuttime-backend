@@ -16,8 +16,9 @@ DB_EXISTS=$(psql -U "$POSTGRES_USER" -tAc "SELECT 1 FROM pg_database WHERE datna
 
 if [ "$DB_EXISTS" != "1" ]; then
     echo "Database does not exist. Creating..."
-    psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" <<-EOSQL
-        CREATE DATABASE user_service_db;
+    psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d user_service_db <<-EOSQL
+        CREATE EXTENSION IF NOT EXISTS postgis; -- MANDATORY for your user_locations table
+        CREATE SCHEMA IF NOT EXISTS user_service;
         ALTER DATABASE user_service_db SET search_path TO user_service, public;
 EOSQL
     echo "Database created successfully."

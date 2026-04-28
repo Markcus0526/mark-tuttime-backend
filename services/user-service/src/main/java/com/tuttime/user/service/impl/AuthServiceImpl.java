@@ -451,7 +451,7 @@ public class AuthServiceImpl implements AuthService {
 
 	private AuthDto.AuthResponse.OAuthUserInfo verifyGoogleToken(String token) {
 		GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-				.setAudience(Collections.singletonList("${google.client.id}")) // Ensure this matches your Client ID
+				.setAudience(Collections.singletonList("${app.oauth.google.client.id}")) // Ensure this matches your Client ID
 				.build();
 
 		try {
@@ -473,7 +473,7 @@ public class AuthServiceImpl implements AuthService {
 		Claims claims = Jwts.parser()
 				.verifyWith(applePublicKey)
 				.requireIssuer("https://appleid.apple.com")
-				.requireAudience("${apple.client.id}")
+				.requireAudience("${app.oauth.apple.client.id}")
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();

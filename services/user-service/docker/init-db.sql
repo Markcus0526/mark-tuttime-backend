@@ -2,7 +2,14 @@
 -- USER SERVICE - Full Database Schema (Optimized)
 -- ============================================================================
 
--- Enable extensions
+-- 1. Create the schema required by your Spring Boot application.yml
+CREATE SCHEMA IF NOT EXISTS user_service;
+
+-- 2. Ensure all subsequent tables/types are created inside this schema
+SET search_path TO user_service, public;
+
+-- === Now paste your existing script below ===
+-- Enable extensions (these usually stay in public, which is fine)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS postgis;
