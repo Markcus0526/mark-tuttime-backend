@@ -13,6 +13,10 @@ services:
       - user_service_db_data:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
       - ./docker/init-db.sql:/docker-entrypoint-initdb.d/02-init-schema.sql:ro
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -35,13 +39,22 @@ services:
       # Inject values directly to override anything in application.yml
       SERVER_PORT: ${USER_SERVICE_PORT}
       HOSTNAME: user-service
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
     ports:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
       - "${USER_GRPC_PORT}:${USER_GRPC_PORT}"
     volumes:
-      - ./uploads:/app/uploads/medias # Persistent local storage for user images
+      - ./uploads:/app/uploads:rw # Persistent local storage for review images
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1800M
+        reservations:
+          cpus: '0.25'
+          memory: 1024M
     healthcheck:
-      test: ["CMD-SHELL", "cat < /dev/null > /dev/tcp/127.0.0.1/${USER_SERVICE_PORT} || exit 1"]
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${USER_SERVICE_PORT} || exit 1"]
       interval: 20s
       timeout: 10s
       retries: 3
