@@ -19,13 +19,13 @@ public class UserGrpcClient {
 
 	public UserValidResponse validateUser(UserValidRequest request) {
 		return GrpcExecutor.execute(USER_SERVICE, "validateUser", () ->
-				userServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				userServiceBlockingStub.withDeadlineAfter(10, TimeUnit.SECONDS)
 						.validateUser(request));
 	}
 
 	public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
 		return GrpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
-				userServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				userServiceBlockingStub.withDeadlineAfter(10, TimeUnit.SECONDS)
 						.getUserDetails(request));
 	}
 }

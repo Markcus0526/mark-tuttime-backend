@@ -34,13 +34,13 @@ public class MediaServiceImpl implements MediaService {
 	private final MediaMapper mediaMapper;
 	private final StaffService staffService;
 
-	@Value("${app.image.local.upload-dir}")
+	@Value("${app.media.local.upload-dir}")
 	private String uploadDir;
 
-	@Value("${app.image.local.upload-url}")
+	@Value("${app.media.local.upload-url}")
 	private String uploadUrl;
 
-	@Value("${app.image.max-size}")
+	@Value("${app.media.max-size}")
 	private int imageMaxSize;
 
 	@Override
