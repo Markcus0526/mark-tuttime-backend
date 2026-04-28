@@ -2,42 +2,50 @@ spring:
   application:
     name: api-gateway
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE}
+
   jackson:
     time-zone: UTC
     serialization:
       write-dates-as-timestamps: false
+
   main:
     web-application-type: reactive
+
   codec:
-    max-in-memory-size: 500MB  # Increase max body size for large file uploads (videos)
+    max-in-memory-size: ${SPRING_CODEC_MAX_IN_MEMORY_SIZE:500MB}
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:5000ms}
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE}
+          max-idle: ${REDIS_POOL_MAX_IDLE}
+          min-idle: ${REDIS_POOL_MIN_IDLE}
+
   cloud:
-    # Kubernetes Config (for ConfigMap support) - Discovery not needed (using direct URLs)
     kubernetes:
       discovery:
-        enabled: false  # Not needed - using direct URLs with Kubernetes DNS
+        enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED:false}
       config:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
+
     gateway:
       httpclient:
         max-header-size: 16KB
-        max-keep-alive-time: 3600s  # 1 hour for WebSocket connections (server timeout)
-        connect-timeout: 60000  # 60 seconds connection timeout
-        response-timeout: 300s  # 5 minutes for HTTP requests (WebSocket uses different timeout mechanism)
+        max-keep-alive-time: ${GATEWAY_HTTP_KEEP_ALIVE:3600s}
+        connect-timeout: ${GATEWAY_HTTP_CONNECT_TIMEOUT:60000}
+        response-timeout: ${GATEWAY_HTTP_RESPONSE_TIMEOUT:300s}
         pool:
-          max-idle-time: 0
-          max-connections: 5000  # Increased to 5000 for 100M user scale (12 pods × 5000 = 60k capacity, can scale to 30 pods × 5000 = 150k)
-          eviction-interval: 30s
-      # Discovery locator disabled - using direct URLs instead of lb:// URIs
-      # Kubernetes Service provides automatic load balancing
-      discovery:
-        locator:
-          enabled: false
+          max-connections: ${GATEWAY_POOL_MAX_CONNECTIONS:5000}
+
       routes:
         ################# User Service Routes #######################
-
         # Auth Service Routes (consolidated route with filters)
-        # Endpoints include: /api/v1/auth/**
         - id: user-service-auth
           order: 11
           uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
@@ -45,19 +53,12 @@ spring:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTION
           filters:
-            # Temporarily comment out custom filters to debug routing issue
-            # - name: RateLimiting
-            # - name: BruteForceProtection
-            # - name: JwtAuthentication
-            #   args:
-            #     skipPaths: /api/v1/auth/register,/api/v1/auth/register/refresh-token,/api/v1/auth/register/phone/verify,/api/v1/auth/register/send-code,/api/v1/auth/register/password-reset/request,/api/v1/auth/register/password-reset/confirm,/api/v1/auth/register/oauth-login,/api/v1/auth/register/email/send-verification,/api/v1/auth/register/email/verify
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
         # User Service Routes (GENERAL - comes after specific routes)
-        # Endpoints include: /api/v1/users/**
         - id: user-service-user
           order: 12
           uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
@@ -72,7 +73,6 @@ spring:
                 fallbackUri: forward:/fallback/user-service
 
         # User Service - App Version Routes
-        # Endpoints include: /api/v1/app/**
         - id: user-service-app-version
           order: 13
           uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
@@ -86,9 +86,6 @@ spring:
                 fallbackUri: forward:/fallback/user-service
 
         ################# Restaurant Service Routes #######################
-
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/restaurants/**
         - id: restaurant-service-restaurant
           order: 21
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -101,8 +98,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/restaurant-branches/**
         - id: restaurant-service-branch
           order: 22
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -115,8 +110,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/restaurant-zones/**
         - id: restaurant-service-zone
           order: 23
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -129,8 +122,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/restaurant-tables/**
         - id: restaurant-service-table
           order: 24
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -143,8 +134,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/restaurant-schedules/**
         - id: restaurant-service-schedule
           order: 25
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -157,8 +146,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/restaurant-medias/**
         - id: restaurant-service-media
           order: 26
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -171,8 +158,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /media/**
         - id: restaurant-service-media-files
           order: 27
           uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
@@ -180,12 +165,9 @@ spring:
             - Path=/restaurant-medias/**
           filters:
             - name: CircuitBreaker # GOOD
-            # - JwtAuthentication # REMOVE THIS IF IT IS HERE
 
         ################# Menu Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menus/**
         - id: menu-service-menu
           order: 31
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
@@ -198,8 +180,6 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-items/**
         - id: menu-service-item
           order: 32
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
@@ -212,8 +192,6 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-modifiers/**
         - id: menu-service-modifier
           order: 33
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
@@ -226,8 +204,6 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-discounts/**
         - id: menu-service-discount
           order: 34
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
@@ -240,8 +216,6 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-stoplists/**
         - id: menu-service-stoplist
           order: 35
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
@@ -254,8 +228,6 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/menu-medias/**
         - id: menu-service-media
           order: 36
           uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
@@ -268,8 +240,6 @@ spring:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /media/**
         - id: menu-service-media-files
           order: 37
           uri: http://173.249.29.61:28003
@@ -280,8 +250,6 @@ spring:
 
         ################# Booking Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/bookings/**
         - id: booking-service-booking
           order: 41
           uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
@@ -297,8 +265,6 @@ spring:
 
         ################# Order Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/orders/**
         - id: order-service-order
           order: 51
           uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
@@ -314,8 +280,6 @@ spring:
 
         ################# Payment Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/payments/**
         - id: payment-service-payment
           order: 61
           uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
@@ -331,8 +295,6 @@ spring:
 
         ################# Pos Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/poses/**
         - id: pos-service-pos
           order: 71
           uri: http://${POS_SERVICE:localhost}:${POS_SERVICE_PORT:28007}
@@ -348,8 +310,6 @@ spring:
 
         ################# Review Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/reviews/**
         - id: review-service-review
           order: 81
           uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
@@ -365,8 +325,6 @@ spring:
 
         ################# Analytics Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/analytics/**
         - id: analytics-service-analytics
           order: 91
           uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
@@ -382,8 +340,6 @@ spring:
 
         ################# Notification Service Routes #######################
 
-        # Methods: GET, POST, PUT, PATCH, DELETE
-        # Endpoints include: /api/v1/notifications/**
         - id: notification-service-notification
           order: 101
           uri: http://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
@@ -397,8 +353,6 @@ spring:
                 name: notificationServiceCircuitBreaker
                 fallbackUri: forward:/fallback/notification-service
 
-        # Notification Service - WebSocket for In-App Popups
-        # Endpoints include: /ws-notifications/**
         - id: notification-service-websocket
           order: 102
           uri: ws://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
@@ -476,116 +430,42 @@ spring:
           filters:
             - RewritePath=/notification-docs/(?<segment>.*), /$\{segment}
 
-
-  # Redis Configuration for token blacklist
-  data:
-    redis:
-      # Redis Sentinel Configuration (preferred for HA)
-      # If SPRING_DATA_REDIS_SENTINEL_MASTER and SPRING_DATA_REDIS_SENTINEL_NODES are set, Sentinel mode is used
-      # Otherwise, direct connection mode is used (backward compatible)
-      # Spring Boot automatically maps SPRING_DATA_REDIS_SENTINEL_* environment variables to these properties
-      #sentinel:
-      #  master: ${SPRING_DATA_REDIS_SENTINEL_MASTER}
-      #  nodes: ${SPRING_DATA_REDIS_SENTINEL_NODES}
-      # Direct connection configuration (used when Sentinel is not configured)
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      timeout: ${SPRING_DATA_REDIS_TIMEOUT:5000ms}
-      lettuce:
-        pool:
-          max-active: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE:8}
-          max-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE:8}
-          min-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE:0}
-
-  security:
-    jwt:
-      secret: ${JWT_SECRET:}
-      issuer: ${JWT_ISSUER:tuttime-backend} # Token issuer identifier
-      audience: ${JWT_AUDIENCE:tuttime-mobile-app} # Token audience identifier
-
-  threads:
-    virtual:
-      enabled: true
-
-  # Kafka configuration (uses environment variables from docker-compose.yml)
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     consumer:
       group-id: gateway-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
+
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER}
+      audience: ${JWT_AUDIENCE}
+
+  threads:
+    virtual:
+      enabled: true
 
 server:
-  port: 8080
+  port: ${API_GATEWAY_PORT:8080}
+  shutdown: graceful
 
-# Resilience4j Circuit Breaker Configuration
 resilience4j:
   circuitbreaker:
     instances:
       userServiceCircuitBreaker:
         registerHealthIndicator: true
         slidingWindowSize: 20
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 20s
         failureRateThreshold: 65
-        # Record exceptions that should be considered as failures
-        recordExceptions:
-          - java.util.concurrent.TimeoutException
-          - java.io.IOException
-          - org.springframework.web.client.HttpServerErrorException
-          - org.springframework.web.client.ResourceAccessException
-        # Ignore 4xx client errors (not service failures)
-        ignoreExceptions:
-          - org.springframework.web.client.HttpClientErrorException
-      restaurantServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 30s
-        failureRateThreshold: 50
-      menuServiceCircuitBreaker:
-        registerHealthIndicator: true
-        slidingWindowSize: 20
-        minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
         waitDurationInOpenState: 20s
-        failureRateThreshold: 65
-
-      # Note: Admin routes are handled by admin-gateway (port 28080), not api-gateway
   timelimiter:
     instances:
-      # Timeout configurations for all circuit breakers
-      # Must be longer than httpclient.response-timeout (300s) to allow requests to complete
       userServiceCircuitBreaker:
-        timeoutDuration: 65s
-      restaurantServiceCircuitBreaker:
-        timeoutDuration: 65s
-      menuServiceCircuitBreaker:
-        timeoutDuration: 65s
+        # Optimized: must be slightly higher than spring.cloud.gateway.httpclient.response-timeout
+        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s}
 
-  retry:
-    instances:
-      userService:
-        maxAttempts: 3
-        waitDuration: 1s
-      restaurantService:
-        maxAttempts: 3
-        waitDuration: 1s
-      menuService:
-        maxAttempts: 3
-        waitDuration: 1s
-      # Note: Admin routes are handled by admin-gateway (port 28080), not api-gateway
-
-# Management endpoints
 management:
   endpoints:
     web:
@@ -593,105 +473,40 @@ management:
         include: health,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
-      show-details: always  # Helps debugging why a status might be "DOWN"
+      show-details: always
   tracing:
     sampling:
       probability: 1.0
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_URL:http://tuttime-zipkin:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_URL}
 
-# Logging Configuration
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
-    com.tuttime.gateway: INFO
+    com.tuttime: DEBUG
     org.springframework.cloud.gateway: INFO
-    org.springframework.web: INFO
-    org.springframework.data.redis: WARN  # Only log Redis errors/warnings
-    io.lettuce.core: WARN  # Only log Redis connection errors
-    org.hibernate.SQL: WARN  # Disable SQL query logging
-    org.hibernate.type.descriptor.sql.BasicBinder: WARN  # Disable SQL parameter binding logging
-    io.github.resilience4j: INFO  # Log circuit breaker state changes
-    io.github.resilience4j.circuitbreaker: WARN  # Only log circuit breaker state changes (opens/closes)
 
-# Graylog Configuration
-# Note: Graylog logging is enabled via Spring profile 'graylog-enabled'
-# To enable: Add 'graylog-enabled' to spring.profiles.active
-# Example: SPRING_PROFILES_ACTIVE=local,graylog-enabled
 graylog:
-  host: ${GRAYLOG_HOST:173.249.29.61} # Graylog server host
-  port: ${GRAYLOG_PORT:12203} # Graylog UDP port
-  origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
-  facility: ${GRAYLOG_FACILITY:api-gateway} # Facility name for log categorization
-  include-source: ${GRAYLOG_INCLUDE_SOURCE:true} # Include source file and line number
-  include-mdc: ${GRAYLOG_INCLUDE_MDC:true} # Include Mapped Diagnostic Context fields
-  include-marker: ${GRAYLOG_INCLUDE_MARKER:true} # Include log markers
-  include-caller-data: ${GRAYLOG_INCLUDE_CALLER_DATA:false} # Include caller data (class, method, line)
-  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192} # Maximum GELF message size in bytes
-  compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP} # Compression type: GZIP, ZLIB, or NONE
+  host: ${GRAYLOG_HOST}
+  port: ${GRAYLOG_PORT}
+  origin-host: ${GRAYLOG_ORIGIN_HOST}
+  facility: ${GRAYLOG_FACILITY:api-gateway}
+  include-source: ${GRAYLOG_INCLUDE_SOURCE:true}
+  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192}
+  compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP}
 
-# Application-specific configuration
-#app:
-#  cors:
-#    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://app.tuttime.com,http://localhost:3000,http://localhost:8080}
-
-# Rate Limiting Configuration
-# All rate limit thresholds are configurable via environment variables
-# Default values match the current hardcoded values in the codebase
 rate:
   limit:
-    # IP-based endpoints - Sign In
-    signin:
-      capacity: ${RATE_LIMIT_SIGNIN_CAPACITY:5}
-      refill:
-        period:
-          minutes: ${RATE_LIMIT_SIGNIN_REFILL_PERIOD_MINUTES:1}
-    # IP-based endpoints - Sign Up
-    signup:
-      capacity: ${RATE_LIMIT_SIGNUP_CAPACITY:3}
-      refill:
-        period:
-          minutes: ${RATE_LIMIT_SIGNUP_REFILL_PERIOD_MINUTES:1}
-      sendsms:
-        capacity: ${RATE_LIMIT_SIGNUP_SEND_SMS_CAPACITY:3}
-        refill:
-          period:
-            hours: ${RATE_LIMIT_SIGNUP_SEND_SMS_REFILL_PERIOD_HOURS:1}
-      verifysms:
-        capacity: ${RATE_LIMIT_SIGNUP_VERIFY_SMS_CAPACITY:10}
-        refill:
-          period:
-            hours: ${RATE_LIMIT_SIGNUP_VERIFY_SMS_REFILL_PERIOD_HOURS:1}
-    # IP-based endpoints - Password Reset
-    password:
-      forgot:
-        capacity: ${RATE_LIMIT_PASSWORD_FORGOT_CAPACITY:3}
-        refill:
-          period:
-            hours: ${RATE_LIMIT_PASSWORD_FORGOT_REFILL_PERIOD_HOURS:1}
-      verifysms:
-        capacity: ${RATE_LIMIT_PASSWORD_VERIFY_SMS_CAPACITY:10}
-        refill:
-          period:
-            hours: ${RATE_LIMIT_PASSWORD_VERIFY_SMS_REFILL_PERIOD_HOURS:1}
-    # User-based endpoints - Auth Refresh
-    auth:
-      refresh:
-        capacity: ${RATE_LIMIT_AUTH_REFRESH_CAPACITY:10}
-        refill:
-          period:
-            minutes: ${RATE_LIMIT_AUTH_REFRESH_REFILL_PERIOD_MINUTES:1}
-    # User-based endpoints - Authenticated (default for all authenticated endpoints)
     authenticated:
       capacity: ${RATE_LIMIT_AUTHENTICATED_CAPACITY:500}
       refill:
         period:
-          minutes: ${RATE_LIMIT_AUTHENTICATED_REFILL_PERIOD_MINUTES:1}
+          minutes: 1
 
 springdoc:
   cache:
-    disabled: true  # Prevents server-side caching of the OpenAPI spec
+    disabled: true
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: alpha

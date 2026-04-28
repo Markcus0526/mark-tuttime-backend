@@ -33,7 +33,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 	private final PaymentAuditLogRepository auditLogRepository;
 	private final EventProducer eventProducer;
 
-	@Value("${stripe.webhook.secret}")
+//	@Value("${stripe.webhook.secret}")
 	private String webhookSecret; // Found in Stripe Dashboard -> Developers -> Webhooks
 
 	@Override
