@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -230,8 +232,12 @@ public class StaffServiceImpl implements StaffService {
 				.build();
 
 		UserValidResponse response = userGrpClient.validateUser(request);
-		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.ADMIN.name()))
+		if (!response.getValid()) {
 			throw new InvalidRequestException("Current User not found: " + currentUserId);
+		}
+		if (!response.getRoles().contains(UserRoleKind.ADMIN.name())) {
+			throw new ForbiddenException("Insufficient permissions. Required: ADMIN or OWNER.");
+		}
 	}
 
 	@Override
@@ -245,8 +251,15 @@ public class StaffServiceImpl implements StaffService {
 				.build();
 
 		UserValidResponse response = userGrpClient.validateUser(request);
-		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.OWNER.name()))
+		if (!response.getValid()) {
 			throw new InvalidRequestException("Current User not found: " + currentUserId);
+		}
+
+		boolean hasAccess = response.getRoles().contains(UserRoleKind.ADMIN.name())
+				|| response.getRoles().contains(UserRoleKind.OWNER.name());
+		if (!hasAccess) {
+			throw new ForbiddenException("Insufficient permissions. Required: ADMIN or OWNER.");
+		}
 	}
 
 	/**

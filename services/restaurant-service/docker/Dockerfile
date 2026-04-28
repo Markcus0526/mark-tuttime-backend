@@ -1,66 +1,53 @@
 # syntax=docker/dockerfile:1.4
-
 FROM maven:3.9.9-eclipse-temurin-21 AS builder
-
 WORKDIR /app
 
-COPY pom.xml ./pom.xml
+# 1. Copy Skeleton POMs to satisfy Maven Reactor
+COPY pom.xml ./
+COPY common-libs/common/pom.xml ./common-libs/common/
+COPY common-libs/common-event/pom.xml ./common-libs/common-event/
+COPY common-libs/common-auth/pom.xml ./common-libs/common-auth/
+COPY api-gateway/pom.xml ./api-gateway/
 
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn install -N -DskipTests -T 1C
+# Copy service poms (Even if not building them, they must exist for the Root POM to be valid)
+COPY services/user-service/pom.xml ./services/user-service/
+COPY services/restaurant-service/pom.xml ./services/restaurant-service/
+COPY services/menu-service/pom.xml ./services/menu-service/
+COPY services/booking-service/pom.xml ./services/booking-service/
+COPY services/payment-service/pom.xml ./services/payment-service/
+COPY services/order-service/pom.xml ./services/order-service/
+COPY services/pos-service/pom.xml ./services/pos-service/
+COPY services/review-service/pom.xml ./services/review-service/
+COPY services/analytics-service/pom.xml ./services/analytics-service/
+COPY services/notification-service/pom.xml ./services/notification-service/
 
-# Build common-libs
-COPY common-libs/commons-exception/pom.xml ./common-libs/commons-exception/pom.xml
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -pl common-libs/commons-exception -am -T 1C || true
-COPY common-libs/commons-exception/src ./common-libs/commons-exception/src
-RUN --mount=type=cache,target=/root/.m2 \
-    cd common-libs/commons-exception && mvn clean install -DskipTests -T 1C
+# 2. Build Shared Libraries
+RUN --mount=type=cache,target=/root/.m2 mvn install -N -DskipTests
+COPY common-libs/common/src ./common-libs/common/src
+RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common -am -DskipTests
 
-COPY common-libs/commons-events/pom.xml ./common-libs/commons-events/pom.xml
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -pl common-libs/commons-events -am -T 1C || true
-COPY common-libs/commons-events/src ./common-libs/commons-events/src
-RUN --mount=type=cache,target=/root/.m2 \
-    cd common-libs/commons-events && \
-    mvn protobuf:compile protobuf:compile-custom -DskipTests -T 1C 2>&1 | tee /tmp/protobuf.log || true && \
-    if [ -d target/protoc-plugins ]; then \
-        find target/protoc-plugins -type f -name "*.exe" 2>/dev/null | while read f; do \
-            linuxf="${f%.exe}"; \
-            if [ ! -f "$linuxf" ]; then \
-                cp "$f" "$linuxf" && chmod +x "$linuxf" && echo "Fixed: $linuxf"; \
-            fi; \
-        done; \
-    fi && \
-    mvn clean install -DskipTests -T 1C
+COPY common-libs/common-event/src ./common-libs/common-event/src
+RUN --mount=type=cache,target=/root/.m2 cd common-libs/common-event && \
+    mvn protobuf:compile -DskipTests || true && mvn clean install -DskipTests
 
-COPY common-libs/commons-auth/pom.xml ./common-libs/commons-auth/pom.xml
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -pl common-libs/commons-auth -am -T 1C || true
-COPY common-libs/commons-auth/src ./common-libs/commons-auth/src
-RUN --mount=type=cache,target=/root/.m2 \
-    cd common-libs/commons-auth && mvn clean install -DskipTests -T 1C
+COPY common-libs/common-auth/src ./common-libs/common-auth/src
+RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common-auth -am -DskipTests
 
-# Build restaurant-service
-# Re-install parent POM to ensure it's in local repository (required for restaurant-service's empty relativePath)
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn install -N -DskipTests -T 1C && \
-    ls -la /root/.m2/repository/com/tuttime/tuttime-be/1.0-SNAPSHOT/ || echo "Parent POM install verification failed"
-COPY services/restaurant-service/pom.xml ./services/restaurant-service/pom.xml
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn dependency:go-offline -pl services/restaurant-service -am -T 1C || true
+# 3. Build Restaurant Service
 COPY services/restaurant-service/src ./services/restaurant-service/src
-# Build from the module directory - parent POM should be in local repo due to empty relativePath
 RUN --mount=type=cache,target=/root/.m2 \
-    cd services/restaurant-service && mvn clean package -DskipTests -T 1C
+    mvn clean package -pl services/restaurant-service -am -DskipTests
 
+# --- Runner Stage ---
 FROM eclipse-temurin:21-jre-jammy AS runner
-
+RUN useradd -ms /bin/bash tuttime && mkdir -p /app/uploads/medias && chown tuttime:tuttime /app/uploads/medias
+USER tuttime
 WORKDIR /app
-
 COPY --from=builder /app/services/restaurant-service/target/restaurant-service-*.jar app.jar
 
+USER root
+ENTRYPOINT ["sh", "-c", "chown -R tuttime:tuttime /app/uploads && runuser -u tuttime -- java $JAVA_OPTS -jar app.jar"]
+
+ENV JAVA_OPTS="-XX:+UseParallelGC -XX:MaxRAMPercentage=75.0 -Duser.timezone=UTC"
 EXPOSE 28002 29002
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
-
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

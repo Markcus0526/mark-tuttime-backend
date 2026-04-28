@@ -2,16 +2,28 @@ package com.tuttime.restaurant;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@Slf4j
-@SpringBootApplication(scanBasePackages = "com.tuttime")
+@SpringBootApplication(
+		scanBasePackages = "com.tuttime",
+		exclude = {
+				RedisAutoConfiguration.class,
+				RedisRepositoriesAutoConfiguration.class,
+				RedisReactiveHealthContributorAutoConfiguration.class,
+				RedisHealthContributorAutoConfiguration.class
+		}
+)
 @EnableScheduling
+@Slf4j
 public class RestaurantServiceApplication {
 
 	public static void main(String[] args) {
