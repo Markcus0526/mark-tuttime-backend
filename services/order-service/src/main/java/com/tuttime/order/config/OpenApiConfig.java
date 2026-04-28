@@ -36,7 +36,6 @@ public class OpenApiConfig {
 
 	@Bean
 	public OpenAPI customOpenAPI() {
-		// Force Swagger UI to make calls to the Gateway port (8080) instead of 28001!
 		Server gatewayServer = new Server();
 		gatewayServer.setUrl("http://173.249.29.61:8080/order-docs");
 		gatewayServer.setDescription("Gateway Route");
