@@ -397,6 +397,14 @@ spring:
                 name: notificationServiceCircuitBreaker
                 fallbackUri: forward:/fallback/notification-service
 
+        # Notification Service - WebSocket for In-App Popups
+        # Endpoints include: /ws-notifications/**
+        - id: notification-service-websocket
+          order: 102
+          uri: ws://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
+          predicates:
+          - Path=/ws-notifications/**
+
         ################# OpenAPI(Swagger UI) Routes #######################
         - id: user-openapi
           uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
@@ -583,6 +591,9 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus,circuitbreakers
+  endpoint:
+    health:
+      show-details: always  # Helps debugging why a status might be "DOWN"
   tracing:
     sampling:
       probability: 1.0

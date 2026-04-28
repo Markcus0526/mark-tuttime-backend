@@ -39,7 +39,7 @@
         <dependency>
             <groupId>com.tuttime</groupId>
             <artifactId>common</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <exclusions>
                 <!-- Exclude Tomcat - Spring Cloud Gateway requires Netty -->
                 <exclusion>

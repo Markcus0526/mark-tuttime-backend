@@ -1,35 +1,72 @@
 services:
   api-gateway:
     build:
-      context: ..
+      context: ../
       dockerfile: api-gateway/docker/Dockerfile
-    image: tuttime/api-gateway:v1  # <--- Add this line
+    image: tuttime/api-gateway:v1
     container_name: tuttime-api-gateway
+    # Load shared variables (JWT secrets, etc.)
     env_file:
+      - .env
       - .env.docker
     environment:
-      # Explicitly set profile to ensure docker profile is active
-      SPRING_PROFILES_ACTIVE: docker
-      # Redis configuration - explicitly set to ensure they're passed to container
+      # Profile must include 'docker' to match your application-docker.yml logic
+      SPRING_PROFILES_ACTIVE: docker,graylog-enabled
+
+      # Networking: Standardize internal port to 8080
+      SERVER_PORT: 8080
+
+      # Service Discovery: Map to other container names in tuttime-network
+      USER_SERVICE: user-service
+      RESTAURANT_SERVICE: restaurant-service
+      MENU_SERVICE: menu-service
+      BOOKING_SERVICE: booking-service
+      ORDER_SERVICE: order-service
+      PAYMENT_SERVICE: payment-service
+      POS_SERVICE: pos-service
+      REVIEW_SERVICE: review-service
+      ANALYTICS_SERVICE: analytics-service
+      NOTIFICATION_SERVICE: notification-service
+
+      # Ports for the Gateway to use internally
+      USER_SERVICE_PORT: 28001
+      RESTAURANT_SERVICE_PORT: 28002
+      MENU_SERVICE_PORT: 28003
+      BOOKING_SERVICE_PORT: 28004
+      ORDER_SERVICE_PORT: 28005
+      PAYMENT_SERVICE_PORT: 28006
+      POS_SERVICE_PORT: 28007
+      REVIEW_SERVICE_PORT: 28008
+      ANALYTICS_SERVICE_PORT: 28009
+      NOTIFICATION_SERVICE_PORT: 28010
+
+      # Infrastructure Overrides
       REDIS_HOST: tuttime-redis
       REDIS_PORT: 6379
-      # REDIS_PASSWORD will be loaded from .env via env_file
-      # Don't set it here to avoid overriding the value from env_file
+      KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
       ZIPKIN_URL: http://tuttime-zipkin:9411/api/v2/spans
+      GRAYLOG_HOST: tuttime-graylog
+
+      # App specific
+      SPRING_CODEC_MAX_IN_MEMORY_SIZE: 500MB
       HOSTNAME: api-gateway
+      JAVA_OPTS: "-Djava.rmi.server.hostname=api-gateway -XX:+UseParallelGC -XX:MaxRAMPercentage=75.0"
+
     ports:
-      - "29000:29000"
+      - "8080:8080"
+
     networks:
       - tuttime-network
+
     healthcheck:
-      test: [ "CMD-SHELL", "wget --spider --quiet http://localhost:29000/actuator/health || exit 1" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 120s # Give it 2 full minutes to start up
+
     restart: unless-stopped
 
 networks:
   tuttime-network:
     external: true
-

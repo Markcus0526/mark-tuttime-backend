@@ -82,7 +82,7 @@
             <queueSize>512</queueSize>
             <discardingThreshold>0</discardingThreshold>
             <includeCallerData>false</includeCallerData>
-            <neverBlock>false</neverBlock>
+            <neverBlock>true</neverBlock>
             <appender-ref ref="GELF_UDP"/>
         </appender>
     </springProfile>
