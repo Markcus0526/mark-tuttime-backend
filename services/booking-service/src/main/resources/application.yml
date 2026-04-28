@@ -1,98 +1,78 @@
 spring:
   application:
     name: booking-service
+
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE}
+
   jackson:
     time-zone: UTC
     serialization:
       write-dates-as-timestamps: false
+
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5404/booking_service_db?currentSchema=booking_service&stringtype=unspecified&prepareThreshold=0}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:50} # Adjust based on DB capacity
-      minimum-idle: ${DB_POOL_MIN_IDLE:20}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE}
+      minimum-idle: ${DB_POOL_MIN_IDLE}
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
       leak-detection-threshold: 60000
-      # Set search_path and timezone on each connection
       connection-init-sql: SET search_path TO booking_service, public; SET timezone = 'UTC';
-    # Read replica configuration (optional - enables read/write splitting)
-    # Set DATABASE_REPLICA_URL environment variable to enable read replicas
     replica:
-      url: ${DATABASE_REPLICA_URL:}
-      username: ${DATABASE_REPLICA_USERNAME:${DATABASE_USERNAME:postgres}}
-      password: ${DATABASE_REPLICA_PASSWORD:${DATABASE_PASSWORD:}}
+      url: ${DATABASE_URL}
+      username: ${DATABASE_USERNAME}
+      password: ${DATABASE_PASSWORD}
       driver-class-name: org.postgresql.Driver
       hikari:
-        maximum-pool-size: ${DB_REPLICA_POOL_MAX_SIZE:50}
-        minimum-idle: ${DB_REPLICA_POOL_MIN_IDLE:10}
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        leak-detection-threshold: 60000
-        # Set search_path and timezone on each connection
-        connection-init-sql: SET search_path TO booking_service, public; SET timezone = 'UTC';
+        maximum-pool-size: ${DB_REPLICA_POOL_MAX_SIZE}
+        minimum-idle: ${DB_REPLICA_POOL_MIN_IDLE}
 
   jpa:
     hibernate:
-      ddl-auto: update # Change from 'none' or 'validate' to 'update'
-    show-sql: false  # Disable SQL logging
+      ddl-auto: none
+    show-sql: false
     properties:
       hibernate:
         default_schema: booking_service
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false  # Disable SQL formatting
         jdbc:
           batch_size: 50
           time_zone: UTC
         order_inserts: true
         order_updates: true
-        # Disable SQL logging
-        use_sql_comments: false
 
-  # Use Redis cache (default)
-  cache:
-    type: ${CACHE_TYPE:redis}
-  # Spring Data Configuration (Pagination + Redis)
   data:
     web:
       pageable:
         default-page-size: 100
         max-page-size: 1000
-        page-parameter: page
-        size-parameter: size
-      # Note: Page serialization mode is configured via @EnableSpringDataWebSupport in WebConfig.java
     redis:
-      # Direct connection configuration (used when Sentinel is not configured)
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
-      timeout: 2000ms
-      ssl:
-        enabled: false
+      timeout: 8000ms
       lettuce:
         pool:
-          # Increased pool size for high concurrency
-          max-active: ${REDIS_POOL_MAX_ACTIVE:500}
-          max-idle: ${REDIS_POOL_MAX_IDLE:50}
-          min-idle: ${REDIS_POOL_MIN_IDLE:10}
-          max-wait: 5000ms
+          max-active: ${REDIS_POOL_MAX_ACTIVE}
+          max-idle: ${REDIS_POOL_MAX_IDLE}
+          min-idle: ${REDIS_POOL_MIN_IDLE}
+          max-wait: -1ms
 
-  # Kafka configuration (uses environment variables from docker-compose.yml)
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     security:
-      protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL}
     properties:
       sasl:
         mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+      spring.json.add.type.headers: true
     consumer:
       group-id: booking-service-group
       auto-offset-reset: earliest
@@ -104,73 +84,100 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
+  security:
+    jwt:
+      access-token:
+        secret: ${JWT_SECRET}
+        expiration: ${JWT_EXPIRATION}
+      issuer: ${JWT_ISSUER}
+      audience: ${JWT_AUDIENCE}
 
-  # Servlet Multipart Configuration - Required for profile image uploads > 1MB
-  # Default Spring Boot limit is 1MB, which blocks 1.5MB and 3MB images
   servlet:
     multipart:
-      enabled: ${SPRING_SERVLET_MULTIPART_ENABLED:true}
-      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE:10MB}
-      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE:10MB}
-      file-size-threshold: ${SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD:2KB}
+      enabled: ${SPRING_SERVLET_MULTIPART_ENABLED}
+      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE}
+      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE}
 
   threads:
     virtual:
       enabled: true
 
-# Brute-Force Protection Configuration
-bruteforce:
-  warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD:4} # Log warning after 4 failed attempts (increased from 3 for better UX)
-  ip-block-threshold: ${BRUTEFORCE_IP_BLOCK_THRESHOLD:7} # Block IP after 7 failed attempts (increased from 5 for better UX)
-  phone-block-threshold: ${BRUTEFORCE_PHONE_BLOCK_THRESHOLD:12} # Block phone after 12 failed attempts (increased from 10 for better UX)
-  permanent-block-threshold: ${BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD:18} # Permanent block after 18 failed attempts (increased from 15 for better UX)
-  ip-block-duration-minutes: ${BRUTEFORCE_IP_BLOCK_DURATION_MINUTES:15} # Block IP for 15 minutes
-  phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES:60} # Block phone for 1 hour
+  # Cloud block moved outside resilience4j
+  cloud:
+    kubernetes:
+      discovery:
+        enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED}
+        namespaces:
+          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES}
+      config:
+        enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED}
 
 server:
-  port: ${BOOKING_SERVICE_PORT:28004}
+  port: ${BOOKING_SERVICE_PORT}
   shutdown: graceful
 
 grpc:
   server:
-    port: ${BOOKING_GRPC_PORT:29004}
-  # Global gRPC client deadline (seconds). Prevents indefinite hangs when remote services
-  # are unresponsive. 60s is generous for batch operations under heavy load.
-  # Used by GrpcClientDeadlineInterceptor.
-  client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS:60}
+    port: ${BOOKING_GRPC_PORT}
   client:
     user-service:
-      address: static://${USER_SERVICE:localhost}:${USER_GRPC_PORT:29001}
+      address: static://${USER_SERVICE}:${USER_GRPC_PORT}
       negotiation-type: plaintext
     restaurant-service:
-      address: static://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_GRPC_PORT:29002}
+      address: static://${RESTAURANT_SERVICE}:${RESTAURANT_GRPC_PORT}
       negotiation-type: plaintext
     menu-service:
-      address: static://${MENU_SERVICE:localhost}:${MENU_GRPC_PORT:29003}
+      address: static://${MENU_SERVICE}:${MENU_GRPC_PORT}
       negotiation-type: plaintext
     booking-service:
-      address: static://${BOOKING_SERVICE:localhost}:${BOOKING_GRPC_PORT:29004}
+      address: static://${BOOKING_SERVICE}:${BOOKING_GRPC_PORT}
       negotiation-type: plaintext
     order-service:
-      address: static://${ORDER_SERVICE:localhost}:${ORDER_GRPC_PORT:29005}
+      address: static://${ORDER_SERVICE}:${ORDER_GRPC_PORT}
       negotiation-type: plaintext
     payment-service:
-      address: static://${PAYMENT_SERVICE:localhost}:${PAYMENT_GRPC_PORT:29006}
+      address: static://${PAYMENT_SERVICE}:${PAYMENT_GRPC_PORT}
       negotiation-type: plaintext
     pos-service:
-      address: static://${POS_SERVICE:localhost}:${POS_GRPC_PORT:29007}
+      address: static://${POS_SERVICE}:${POS_GRPC_PORT}
       negotiation-type: plaintext
     review-service:
-      address: static://${REVIEW_SERVICE:localhost}:${REVIEW_GRPC_PORT:29008}
+      address: static://${REVIEW_SERVICE}:${REVIEW_GRPC_PORT}
       negotiation-type: plaintext
     analytics-service:
-      address: static://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_GRPC_PORT:29009}
+      address: static://${ANALYTICS_SERVICE}:${ANALYTICS_GRPC_PORT}
       negotiation-type: plaintext
     notification-service:
-      address: static://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_GRPC_PORT:29010}
+      address: static://${NOTIFICATION_SERVICE}:${NOTIFICATION_GRPC_PORT}
       negotiation-type: plaintext
+  security:
+    enabled: false
+  client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS}
+
+app:
+  media:
+    storage:
+      type: ${MEDIA_STORAGE_TYPE}
+    s3:
+      endpoint: ${S3_ENDPOINT}
+      region: ${S3_REGION}
+      bucket: ${S3_BUCKET}
+      access-key: ${S3_ACCESS_KEY}
+      secret-key: ${S3_SECRET_KEY}
+    local:
+      upload-dir: ${LOCAL_STORAGE_PATH}
+      upload-url: ${LOCAL_MEDIA_URL_PATH}
+    max-size: ${MEDIA_MAX_SIZE:5242880}
+    max-dimension: ${MEDIA_MAX_DIMENSION:1024}
+    quality: ${MEDIA_QUALITY:0.85}
+
+  oauth:
+    google:
+      client:
+        id: ${GOOGLE_CLIENT_ID}
+    apple:
+      client:
+        id: ${APPLE_CLIENT_ID}
 
 management:
   endpoints:
@@ -179,43 +186,62 @@ management:
         include: health,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
+      validate-group-membership: false
       show-details: always
-      # Enable database health check (includes connection pool monitoring)
       db:
         enabled: true
       group:
         readiness:
-          include: db,redis,diskSpace,ping
+          include: db,diskSpace,ping
         liveness:
           include: diskSpace,ping
   metrics:
-    export:
-      prometheus:
-        enabled: true
-    # Enable HikariCP metrics
     tags:
       application: ${spring.application.name}
     distribution:
       percentiles-histogram:
         "[hikari.connections.*]": true
-      percentiles:
-        "[hikari.connections.*]": 0.5, 0.95, 0.99
   health:
-    # Exclude gRPC channels from health checks
-    # gRPC channels can have TRANSIENT_FAILURE during network issues or service restarts
-    # This should not cause the entire service to be marked as DOWN
     grpc:
+      enabled: false
+    redis:
       enabled: false
   tracing:
     sampling:
-      probability: 1.0  # 100% sampling for development, reduce in production
-  # Shared Zipkin instance for distributed tracing
-  # All microservices use the same Zipkin instance in Docker environment
+      probability: 1.0
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_URL:http://tuttime-zipkin:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_URL}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
-# Resilience4j Circuit Breaker Configuration
+connection:
+  pool:
+    monitoring:
+      enabled: ${CONNECTION_POOL_MONITORING_ENABLED}
+
+springdoc:
+  cache:
+    disabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+bruteforce:
+  warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD}
+  ip-block-threshold: ${BRUTEFORCE_IP_BLOCK_THRESHOLD}
+  phone-block-threshold: ${BRUTEFORCE_PHONE_BLOCK_THRESHOLD}
+  permanent-block-threshold: ${BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD}
+  ip-block-duration-minutes: ${BRUTEFORCE_IP_BLOCK_DURATION_MINUTES}
+  phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES}
+
+antifraud:
+  max-devices-per-user: ${ANTIFRAUD_MAX_DEVICES_PER_USER}
+  multi-account-ip-threshold: ${ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD}
+
 resilience4j:
   circuitbreaker:
     instances:
@@ -223,118 +249,30 @@ resilience4j:
         registerHealthIndicator: true
         slidingWindowSize: 20
         minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
-        automaticTransitionFromOpenToHalfOpenEnabled: true
         waitDurationInOpenState: 20s
         failureRateThreshold: 65
-        eventConsumerBufferSize: 10
   retry:
     instances:
       grpc:
         maxAttempts: 5
         waitDuration: 1s
-        enableExponentialBackoff: true
-        exponentialBackoffMultiplier: 2
-
-  # Kubernetes Discovery - Disabled in Docker
-  cloud:
-    # Kubernetes discovery - enabled only in K8s via env var
-    kubernetes:
-      discovery:
-        enabled: ${SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED:false}
-        namespaces:
-          - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES:tuttime}
-        discovery-server-url: ""
-      config:
-        enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED:false}
 
 logging:
   pattern:
-    # This pattern removes the empty MDC brackets and extra padding
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   level:
-    root: ${LOG_LEVEL:INFO}
+    root: ${LOG_LEVEL}
     com.tuttime: DEBUG
-    # Reduce Spring Security logging to INFO to avoid noisy anonymous authentication logs for health checks
     org.springframework.security: INFO
-    org.springframework.security.web.authentication.AnonymousAuthenticationFilter: WARN  # Suppress anonymous auth logs
-    org.hibernate.SQL: WARN  # Disable SQL query logging
-    org.hibernate.type.descriptor.sql.BasicBinder: WARN  # Disable SQL parameter binding logging
-    org.springframework.data.redis: WARN  # Only log Redis errors/warnings
-    io.lettuce.core: WARN  # Only log Redis connection errors
-    org.apache.kafka: INFO
-    org.springframework.kafka: INFO
 
-# Graylog Configuration
-# Note: Graylog logging is enabled via Spring profile 'graylog-enabled'
-# To enable: Add 'graylog-enabled' to spring.profiles.active
-# Example: SPRING_PROFILES_ACTIVE=graylog-enabled
 graylog:
-  host: ${GRAYLOG_HOST:173.249.29.61} # Graylog server host
-  port: ${GRAYLOG_PORT:12203} # Graylog UDP port
-  origin-host: ${GRAYLOG_ORIGIN_HOST:${spring.application.name}} # Origin host identifier
-  facility: ${GRAYLOG_FACILITY:booking-service} # Facility name for log categorization
-  include-source: ${GRAYLOG_INCLUDE_SOURCE:true} # Include source file and line number
-  include-mdc: ${GRAYLOG_INCLUDE_MDC:true} # Include Mapped Diagnostic Context fields
-  include-marker: ${GRAYLOG_INCLUDE_MARKER:true} # Include log markers
-  include-caller-data: ${GRAYLOG_INCLUDE_CALLER_DATA:false} # Include caller data (class, method, line)
-  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192} # Maximum GELF message size in bytes
-  compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP} # Compression type: GZIP, ZLIB, or NONE
-
-# Application Configuration
-app:
-  image:
-    storage:
-      type: ${IMAGE_STORAGE_TYPE:s3} # Use S3 in Docker
-    s3:
-      endpoint: ${S3_ENDPOINT:https://s3.ru-7.storage.selcloud.ru}
-      region: ${S3_REGION:ru-7}
-      bucket: ${S3_BUCKET:tuttime-storage}
-      access-key: ${S3_ACCESS_KEY:}
-      secret-key: ${S3_SECRET_KEY:}
-      base-url: ${S3_BASE_URL:} # Optional: CDN or public URL base (e.g., https://cdn.example.com)
-      presigned-url-expiration-hours: ${S3_PRESIGNED_URL_EXPIRATION_HOURS:24}
-    max-size: ${IMAGE_MAX_SIZE:5242880} # 5MB
-    max-dimension: ${IMAGE_MAX_DIMENSION:1024} # Max width/height in pixels
-    quality: ${IMAGE_QUALITY:0.85} # JPEG quality (0.0 to 1.0)
-  language:
-    apple-user-id: ${APPLE_LANGUAGE_USER_ID:} # User ID that should receive apple language translations (empty = disabled)
-
-# Map Query Configuration
-map:
-  query:
-    # Use approximate COUNT queries for better performance (faster but less accurate)
-    # Set to true for large datasets (>1M users) to improve COUNT query performance
-    use-approximate-count: ${MAP_USE_APPROXIMATE_COUNT:false}
-
-# Rate Limiting Configuration
-ratelimit:
-  map:
-    query:
-      # Maximum number of map queries allowed per window
-      limit: ${RATELIMIT_MAP_QUERY_LIMIT:100}
-      # Time window in minutes for map query rate limiting
-      window-minutes: ${RATELIMIT_MAP_QUERY_WINDOW_MINUTES:1}
-  location:
-    update:
-      # Maximum number of location updates allowed per window
-      limit: ${RATELIMIT_LOCATION_UPDATE_LIMIT:10}
-      # Time window in hours for location update rate limiting
-      window-hours: ${RATELIMIT_LOCATION_UPDATE_WINDOW_HOURS:1}
-
-# Connection Pool Monitoring Configuration
-connection:
-  pool:
-    # Enable periodic logging of connection pool statistics (every 5 minutes)
-    # Useful for monitoring pool usage over time
-    monitoring:
-      enabled: ${CONNECTION_POOL_MONITORING_ENABLED:false}
-
-springdoc:
-  cache:
-    disabled: true  # Prevents server-side caching of the OpenAPI spec
-  swagger-ui:
-    path: /swagger-ui.html
-  api-docs:
-    path: /v3/api-docs
-  model-and-parameter-ignores: X-User-Id,X-User-Roles
+  host: ${GRAYLOG_HOST}
+  port: ${GRAYLOG_PORT}
+  origin-host: ${GRAYLOG_ORIGIN_HOST}
+  facility: ${GRAYLOG_FACILITY}
+  include-source: ${GRAYLOG_INCLUDE_SOURCE}
+  include-mdc: ${GRAYLOG_INCLUDE_MDC}
+  include-marker: ${GRAYLOG_INCLUDE_MARKER}
+  include-caller-data: ${GRAYLOG_INCLUDE_CALLER_DATA}
+  maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE}
+  compression-type: ${GRAYLOG_COMPRESSION_TYPE}
