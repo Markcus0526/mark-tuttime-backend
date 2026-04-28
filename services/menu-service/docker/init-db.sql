@@ -56,6 +56,7 @@ CREATE TABLE modifier_groups
     min_select  INT          NOT NULL DEFAULT 0, -- 1 for mandatory
     max_select  INT          NOT NULL DEFAULT 1, -- >1 for multiple choice
     deleted     BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at  TIMESTAMPTZ,
     created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
@@ -69,6 +70,7 @@ CREATE TABLE modifiers
     description       TEXT,
     price_adjustment  DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     deleted           BOOLEAN        NOT NULL DEFAULT FALSE,
+    deleted_at  TIMESTAMPTZ,
     created_at        TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP
 );
@@ -102,7 +104,8 @@ CREATE TABLE stop_lists
     start_date   DATE NOT NULL,
     end_date     DATE NOT NULL DEFAULT '9999-12-31',
     reason       VARCHAR(255),
-    created_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 9. DISCOUNTS (Promotional Rules)
@@ -117,7 +120,8 @@ CREATE TABLE discounts
     start_date    TIMESTAMPTZ,
     end_date      TIMESTAMPTZ,
     active        BOOLEAN          DEFAULT TRUE,
-    created_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 10. MEDIAS (Polymorphic Images)
@@ -130,7 +134,9 @@ CREATE TABLE medias
     primary_entity BOOLEAN                DEFAULT FALSE,
     media_type     media_type_enum        DEFAULT 'IMAGE',
     deleted        BOOLEAN       NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMPTZ            DEFAULT CURRENT_TIMESTAMP
+    deleted_at     TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 11. INDICES (For Query Optimization)

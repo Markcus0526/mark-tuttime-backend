@@ -22,10 +22,10 @@ public class WebConfig implements WebMvcConfigurer {
 	private final UserHeaderInterceptor userHeaderInterceptor;
 	private final ObjectMapper objectMapper;
 
-	@Value("${app.image.local.upload-dir}")
+	@Value("${app.media.local.upload-dir}")
 	private String uploadDir;
 
-	@Value("${app.image.local.upload-url}")
+	@Value("${app.media.local.upload-url}")
 	private String uploadUrl;
 
 	@Override
