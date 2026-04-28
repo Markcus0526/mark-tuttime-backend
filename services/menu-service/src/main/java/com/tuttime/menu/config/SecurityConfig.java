@@ -23,7 +23,7 @@ public class SecurityConfig {
 
 	private final GatewayHeaderSecurityFilter gatewayHeaderSecurityFilter;
 
-	@Value("${app.image.local.upload-url}")
+	@Value("${app.media.local.upload-url}")
 	private String uploadUrl;
 
 	@Bean
