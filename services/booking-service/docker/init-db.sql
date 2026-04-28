@@ -70,6 +70,7 @@ CREATE TABLE booking_items
     unit_price    DECIMAL(10, 2) NOT NULL,
     total_price   DECIMAL(10, 2) NOT NULL,
     notes         VARCHAR(255),
+    selected_modifiers TEXT,
     created_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
 );
