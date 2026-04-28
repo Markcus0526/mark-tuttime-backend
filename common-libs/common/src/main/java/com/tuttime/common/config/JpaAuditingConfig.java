@@ -38,7 +38,7 @@ public class JpaAuditingConfig {
 	 * @return DateTimeProvider that provides OffsetDateTime instances
 	 */
 	public JpaAuditingConfig() {
-		System.out.println("DEBUG: JpaAuditingConfig has been loaded!");
+//		System.out.println("DEBUG: JpaAuditingConfig has been loaded!");
 	}
 
 	@Bean(name = "offsetDateTimeProvider")
