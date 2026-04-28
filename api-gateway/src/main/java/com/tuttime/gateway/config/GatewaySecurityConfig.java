@@ -34,7 +34,10 @@ public class GatewaySecurityConfig {
 				.csrf(ServerHttpSecurity.CsrfSpec::disable)
 
 				.authorizeExchange(exchanges -> exchanges
+								.pathMatchers("/actuator/health").permitAll() // Allow this!
+
 								// 3. EXPLICITLY allow anyone to access Swagger and OpenAPI paths
+								.pathMatchers(HttpMethod.GET, "/user-medias/**").permitAll()
 								.pathMatchers(HttpMethod.GET, "/restaurant-medias/**").permitAll()
 								.pathMatchers(HttpMethod.GET, "/menu-medias/**").permitAll()
 
