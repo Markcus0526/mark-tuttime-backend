@@ -12,8 +12,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "reviews", schema = "review_service")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Schema(description = "Review Entity representing user feedback for a branch")
 public class Review extends BaseUuidEntity {
@@ -26,7 +28,8 @@ public class Review extends BaseUuidEntity {
 	@Schema(description = "ID of the branch being reviewed")
 	private UUID branchId;
 
-	@Min(1) @Max(5)
+	@Min(1)
+	@Max(5)
 	@Column(nullable = false)
 	@Schema(description = "Rating from 1 to 5", example = "5")
 	private Integer rating;

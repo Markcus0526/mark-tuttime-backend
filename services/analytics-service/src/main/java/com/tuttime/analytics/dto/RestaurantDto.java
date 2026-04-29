@@ -17,7 +17,8 @@ public class RestaurantDto {
 			BigDecimal occupancyRate,
 			String demandLevel,
 			Float recommendedDiscountPct
-	) {}
+	) {
+	}
 
 	@Builder
 	public record DailyLedgerResponse(
@@ -27,7 +28,8 @@ public class RestaurantDto {
 			BigDecimal commissionEarned,
 			BigDecimal payoutDueRestaurant,
 			BigDecimal refundVolume
-	) {}
+	) {
+	}
 
 	public record BranchPerformanceResponse(
 			UUID branchId,
@@ -35,5 +37,6 @@ public class RestaurantDto {
 			BigDecimal posSyncHealthPct,
 			BigDecimal avgGuestRating,
 			UUID popularDishId
-	) {}
+	) {
+	}
 }

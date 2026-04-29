@@ -89,6 +89,9 @@ spring:
       access-token:
         secret: ${JWT_SECRET}
         expiration: ${JWT_EXPIRATION}
+      refresh-token:
+        secret: ${JWT_SECRET}
+        expiration: ${JWT_EXPIRATION}
       issuer: ${JWT_ISSUER}
       audience: ${JWT_AUDIENCE}
 
@@ -248,6 +251,10 @@ resilience4j:
         minimumNumberOfCalls: 5
         waitDurationInOpenState: 20s
         failureRateThreshold: 65
+  timelimiter:
+    instances:
+      bookingServiceCircuitBreaker:
+        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s} # Ensure this is > GRPC_CLIENT_DEADLINE_SECONDS!
   retry:
     instances:
       grpc:

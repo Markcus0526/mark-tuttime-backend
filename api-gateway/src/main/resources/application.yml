@@ -85,6 +85,17 @@ spring:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
+        - id: user-service-media-files
+          order: 14
+          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
+          predicates:
+            - Path=/user-medias/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+                fallbackUri: forward:/fallback/user-service
+
         ################# Restaurant Service Routes #######################
         - id: restaurant-service-restaurant
           order: 21
@@ -165,6 +176,9 @@ spring:
             - Path=/restaurant-medias/**
           filters:
             - name: CircuitBreaker # GOOD
+              args:
+                name: restaurantServiceCircuitBreaker
+                fallbackUri: forward:/fallback/restaurant-service
 
         ################# Menu Service Routes #######################
 
@@ -246,7 +260,10 @@ spring:
           predicates:
             - Path=/menu-medias/**
           filters:
-            - name: CircuitBreaker # GOOD
+            - name: CircuitBreaker
+              args:
+                name: menuServiceCircuitBreaker
+                fallbackUri: forward:/fallback/menu-service
 
         ################# Booking Service Routes #######################
 

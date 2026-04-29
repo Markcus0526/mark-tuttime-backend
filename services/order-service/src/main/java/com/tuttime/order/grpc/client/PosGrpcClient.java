@@ -7,6 +7,7 @@ import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +21,9 @@ import static com.tuttime.common.constants.ServiceNames.POS_SERVICE;
 @Slf4j
 @RequiredArgsConstructor
 public class PosGrpcClient {
+
+	@Value("${grpc.client-deadline-seconds}")
+	private int grpcDeadline;
 
 	@GrpcClient("pos-service")
 	private PosServiceGrpc.PosServiceBlockingStub posServiceBlockingStub;
@@ -74,7 +78,7 @@ public class PosGrpcClient {
 		});
 
 		return GrpcExecutor.execute(POS_SERVICE, "pushToKitchen", () ->
-				posServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				posServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.pushToKitchen(requestBuilder.build()).getSuccess());
 	}
 

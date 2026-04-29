@@ -1,7 +1,6 @@
 package com.tuttime.analytics.repository;
 
 import com.tuttime.analytics.entity.BranchYieldManagement;
-import com.tuttime.analytics.entity.SystemEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

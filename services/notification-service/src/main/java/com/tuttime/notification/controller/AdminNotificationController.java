@@ -1,7 +1,7 @@
 package com.tuttime.notification.controller;
 
 import com.tuttime.common.auth.security.UserContext;
-import com.tuttime.common.dto.ApiRes; // Assuming common location
+import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.notification.dto.AdminNotificationDto;

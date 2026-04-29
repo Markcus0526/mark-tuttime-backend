@@ -1,9 +1,9 @@
 package com.tuttime.user.grpc;
 
-import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.event.proto.*;
-import com.tuttime.user.entity.*;
 import com.tuttime.common.enums.UserStatus;
+import com.tuttime.common.event.proto.*;
+import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.user.entity.*;
 import com.tuttime.user.repository.UserRepository;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.TokenBlacklistService;

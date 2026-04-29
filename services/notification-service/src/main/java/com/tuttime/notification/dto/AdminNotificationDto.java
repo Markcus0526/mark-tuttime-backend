@@ -5,6 +5,7 @@ import com.tuttime.notification.entity.enums.NotificationChannel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.Map;
 
 public class AdminNotificationDto {
@@ -33,7 +34,8 @@ public class AdminNotificationDto {
 
 			@Schema(description = "Status of the template", example = "true")
 			boolean active
-	) {}
+	) {
+	}
 
 	@Schema(description = "DTO for previewing a template before saving")
 	public record PreviewRequest(
@@ -43,5 +45,6 @@ public class AdminNotificationDto {
 
 			@Schema(description = "Mock data to inject into placeholders", example = "{\"userName\": \"John Doe\"}")
 			Map<String, Object> mockParams
-	) {}
+	) {
+	}
 }

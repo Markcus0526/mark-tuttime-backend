@@ -2,25 +2,22 @@ package com.tuttime.payment.service.impl;
 
 import com.stripe.exception.StripeException;
 import com.stripe.param.RefundCreateParams;
+import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.PaymentEvent;
-import com.tuttime.common.event.kafka.UserEvent;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.Refund;
-import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
 import com.tuttime.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Service
@@ -32,7 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
 	private final RefundRepository refundRepository;
 	private final EventProducer eventProducer;
 
-//	@Value("${stripe.webhook.secret}")
+	//	@Value("${stripe.webhook.secret}")
 	private String webhookSecret;
 
 	@Override

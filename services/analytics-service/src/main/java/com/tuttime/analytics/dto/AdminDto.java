@@ -16,7 +16,8 @@ public class AdminDto {
 			long totalBookingsCount,         // Platform usage volume
 			double averageCommissionRate,    // Health of the 5–12% margin
 			double platformYieldPercentage   // Efficiency of filling "dead hours"
-	) {}
+	) {
+	}
 
 	@Builder
 	public record UserReliabilityResponse(
@@ -27,5 +28,6 @@ public class AdminDto {
 			Integer lateCancelCount,
 			String riskLevel,
 			boolean requiresFullPrepay // Calculated field for the UI
-	) {}
+	) {
+	}
 }

@@ -12,7 +12,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "financial_ledgers", schema = "analytics_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class FinancialLedger extends BaseUuidEntity {
 
 	@Column(name = "branch_id", nullable = false)

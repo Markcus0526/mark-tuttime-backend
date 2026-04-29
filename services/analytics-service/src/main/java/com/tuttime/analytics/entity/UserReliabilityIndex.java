@@ -11,7 +11,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "user_reliability_indexes", schema = "analytics_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserReliabilityIndex extends BaseTimeStampEntity {
 	@Id
 	@Column(name = "user_id")

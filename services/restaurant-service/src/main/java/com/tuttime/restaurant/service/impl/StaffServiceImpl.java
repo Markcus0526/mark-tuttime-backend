@@ -3,10 +3,10 @@ package com.tuttime.restaurant.service.impl;
 import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.RestaurantEvent;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
-import com.tuttime.common.event.proto.*;
 import com.tuttime.restaurant.dto.StaffDto;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;
@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
 @Service
 @RequiredArgsConstructor

@@ -11,7 +11,11 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "branch_yield_managements", schema = "analytics_service")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BranchYieldManagement extends BaseTimeStampEntity {
 
 	@EmbeddedId
@@ -33,7 +37,9 @@ public class BranchYieldManagement extends BaseTimeStampEntity {
 	private Float recommendedDiscountPct;
 
 	@Embeddable
-	@Data @AllArgsConstructor @NoArgsConstructor
+	@Data
+	@AllArgsConstructor
+	@NoArgsConstructor
 	public static class BranchSlotId implements Serializable {
 		private UUID branchId;
 		private OffsetDateTime timeSlot;

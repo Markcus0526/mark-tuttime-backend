@@ -1,7 +1,6 @@
 package com.tuttime.analytics.repository;
 
 import com.tuttime.analytics.entity.FinancialLedger;
-import com.tuttime.analytics.entity.UserReliabilityIndex;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

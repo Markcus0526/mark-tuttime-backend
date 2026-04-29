@@ -9,6 +9,7 @@ import com.tuttime.common.util.NumberUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,6 +24,9 @@ import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
 @RequiredArgsConstructor
 public class MenuGrpcClient {
 
+	@Value("${grpc.client-deadline-seconds}")
+	private int grpcDeadline;
+
 	@GrpcClient("menu-service") // Name matches config in application.yml
 	private MenuServiceGrpc.MenuServiceBlockingStub menuServiceBlockingStub;
 
@@ -33,7 +37,7 @@ public class MenuGrpcClient {
 				.build();
 
 		String priceString = GrpcExecutor.execute(MENU_SERVICE, "getPriceForOrder", () ->
-				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getPriceForOrder(request).getVerifiedTotalPrice());
 
 		return NumberUtil.stringToBigDecimal(priceString);
@@ -46,7 +50,7 @@ public class MenuGrpcClient {
 				.build();
 
 		return GrpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
-				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getMenuDetails(request).getItemsList());
 	}
 }

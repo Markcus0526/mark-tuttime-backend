@@ -2,9 +2,6 @@ package com.tuttime.analytics.service;
 
 import com.tuttime.analytics.dto.AdminDto;
 import com.tuttime.analytics.dto.RestaurantDto;
-import com.tuttime.analytics.entity.BranchPerformanceStat;
-import com.tuttime.analytics.entity.BranchYieldManagement;
-import com.tuttime.analytics.entity.FinancialLedger;
 import com.tuttime.analytics.entity.UserReliabilityIndex;
 
 import java.time.LocalDate;

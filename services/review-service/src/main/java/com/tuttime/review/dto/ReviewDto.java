@@ -45,7 +45,8 @@ public class ReviewDto {
 			@Schema(description = "Optional reason for rejection or moderation notes",
 					example = "Review contains inappropriate language.")
 			String reason
-	) {}
+	) {
+	}
 
 	@Schema(description = "Review output payload")
 	public record ReviewResponse(
@@ -75,6 +76,7 @@ public class ReviewDto {
 				String email,
 				String fullName,
 				String profilePicture
-		) {}
+		) {
+		}
 	}
 }

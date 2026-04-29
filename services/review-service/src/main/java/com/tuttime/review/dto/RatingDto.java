@@ -34,5 +34,6 @@ public class RatingDto {
 			@Schema(description = "Star distribution map (Star Level -> Count)",
 					example = "{\"1\": 2, \"2\": 0, \"3\": 10, \"4\": 45, \"5\": 71}")
 			Map<String, Integer> ratingDistribution
-	) {}
+	) {
+	}
 }
