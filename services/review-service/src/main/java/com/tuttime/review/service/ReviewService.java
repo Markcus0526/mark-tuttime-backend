@@ -1,9 +1,11 @@
 package com.tuttime.review.service;
 
-import com.tuttime.review.dto.*;
+import com.tuttime.review.dto.RatingDto;
+import com.tuttime.review.dto.ReviewDto;
 import com.tuttime.review.entity.enums.ReviewStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import java.util.UUID;
 
 public interface ReviewService {

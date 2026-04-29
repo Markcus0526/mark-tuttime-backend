@@ -5,7 +5,6 @@ import com.tuttime.analytics.entity.BranchPerformanceStat;
 import com.tuttime.analytics.entity.BranchYieldManagement;
 import com.tuttime.analytics.entity.FinancialLedger;
 import org.mapstruct.Mapper;
-
 import org.mapstruct.Mapping;
 
 import java.util.List;

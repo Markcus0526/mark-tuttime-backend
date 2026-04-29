@@ -2,10 +2,10 @@ package com.tuttime.analytics.grpc;
 
 import com.tuttime.analytics.entity.UserReliabilityIndex;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.event.proto.AnalyticsServiceGrpc;
 import com.tuttime.common.event.proto.UserScoreRequest;
 import com.tuttime.common.event.proto.UserScoreResponse;
+import com.tuttime.common.exception.InvalidRequestException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;

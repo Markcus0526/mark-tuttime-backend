@@ -1,6 +1,7 @@
 package com.tuttime.order.entity;
 
 import com.tuttime.common.entity.BaseLockingEntity;
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class OrderItemModifier extends BaseLockingEntity {
+public class OrderItemModifier extends BaseUuidAnDeleteEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "order_item_id")

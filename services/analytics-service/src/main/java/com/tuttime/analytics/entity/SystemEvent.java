@@ -2,7 +2,10 @@ package com.tuttime.analytics.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.tuttime.common.entity.BaseUuidEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;

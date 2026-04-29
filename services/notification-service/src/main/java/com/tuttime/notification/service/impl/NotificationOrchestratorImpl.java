@@ -3,7 +3,6 @@ package com.tuttime.notification.service.impl;
 import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.event.proto.UserDetailRequest;
 import com.tuttime.common.event.proto.UserDetailResponse;
-import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.notification.entity.NotificationLog;
 import com.tuttime.notification.entity.NotificationTemplate;
 import com.tuttime.notification.entity.UserNotificationPreference;
@@ -22,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
 import java.util.List;

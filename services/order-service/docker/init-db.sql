@@ -45,24 +45,26 @@ CREATE TABLE orders
     table_id     UUID           NOT NULL, -- Logical reference to Table Service
     status       order_status   NOT NULL DEFAULT 'CREATED',
     total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
+    deleted      BOOLEAN        NOT NULL DEFAULT FALSE,
+    deleted_at   TIMESTAMPTZ,
     created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     created_by   UUID,
-    updated_by   UUID,
-    deleted_at   TIMESTAMP WITH TIME ZONE NULL
+    updated_by   UUID
 );
 
 -- 3. Order Items Table
 CREATE TABLE order_items
 (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id           UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
     order_id     UUID           NOT NULL,
     menu_item_id UUID           NOT NULL,
     quantity     INT            NOT NULL CHECK (quantity > 0),
     price        NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
-    deleted_at   TIMESTAMP WITH TIME ZONE NULL,
-    created_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    deleted      BOOLEAN        NOT NULL DEFAULT FALSE,
+    deleted_at   TIMESTAMPTZ,
+    created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_order_items_orders FOREIGN KEY (order_id)
         REFERENCES orders (id) ON DELETE CASCADE
 );
@@ -74,7 +76,8 @@ CREATE TABLE order_item_modifiers
     order_item_id    UUID           NOT NULL,
     modifier_id      UUID           NOT NULL,
     price_adjustment NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    deleted_at       TIMESTAMP WITH TIME ZONE NULL,
+    deleted          BOOLEAN        NOT NULL DEFAULT FALSE,
+    deleted_at       TIMESTAMPTZ,
     created_at       TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_modifiers_order_item FOREIGN KEY (order_item_id)

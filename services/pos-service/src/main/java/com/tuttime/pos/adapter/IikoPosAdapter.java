@@ -1,8 +1,8 @@
 package com.tuttime.pos.adapter;
 
+import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.PosSyncException;
-import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.dto.liko.IikoErrorResponse;
 import com.tuttime.pos.dto.liko.IikoNomenclatureResponse;
 import com.tuttime.pos.entity.PosConfig;

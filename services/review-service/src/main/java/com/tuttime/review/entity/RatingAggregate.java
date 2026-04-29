@@ -15,8 +15,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "rating_aggregates", schema = "review_service")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class RatingAggregate extends BaseTimeStampEntity {
 	// Note: In your SQL, branch_id is the Primary Key

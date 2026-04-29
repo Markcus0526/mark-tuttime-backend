@@ -1,12 +1,13 @@
 package com.tuttime.menu.grpc.client;
 
-import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.event.grpc.GrpcExecutor;
 import com.tuttime.common.event.proto.BranchPermissionRequest;
 import com.tuttime.common.event.proto.RestaurantServiceGrpc;
+import com.tuttime.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,6 +20,9 @@ import static com.tuttime.common.constants.ServiceNames.RESTAURANT_SERVICE;
 @RequiredArgsConstructor
 public class RestaurantGrpcClient {
 
+	@Value("${grpc.client-deadline-seconds}")
+	private int grpcDeadline;
+
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
@@ -30,7 +34,7 @@ public class RestaurantGrpcClient {
 				.build();
 
 		boolean valid = GrpcExecutor.execute(RESTAURANT_SERVICE, "validateBranchPermission", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.validateBranchPermission(request).getValid());
 
 		if (!valid) {

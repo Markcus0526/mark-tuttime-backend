@@ -84,14 +84,6 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-  security:
-    jwt:
-      access-token:
-        secret: ${JWT_SECRET}
-        expiration: ${JWT_EXPIRATION}
-      issuer: ${JWT_ISSUER}
-      audience: ${JWT_AUDIENCE}
-
   servlet:
     multipart:
       enabled: ${SPRING_SERVLET_MULTIPART_ENABLED}
@@ -263,6 +255,10 @@ resilience4j:
         minimumNumberOfCalls: 5
         waitDurationInOpenState: 20s
         failureRateThreshold: 65
+  timelimiter:
+    instances:
+      bookingServiceCircuitBreaker:
+        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s} # Ensure this is > GRPC_CLIENT_DEADLINE_SECONDS!
   retry:
     instances:
       grpc:

@@ -2,7 +2,8 @@ package com.tuttime.analytics.constants;
 
 public final class AnalyticsConstants {
 
-	private AnalyticsConstants() {} // Prevent instantiation
+	private AnalyticsConstants() {
+	} // Prevent instantiation
 
 	// Service Sources
 	public static final String SOURCE_BOOKING_SERVICE = "BOOKING_SERVICE";
@@ -11,9 +12,9 @@ public final class AnalyticsConstants {
 	public static final String SOURCE_REVIEW_SERVICE = "REVIEW_SERVICE";
 
 	// Booking Event Types
-	public static final String EVENT_BOOKING_CREATED   = "BOOKING_CREATED";
-	public static final String EVENT_BOOKING_CANCELED  = "BOOKING_CANCELED"; // Single 'L' to match Enum
-	public static final String EVENT_BOOKING_NO_SHOW   = "BOOKING_NO_SHOW";
+	public static final String EVENT_BOOKING_CREATED = "BOOKING_CREATED";
+	public static final String EVENT_BOOKING_CANCELED = "BOOKING_CANCELED"; // Single 'L' to match Enum
+	public static final String EVENT_BOOKING_NO_SHOW = "BOOKING_NO_SHOW";
 	public static final String EVENT_BOOKING_COMPLETED = "BOOKING_COMPLETED";
 
 	// Payment Event Types

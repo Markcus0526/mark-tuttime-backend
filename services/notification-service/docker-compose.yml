@@ -57,7 +57,7 @@ services:
           cpus: '0.1'
           memory: 512M
     healthcheck:
-      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${NOTIFICATION_SERVICE_PORT}' || exit 1" ]
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${NOTIFICATION_SERVICE_PORT} || exit 1" ]
       interval: 20s
       timeout: 10s
       retries: 3

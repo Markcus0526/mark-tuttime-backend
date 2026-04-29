@@ -1,7 +1,9 @@
 package com.tuttime.user.service.impl;
 
 import com.tuttime.common.enums.NotificationTemplateKey;
+import com.tuttime.common.enums.UserStatus;
 import com.tuttime.common.enums.UserStatusEvent;
+import com.tuttime.common.enums.VerificationType;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.UserEvent;
 import com.tuttime.common.exception.BusinessException;
@@ -10,8 +12,6 @@ import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
-import com.tuttime.common.enums.UserStatus;
-import com.tuttime.common.enums.VerificationType;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.service.UserService;
@@ -63,7 +63,9 @@ public class UserServiceImpl implements UserService {
 
 		// 2. Conflict Check
 		userRepository.findByPhoneNumberOrEmail(phoneNumber, email)
-				.ifPresent(u -> { throw new ConflictException("Phone number or email already in use"); });
+				.ifPresent(u -> {
+					throw new ConflictException("Phone number or email already in use");
+				});
 
 		// 3. Persist User Entity
 		User user = new User();

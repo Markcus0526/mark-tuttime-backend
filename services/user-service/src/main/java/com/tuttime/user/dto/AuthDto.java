@@ -2,11 +2,7 @@ package com.tuttime.user.dto;
 
 import com.tuttime.user.entity.enums.AuthProvider;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.util.UUID;
 
@@ -167,7 +163,8 @@ public class AuthDto {
 				String providerId, // The unique ID from Google/Apple (usually 'sub')
 				String email,      // The user's email
 				String fullName        // Optional: user's name
-		) {}
+		) {
+		}
 	}
 
 }

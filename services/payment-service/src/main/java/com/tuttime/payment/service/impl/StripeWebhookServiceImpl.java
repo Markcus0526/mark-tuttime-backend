@@ -4,23 +4,21 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.PaymentEvent;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
-import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.service.StripeWebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 
@@ -33,7 +31,7 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 	private final PaymentAuditLogRepository auditLogRepository;
 	private final EventProducer eventProducer;
 
-//	@Value("${stripe.webhook.secret}")
+	//	@Value("${stripe.webhook.secret}")
 	private String webhookSecret; // Found in Stripe Dashboard -> Developers -> Webhooks
 
 	@Override

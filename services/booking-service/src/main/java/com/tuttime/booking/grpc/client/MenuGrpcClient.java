@@ -8,6 +8,7 @@ import com.tuttime.common.event.proto.MenuServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,16 +22,18 @@ import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
 @Slf4j
 public class MenuGrpcClient {
 
+	@Value("${grpc.client-deadline-seconds}")
+	private int grpcDeadline;
+
 	@GrpcClient("menu-service")
 	private MenuServiceGrpc.MenuServiceBlockingStub menuServiceBlockingStub;
-
 
 	public List<MenuItemDetailResponse> getPreOrderMenu(UUID branchId) {
 		MenuRequest request = MenuRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
 		return GrpcExecutor.execute(MENU_SERVICE, "getPreOrderMenu", () ->
-				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getPreOrderMenu(request).getItemsList());
 //		return menuServiceBlockingStub.getPreOrderMenu(req).getItemsList();
 	}
@@ -41,7 +44,7 @@ public class MenuGrpcClient {
 				.build();
 
 		return GrpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
-				menuServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getMenuDetails(request).getItemsList());
 //		try {
 //			// 2. Call the server and return the items list

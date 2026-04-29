@@ -7,6 +7,7 @@ import com.tuttime.common.event.proto.OrderServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,6 +20,9 @@ import static com.tuttime.common.constants.ServiceNames.ORDER_SERVICE;
 @RequiredArgsConstructor
 public class OrderGrpcClient {
 
+	@Value("${grpc.client-deadline-seconds}")
+	private int grpcDeadline;
+
 	@GrpcClient("order-service") // Configuration name in application.yml
 	private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
 
@@ -28,7 +32,7 @@ public class OrderGrpcClient {
 				.build();
 
 		return GrpcExecutor.execute(ORDER_SERVICE, "getOrderDetail", () ->
-				orderServiceBlockingStub.withDeadlineAfter(3, TimeUnit.SECONDS)
+				orderServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getOrderDetail(request));
 	}
 }
