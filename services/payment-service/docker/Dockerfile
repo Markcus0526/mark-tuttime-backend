@@ -40,13 +40,13 @@ RUN --mount=type=cache,target=/root/.m2 \
 
 # --- Runner Stage ---
 FROM eclipse-temurin:21-jre-jammy AS runner
-RUN useradd -ms /bin/bash tuttime && mkdir -p /app/uploads/medias && chown tuttime:tuttime /app/uploads/medias
-USER tuttime
+RUN groupadd -r tuttime && useradd -r -g tuttime -ms /bin/bash tuttime
+
 WORKDIR /app
+RUN mkdir -p /app/uploads/medias && chown -R tuttime:tuttime /app
 COPY --from=builder /app/services/payment-service/target/payment-service-*.jar app.jar
 
-USER root
-ENTRYPOINT ["sh", "-c", "chown -R tuttime:tuttime /app/uploads && runuser -u tuttime -- java $JAVA_OPTS -jar app.jar"]
+USER tuttime
 
 ENV JAVA_OPTS="-XX:+UseParallelGC -XX:MaxRAMPercentage=75.0 -Duser.timezone=UTC"
 EXPOSE 28006 29006

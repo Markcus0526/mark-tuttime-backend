@@ -147,7 +147,10 @@ public class AuthDto {
 			String email,
 
 			@Schema(description = "User phone number", nullable = true)
-			String phoneNumber
+			String phoneNumber,
+
+			@Schema(description = "User profile url", nullable = true)
+			String profilePicture
 	) {
 		// Nested Record for immutability and cleaner code
 		public record RestaurantStaffDto(

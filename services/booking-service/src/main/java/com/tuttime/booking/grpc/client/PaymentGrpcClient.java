@@ -27,7 +27,7 @@ public class PaymentGrpcClient {
 				.setUserId(userId.toString())
 				.setBranchId(branchId.toString())
 				.setAmount(amount.toString())
-				.setCurrency("USD")
+				.setCurrency("RUB")
 				.build();
 
 		// 2. Execute synchronous gRPC call

@@ -19,19 +19,19 @@ CREATE TABLE payments
     user_id             UUID           NOT NULL, -- For cross-service verification
     branch_id           UUID           NOT NULL, -- For cross-service verification
 
-    -- Stripe Identifiers
-    stripe_session_id   VARCHAR(255) UNIQUE,     -- ID from Checkout Session creation
-    payment_intent_id   VARCHAR(255) UNIQUE,     -- ID returned after user completes payment
+    -- YooKassa Identifiers
+    yookassa_payment_id VARCHAR(255) UNIQUE,     -- 'id' from YooKassa response
+    idempotency_key     UUID           UNIQUE,     -- Crucial for YooKassa API retries
 
     -- Transaction Details
     amount              NUMERIC(10, 2) NOT NULL,
-    currency            VARCHAR(10)    NOT NULL DEFAULT 'USD',
+    currency            VARCHAR(10)    NOT NULL DEFAULT 'RUB',
     payment_method_type VARCHAR(50),             -- e.g., 'card', 'apple_pay'
     status              VARCHAR(20)    NOT NULL DEFAULT 'PENDING',
-    -- Statuses: PENDING, COMPLETED, FAILED, EXPIRED
+    -- Statuses: PENDING, WAITING_FOR_CAPTURE, SUCCEEDED, CANCELED
 
-    -- Metadata & Receipts
-    receipt_url         VARCHAR(500),
+    -- Confirmation & Metadata
+    confirmation_url    VARCHAR(500),            -- The URL your React Native app opens
     failure_message     TEXT,
 
     created_at          TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
@@ -52,23 +52,20 @@ CREATE TABLE refunds
 );
 
 -- 3. Webhook Idempotency & Audit Log
--- Crucial for handling Stripe Webhook retries and Apple Pay events
 CREATE TABLE payment_audit_logs
 (
-    id              BIGSERIAL PRIMARY KEY,
-    payment_id      UUID         REFERENCES payments (id) ON DELETE SET NULL,
-    stripe_event_id VARCHAR(255) UNIQUE,   -- PREVENTS DUPLICATE PROCESSING
-    event_type      VARCHAR(100) NOT NULL, -- e.g., checkout.session.completed
-    event_data      JSONB,                 -- Full raw Stripe payload for debugging
-    created_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    id                  BIGSERIAL PRIMARY KEY,
+    payment_id          UUID         REFERENCES payments (id) ON DELETE SET NULL,
+    event_id            VARCHAR(255) UNIQUE,   -- Maps to YooKassa event notification ID
+    event_type          VARCHAR(100) NOT NULL, -- payment.succeeded, refund.succeeded, etc.
+    event_data          JSONB,                 -- Raw YooKassa JSON payload
+    created_at          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Performance & Reliability Indices
+-- Indices for YooKassa
 CREATE INDEX idx_payments_booking_id ON payments (booking_id);
-CREATE INDEX idx_payments_session_id ON payments (stripe_session_id);
-CREATE INDEX idx_audit_event_id ON payment_audit_logs (stripe_event_id);
-CREATE INDEX idx_audit_created_at ON payment_audit_logs (created_at);
+CREATE INDEX idx_payments_yoo_id ON payments (yookassa_payment_id);
+CREATE INDEX idx_audit_event_id ON payment_audit_logs (event_id);
 
 -- Automatic Timestamp Trigger
 CREATE

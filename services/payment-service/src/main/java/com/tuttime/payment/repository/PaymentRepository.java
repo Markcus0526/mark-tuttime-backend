@@ -20,5 +20,5 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 	 * Used to verify if a Stripe Session already exists to prevent
 	 * creating multiple sessions for the same booking.
 	 */
-	Optional<Payment> findByStripeSessionId(String stripeSessionId);
+	Optional<Payment> findByYookassaPaymentId(String yookassaPaymentId);
 }

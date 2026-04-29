@@ -17,7 +17,7 @@ public class PaymentEvent {
 			UUID bookingId,
 			UUID userId,
 			UUID branchId,
-			String stripePaymentIntentId,
+			String externalPaymentId,
 			BigDecimal amount,
 			BigDecimal commissionRate,  // Add this: e.g., 0.10 for 10%
 			String currency,
@@ -54,7 +54,7 @@ public class PaymentEvent {
 			UUID userId,
 			UUID branchId,
 			BigDecimal amount,      // The amount refunded (Full or Partial)
-			String currency,        // e.g., "USD"
+			String currency,        // e.g., "RUB"
 			String stripeRefundId,  // For audit matching with Stripe
 			String reason,          // Why the refund happened (e.g., "Customer Cancellation")
 			OffsetDateTime occurredAt

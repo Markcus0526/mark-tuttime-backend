@@ -185,6 +185,13 @@
             <version>2.20.26</version>
         </dependency>
 
+        <!-- Thumbnailator -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.20</version>
+        </dependency>
+
         <!-- GELF Logging for Graylog -->
         <dependency>
             <groupId>de.siegmar</groupId>

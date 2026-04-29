@@ -158,31 +158,6 @@ grpc:
     enabled: false
   client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS}
 
-app:
-  media:
-    storage:
-      type: ${MEDIA_STORAGE_TYPE}
-    s3:
-      endpoint: ${S3_ENDPOINT}
-      region: ${S3_REGION}
-      bucket: ${S3_BUCKET}
-      access-key: ${S3_ACCESS_KEY}
-      secret-key: ${S3_SECRET_KEY}
-    local:
-      upload-dir: ${LOCAL_STORAGE_PATH}
-      upload-url: ${LOCAL_MEDIA_URL_PATH}
-    max-size: ${MEDIA_MAX_SIZE:5242880}
-    max-dimension: ${MEDIA_MAX_DIMENSION:1024}
-    quality: ${MEDIA_QUALITY:0.85}
-
-  oauth:
-    google:
-      client:
-        id: ${GOOGLE_CLIENT_ID}
-    apple:
-      client:
-        id: ${APPLE_CLIENT_ID}
-
 management:
   endpoints:
     web:

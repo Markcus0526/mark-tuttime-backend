@@ -28,18 +28,18 @@ public class Payment extends BaseUuidEntity {
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
-	@Column(name = "stripe_session_id", unique = true)
-	private String stripeSessionId;
+	@Column(name = "yookassa_payment_id", unique = true)
+	private String yookassaPaymentId;
 
-	@Column(name = "payment_intent_id", unique = true)
-	private String paymentIntentId;
+	@Column(name = "idempotency_key", unique = true)
+	private UUID idempotencyKey;
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal amount;
 
 	@Column(nullable = false, length = 10)
 	@Builder.Default
-	private String currency = "USD";
+	private String currency = "RUB";
 
 	@Column(name = "payment_method_type", length = 50)
 	private String paymentMethodType; // e.g., "card", "apple_pay"
@@ -49,8 +49,8 @@ public class Payment extends BaseUuidEntity {
 	@Builder.Default
 	private PaymentStatus status = PaymentStatus.PENDING;
 
-	@Column(name = "receipt_url", length = 500)
-	private String receiptUrl;
+	@Column(name = "confirmation_url", length = 500)
+	private String confirmationUrl;
 
 	@Column(name = "failure_message", columnDefinition = "TEXT")
 	private String failureMessage;

@@ -7,6 +7,7 @@ import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.enums.MediaType;
 import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
 import com.tuttime.menu.mapper.MediaMapper;
+import com.tuttime.menu.provider.StorageProvider;
 import com.tuttime.menu.repository.MediaRepository;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
@@ -33,20 +34,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MediaServiceImpl implements MediaService {
 
+	@Value("${app.media.max-size}")
+	private int imageMaxSize;
+
 	private final MediaRepository mediaRepository;
 	private final MenuCategoryRepository menuCategoryRepository;
 	private final MenuItemRepository menuItemRepository;
 	private final MediaMapper mediaMapper;
+	private final StorageProvider storageProvider;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 
-	@Value("${app.media.local.upload-dir}")
-	private String uploadDir;
-
-	@Value("${app.media.local.upload-url}")
-	private String uploadUrl;
-
-	@Value("${app.media.max-size}")
-	private int imageMaxSize;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -72,7 +69,7 @@ public class MediaServiceImpl implements MediaService {
 		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
 		// 1. Save physical file
-		String fileName = saveFile(file);
+		String fileUrl = storageProvider.store(file);
 
 		if (request.primaryEntity()) {
 			mediaRepository.resetPrimaryStatus(request.entityId());
@@ -81,7 +78,7 @@ public class MediaServiceImpl implements MediaService {
 		// 2. Map metadata
 		Media media = Media.builder()
 				.entityId(request.entityId())
-				.url(uploadUrl + fileName) // Virtual path served by WebMvcConfig
+				.url(fileUrl) // Virtual path served by WebMvcConfig
 				.mediaType(detectMediaType(file))
 				.primaryEntity(request.primaryEntity())
 				.altText(request.altText())
@@ -107,10 +104,9 @@ public class MediaServiceImpl implements MediaService {
 		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
 		// 1. Handle File Replacement if a new file is provided
-		if (file != null && !file.isEmpty()) {
-			deletePhysicalFile(existing.getUrl()); // Delete old file from VPS
-			String newFileName = saveFile(file);   // Save new file
-			existing.setUrl(uploadUrl + newFileName);
+		if (!file.isEmpty()) {
+			storageProvider.delete(existing.getUrl());
+			existing.setUrl(storageProvider.store(file));
 			existing.setMediaType(detectMediaType(file));
 		}
 
@@ -139,7 +135,7 @@ public class MediaServiceImpl implements MediaService {
 
 		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
-		deletePhysicalFile(media.getUrl()); // Physical cleanup
+		storageProvider.delete(media.getUrl());
 
 		UUID entityId = media.getEntityId();
 		boolean wasPrimary = media.getPrimaryEntity();
@@ -148,28 +144,6 @@ public class MediaServiceImpl implements MediaService {
 
 		if (wasPrimary) {
 			promoteNewPrimary(entityId);
-		}
-	}
-
-	private String saveFile(MultipartFile file) {
-		String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-		try {
-			Path targetPath = Paths.get(uploadDir).resolve(fileName);
-			Files.createDirectories(targetPath.getParent());
-			Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-			return fileName;
-		} catch (IOException e) {
-			throw new RuntimeException("Could not store file on VPS", e);
-		}
-	}
-
-	private void deletePhysicalFile(String virtualPath) {
-		// Converts "/media/filename.jpg" -> "/var/www/menu-media/filename.jpg"
-		String fileName = virtualPath.replace(uploadUrl, "");
-		try {
-			Files.deleteIfExists(Paths.get(uploadDir).resolve(fileName));
-		} catch (IOException e) {
-			// Log warning but don't fail transaction if file is already gone
 		}
 	}
 

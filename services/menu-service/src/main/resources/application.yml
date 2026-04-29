@@ -163,14 +163,6 @@ app:
     max-dimension: ${MEDIA_MAX_DIMENSION:1024}
     quality: ${MEDIA_QUALITY:0.85}
 
-  oauth:
-    google:
-      client:
-        id: ${GOOGLE_CLIENT_ID}
-    apple:
-      client:
-        id: ${APPLE_CLIENT_ID}
-
 management:
   endpoints:
     web:

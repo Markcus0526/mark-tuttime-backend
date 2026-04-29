@@ -11,5 +11,5 @@ public interface PaymentAuditLogRepository extends JpaRepository<PaymentAuditLog
 	 * Critical for Idempotency: Checks if this specific Stripe Event ID
 	 * has already been processed and logged.
 	 */
-	boolean existsByStripeEventId(String stripeEventId);
+	boolean existsByEventId(String eventId);
 }
