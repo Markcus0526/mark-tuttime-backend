@@ -41,7 +41,7 @@ public class PaymentEventConsumer {
 					"amount", event.amount(),
 					"currency", event.currency(),
 					"bookingId", event.bookingId(),
-					"transactionId", event.stripePaymentIntentId()
+					"transactionId", event.externalPaymentId()
 			);
 
 			// 3. Delegate to Notification Service

@@ -1,10 +1,7 @@
 package com.tuttime.payment.entity;
 
 import com.tuttime.common.entity.BaseUuidEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -21,11 +18,12 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Refund extends BaseUuidEntity {
 
-	@Column(name = "payment_id", nullable = false)
-	private UUID paymentId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "payment_id", nullable = false)
+	private Payment payment;
 
-	@Column(name = "stripe_refund_id", nullable = false, unique = true)
-	private String stripeRefundId;
+	@Column(name = "yookassa_refund_id", nullable = false, unique = true)
+	private String yookassaRefundId;
 
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal amount;

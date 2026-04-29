@@ -5,6 +5,7 @@ import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Media;
 import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.mapper.MediaMapper;
+import com.tuttime.restaurant.provider.StorageProvider;
 import com.tuttime.restaurant.repository.MediaRepository;
 import com.tuttime.restaurant.service.MediaService;
 import com.tuttime.restaurant.service.StaffService;
@@ -33,6 +34,7 @@ public class MediaServiceImpl implements MediaService {
 	private final MediaRepository mediaRepository;
 	private final MediaMapper mediaMapper;
 	private final StaffService staffService;
+	private final StorageProvider storageProvider;
 
 	@Value("${app.media.local.upload-dir}")
 	private String uploadDir;
@@ -61,7 +63,7 @@ public class MediaServiceImpl implements MediaService {
 		staffService.validatePermissions(request.entityId(), currentUserId, userRoles);
 
 		// 1. Save physical file
-		String fileName = saveFile(file);
+		String fileUrl = storageProvider.store(file);
 
 		if (request.primaryEntity()) {
 			mediaRepository.resetPrimaryStatus(request.entityId());
@@ -70,7 +72,7 @@ public class MediaServiceImpl implements MediaService {
 		// 2. Map metadata
 		Media media = Media.builder()
 				.entityId(request.entityId())
-				.url(uploadUrl + fileName) // Virtual path served by WebMvcConfig
+				.url(fileUrl) // Virtual path served by WebMvcConfig
 				.mediaType(detectMediaType(file))
 				.primaryEntity(request.primaryEntity())
 				.altText(request.altText())
@@ -90,10 +92,9 @@ public class MediaServiceImpl implements MediaService {
 		staffService.validatePermissions(existing.getEntityId(), currentUserId, userRoles);
 
 		// 1. Handle File Replacement if a new file is provided
-		if (file != null && !file.isEmpty()) {
-			deletePhysicalFile(existing.getUrl()); // Delete old file from VPS
-			String newFileName = saveFile(file);   // Save new file
-			existing.setUrl(uploadUrl + newFileName);
+		if (!file.isEmpty()) {
+			storageProvider.delete(existing.getUrl()); // Delete old file from VPS
+			existing.setUrl(storageProvider.store(file));
 			existing.setMediaType(detectMediaType(file));
 		}
 
@@ -116,7 +117,7 @@ public class MediaServiceImpl implements MediaService {
 
 		staffService.validatePermissions(media.getEntityId(), currentUserId, userRoles);
 
-		deletePhysicalFile(media.getUrl()); // Physical cleanup
+		storageProvider.delete(media.getUrl()); // Provider cleanup
 
 		UUID entityId = media.getEntityId();
 		boolean wasPrimary = media.getPrimaryEntity();
@@ -132,28 +133,6 @@ public class MediaServiceImpl implements MediaService {
 	@Transactional
 	public void deleteAllByEntityId(UUID entityId) {
 		mediaRepository.deleteAllByEntityId(entityId);
-	}
-
-	private String saveFile(MultipartFile file) {
-		String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-		try {
-			Path targetPath = Paths.get(uploadDir).resolve(fileName);
-			Files.createDirectories(targetPath.getParent());
-			Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-			return fileName;
-		} catch (IOException e) {
-			throw new RuntimeException("Could not store file on VPS", e);
-		}
-	}
-
-	private void deletePhysicalFile(String virtualPath) {
-		// Converts "/media/filename.jpg" -> "/var/www/menu-media/filename.jpg"
-		String fileName = virtualPath.replace(uploadUrl, "");
-		try {
-			Files.deleteIfExists(Paths.get(uploadDir).resolve(fileName));
-		} catch (IOException e) {
-			// Log warning but don't fail transaction if file is already gone
-		}
 	}
 
 	private MediaType detectMediaType(MultipartFile file) {

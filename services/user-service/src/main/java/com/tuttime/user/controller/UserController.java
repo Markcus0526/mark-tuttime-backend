@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -250,15 +251,16 @@ public class UserController {
 		return ResponseEntity.ok(ApiRes.success(unblockedUser));
 	}
 
-	@Operation(summary = "Update my profile", description = "Allows the logged-in user to update their name, profile picture, etc.")
-	@PatchMapping(value = "/me", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<ApiRes<UserDto.UserResponse>> updateProfile(@RequestBody @Valid UserDto.UserUpdateRequest request) {
+	@Operation(summary = "Update my profile", description = "Update profile details including an optional profile picture file.")
+	@PatchMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ApiRes<UserDto.UserResponse>> updateProfile(
+			@RequestPart(value = "userRequest", required = false) @Valid UserDto.UserUpdateRequest request,
+			@RequestPart(value = "file", required = false) MultipartFile file) {
 
 		validateLogin();
-
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		UserDto.UserResponse updatedUser = userService.updateUser(currentUserId, request);
 
+		UserDto.UserResponse updatedUser = userService.updateMe(currentUserId, request, file);
 		return ResponseEntity.ok(ApiRes.success(updatedUser));
 	}
 

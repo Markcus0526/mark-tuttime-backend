@@ -13,12 +13,14 @@ import com.tuttime.user.dto.UserDto;
 import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.mapper.UserMapper;
+import com.tuttime.user.provider.StorageProvider;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.service.UserService;
 import com.tuttime.user.util.TokenUtil;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,7 +28,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -43,6 +51,7 @@ public class UserServiceImpl implements UserService {
 	private final VerificationCodeRepository verificationCodeRepository;
 	private final UserLocationRepository userLocationRepository;
 	private final UserMapper userMapper;
+	private final StorageProvider storageProvider;
 	private final PasswordEncoder passwordEncoder;
 	private final EventProducer eventProducer;
 	private final TokenUtil tokenUtil;
@@ -132,30 +141,88 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
-	public UserDto.UserResponse updateUser(UUID id, UserDto.UserUpdateRequest userUpdateRequest) {
+	public UserDto.UserResponse updateUser(UUID id, UserDto.UserUpdateRequest request) {
 		User user = userRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
-		if (userUpdateRequest.phoneNumber() != null && !userUpdateRequest.phoneNumber().equals(user.getPhoneNumber())) {
-			userRepository.findByPhoneNumberAndDeletedFalse(userUpdateRequest.phoneNumber())
+		if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
+			userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
 					.ifPresent(u -> {
 						throw new ConflictException("Phone number already in use");
 					});
-			user.setPhoneNumber(userUpdateRequest.phoneNumber());
+			user.setPhoneNumber(request.phoneNumber());
 		}
-		if (userUpdateRequest.email() != null && !userUpdateRequest.email().equals(user.getEmail())) {
-			userRepository.findByEmailAndDeletedFalse(userUpdateRequest.email())
+
+		if (request.email() != null && !request.email().equals(user.getEmail())) {
+			userRepository.findByEmailAndDeletedFalse(request.email())
 					.ifPresent(u -> {
 						throw new ConflictException("Email already in use");
 					});
-			user.setEmail(userUpdateRequest.email());
+			user.setEmail(request.email());
 		}
-		if (userUpdateRequest.fullName() != null) {
-			user.setFullName(userUpdateRequest.fullName());
+
+		if (request.fullName() != null) {
+			user.setFullName(request.fullName());
 		}
-		if (userUpdateRequest.profilePicture() != null) {
-			user.setProfilePicture(userUpdateRequest.profilePicture());
+
+		if (request.profilePicture() != null) {
+			user.setProfilePicture(request.profilePicture());
 		}
+
+		user = userRepository.save(user);
+
+		UserEvent.ProfileUpdatedEvent event = UserEvent.ProfileUpdatedEvent.builder()
+				.userId(user.getId())
+				.fullName(user.getFullName())
+				.profilePicture(user.getProfilePicture())
+				.updatedAt(user.getUpdatedAt())
+				.build();
+		eventProducer.sendUserUpdatedEvent(event);
+
+		return userMapper.toResponse(user);
+	}
+
+	@Override
+	@Transactional
+	public UserDto.UserResponse updateMe(UUID id, UserDto.UserUpdateRequest request, MultipartFile file) {
+		User user = userRepository.findById(id)
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
+
+		if (file != null && !file.isEmpty()) {
+			// Clean up old file to save space/money
+			if (StringUtils.hasText(user.getProfilePicture())) {
+				storageProvider.delete(user.getProfilePicture());
+			}
+
+			// Store new file and get the key
+			String key = storageProvider.store(file);
+			user.setProfilePicture(key);
+		}
+
+		if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
+			userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
+					.ifPresent(u -> {
+						throw new ConflictException("Phone number already in use");
+					});
+			user.setPhoneNumber(request.phoneNumber());
+		}
+
+		if (request.email() != null && !request.email().equals(user.getEmail())) {
+			userRepository.findByEmailAndDeletedFalse(request.email())
+					.ifPresent(u -> {
+						throw new ConflictException("Email already in use");
+					});
+			user.setEmail(request.email());
+		}
+
+		if (request.fullName() != null) {
+			user.setFullName(request.fullName());
+		}
+
+		if (request.profilePicture() != null) {
+			user.setProfilePicture(request.profilePicture());
+		}
+
 		user = userRepository.save(user);
 
 		UserEvent.ProfileUpdatedEvent event = UserEvent.ProfileUpdatedEvent.builder()

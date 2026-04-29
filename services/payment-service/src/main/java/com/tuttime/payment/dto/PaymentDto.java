@@ -28,14 +28,14 @@ public class PaymentDto {
 			BigDecimal amount,
 
 			@NotBlank(message = "Currency is required")
-			String currency, // e.g., "USD"
+			String currency, // e.g., "RUB"
 
 			String description // Optional: e.g., "Table Reservation for Branch A"
 	) {
 		// Compact constructor to set defaults if needed
 		public PaymentRequest {
 			if (currency == null || currency.isBlank()) {
-				currency = "USD";
+				currency = "RUB";
 			}
 		}
 	}

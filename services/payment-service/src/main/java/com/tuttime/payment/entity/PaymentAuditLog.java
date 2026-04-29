@@ -25,8 +25,8 @@ public class PaymentAuditLog {
 	@Column(name = "payment_id")
 	private UUID paymentId;
 
-	@Column(name = "stripe_event_id", unique = true, nullable = false)
-	private String stripeEventId;
+	@Column(name = "event_id", unique = true)
+	private String eventId;
 
 	@Column(name = "event_type", nullable = false, length = 100)
 	private String eventType;

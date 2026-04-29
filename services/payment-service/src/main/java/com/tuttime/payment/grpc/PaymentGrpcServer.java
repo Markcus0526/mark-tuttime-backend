@@ -27,7 +27,7 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 		try {
 			// 1. Business Logic call (uses Stripe)
 			// We use the service we wrote earlier to handle the Stripe API call
-			String checkoutUrl = paymentService.createCheckoutSession(
+			String checkoutUrl = paymentService.initiatePaymentLifecycle(
 					UUID.fromString(request.getBookingId()),
 					UUID.fromString(request.getUserId()),
 					UUID.fromString(request.getBranchId()),
