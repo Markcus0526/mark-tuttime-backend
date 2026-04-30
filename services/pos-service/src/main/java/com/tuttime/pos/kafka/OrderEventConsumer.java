@@ -2,7 +2,7 @@ package com.tuttime.pos.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.common.event.kafka.OrderEvent;
+import com.tuttime.common.event.kafka.event.OrderEvent;
 import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;

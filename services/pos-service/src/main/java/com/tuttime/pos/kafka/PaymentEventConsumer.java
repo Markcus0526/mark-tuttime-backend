@@ -1,7 +1,7 @@
 package com.tuttime.pos.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.PaymentEvent;
+import com.tuttime.common.event.kafka.event.PaymentEvent;
 import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.repository.PosConfigRepository;
 import lombok.RequiredArgsConstructor;

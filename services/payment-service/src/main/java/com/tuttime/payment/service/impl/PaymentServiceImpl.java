@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.EventProducer;
-import com.tuttime.common.event.kafka.PaymentEvent;
+import com.tuttime.common.event.kafka.event.PaymentEvent;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.entity.Refund;

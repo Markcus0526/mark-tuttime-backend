@@ -1,7 +1,7 @@
 package com.tuttime.review.service.impl;
 
 import com.tuttime.common.event.kafka.EventProducer;
-import com.tuttime.common.event.kafka.ReviewEvent;
+import com.tuttime.common.event.kafka.event.ReviewEvent;
 import com.tuttime.common.event.proto.UserDetailResponse;
 import com.tuttime.common.event.proto.UserDetailsRequest;
 import com.tuttime.common.event.proto.UserDetailsResponse;

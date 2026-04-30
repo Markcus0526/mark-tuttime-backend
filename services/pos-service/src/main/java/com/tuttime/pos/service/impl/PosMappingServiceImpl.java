@@ -1,7 +1,7 @@
 package com.tuttime.pos.service.impl;
 
 import com.tuttime.common.event.kafka.EventProducer;
-import com.tuttime.common.event.kafka.PosEvent;
+import com.tuttime.common.event.kafka.event.PosEvent;
 import com.tuttime.pos.dto.liko.IikoProduct;
 import com.tuttime.pos.dto.rkeeper.RK7MenuItem;
 import com.tuttime.pos.entity.PosMenuMapping;
