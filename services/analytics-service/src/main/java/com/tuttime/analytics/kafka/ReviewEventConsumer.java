@@ -2,7 +2,7 @@ package com.tuttime.analytics.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.event.kafka.ReviewEvent;
+import com.tuttime.common.event.kafka.event.ReviewEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
