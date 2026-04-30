@@ -1,7 +1,7 @@
 package com.tuttime.pos.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
 import com.tuttime.pos.entity.PosSyncQueue;
