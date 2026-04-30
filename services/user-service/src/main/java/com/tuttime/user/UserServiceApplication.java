@@ -1,12 +1,10 @@
 package com.tuttime.user;
 
-import com.tuttime.user.config.EmailProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -24,7 +22,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 )
 @Slf4j
 @EnableScheduling
-@EnableConfigurationProperties(EmailProperties.class)
 public class UserServiceApplication {
 
 	/**
