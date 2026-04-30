@@ -1,7 +1,7 @@
 package com.tuttime.user.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.RestaurantEvent;
+import com.tuttime.common.event.kafka.event.RestaurantEvent;
 import com.tuttime.user.entity.UserRole;
 import com.tuttime.user.repository.RoleRepository;
 import com.tuttime.user.repository.UserRepository;

@@ -4,6 +4,7 @@ import com.tuttime.common.enums.UserStatus;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.entity.*;
+import com.tuttime.user.repository.UserDeviceRepository;
 import com.tuttime.user.repository.UserRepository;
 import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.TokenBlacklistService;
@@ -27,6 +28,7 @@ import static com.tuttime.common.event.util.ProtoUtil.convertOffsetDatetimeToPro
 public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 
 	private final UserRepository userRepository;
+	private final UserDeviceRepository userDeviceRepository;
 	private final JwtTokenProvider jwtTokenProvider; // Your JWT utility
 	private final TokenBlacklistService tokenBlacklistService;
 	private final StringRedisTemplate redisTemplate; // For JTI blacklisting
@@ -37,7 +39,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	 */
 	@Override
 	@Transactional(readOnly = true) // Crucial for loading roles correctly
-	public void validateUserToken(ValidTokenRequest request, StreamObserver<ValidTokenResponse> responseObserver) {
+	public void validateUserToken(TokenValidRequest request, StreamObserver<ValidTokenResponse> responseObserver) {
 		try {
 			String token = request.getJwtToken();
 
@@ -98,12 +100,18 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			User user = userRepository.findByIdAndDeletedFalse(userId)
 					.orElseThrow(() -> new InvalidRequestException("User not found or deleted"));
 
+			List<String> fcmTokens = userDeviceRepository.findByUserId(userId)
+					.stream()
+					.map(UserDevice::getFcmToken)
+					.toList();
+
 			// Building Response based on your exact SQL fields
 			UserDetailResponse.Builder responseBuilder = UserDetailResponse.newBuilder()
 					.setUserId(user.getId().toString())
 					.setEmail(user.getEmail())
 					.setFullName(user.getFullName() != null ? user.getFullName() : "")
 					.setStatus(user.getStatus().toString())
+					.addAllFcmTokens(fcmTokens)
 					.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
 					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
 			if (user.getProfilePicture() != null) {
@@ -206,16 +214,26 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			// 2. Fetch users from Database
 			List<User> users = userRepository.findAllByIdInAndDeletedFalse(userIds);
 
+			Map<UUID, List<String>> userTokensMap = userDeviceRepository.findAllByUserIdIn(userIds)
+					.stream()
+					.collect(Collectors.groupingBy(
+							UserDevice::getUserId,
+							Collectors.mapping(UserDevice::getFcmToken, Collectors.toList())
+					));
+
 			// 3. Build the Response
 			UserDetailsResponse.Builder responseBuilder = UserDetailsResponse.newBuilder();
 
 			for (User user : users) {
+				List<String> tokens = userTokensMap.getOrDefault(user.getId(), Collections.emptyList());
+
 				UserDetailResponse profile = UserDetailResponse.newBuilder()
 						.setUserId(user.getId().toString())
 						.setFullName(user.getFullName() != null ? user.getFullName() : "")
 						.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
 						.setEmail(user.getEmail() != null ? user.getEmail() : "")
 						.setProfilePicture((user.getProfilePicture() != null ? user.getProfilePicture() : ""))
+						.addAllFcmTokens(tokens)
 						.build();
 				responseBuilder.addProfiles(profile);
 			}
@@ -233,6 +251,15 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			// Keep this for actual system failures (DB down, etc.)
 			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
 		}
+	}
+
+	@Override
+	public void deleteDeviceToken(DeviceTokenDeleteRequest request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+		userDeviceRepository.deleteByFcmToken(request.getFcmToken());
+
+		// Success confirmation
+		responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
+		responseObserver.onCompleted();
 	}
 
 	/**

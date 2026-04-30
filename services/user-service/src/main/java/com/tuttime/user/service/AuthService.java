@@ -3,6 +3,8 @@ package com.tuttime.user.service;
 import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.user.dto.AuthDto;
 
+import java.util.UUID;
+
 /**
  * Service interface for handling user authentication, registration,
  * verification, password reset, and token management.
@@ -51,7 +53,7 @@ public interface AuthService {
 	 *
 	 * @param refreshToken Refresh token to invalidate
 	 */
-	void logoutUser(String refreshToken);
+	void logoutUser(String refreshToken, String fcmToken);
 
 	/**
 	 * Sends a phone verification code via SMS to the specified phone number.
@@ -76,4 +78,6 @@ public interface AuthService {
 	void resetPassword(AuthDto.PasswordResetConfirmRequest request);
 
 	AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request);
+
+	void registerDevice(UUID userId, AuthDto.DeviceRegistrationRequest deviceInfo);
 }
