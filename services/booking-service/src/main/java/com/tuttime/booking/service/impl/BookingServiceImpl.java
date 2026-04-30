@@ -17,7 +17,7 @@ import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.BusinessException;
@@ -28,6 +28,7 @@ import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RAtomicLong;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
@@ -117,6 +118,27 @@ public class BookingServiceImpl implements BookingService {
 					.build();
 
 			Booking savedBooking = bookingRepository.save(booking);
+
+			String occupancyKey = "branch:occupancy:" + savedBooking.getBranchId();
+			RAtomicLong activeBookingsCounter = redissonClient.getAtomicLong(occupancyKey);
+			long currentCount = activeBookingsCounter.incrementAndGet();
+
+			// Check threshold (Total tables from gRPC response in Step 1)
+			int totalTables = response.getTotalTables(); // Ensure your gRPC TableDetailResponse includes this
+			double occupancy = ((double) currentCount / totalTables) * 100;
+
+			if (occupancy >= 90.0) {
+				BookingEvent.BranchAvailabilityEvent availabilityEvent = BookingEvent.BranchAvailabilityEvent.builder()
+						.eventId(UUID.randomUUID())
+						.branchId(response.getBranchId())
+						.branchName(response.getBranchName())
+						.occupancyPercent(occupancy)
+						.totalTables(totalTables)
+						.bookedTables((int) currentCount)
+						.build();
+
+				eventProducer.sendBookingBranchAvailabilityEvent(availabilityEvent);
+			}
 
 			// 5. Save Items with Selected Modifiers
 			// Note: You should update your BookingItem entity to store a JSON or link to selected options
@@ -243,6 +265,20 @@ public class BookingServiceImpl implements BookingService {
 			booking.setCancellationReason(reason);
 		}
 		bookingRepository.save(booking);
+
+		// 2. Redis Occupancy Counter Logic
+		String occupancyKey = "branch:occupancy:" + booking.getBranchId();
+		RAtomicLong activeBookingsCounter = redissonClient.getAtomicLong(occupancyKey);
+
+		// If moving from Active (CREATED, PAID, ARRIVED) to Inactive (CANCELED, COMPLETED, NO_SHOW)
+		if (isActive(oldStatus) && !isActive(newStatus)) {
+			activeBookingsCounter.decrementAndGet();
+		}
+		// If moving from Inactive to Active (less common, but handles re-activation)
+		else if (!isActive(oldStatus) && isActive(newStatus)) {
+			long currentCount = activeBookingsCounter.incrementAndGet();
+			checkAndNotifyLowAvailability(booking, currentCount);
+		}
 
 		// 3. Save Audit History (Required for your booking_status_histories table)
 		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, currentUserId, reason));
@@ -713,4 +749,28 @@ public class BookingServiceImpl implements BookingService {
 		);
 	}
 
+	private void checkAndNotifyLowAvailability(Booking booking, long currentCount) {
+		// This calls the gRPC to get total table capacity for comparison
+		TableDetailResponse tableDetail = restaurantGrpcClient.getTableDetail(booking.getTableId());
+		int totalTables = tableDetail.getTotalTables();
+		double occupancy = ((double) currentCount / totalTables) * 100;
+
+		// 3. If threshold (e.g. 90%) is hit, publish the event
+		if (occupancy >= 90.0) {
+			BookingEvent.BranchAvailabilityEvent event = BookingEvent.BranchAvailabilityEvent.builder()
+					.eventId(UUID.randomUUID())
+					.branchId(booking.getBranchId().toString())
+					.branchName(tableDetail.getBranchName())
+					.occupancyPercent(occupancy)
+					.totalTables(totalTables)
+					.bookedTables((int) currentCount)
+					.build();
+
+			eventProducer.sendBookingBranchAvailabilityEvent(event);
+		}
+	}
+
+	private boolean isActive(BookingStatus status) {
+		return status == BookingStatus.CREATED || status == BookingStatus.PAID || status == BookingStatus.ARRIVED;
+	}
 }

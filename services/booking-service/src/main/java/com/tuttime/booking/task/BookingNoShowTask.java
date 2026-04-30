@@ -5,7 +5,7 @@ import com.tuttime.booking.entity.BookingStatusHistory;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.common.event.kafka.EventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

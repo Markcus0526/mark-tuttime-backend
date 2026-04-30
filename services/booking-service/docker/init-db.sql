@@ -21,9 +21,10 @@ CREATE TABLE bookings
     table_id            UUID                NOT NULL,
     status              booking_status_enum NOT NULL DEFAULT 'CREATED',
     booking_datetime    TIMESTAMPTZ         NOT NULL, -- Use TZ for global accuracy
+    reminder_send       BOOLEAN                      DEFAULT FALSE,
     duration            INT                 NOT NULL,
     party_size          INT                 NOT NULL CHECK (party_size > 0),
-    total_amount        DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    total_amount        DECIMAL(10, 2)      NOT NULL DEFAULT 0.00,
     lead_time_minutes   INT                          DEFAULT 0,
     grace_period_mins   INT                          DEFAULT 15,
     cancellation_reason VARCHAR(255),
@@ -62,17 +63,17 @@ CREATE TABLE booking_notifications
 -- 4. Booking Items (Pre-ordered food/services)
 CREATE TABLE booking_items
 (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    booking_id    UUID           NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
-    menu_item_id  UUID           NOT NULL, -- Reference to Menu Service
-    modifier_ids  UUID[],
-    quantity      INT            NOT NULL CHECK (quantity > 0),
-    unit_price    DECIMAL(10, 2) NOT NULL,
-    total_price   DECIMAL(10, 2) NOT NULL,
-    notes         VARCHAR(255),
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id         UUID           NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    menu_item_id       UUID           NOT NULL, -- Reference to Menu Service
+    modifier_ids       UUID[],
+    quantity           INT            NOT NULL CHECK (quantity > 0),
+    unit_price         DECIMAL(10, 2) NOT NULL,
+    total_price        DECIMAL(10, 2) NOT NULL,
+    notes              VARCHAR(255),
     selected_modifiers TEXT,
-    created_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+    created_at         TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_booking_items_parent ON booking_items (booking_id);

@@ -15,22 +15,6 @@ import java.util.UUID;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
-	/**
-	 *
-	 * Checks if a table has any active bookings that overlap with the given time range.
-	 * Logic: An overlap exists if (existingStart < newEnd) AND (existingEnd > newStart).
-	 */
-//	@Query(value = "SELECT COUNT(*) > 0 FROM bookings b " +
-//			"WHERE b.table_id = :tableId " +
-//			"AND b.status NOT IN ('CANCELED', 'NO_SHOW') " +
-//			"AND b.booking_datetime < :endTime " +
-//			"AND (b.booking_datetime + (b.duration * INTERVAL '1 minute')) > :startTime",
-//			nativeQuery = true)
-//	boolean existsOverlappingBooking(
-//			@Param("tableId") UUID tableId,
-//			@Param("startTime") OffsetDateTime startTime,
-//			@Param("endTime") OffsetDateTime endTime
-//	);
 	@Query(value = "SELECT EXISTS (" +
 			"SELECT 1 FROM bookings " +
 			"WHERE table_id = :tableId " +
@@ -60,8 +44,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 	// Spring Data JPA derives the query: SELECT * FROM bookings WHERE user_id = :userId ORDER BY booking_datetime DESC
 	List<Booking> findAllByUserIdOrderByBookingDatetimeDesc(UUID userId);
 
-	List<Booking> findAllByRestaurantIdAndBookingDatetimeBetween(UUID restaurantId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
-
 	List<Booking> findAllByBranchIdAndBookingDatetimeBetween(UUID branchId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 
 	List<Booking> findAllByStatusAndCreatedAtBefore(BookingStatus status, OffsetDateTime cutoff);
@@ -84,4 +66,21 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 			"AND (b.booking_datetime + (b.grace_period_mins || ' minutes')::interval) < :now",
 			nativeQuery = true)
 	List<Booking> findExpiredBookings(@Param("now") OffsetDateTime now);
+
+	List<Booking> findByBookingDatetimeBetweenAndStatusAndReminderSentFalse(
+			OffsetDateTime start,
+			OffsetDateTime end,
+			BookingStatus status
+	);
+
+	/**
+	 * Finds all unique branch IDs that currently have bookings in the specified statuses.
+	 */
+	@Query("SELECT DISTINCT b.branchId FROM Booking b WHERE b.status IN :statuses")
+	List<UUID> findDistinctBranchIdsByStatusIn(@Param("statuses") List<BookingStatus> statuses);
+
+	/**
+	 * Counts the total number of bookings for a specific branch that match the specified statuses.
+	 */
+	long countByBranchIdAndStatusIn(UUID branchId, List<BookingStatus> statuses);
 }

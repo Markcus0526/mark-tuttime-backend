@@ -4,7 +4,7 @@ import com.tuttime.booking.entity.enums.WaitlistStatus;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.WaitlistRepository;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.event.BookingEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
