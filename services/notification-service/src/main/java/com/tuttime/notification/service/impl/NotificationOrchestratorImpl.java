@@ -1,6 +1,7 @@
 package com.tuttime.notification.service.impl;
 
 import com.tuttime.common.enums.NotificationTemplateKey;
+import com.tuttime.common.event.proto.DeviceTokenDeleteRequest;
 import com.tuttime.common.event.proto.UserDetailRequest;
 import com.tuttime.common.event.proto.UserDetailResponse;
 import com.tuttime.notification.entity.NotificationLog;
@@ -10,12 +11,11 @@ import com.tuttime.notification.entity.enums.NotificationChannel;
 import com.tuttime.notification.entity.enums.NotificationPriority;
 import com.tuttime.notification.entity.enums.NotificationStatus;
 import com.tuttime.notification.grpc.client.UserGrpcClient;
-import com.tuttime.notification.provider.EmailProvider;
-import com.tuttime.notification.provider.InAppProvider;
+import com.tuttime.notification.provider.*;
 import com.tuttime.notification.repository.NotificationLogRepository;
 import com.tuttime.notification.repository.NotificationTemplateRepository;
 import com.tuttime.notification.repository.UserNotificationPreferenceRepository;
-import com.tuttime.notification.service.MailTemplateService;
+import com.tuttime.notification.service.TemplateService;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +36,13 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 	private final NotificationTemplateRepository notificationTemplateRepository;
 	private final UserNotificationPreferenceRepository userNotificationPreferenceRepository;
 	private final NotificationLogRepository notificationLogRepository;
-	private final MailTemplateService templateService;
+	private final TemplateService templateService;
 	private final UserGrpcClient userGrpcClient;
 	private final EmailProvider emailProvider;
+	private final SmsProvider smsProvider;
 	private final InAppProvider inAppProvider;
+	private final PushProvider pushProvider;
+	private final UserSessionRegistry userSessionRegistry;
 
 	@Transactional
 	public void handleNotification(UUID eventId, UUID userId, NotificationTemplateKey templateKey, Map<String, Object> params) {
@@ -54,6 +57,13 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 		List<NotificationTemplate> templates = notificationTemplateRepository.findByTemplateKeyAndActiveTrue(templateKey);
 
 		for (NotificationTemplate template : templates) {
+
+			// NEW: Check if the user actually has the data required for this channel
+			if (!isChannelSupported(template.getChannel(), userResponse)) {
+				log.warn("Channel {} is active but user {} is missing required contact info. Skipping.",
+						template.getChannel(), userId);
+				continue;
+			}
 
 			// 1. Find if a log already exists for this event and channel
 			Optional<NotificationLog> existingLog = notificationLogRepository
@@ -96,6 +106,8 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 
 	private void dispatch(NotificationTemplate template, UserDetailResponse user, Map<String, Object> params, NotificationLog logEntry) {
 		try {
+			String processedContent = templateService.generateHtmlContent(template.getContent(), params);
+
 			switch (template.getChannel()) {
 				case EMAIL -> {
 					String htmlBody = templateService.generateHtmlContent(template.getContent(), params);
@@ -103,13 +115,54 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 					logEntry.setStatus(NotificationStatus.SENT);
 				}
 				case SMS -> {
-					// smsProvider.send(user.getPhoneNumber(), template.getContent());
-					logEntry.setStatus(NotificationStatus.SENT);
+					if (!smsProvider.isLocallyValid(user.getPhoneNumber())) {
+						logEntry.setStatus(NotificationStatus.FAILED);
+						logEntry.setProviderResponse(Map.of("error", "Invalid phone number format"));
+					} else {
+						String smsBody = templateService.generateHtmlContent(template.getContent(), params);
+						smsProvider.send(user.getPhoneNumber(), smsBody);
+						logEntry.setStatus(NotificationStatus.SENT);
+					}
 				}
 				case IN_APP -> {
-					inAppProvider.sendRealTimeUpdate(user.getUserId(), template.getTitle(), template.getContent());
+					// 1. WebSocket: Always try to send to active browser/app sessions first
+					if (userSessionRegistry.isUserOnline(user.getUserId())) {
+						inAppProvider.sendRealTimeUpdate(user.getUserId(), template.getTitle(), processedContent);
+						logEntry.setProviderResponse(Map.of("method", "WEBSOCKET"));
+						logEntry.setStatus(NotificationStatus.SENT);
+					}
+
+					// 2. Fallback/Parallel Push: Send to all registered Firebase devices
+					List<String> tokens = user.getFcmTokensList(); // Updated to handle 'repeated' proto field
+
+					if (!tokens.isEmpty()) {
+						for (String token : tokens) {
+							Thread.ofVirtual().start(() -> {
+								try {
+									pushProvider.sendPush(token, template.getTitle(), processedContent);
+								} catch (Exception e) {
+									if (isTokenInvalid(e)) {
+										log.info("Reporting invalid token to User Service: {}", token);
+										// Call gRPC client to tell User Service to delete this token
+										userGrpcClient.deleteDeviceToken(DeviceTokenDeleteRequest.newBuilder()
+												.setFcmToken(token)
+												.build());
+									}
+								}
+							});
+						}
+
+						// If WebSocket wasn't used, mark Push as the primary method
+						if (logEntry.getProviderResponse() == null) {
+							logEntry.setProviderResponse(Map.of("method", "FIREBASE_PUSH", "device_count", tokens.size()));
+						}
+						logEntry.setStatus(NotificationStatus.SENT);
+					} else if (!userSessionRegistry.isUserOnline(user.getUserId())) {
+						// Only mark as warning if BOTH WebSocket and Push are unavailable
+						logEntry.setProviderResponse(Map.of("warning", "User offline and no FCM tokens registered"));
+						logEntry.setStatus(NotificationStatus.FAILED);
+					}
 				}
-				// Add Push/In-App logic here
 			}
 			logEntry.setSentAt(OffsetDateTime.now());
 		} catch (Exception e) {
@@ -133,10 +186,10 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 
 	private String getPreferenceCategory(NotificationTemplateKey key) {
 		return switch (key) {
-			case USER_REGISTER, USER_LOGIN, USER_VERIFICATION, PASSWORD_RESET, ADMIN_USER_CREATED -> "SECURITY";
-			case BOOKING_CREATED, BOOKING_CANCELED, BOOKING_COMPLETED -> "BOOKING";
-			case PAYMENT_SUCCESS, PAYMENT_REFUNDED -> "PAYMENT";
-			case REVIEW_APPROVED -> "REVIEW";
+			case USER_REGISTER, USER_VERIFICATION, USER_LOGIN, PASSWORD_RESET, MFA_CODE, ACCOUNT_LOCKED, ADMIN_USER_CREATED -> "ACCOUNT";
+			case BOOKING_CREATED, BOOKING_REMINDER, BOOKING_CANCELED, BOOKING_COMPLETED, MANAGER_BOOKING_ALERT, MANAGER_BOOKING_CANCEL, MANAGER_LOW_AVAILABILITY -> "BOOKING";
+			case PAYMENT_SUCCESS, PAYMENT_FAILED, PAYMENT_REFUNDED -> "PAYMENT";
+			case REVIEW_REQUEST, REVIEW_APPROVED, REVIEW_REJECTED -> "REVIEW";
 		};
 	}
 
@@ -152,14 +205,21 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 		};
 	}
 
-	/**
-	 * Validates if the requested target (email/phone) is compatible with the template channel.
-	 */
-	private boolean isTargetMatchingChannel(String target, NotificationChannel channel) {
-		if (channel == NotificationChannel.EMAIL) return target.contains("@");
-		if (channel == NotificationChannel.SMS) return target.matches("^[+0-9]+$");
-		if (channel == NotificationChannel.IN_APP) return true; // Admins always get in-app
-		return false;
+	private boolean isTokenInvalid(Exception e) {
+		String msg = e.getMessage().toLowerCase();
+		// 'registration-token-not-registered' is the standard FCM error for uninstalled apps
+		return msg.contains("not-registered") ||
+				msg.contains("invalid-registration-token") ||
+				msg.contains("not-found");
+	}
+
+	private boolean isChannelSupported(NotificationChannel channel, UserDetailResponse user) {
+		return switch (channel) {
+			case EMAIL -> !user.getEmail().isBlank();
+			case SMS -> !user.getPhoneNumber().isBlank();
+			case IN_APP -> userSessionRegistry.isUserOnline(user.getUserId()) || !user.getFcmTokensList().isEmpty();
+			default -> false;
+		};
 	}
 }
 

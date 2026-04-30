@@ -2,7 +2,7 @@ package com.tuttime.notification.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.NotificationTemplateKey;
-import com.tuttime.common.event.kafka.ReviewEvent;
+import com.tuttime.common.event.kafka.event.ReviewEvent;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,9 +14,9 @@ import java.util.Map;
 
 import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_APPROVED;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewEventConsumer {
 
 	private final ObjectMapper objectMapper;

@@ -1,6 +1,6 @@
 package com.tuttime.notification.service.impl;
 
-import com.tuttime.notification.service.MailTemplateService;
+import com.tuttime.notification.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class MailTemplateServiceImpl implements MailTemplateService {
+public class TemplateServiceImpl implements TemplateService {
 
 	private final SpringTemplateEngine templateEngine;
 
