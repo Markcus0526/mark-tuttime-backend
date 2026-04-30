@@ -2,7 +2,7 @@ package com.tuttime.gateway.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.UserStatusEvent;
-import com.tuttime.common.event.kafka.UserEvent;
+import com.tuttime.common.event.kafka.event.UserEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
