@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.ReviewEvent;
+import com.tuttime.common.event.kafka.event.ReviewEvent;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.entity.Branch;
 import com.tuttime.restaurant.entity.Restaurant;

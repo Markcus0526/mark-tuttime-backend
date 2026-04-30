@@ -65,7 +65,8 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 			        b.name,
 				    b.address,
 					b.phone,
-					r.name
+					r.name,
+					(SELECT COUNT(t2) FROM DishTable t2 WHERE t2.zone.branch.id = b.id AND t2.deleted = false)			
 			    )
 			    FROM DishTable t
 			    JOIN t.zone z

@@ -2,6 +2,8 @@ package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.Staff;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -24,4 +26,12 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
 	boolean existsByBranchIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
 
 	void deleteByUserId(UUID userId);
+
+	@Query("""
+        SELECT s.userId FROM Staff s 
+        WHERE s.branch.id = :branchId 
+        AND s.active = true 
+        AND s.roleName IN ('MANAGER', 'OWNER')
+    """)
+	List<UUID> findManagerUserIdsByBranchId(@Param("branchId") UUID branchId);
 }
