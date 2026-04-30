@@ -3,7 +3,7 @@ package com.tuttime.booking.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.event.kafka.PaymentEvent;
+import com.tuttime.common.event.kafka.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
