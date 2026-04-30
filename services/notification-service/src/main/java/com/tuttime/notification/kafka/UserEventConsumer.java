@@ -1,7 +1,7 @@
 package com.tuttime.notification.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.UserEvent;
+import com.tuttime.common.event.kafka.event.UserEvent;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

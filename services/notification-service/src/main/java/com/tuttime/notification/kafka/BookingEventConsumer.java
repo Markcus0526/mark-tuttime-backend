@@ -1,8 +1,12 @@
 package com.tuttime.notification.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.enums.NotificationTemplateKey;
-import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.event.BookingEvent;
+import com.tuttime.common.event.proto.BranchManagersRequest;
+import com.tuttime.common.event.proto.BranchManagersResponse;
+import com.tuttime.notification.grpc.client.RestaurantGrpcClient;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,16 +15,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS_UPDATED;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BookingEventConsumer {
 
 	private final ObjectMapper objectMapper;
 	private final NotificationOrchestrator notificationOrchestrator;
+	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	/**
 	 * Perfect Consumer Implementation for Spring Boot 3.3.13
@@ -37,34 +43,70 @@ public class BookingEventConsumer {
 					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
 			// 1. Map Status to Template Key using modern switch
-			NotificationTemplateKey key = switch (event.newStatus()) {
+			NotificationTemplateKey customerKey = switch (event.newStatus()) {
 				case CREATED -> NotificationTemplateKey.BOOKING_CREATED;
 				case CANCELED -> NotificationTemplateKey.BOOKING_CANCELED;
 				case COMPLETED -> NotificationTemplateKey.BOOKING_COMPLETED;
 				default -> null;
 			};
 
-			if (key != null) {
-				log.info("Kafka: Processing {} notification for booking {}", key, event.bookingId());
+			if (customerKey != null) {
+				log.info("Kafka: Processing {} notification for booking {}", customerKey, event.bookingId());
 
-				// 2. Prepare Template Parameters
+				// 1. Notify the Customer (userId is already in the event)
 				Map<String, Object> params = Map.of(
 						"bookingId", event.bookingId(),
 						"status", event.newStatus().toString(),
 						"startTime", event.bookingTime().toString()
 						// Add any other dynamic fields needed for the email/push
 				);
-
-				// 3. Trigger the Orchestrator
-				// userId comes from the event; orchestrator handles gRPC lookup
 				notificationOrchestrator.handleNotification(
 						event.eventId(),
 						event.userId(),
-						key,
+						customerKey,
 						params);
+			}
+
+			if (shouldNotifyManagers(event.newStatus())) {
+				NotificationTemplateKey managerKey = (event.newStatus() == BookingStatus.CREATED)
+						? NotificationTemplateKey.MANAGER_BOOKING_ALERT
+						: NotificationTemplateKey.MANAGER_BOOKING_CANCEL;
+
+				Thread.ofVirtual().start(() -> {
+					try {
+						// FIX: Pass event.branchId(), not bookingTime
+						BranchManagersResponse response = restaurantGrpcClient.getBranchManagers(
+								BranchManagersRequest.newBuilder()
+										.setBranchId(event.branchId().toString())
+										.build());
+
+						response.getManagerIdsList().stream()
+								.map(UUID::fromString)
+								.forEach(managerId -> notificationOrchestrator.handleNotification(
+										event.eventId(),
+										managerId,
+										managerKey,
+										buildParams(event)
+								));
+					} catch (Exception e) {
+						log.error("Manager fan-out failed for branch {}: {}", event.branchId(), e.getMessage());
+					}
+				});
 			}
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
 		}
+	}
+
+	private boolean shouldNotifyManagers(BookingStatus status) {
+		return status == BookingStatus.CREATED || status == BookingStatus.CANCELED;
+	}
+
+	private Map<String, Object> buildParams(BookingEvent.BookingStatusUpdatedEvent event) {
+		return Map.of(
+				"bookingId", event.bookingId(),
+				"time", event.bookingTime().toString(),
+				"status", event.newStatus().name()
+		);
 	}
 }

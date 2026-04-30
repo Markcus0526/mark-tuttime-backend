@@ -1,6 +1,7 @@
 package com.tuttime.notification.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.DeviceTokenDeleteRequest;
 import com.tuttime.common.event.proto.UserDetailRequest;
 import com.tuttime.common.event.proto.UserDetailResponse;
 import com.tuttime.common.event.proto.UserServiceGrpc;
@@ -29,5 +30,11 @@ public class UserGrpcClient {
 		return GrpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
 				userServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getUserDetail(request));
+	}
+
+	public void deleteDeviceToken(DeviceTokenDeleteRequest request) {
+		GrpcExecutor.execute(USER_SERVICE, "deleteDeviceToken", () ->
+				userServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+						.deleteDeviceToken(request));
 	}
 }

@@ -4,7 +4,7 @@ import com.tuttime.notification.dto.AdminNotificationDto;
 import com.tuttime.notification.entity.NotificationTemplate;
 import com.tuttime.notification.repository.NotificationTemplateRepository;
 import com.tuttime.notification.service.AdminNotificationService;
-import com.tuttime.notification.service.MailTemplateService;
+import com.tuttime.notification.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +17,7 @@ import java.util.Map;
 public class AdminNotificationServiceImpl implements AdminNotificationService {
 
 	private final NotificationTemplateRepository templateRepository;
-	private final MailTemplateService templateEngine;
+	private final TemplateService templateEngine;
 
 	@Transactional
 	public NotificationTemplate createTemplate(AdminNotificationDto.TemplateRequest dto) {
