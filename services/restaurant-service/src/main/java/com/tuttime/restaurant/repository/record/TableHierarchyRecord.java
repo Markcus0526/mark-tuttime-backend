@@ -12,7 +12,8 @@ public record TableHierarchyRecord(
 		String branchName,
 		String branchAddress,
 		String branchPhone,
-		String restaurantName
+		String restaurantName,
+		int totalTables
 ) {
 }
 

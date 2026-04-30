@@ -1,7 +1,7 @@
 package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.BookingEvent;
+import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.TableRepository;
 import lombok.RequiredArgsConstructor;

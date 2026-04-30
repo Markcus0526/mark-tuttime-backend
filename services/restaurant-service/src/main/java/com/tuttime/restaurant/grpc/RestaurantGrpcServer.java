@@ -99,6 +99,9 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 					.setBranchId(record.branchId().toString())
 					.setZoneId(record.zoneId().toString())
 					.setTableId(record.tableId().toString())
+					.setTableLabel(record.tableLabel())
+					.setBranchName(record.branchName())
+					.setTotalTables(record.totalTables())
 					.setAvailable(true)
 					.build();
 
@@ -330,6 +333,28 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		} catch (Exception e) {
 			// Keep this for actual system failures (DB down, etc.)
 			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getBranchManagers(BranchManagersRequest request, StreamObserver<BranchManagersResponse> responseObserver) {
+		try {
+			UUID branchId = UUID.fromString(request.getBranchId());
+
+			// Correct lookup: find user_ids from the staffs table for this branch
+			List<String> managerIds = staffRepository.findManagerUserIdsByBranchId(branchId)
+					.stream()
+					.map(UUID::toString)
+					.toList();
+
+			BranchManagersResponse response = BranchManagersResponse.newBuilder()
+					.addAllManagerIds(managerIds)
+					.build();
+
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (Exception e) {
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
 }

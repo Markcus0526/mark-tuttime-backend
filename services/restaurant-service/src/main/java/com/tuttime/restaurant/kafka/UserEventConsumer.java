@@ -2,7 +2,7 @@ package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.UserStatusEvent;
-import com.tuttime.common.event.kafka.UserEvent;
+import com.tuttime.common.event.kafka.event.UserEvent;
 import com.tuttime.restaurant.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
