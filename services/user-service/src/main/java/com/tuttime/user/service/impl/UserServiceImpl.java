@@ -5,7 +5,7 @@ import com.tuttime.common.enums.UserStatus;
 import com.tuttime.common.enums.UserStatusEvent;
 import com.tuttime.common.enums.VerificationType;
 import com.tuttime.common.event.kafka.EventProducer;
-import com.tuttime.common.event.kafka.UserEvent;
+import com.tuttime.common.event.kafka.event.UserEvent;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
@@ -20,7 +20,6 @@ import com.tuttime.user.util.TokenUtil;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,11 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.*;
 

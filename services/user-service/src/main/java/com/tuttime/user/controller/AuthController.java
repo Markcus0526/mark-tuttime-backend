@@ -1,7 +1,11 @@
 package com.tuttime.user.controller;
 
+import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.enums.NotificationTemplateKey;
+import com.tuttime.common.exception.ForbiddenException;
+import com.tuttime.common.exception.UnauthorizedException;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.user.dto.AuthDto;
 import com.tuttime.user.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +23,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -67,7 +73,7 @@ public class AuthController {
 			@Parameter(description = "Logout request with refresh token", required = true)
 			@Valid @RequestBody AuthDto.LogoutRequest request) {
 
-		authService.logoutUser(request.refreshToken());
+		authService.logoutUser(request.refreshToken(), request.fcmToken());
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
@@ -153,5 +159,50 @@ public class AuthController {
 
 		AuthDto.AuthResponse response = authService.loginWithOtp(request);
 		return ResponseEntity.ok(ApiRes.success(response));
+	}
+
+	@Operation(summary = "Register or update FCM device token for the current user.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Device token updated"),
+			@ApiResponse(responseCode = "401", description = "Unauthorized")
+	})
+	@PostMapping("/device-token")
+	public ResponseEntity<ApiRes<Void>> updateDeviceToken(
+			@Valid @RequestBody AuthDto.DeviceRegistrationRequest request) {
+
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		authService.registerDevice(currentUserId, request);
+		return ResponseEntity.ok(ApiRes.success("Device token registered successfully", null));
+	}
+
+	/**
+	 * Private helper to keep the controller DRY
+	 */
+	private void validateLogin() {
+		if (!UserContext.isValidUUID()) {
+			throw new UnauthorizedException("Unauthorized: You should login");
+		}
+	}
+
+	private void validateAdmin() {
+		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
+	}
+
+	private void validateAdminOrOwner() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
+	}
+
+	private void validateAdminOrOwnerOrManager() {
+		if (!UserContext.isValidUUID()
+				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+			throw new ForbiddenException("Access forbidden: Insufficient permissions");
+		}
 	}
 }

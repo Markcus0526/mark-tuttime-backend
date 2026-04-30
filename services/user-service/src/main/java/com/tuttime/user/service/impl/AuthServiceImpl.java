@@ -10,7 +10,7 @@ import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.enums.UserStatus;
 import com.tuttime.common.enums.VerificationType;
 import com.tuttime.common.event.kafka.EventProducer;
-import com.tuttime.common.event.kafka.UserEvent;
+import com.tuttime.common.event.kafka.event.UserEvent;
 import com.tuttime.common.event.proto.StaffUserRequest;
 import com.tuttime.common.event.proto.StaffUserResponse;
 import com.tuttime.common.exception.ForbiddenException;
@@ -55,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
 	private final UserAuthMethodRepository userAuthMethodRepository;
 	private final UserRoleRepository userRoleRepository;
 	private final RoleRepository roleRepository;
+	private final UserDeviceRepository userDeviceRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final AuthMapper authMapper;
@@ -216,10 +217,14 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public void logoutUser(String refreshToken) {
+	public void logoutUser(String refreshToken, String fcmToken) {
 		// Implementation depends on token invalidation strategy
 		// e.g., store refresh token blacklist or remove from persistent store
 		jwtTokenProvider.invalidateRefreshToken(refreshToken);
+
+		if (fcmToken != null) {
+			userDeviceRepository.deleteByFcmToken(fcmToken);
+		}
 	}
 
 	@Override
@@ -433,6 +438,16 @@ public class AuthServiceImpl implements AuthService {
 		updatePasswordForUser(user.getId(), newPassword);
 		user.setStatus(UserStatus.ACTIVE);
 		userRepository.save(user);
+	}
+
+	@Transactional
+	public void registerDevice(UUID userId, AuthDto.DeviceRegistrationRequest deviceInfo) {
+		userDeviceRepository.upsertToken(
+				userId,
+				deviceInfo.token(),
+				deviceInfo.platform().name(),
+				deviceInfo.deviceName()
+		);
 	}
 
 	private void updatePasswordForUser(UUID userId, String newPassword) {

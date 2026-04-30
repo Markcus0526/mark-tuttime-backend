@@ -1,6 +1,7 @@
 package com.tuttime.user.dto;
 
 import com.tuttime.user.entity.enums.AuthProvider;
+import com.tuttime.user.entity.enums.DevicePlatform;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
@@ -78,7 +79,9 @@ public class AuthDto {
 
 			@Schema(description = "User password", example = "StrongPassword123!")
 			@NotBlank(message = "Password is required")
-			String password
+			String password,
+
+			DeviceRegistrationRequest deviceInfo
 	) {
 	}
 
@@ -93,12 +96,13 @@ public class AuthDto {
 	) {
 	}
 
-
 	@Schema(description = "Login request details")
 	public record LogoutRequest(
 			@Schema(description = "Refresh token to invalidate")
 			@NotBlank
-			String refreshToken
+			String refreshToken,
+
+			String fcmToken
 	) {
 	}
 
@@ -117,6 +121,12 @@ public class AuthDto {
 			String password
 	) {
 	}
+
+	public record DeviceRegistrationRequest(
+			@NotBlank String token,
+			@NotNull DevicePlatform platform,
+			String deviceName
+	) {}
 
 	public record AuthResponse(
 			@Schema(description = "JWT access token")
