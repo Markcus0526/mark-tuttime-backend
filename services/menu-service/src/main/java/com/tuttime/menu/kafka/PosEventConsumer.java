@@ -1,7 +1,7 @@
 package com.tuttime.menu.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.event.kafka.PosEvent;
+import com.tuttime.common.event.kafka.event.PosEvent;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.service.MenuItemService;
 import lombok.RequiredArgsConstructor;
