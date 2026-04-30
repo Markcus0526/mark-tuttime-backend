@@ -2,7 +2,7 @@ package com.tuttime.order.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
-import com.tuttime.common.event.kafka.PaymentEvent;
+import com.tuttime.common.event.kafka.event.PaymentEvent;
 import com.tuttime.order.entity.Order;
 import com.tuttime.order.grpc.client.PosGrpcClient;
 import com.tuttime.order.service.OrderService;

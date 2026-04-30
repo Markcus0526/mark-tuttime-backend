@@ -2,7 +2,7 @@ package com.tuttime.order.service.impl;
 
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.kafka.EventProducer;
-import com.tuttime.common.event.kafka.OrderEvent;
+import com.tuttime.common.event.kafka.event.OrderEvent;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.order.dto.OrderDto;
