@@ -28,6 +28,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,15 +37,18 @@ import org.springframework.util.StringUtils;
 import java.net.URL;
 import java.security.PublicKey;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+	@Value("${app.oauth.google.client.id}")
+	private String googleClientId;
+
+	@Value("${app.oauth.apple.client.id}")
+	private String appleClientId;
 
 	private final UserRepository userRepository;
 	private final VerificationCodeRepository verificationCodeRepository;
@@ -450,21 +454,28 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	private AuthDto.AuthResponse.OAuthUserInfo verifyGoogleToken(String token) {
-		GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-				.setAudience(Collections.singletonList("${app.oauth.google.client.id}")) // Ensure this matches your Client ID
-				.build();
-
 		try {
+			// 2. Re-run verification with skew allowance
+			GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+					.setAudience(Collections.singletonList(googleClientId))
+					.setAcceptableTimeSkewSeconds(60)
+					.build();
+
 			GoogleIdToken idToken = verifier.verify(token);
-			if (idToken == null) throw new ForbiddenException("Invalid Google Token");
+
+			if (idToken == null) {
+				// If it's still null, compare the 'aud' from the DEBUG print above
+				// with your 'googleClientId' variable. They must be IDENTICAL.
+				throw new ForbiddenException("Invalid Google Token (Verification failed)");
+			}
 
 			GoogleIdToken.Payload payload = idToken.getPayload();
 			return new AuthDto.AuthResponse.OAuthUserInfo(
-					payload.getSubject(),    // providerId
-					payload.getEmail(),      // email
-					(String) payload.get("name")); // name
+					payload.getSubject(),
+					payload.getEmail(),
+					(String) payload.get("name"));
 		} catch (Exception e) {
-			throw new ForbiddenException("Google verification failed");
+			throw new ForbiddenException("Google verification failed: " + e.getMessage());
 		}
 	}
 
@@ -473,7 +484,7 @@ public class AuthServiceImpl implements AuthService {
 		Claims claims = Jwts.parser()
 				.verifyWith(applePublicKey)
 				.requireIssuer("https://appleid.apple.com")
-				.requireAudience("${app.oauth.apple.client.id}")
+				.requireAudience(appleClientId)
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
@@ -515,8 +526,9 @@ public class AuthServiceImpl implements AuthService {
 		linkOAuthMethod(newUser, provider, userInfo.providerId());
 
 		// Add default role
-		// UserRole role = UserRole.builder().user(newUser).role(Role.USER).build();
-		// newUser.getRoles().add(role);
+		Role role = roleRepository.findByName(UserRoleKind.USER.name())
+				.orElseThrow(() -> new InvalidRequestException("Role " + UserRoleKind.USER.name() + " not found"));
+		newUser.getRoles().add(UserRole.builder().user(newUser).role(role).build());
 
 		return userRepository.save(newUser);
 	}
