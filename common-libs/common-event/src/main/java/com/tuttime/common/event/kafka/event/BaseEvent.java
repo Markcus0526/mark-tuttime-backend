@@ -1,4 +1,4 @@
-package com.tuttime.common.event.kafka;
+package com.tuttime.common.event.kafka.event;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -11,6 +11,7 @@ public sealed interface BaseEvent permits
 		RestaurantEvent.StaffUpdatedEvent,
 
 		BookingEvent.BookingStatusUpdatedEvent,
+		BookingEvent.BranchAvailabilityEvent,
 
 		OrderEvent.OrderCreatedEvent,
 		OrderEvent.OrderStatusEvent,

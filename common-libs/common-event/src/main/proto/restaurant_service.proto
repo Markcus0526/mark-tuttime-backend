@@ -1,7 +1,8 @@
 syntax = "proto3";
 
+package com.tuttime.common.event.proto;
+
 import "google/protobuf/timestamp.proto";
-package com.tuttime.common.proto;
 
 option java_multiple_files = true;
 option java_package = "com.tuttime.common.event.proto";
@@ -26,6 +27,7 @@ service RestaurantService {
 
   rpc ValidateBranch (BranchValidRequest) returns (BranchValidResponse);
 
+  rpc GetBranchManagers(BranchManagersRequest) returns (BranchManagersResponse);
 }
 
 // rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
@@ -62,7 +64,10 @@ message TableDetailResponse {
   string branch_id = 2;
   string zone_id = 3;
   string table_id = 4;
-  bool available = 5;
+  string table_label = 5;
+  string branch_name = 6;
+  int32 total_tables = 7;
+  bool available = 8;
 }
 
 // rpc GetBranchSlots (BranchSlotsRequest) returns (BranchSlotsResponse);
@@ -144,4 +149,13 @@ message BranchValidResponse {
   bool exists = 1;
   string name = 2;
   bool active = 3;
+}
+
+// rpc GetBranchManagers(BranchManagersRequest) returns (BranchManagersResponse);
+message BranchManagersRequest {
+  string branch_id = 1;
+}
+
+message BranchManagersResponse {
+  repeated string manager_ids = 1;
 }

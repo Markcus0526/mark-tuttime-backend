@@ -1,26 +1,31 @@
-package com.tuttime.common.event.kafka;
+package com.tuttime.common.event.kafka.event;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.tuttime.common.enums.OrderStatus;
 import lombok.Builder;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public class OrderEvent {
+public class PaymentEvent {
 
 	@Builder(toBuilder = true)
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-	public record OrderCreatedEvent(
+	public record PaymentCompletedEvent(
 			UUID eventId,
-			UUID orderId,
+			UUID bookingId,
+			UUID userId,
 			UUID branchId,
+			String externalPaymentId,
+			BigDecimal amount,
+			BigDecimal commissionRate,  // Add this: e.g., 0.10 for 10%
+			String currency,
 			OffsetDateTime occurredAt
 	) implements BaseEvent {
 
 		// Canonical Constructor to handle default values manually
-		public OrderCreatedEvent {
+		public PaymentCompletedEvent {
 			if (eventId == null) eventId = UUID.randomUUID();
 			if (occurredAt == null) occurredAt = OffsetDateTime.now();
 		}
@@ -36,20 +41,27 @@ public class OrderEvent {
 		}
 	}
 
+	/**
+	 * Immutable event broadcasted via Kafka when a refund is confirmed.
+	 * Distributed to Booking, Order, and Waitlist services.
+	 */
 	@Builder(toBuilder = true)
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-	public record OrderStatusEvent(
+	public record PaymentRefundedEvent(
 			UUID eventId,
-			UUID orderId,
-			UUID bookingId,
+			UUID paymentId,         // For internal payment tracking
+			UUID bookingId,         // To identify which reservation to cancel
+			UUID userId,
 			UUID branchId,
-			OrderStatus oldStatus,
-			OrderStatus newStatus,
+			BigDecimal amount,      // The amount refunded (Full or Partial)
+			String currency,        // e.g., "RUB"
+			String stripeRefundId,  // For audit matching with Stripe
+			String reason,          // Why the refund happened (e.g., "Customer Cancellation")
 			OffsetDateTime occurredAt
 	) implements BaseEvent {
 
 		// Canonical Constructor to handle default values manually
-		public OrderStatusEvent {
+		public PaymentRefundedEvent {
 			if (eventId == null) eventId = UUID.randomUUID();
 			if (occurredAt == null) occurredAt = OffsetDateTime.now();
 		}

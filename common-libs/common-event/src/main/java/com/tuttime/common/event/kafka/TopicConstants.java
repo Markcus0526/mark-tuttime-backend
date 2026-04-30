@@ -13,6 +13,7 @@ public class TopicConstants {
 	public static final String TOPIC_RESTAURANT_STAFF_UPDATED = "tuttime.restaurant.staff.updated";
 
 	public static final String TOPIC_BOOKING_STATUS_UPDATED = "tuttime.booking.status.updated";
+	public static final String TOPIC_BRANCH_BRANCH_AVAILABILITY = "tuttime.booking.branch.availability";
 
 	public static final String TOPIC_PAYMENT_COMPLETED = "tuttime.payment.completed";
 	public static final String TOPIC_PAYMENT_REFUND = "tuttime.payment.refund";

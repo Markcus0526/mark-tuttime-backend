@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package com.tuttime.common.event.proto;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_package = "com.tuttime.common.event.proto";
+option java_outer_classname = "NotificationServiceProto";
+
+// Notification Service gRPC
+service NotificationService {
+
+  rpc SendNotification(NotificationRequest) returns (google.protobuf.Empty);
+
+}
+
+// rpc SendNotification(NotificationRequest) returns (google.protobuf.Empty);
+message NotificationRequest {
+  string user_id = 1;
+  string template_key = 2; // e.g., "BOOKING_REMINDER"
+  google.protobuf.Struct params = 3; // Equivalent to Map<String, Object>
+}

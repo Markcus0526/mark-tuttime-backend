@@ -1,4 +1,4 @@
-package com.tuttime.common.event.kafka;
+package com.tuttime.common.event.kafka.event;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
