@@ -1,8 +1,9 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
+package com.tuttime.common.event.proto;
 
-package com.tuttime.common.proto;
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 option java_multiple_files = true;
 option java_package = "com.tuttime.common.event.proto";
@@ -11,7 +12,7 @@ option java_outer_classname = "UserServiceProto";
 // User Service gRPC
 service UserService {
   // Synchronous call for Gateway and Services to validate a user
-  rpc ValidateUserToken (ValidTokenRequest) returns (ValidTokenResponse);
+  rpc ValidateUserToken (TokenValidRequest) returns (ValidTokenResponse);
 
   // Fetch basic profile info for display in Reviews/Bookings
   rpc GetUserDetail (UserDetailRequest) returns (UserDetailResponse);
@@ -20,10 +21,12 @@ service UserService {
 
   rpc GetUserDetails (UserDetailsRequest) returns (UserDetailsResponse);
 
+  rpc DeleteDeviceToken(DeviceTokenDeleteRequest) returns (google.protobuf.Empty);
+
 }
 
-// rpc ValidateUserToken (ValidTokenRequest) returns (ValidTokenResponse);
-message ValidTokenRequest {
+// rpc ValidateUserToken (TokenValidRequest) returns (ValidTokenResponse);
+message TokenValidRequest {
   string jwt_token = 1;
 }
 
@@ -45,9 +48,10 @@ message UserDetailResponse {
   string email = 3;
   string full_name = 4;
   string profile_picture = 5;
-  string status = 7; // Mapping the 'user_status' enum to String
-  string roles = 8;
-  string auth_methods = 9;
+  string status = 6; // Mapping the 'user_status' enum to String
+  string roles = 7;
+  string auth_methods = 8;
+  repeated string fcm_tokens = 9;
 
   // Relationships
   double latitude = 11;           // Latitude for location-based features
@@ -75,4 +79,9 @@ message UserDetailsRequest {
 
 message UserDetailsResponse {
   repeated UserDetailResponse profiles = 1;
+}
+
+// rpc DeleteDeviceToken(DeviceTokenDeleteRequest) returns (google.protobuf.Empty);
+message DeviceTokenDeleteRequest {
+  string fcm_token = 1;
 }

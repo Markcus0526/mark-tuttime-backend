@@ -1,6 +1,7 @@
 package com.tuttime.common.event.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuttime.common.event.kafka.event.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,57 +24,61 @@ public class EventProducer {
 
 	// User Events Publisher
 	public void sendUserRegisteredEvent(UserEvent.VerificationEvent event) {
-		sendEvent(TOPIC_USER_REGISTERED, event.userId().toString(), event);
+		sendEvent(TOPIC_USER_REGISTERED, event.eventId().toString(), event);
 	}
 
 	public void sendUserVerificationRequestedEvent(UserEvent.VerificationEvent event) {
-		sendEvent(TOPIC_USER_VERIFICATION_REQUESTED, event.userId().toString(), event);
+		sendEvent(TOPIC_USER_VERIFICATION_REQUESTED, event.eventId().toString(), event);
 	}
 
 	public void sendUserUpdatedEvent(UserEvent.ProfileUpdatedEvent event) {
-		sendEvent(TOPIC_USER_PROFILE_UPDATED, event.userId().toString(), event);
+		sendEvent(TOPIC_USER_PROFILE_UPDATED, event.eventId().toString(), event);
 	}
 
 	public void sendUserSecurityEvent(UserEvent.SecurityEvent event) {
-		sendEvent(TOPIC_USER_SECURITY_UPDATED, event.userId().toString(), event);
+		sendEvent(TOPIC_USER_SECURITY_UPDATED, event.eventId().toString(), event);
 	}
 
 	// Restaurant Events Publisher
 	public void sendRestaurantStaffUpdatedEvent(RestaurantEvent.StaffUpdatedEvent event) {
-		sendEvent(TOPIC_RESTAURANT_STAFF_UPDATED, event.staffId().toString(), event);
+		sendEvent(TOPIC_RESTAURANT_STAFF_UPDATED, event.eventId().toString(), event);
 	}
 
 	// Booking Events Publisher
 	public void sendBookingStatusUpdatedEvent(BookingEvent.BookingStatusUpdatedEvent event) {
-		sendEvent(TOPIC_BOOKING_STATUS_UPDATED, event.bookingId().toString(), event);
+		sendEvent(TOPIC_BOOKING_STATUS_UPDATED, event.eventId().toString(), event);
+	}
+
+	public void sendBookingBranchAvailabilityEvent(BookingEvent.BranchAvailabilityEvent event) {
+		sendEvent(TOPIC_BRANCH_BRANCH_AVAILABILITY, event.eventId().toString(), event);
 	}
 
 
 	// Payment Events Publisher
 	public void sendPaymentCompletedEvent(PaymentEvent.PaymentCompletedEvent event) {
-		sendEvent(TOPIC_PAYMENT_COMPLETED, event.bookingId().toString(), event);
+		sendEvent(TOPIC_PAYMENT_COMPLETED, event.eventId().toString(), event);
 	}
 
 	public void sendPaymentRefundEvent(PaymentEvent.PaymentRefundedEvent event) {
-		sendEvent(TOPIC_PAYMENT_REFUND, event.bookingId().toString(), event);
+		sendEvent(TOPIC_PAYMENT_REFUND, event.eventId().toString(), event);
 	}
 
 	// Order Events Publisher
 	public void sendOrderCreatedEvent(OrderEvent.OrderCreatedEvent event) {
-		sendEvent(TOPIC_ORDER_CREATED, event.orderId().toString(), event);
+		sendEvent(TOPIC_ORDER_CREATED, event.eventId().toString(), event);
 	}
 
 	public void sendOrderStatusUpdatedEvent(OrderEvent.OrderStatusEvent event) {
-		sendEvent(TOPIC_ORDER_STATUS_UPDATED, event.bookingId().toString(), event);
+		sendEvent(TOPIC_ORDER_STATUS_UPDATED, event.eventId().toString(), event);
 	}
 
 	// Pos Events Publisher
 	public void sendPosMenuUpdatedEvent(PosEvent.PosMenuUpdatedEvent event) {
-		sendEvent(TOPIC_POS_ITEMS_UPDATED, event.branchId().toString(), event);
+		sendEvent(TOPIC_POS_ITEMS_UPDATED, event.eventId().toString(), event);
 	}
 
 	public void sendPosPriceUpdatedEvent(PosEvent.PosPriceUpdatedEvent event) {
-		sendEvent(TOPIC_POS_PRICE_UPDATED, event.branchId().toString(), event);
+		sendEvent(TOPIC_POS_PRICE_UPDATED, event.eventId().toString(), event);
 	}
 
 	// Review Events Publisher
