@@ -101,7 +101,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 					.setTableId(record.tableId().toString())
 					.setTableLabel(record.tableLabel())
 					.setBranchName(record.branchName())
-					.setTotalTables(record.totalTables())
+					.setTotalTables(record.totalTables().intValue())
 					.setAvailable(true)
 					.build();
 
