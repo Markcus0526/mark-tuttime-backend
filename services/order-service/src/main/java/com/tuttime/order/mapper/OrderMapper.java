@@ -56,9 +56,9 @@ public abstract class OrderMapper {
 		return items.stream().map(item -> {
 			// Find matching menu detail from the gRPC list
 			var detail = (details == null) ? null : details.stream()
-					.filter(d -> d.getMenuItemId().equals(item.getMenuItemId().toString()))
-					.findFirst()
-					.orElse(null);
+			                                        .filter(d -> d.getMenuItemId().equals(item.getMenuItemId().toString()))
+			                                        .findFirst()
+			                                        .orElse(null);
 
 			return OrderDto.OrderDetailResponse.MenuItemDto.builder()
 					.menuItemId(item.getMenuItemId())
@@ -82,10 +82,10 @@ public abstract class OrderMapper {
 		return selectedModifiers.stream().map(mod -> {
 			// Flatten the groups to find the specific option ID
 			var modOption = (menuDetail == null) ? null : menuDetail.getModifierGroupsList().stream()
-					.flatMap(group -> group.getOptionsList().stream())
-					.filter(option -> option.getOptionId().equals(mod.getModifierId().toString()))
-					.findFirst()
-					.orElse(null);
+			                                              .flatMap(group -> group.getOptionsList().stream())
+			                                              .filter(option -> option.getOptionId().equals(mod.getModifierId().toString()))
+			                                              .findFirst()
+			                                              .orElse(null);
 
 			return OrderDto.OrderDetailResponse.ModifierDto.builder()
 					.modifierId(mod.getModifierId())

@@ -1,7 +1,7 @@
 package com.tuttime.review.entity;
 
 import com.tuttime.common.entity.BaseUuidEntity;
-import com.tuttime.review.entity.enums.ReviewStatus;
+import com.tuttime.common.enums.ReviewStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;

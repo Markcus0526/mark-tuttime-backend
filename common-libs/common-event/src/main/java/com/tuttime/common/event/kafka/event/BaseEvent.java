@@ -22,7 +22,7 @@ public sealed interface BaseEvent permits
 		PosEvent.PosMenuUpdatedEvent,
 		PosEvent.PosPriceUpdatedEvent,
 
-		ReviewEvent.ReviewApprovedEvent
+		ReviewEvent.ReviewUpdatedEvent
 {
 	// Unique ID for idempotency (Critical for NotificationLog)
 	UUID eventId();

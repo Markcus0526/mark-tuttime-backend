@@ -31,7 +31,8 @@ public class PaymentEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentCompletedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+			PaymentEvent.PaymentCompletedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
 			log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
 
@@ -42,7 +43,8 @@ public class PaymentEventConsumer {
 					event.branchId(), // Important: Pass the branchId for physical tracking
 					event);
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}", TOPIC_PAYMENT_COMPLETED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+					TOPIC_PAYMENT_COMPLETED, e.getMessage());
 		}
 	}
 
@@ -56,7 +58,8 @@ public class PaymentEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentRefundedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
+			PaymentEvent.PaymentRefundedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
 
 			log.info("Kafka: Refund received for booking {}. Releasing table.", event.bookingId());
 
@@ -67,7 +70,8 @@ public class PaymentEventConsumer {
 					event.branchId(), // Important: Pass the branchId for physical tracking
 					event);
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}", TOPIC_PAYMENT_REFUND, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+					TOPIC_PAYMENT_REFUND, e.getMessage());
 		}
 	}
 }

@@ -9,5 +9,4 @@ public interface NotificationOrchestrator {
 
 	void handleNotification(UUID eventId, UUID userId, NotificationTemplateKey templateKey, Map<String, Object> params);
 
-
 }

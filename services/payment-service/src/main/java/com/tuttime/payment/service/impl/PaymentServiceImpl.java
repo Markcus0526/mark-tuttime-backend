@@ -96,9 +96,7 @@ public class PaymentServiceImpl implements PaymentService {
 				paymentAuditLogRepository.save(audit);
 
 				// 4. Trigger Event ONLY if status is COMPLETED
-				if (payment.getStatus() == PaymentStatus.COMPLETED) {
-					dispatchPaymentCompletedEvent(payment, yooId);
-				}
+				dispatchPaymentCompletedEvent(payment, yooId);
 
 				log.info("Payment {} synchronized to status {}", yooId, payment.getStatus());
 			});
@@ -128,6 +126,8 @@ public class PaymentServiceImpl implements PaymentService {
 				.status(yooRefund.getStatus().toUpperCase())
 				.reason(reason)
 				.build());
+
+		dispatchRefundCompletedEvent(payment, reason);
 	}
 
 	@Override
@@ -226,7 +226,20 @@ public class PaymentServiceImpl implements PaymentService {
 				.amount(payment.getAmount())
 				.currency(payment.getCurrency())
 				.commissionRate(BigDecimal.valueOf(0.01))
+				.status(payment.getStatus())
 				.build();
 		eventProducer.sendPaymentCompletedEvent(event);
+	}
+
+	private void dispatchRefundCompletedEvent(Payment payment, String reason) {
+		PaymentEvent.PaymentRefundedEvent event = PaymentEvent.PaymentRefundedEvent.builder()
+				.bookingId(payment.getBookingId())
+				.userId(payment.getUserId())
+				.branchId(payment.getBranchId())
+				.amount(payment.getAmount())
+				.currency(payment.getCurrency())
+				.reason(reason)
+				.build();
+		eventProducer.sendPaymentRefundEvent(event);
 	}
 }

@@ -42,10 +42,12 @@ services:
       # Inject values directly to override anything in application.yml
       SERVER_PORT: ${REVIEW_SERVICE_PORT}
       HOSTNAME: review-service
-      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008"
     ports:
       - "${REVIEW_SERVICE_PORT}:${REVIEW_SERVICE_PORT}"
       - "${REVIEW_GRPC_PORT}:${REVIEW_GRPC_PORT}"
+      - "0.0.0.0:5008:5008" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for review images
     deploy:

@@ -29,7 +29,8 @@ public class BookingEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event = objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+			BookingEvent.BookingStatusUpdatedEvent event =
+					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
 			UUID tableId = event.tableId();
 
@@ -41,7 +42,8 @@ public class BookingEventConsumer {
 			}
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
+					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
 		}
 	}
 

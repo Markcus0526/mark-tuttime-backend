@@ -34,7 +34,8 @@ public class BookingEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event = objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+			BookingEvent.BookingStatusUpdatedEvent event =
+					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
 			// 1. Look up the POS configuration for this specific branch
 			var config = posConfigRepository.findByBranchIdAndEnabledTrue(event.branchId())
@@ -69,7 +70,8 @@ public class BookingEventConsumer {
 			}
 		} catch (Exception e) {
 			// 5. Final safety net to prevent infinite retries of bad messages
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
 		}
 	}
 

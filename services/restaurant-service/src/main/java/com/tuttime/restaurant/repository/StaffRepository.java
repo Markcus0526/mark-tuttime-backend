@@ -28,10 +28,10 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
 	void deleteByUserId(UUID userId);
 
 	@Query("""
-        SELECT s.userId FROM Staff s 
-        WHERE s.branch.id = :branchId 
-        AND s.active = true 
-        AND s.roleName IN ('MANAGER', 'OWNER')
-    """)
+			    SELECT s.userId FROM Staff s 
+			    WHERE s.branch.id = :branchId 
+			    AND s.active = true 
+			    AND s.roleName IN ('MANAGER', 'OWNER')
+			""")
 	List<UUID> findManagerUserIdsByBranchId(@Param("branchId") UUID branchId);
 }

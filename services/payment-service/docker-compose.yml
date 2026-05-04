@@ -42,10 +42,12 @@ services:
       # Inject values directly to override anything in application.yml
       SERVER_PORT: ${PAYMENT_SERVICE_PORT}
       HOSTNAME: payment-service
-      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006"
     ports:
       - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
       - "${PAYMENT_GRPC_PORT}:${PAYMENT_GRPC_PORT}"
+      - "0.0.0.0:5006:5006" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for payment images
     deploy:

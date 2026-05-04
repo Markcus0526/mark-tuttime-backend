@@ -31,7 +31,8 @@ public class PaymentEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentRefundedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
+			PaymentEvent.PaymentRefundedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
 
 //			if ("REFUND_COMPLETED".equals(finalEvent.getType())) {
 //				log.info("Processing refund sync for Order: {}", finalEvent.getOrderId());
@@ -43,7 +44,8 @@ public class PaymentEventConsumer {
 //				adapter.refundOrder(config, finalEvent.getOrderId(), finalEvent.getAmount(), "Payment Gateway Refund");
 //			}TODO
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}", TOPIC_PAYMENT_REFUND, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+					TOPIC_PAYMENT_REFUND, e.getMessage());
 		}
 	}
 }

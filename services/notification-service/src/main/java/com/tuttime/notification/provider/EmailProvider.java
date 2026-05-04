@@ -41,7 +41,7 @@ public class EmailProvider {
 			helper.setFrom("TutTime <no-reply@tuttime.com>");
 
 			mailSender.send(message);*/
-			log.info("Email successfully sent to: {}", to);
+			log.info("Email successfully sent to: {}, subject: {}, text: {}", to, subject, htmlContent);
 
 			// Update DB status to SENT
 			updateLogStatus(logId, NotificationStatus.SENT, null);

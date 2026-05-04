@@ -108,18 +108,14 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			// Building Response based on your exact SQL fields
 			UserDetailResponse.Builder responseBuilder = UserDetailResponse.newBuilder()
 					.setUserId(user.getId().toString())
-					.setEmail(user.getEmail())
+					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
+					.setEmail(user.getEmail() != null ? user.getEmail() : "")
 					.setFullName(user.getFullName() != null ? user.getFullName() : "")
+					.setProfilePicture(user.getProfilePicture() != null ? user.getProfilePicture() : "")
 					.setStatus(user.getStatus().toString())
 					.addAllFcmTokens(fcmTokens)
 					.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
 					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
-			if (user.getProfilePicture() != null) {
-				responseBuilder.setRoles(user.getProfilePicture());
-			}
-			if (user.getLastLogin() != null) {
-				responseBuilder.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
-			}
 			if (user.getRoles() != null && !user.getRoles().isEmpty()) {
 				String combinedRoles = user.getRoles().stream()
 						.map(UserRole::getRole)
@@ -227,14 +223,47 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 			for (User user : users) {
 				List<String> tokens = userTokensMap.getOrDefault(user.getId(), Collections.emptyList());
 
-				UserDetailResponse profile = UserDetailResponse.newBuilder()
+				UserDetailResponse.Builder profile = UserDetailResponse.newBuilder()
 						.setUserId(user.getId().toString())
-						.setFullName(user.getFullName() != null ? user.getFullName() : "")
 						.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
 						.setEmail(user.getEmail() != null ? user.getEmail() : "")
-						.setProfilePicture((user.getProfilePicture() != null ? user.getProfilePicture() : ""))
+						.setFullName(user.getFullName() != null ? user.getFullName() : "")
+						.setProfilePicture(user.getProfilePicture() != null ? user.getProfilePicture() : "")
+						.setStatus(user.getStatus().toString())
 						.addAllFcmTokens(tokens)
-						.build();
+						.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
+						.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
+				if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+					String combinedRoles = user.getRoles().stream()
+							.map(UserRole::getRole)
+							.filter(Objects::nonNull) // Ensure Role is not null
+							.map(Role::getName)
+							.filter(Objects::nonNull) // Ensure Role Name is not null
+							.collect(Collectors.joining(","));
+
+					profile.setRoles(combinedRoles);
+				} else {
+					profile.setRoles(""); // Protobuf builders hate nulls
+				}
+				if (user.getAuthMethods() != null) {
+					String authMethods = user.getAuthMethods().stream()
+							.map(UserAuthMethod::getAuthType)
+							.map(Enum::name)
+							.collect(Collectors.joining(","));
+
+					profile.setAuthMethods(authMethods);
+				}
+				if (!user.getLocations().isEmpty()) {
+					SequencedSet<UserLocation> sequencedLocations = (SequencedSet<UserLocation>) user.getLocations();
+					UserLocation lastLocation = sequencedLocations.getLast();
+					profile.setLongitude(lastLocation.getLocation().getX());
+					profile.setLatitude(lastLocation.getLocation().getY());
+				}
+				// Null-safe mapping for last_login
+				if (user.getLastLogin() != null) {
+					profile.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
+				}
+
 				responseBuilder.addProfiles(profile);
 			}
 

@@ -108,7 +108,7 @@ public class AuthDto {
 
 	@Schema(description = "Register request details")
 	public record RegisterRequest(
-			@Schema(description = "Phone number in E.164 format", example = "+1234567890", nullable = true)
+			@Schema(description = "Phone number in E.164 format", example = "+79164567890", nullable = true)
 			@Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Invalid phone number")
 			String phoneNumber,
 
@@ -116,8 +116,8 @@ public class AuthDto {
 			@Email(message = "Invalid email")
 			String email,
 
-			@Schema(description = "User password", example = "StrongPassword123!")
-			@NotBlank(message = "Password is required")
+			@Schema(description = "User password", example = "12345678")
+			// @NotBlank(message = "Password is required")
 			String password
 	) {
 	}
@@ -126,7 +126,8 @@ public class AuthDto {
 			@NotBlank String token,
 			@NotNull DevicePlatform platform,
 			String deviceName
-	) {}
+	) {
+	}
 
 	public record AuthResponse(
 			@Schema(description = "JWT access token")

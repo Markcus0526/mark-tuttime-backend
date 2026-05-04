@@ -42,10 +42,12 @@ services:
       # Inject values directly to override anything in application.yml
       SERVER_PORT: ${BOOKING_SERVICE_PORT}
       HOSTNAME: booking-service
-      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5004"
     ports:
       - "${BOOKING_SERVICE_PORT}:${BOOKING_SERVICE_PORT}"
       - "${BOOKING_GRPC_PORT}:${BOOKING_GRPC_PORT}"
+      - "0.0.0.0:5004:5004" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for booking images
     deploy:

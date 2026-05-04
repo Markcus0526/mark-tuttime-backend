@@ -11,7 +11,7 @@ import com.tuttime.review.dto.ReviewDto;
 import com.tuttime.review.entity.RatingAggregate;
 import com.tuttime.review.entity.Review;
 import com.tuttime.review.entity.ReviewModerationLog;
-import com.tuttime.review.entity.enums.ReviewStatus;
+import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.review.grpc.client.RestaurantGrpcClient;
 import com.tuttime.review.grpc.client.UserGrpcClient;
 import com.tuttime.review.mapper.ReviewMapper;
@@ -58,6 +58,8 @@ public class ReviewServiceImpl implements ReviewService {
 				.comment(request.comment())
 				.status(ReviewStatus.PENDING)
 				.build();
+
+		dispatchReviewUpdatedEvent(review);
 
 		return reviewMapper.toReviewResponse(reviewRepository.save(review));
 	}
@@ -132,15 +134,7 @@ public class ReviewServiceImpl implements ReviewService {
 		Review updatedReview = reviewRepository.save(review);
 		log.info("Review {} moderated to {} by moderator {}", reviewId, request.status(), moderatorId);
 
-		if (updatedReview.getStatus() == ReviewStatus.APPROVED) {
-			ReviewEvent.ReviewApprovedEvent event = ReviewEvent.ReviewApprovedEvent.builder()
-					.reviewId(review.getId())
-					.branchId(review.getBranchId())
-					.userId(review.getUserId())
-					.rating(review.getRating())
-					.build();
-			eventProducer.sendReviewApprovedEvent(event);
-		}
+		dispatchReviewUpdatedEvent(review);
 
 		return reviewMapper.toReviewResponse(updatedReview);
 	}
@@ -182,5 +176,16 @@ public class ReviewServiceImpl implements ReviewService {
 		aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
 
 		aggregateRepository.save(aggregate);
+	}
+
+	private void dispatchReviewUpdatedEvent(Review review) {
+		ReviewEvent.ReviewUpdatedEvent event = ReviewEvent.ReviewUpdatedEvent.builder()
+				.reviewId(review.getId())
+				.branchId(review.getBranchId())
+				.userId(review.getUserId())
+				.rating(review.getRating())
+				.status(review.getStatus())
+				.build();
+		eventProducer.sendReviewUpdatedEvent(event);
 	}
 }

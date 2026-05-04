@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="db-forest-configuration">
+    <data version="2">.
+	----------------------------------------
+	1:0:c28f652f-ad88-4303-9f8d-57db6c28a6b3
+	2:0:692ca080-d416-4cff-a545-f668698aa9c4
+	3:0:7681be5a-cd09-4cc0-9081-171f8def4ec8
+	4:0:2cf892e6-ed46-43c9-afb8-8f2054505ede
+	5:0:d954f2dd-aae9-4331-9e7b-9e5fd32c795d
+	6:0:c0b16528-50c2-4484-89a7-16feaa0e3adc
+	7:0:ae36e942-1dd3-4938-8227-a70d6ca068ba
+	8:0:53518b9e-af21-42b0-be96-cac0e8a70999
+	9:0:5f996fb0-a2aa-4f8f-a4f8-3a0fd85dfe29
+	10:0:82bf8cdd-ce1a-4421-ac8f-55678606fa99
+		.</data>
+  </component>
   <component name="db-tree-configuration">
     <option name="data" value="----------------------------------------&#10;1:0:c28f652f-ad88-4303-9f8d-57db6c28a6b3&#10;2:0:692ca080-d416-4cff-a545-f668698aa9c4&#10;3:0:7681be5a-cd09-4cc0-9081-171f8def4ec8&#10;4:0:2cf892e6-ed46-43c9-afb8-8f2054505ede&#10;5:0:d954f2dd-aae9-4331-9e7b-9e5fd32c795d&#10;6:0:c0b16528-50c2-4484-89a7-16feaa0e3adc&#10;7:0:ae36e942-1dd3-4938-8227-a70d6ca068ba&#10;8:0:53518b9e-af21-42b0-be96-cac0e8a70999&#10;9:0:5f996fb0-a2aa-4f8f-a4f8-3a0fd85dfe29&#10;10:0:41ac433c-066a-49a2-bfc0-a56933875f7c&#10;" />
   </component>

@@ -20,6 +20,8 @@ public class PushProvider {
 							.build())
 					.build();
 			FirebaseMessaging.getInstance().send(message);
+
+			log.info("Push successfully sent token: {}, title: {}, body: {}", token, title, body);
 		} catch (FirebaseMessagingException e) {
 			log.error("FCM Delivery failed: {}", e.getMessage());
 			throw new RuntimeException(e);

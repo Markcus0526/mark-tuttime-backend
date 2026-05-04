@@ -29,7 +29,8 @@ public class UserEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			UserEvent.SecurityEvent event = objectMapper.readValue(eventString, UserEvent.SecurityEvent.class);
+			UserEvent.SecurityEvent event =
+					objectMapper.readValue(eventString, UserEvent.SecurityEvent.class);
 
 			staffRepository.findByUserId(event.userId()).ifPresentOrElse(user -> {
 				switch (event.type()) {
@@ -47,7 +48,8 @@ public class UserEventConsumer {
 			}, () -> log.warn("User {} not found or deleted, skipping update", event.userId()));
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}", TOPIC_USER_SECURITY_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
+					TOPIC_USER_SECURITY_UPDATED, e.getMessage());
 		}
 	}
 }

@@ -31,13 +31,15 @@ public class PaymentEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentCompletedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+			PaymentEvent.PaymentCompletedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
 			log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
 
 			bookingService.markAsPaid(event.bookingId(), event.userId(), event.externalPaymentId());
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}", TOPIC_PAYMENT_COMPLETED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
+					TOPIC_PAYMENT_COMPLETED, e.getMessage());
 		}
 	}
 
@@ -51,7 +53,8 @@ public class PaymentEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentRefundedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
+			PaymentEvent.PaymentRefundedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
 
 			bookingService.updateStatus(
 					event.bookingId(),
@@ -61,7 +64,8 @@ public class PaymentEventConsumer {
 					null);
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}", TOPIC_PAYMENT_REFUND, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
+					TOPIC_PAYMENT_REFUND, e.getMessage());
 		}
 	}
 }

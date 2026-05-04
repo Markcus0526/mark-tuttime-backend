@@ -53,8 +53,11 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_template_key') THEN
 CREATE DOMAIN notification_template_key AS VARCHAR(100)
     CHECK (VALUE IN (
-                     'USER_REGISTER', 'USER_VERIFICATION', 'PASSWORD_RESET', 'MFA_CODE', 'ACCOUNT_LOCKED', 'ADMIN_USER_CREATED',
-                     'BOOKING_CREATED', 'BOOKING_REMINDER', 'BOOKING_CANCELED', 'BOOKING_COMPLETED', 'REVIEW_REQUEST',
+                     'USER_REGISTER', 'USER_LOGIN', -- Added USER_LOGIN here
+                     'USER_VERIFICATION', 'PASSWORD_RESET', 'MFA_CODE',
+                     'ACCOUNT_LOCKED', 'ADMIN_USER_CREATED', 'ADMIN_USER_BLOCKED', 'ADMIN_USER_UNBLOCKED', 'ADMIN_USER_DELETED',
+                     'BOOKING_CREATED', 'BOOKING_REMINDER', 'BOOKING_CANCELED',
+                     'BOOKING_COMPLETED', 'REVIEW_REQUEST',
                      'MANAGER_BOOKING_ALERT', 'MANAGER_BOOKING_CANCEL', 'MANAGER_LOW_AVAILABILITY',
                      'PAYMENT_SUCCESS', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED',
                      'REVIEW_APPROVED', 'REVIEW_REJECTED'
@@ -141,7 +144,7 @@ VALUES
 ('USER_VERIFICATION', 'SMS', 'en', NULL, 'TutTime: Your verification code is {{code}}. Valid for 10 mins.', true),
 
 -- 4. PASSWORD_RESET
-('PASSWORD_RESET', 'EMAIL', 'en', 'Reset Your Password', 'Click here to reset your password: {{resetLink}}', true),
+('PASSWORD_RESET', 'EMAIL', 'en', 'Reset Your Password', 'Use code <strong>{{code}}</strong> to reset your password. Do not share this code.', true),
 ('PASSWORD_RESET', 'SMS', 'en', NULL, 'TutTime: Use code {{code}} to reset your password. Do not share this code.',
  true),
 
@@ -152,7 +155,29 @@ VALUES
  true),
 ('ADMIN_USER_CREATED', 'IN_APP', 'en', 'Staff Added', 'New admin/staff member {{staffName}} has been created.', true),
 
--- 6. BOOKING_CREATED
+-- 6. ADMIN_USER_BLOCKED
+('ADMIN_USER_BLOCKED', 'EMAIL', 'en', 'Admin Access Granted',
+ 'You have been blocked as an admin.', true),
+('ADMIN_USER_BLOCKED', 'SMS', 'en', NULL, 'TutTime Admin: Your account is blocked.',
+ true),
+('ADMIN_USER_BLOCKED', 'IN_APP', 'en', 'Staff Added', 'Admin/staff member {{staffName}} has been blocked.', true),
+
+-- 7. ADMIN_USER_UNBLOCKED
+('ADMIN_USER_UNBLOCKED', 'EMAIL', 'en', 'Admin Access Granted',
+ 'You have been unblocked as an admin.', true),
+('ADMIN_USER_UNBLOCKED', 'SMS', 'en', NULL, 'TutTime Admin: Your account is unblocked.',
+ true),
+('ADMIN_USER_UNBLOCKED', 'IN_APP', 'en', 'Staff Added', 'Admin/staff member {{staffName}} has been unblocked.', true),
+
+-- 8 ADMIN_USER_DELETED
+('ADMIN_USER_DELETED', 'EMAIL', 'en', 'Admin Access Granted',
+ 'You have been deleted as an admin.', true),
+('ADMIN_USER_DELETED', 'SMS', 'en', NULL, 'TutTime Admin: Your account is deleted.',
+ true),
+('ADMIN_USER_DELETED', 'IN_APP', 'en', 'Staff Added', 'Admin/staff member {{staffName}} has been deleted.', true),
+
+
+-- 9. BOOKING_CREATED
 ('BOOKING_CREATED', 'EMAIL', 'en', 'Booking Confirmed!',
  'Reservation confirmed at {{restaurantName}} for {{bookingTime}}.', true),
 ('BOOKING_CREATED', 'SMS', 'en', NULL,
@@ -160,14 +185,14 @@ VALUES
 ('BOOKING_CREATED', 'IN_APP', 'en', 'New Booking', 'New reservation for {{guestCount}} guests at {{bookingTime}}.',
  true),
 
--- 7. BOOKING_CANCELED
+-- 10. BOOKING_CANCELED
 ('BOOKING_CANCELED', 'EMAIL', 'en', 'Booking Canceled', 'Your reservation at {{restaurantName}} has been canceled.',
  true),
 ('BOOKING_CANCELED', 'SMS', 'en', NULL, 'TutTime: Your booking at {{restaurantName}} for {{bookingTime}} was canceled.',
  true),
 ('BOOKING_CANCELED', 'IN_APP', 'en', 'Cancellation', 'Booking for {{userName}} at {{bookingTime}} was canceled.', true),
 
--- 8. BOOKING_COMPLETED
+-- 11. BOOKING_COMPLETED
 ('BOOKING_COMPLETED', 'EMAIL', 'en', 'How was your meal?',
  'Thanks for visiting {{restaurantName}}! Rate your experience here.', true),
 ('BOOKING_COMPLETED', 'SMS', 'en', NULL,
@@ -175,21 +200,21 @@ VALUES
 ('BOOKING_COMPLETED', 'IN_APP', 'en', 'Table Released', 'Booking for Table {{tableNumber}} is now marked as completed.',
  true),
 
--- 9. PAYMENT_SUCCESS
+-- 12. PAYMENT_SUCCESS
 ('PAYMENT_SUCCESS', 'EMAIL', 'en', 'Payment Successful', 'Received {{amount}} for Order #{{orderId}}.', true),
 ('PAYMENT_SUCCESS', 'SMS', 'en', NULL, 'TutTime: Payment of {{amount}} confirmed for Order #{{orderId}}. Thanks!',
  true),
 ('PAYMENT_SUCCESS', 'IN_APP', 'en', 'Payment Received', 'Payment of {{amount}} confirmed for Order #{{orderId}}.',
  true),
 
--- 10. PAYMENT_REFUNDED
+-- 13. PAYMENT_REFUNDED
 ('PAYMENT_REFUNDED', 'EMAIL', 'en', 'Refund Processed',
  'A refund of {{amount}} for Order #{{orderId}} has been issued.', true),
 ('PAYMENT_REFUNDED', 'SMS', 'en', NULL,
  'TutTime: Refund of {{amount}} for Order #{{orderId}} has been issued to your account.', true),
 ('PAYMENT_REFUNDED', 'IN_APP', 'en', 'Refund Issued', 'Refund of {{amount}} processed for Order #{{orderId}}.', true),
 
--- 11. REVIEW_APPROVED
+-- 14. REVIEW_APPROVED
 ('REVIEW_APPROVED', 'EMAIL', 'en', 'Review Published!', 'Your review for {{restaurantName}} is now live!', true),
 ('REVIEW_APPROVED', 'SMS', 'en', NULL, 'TutTime: Your review for {{restaurantName}} is live! Thanks for the feedback.',
  true),

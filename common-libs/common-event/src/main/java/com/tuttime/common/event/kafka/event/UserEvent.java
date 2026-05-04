@@ -54,6 +54,8 @@ public class UserEvent {
 			UserStatusEvent type, // "USER_BLOCKED", "USER_UNBLOCKED", "TOKEN_REVOKED"
 			String jti,  // Only for TOKEN_REVOKED
 			long ttlMillis,
+			NotificationTemplateKey templateKey, // Use Enum here
+			Map<String, Object> parameters,
 			OffsetDateTime occurredAt
 	) implements BaseEvent {
 

@@ -19,14 +19,14 @@ public class SmsProvider {
 
 	private final PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
 
-	@Value("${twilio.account.sid}")
+	@Value("${twilio.account-sid}")
 	private String accountSid;
 
-	@Value("${twilio.auth.token}")
+	@Value("${twilio.auth-token}")
 	private String authToken;
 
-	@Value("${twilio.from.number}")
-	private String fromNumber;
+	@Value("${twilio.phone-number}")
+	private String phoneNumber;
 
 	@PostConstruct
 	public void init() {
@@ -63,9 +63,11 @@ public class SmsProvider {
 		String formattedNumber = formatToE164(phoneNumber);
 		Message.creator(
 				new com.twilio.type.PhoneNumber(formattedNumber),
-				new com.twilio.type.PhoneNumber(fromNumber),
+				new com.twilio.type.PhoneNumber(this.phoneNumber),
 				content
 		).create();
+
+		log.info("Sms successfully sent to: {}, content: {}", phoneNumber, content);
 	}
 
 	public boolean isTwilioValid(String rawNumber) {

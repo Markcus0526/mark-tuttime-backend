@@ -45,7 +45,10 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 	private final UserSessionRegistry userSessionRegistry;
 
 	@Transactional
-	public void handleNotification(UUID eventId, UUID userId, NotificationTemplateKey templateKey, Map<String, Object> params) {
+	public void handleNotification(UUID eventId,
+	                               UUID userId,
+	                               NotificationTemplateKey templateKey,
+	                               Map<String, Object> params) {
 
 		// 1. Fetch User Profile via gRPC
 		// Note: We do this once outside the loop to save network calls.
@@ -54,7 +57,8 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 				.build());
 
 		// 2. Load all active templates for this event (Email, SMS, IN_APP)
-		List<NotificationTemplate> templates = notificationTemplateRepository.findByTemplateKeyAndActiveTrue(templateKey);
+		List<NotificationTemplate> templates =
+				notificationTemplateRepository.findByTemplateKeyAndActiveTrue(templateKey);
 
 		for (NotificationTemplate template : templates) {
 
@@ -104,7 +108,10 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 		}
 	}
 
-	private void dispatch(NotificationTemplate template, UserDetailResponse user, Map<String, Object> params, NotificationLog logEntry) {
+	private void dispatch(NotificationTemplate template,
+	                      UserDetailResponse user,
+	                      Map<String, Object> params,
+	                      NotificationLog logEntry) {
 		try {
 			String processedContent = templateService.generateHtmlContent(template.getContent(), params);
 
@@ -173,7 +180,9 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 		notificationLogRepository.save(logEntry);
 	}
 
-	private boolean isChannelEnabled(UUID userId, NotificationTemplateKey templateKey, NotificationChannel channel) {
+	private boolean isChannelEnabled(UUID userId,
+	                                 NotificationTemplateKey templateKey,
+	                                 NotificationChannel channel) {
 		// 1. Get the broad category (e.g., "BOOKING")
 		String category = getPreferenceCategory(templateKey);
 
@@ -186,7 +195,8 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 
 	private String getPreferenceCategory(NotificationTemplateKey key) {
 		return switch (key) {
-			case USER_REGISTER, USER_VERIFICATION, USER_LOGIN, PASSWORD_RESET, MFA_CODE, ACCOUNT_LOCKED, ADMIN_USER_CREATED -> "ACCOUNT";
+			case USER_REGISTER, USER_VERIFICATION, USER_LOGIN, PASSWORD_RESET, MFA_CODE,
+			     ACCOUNT_LOCKED, ADMIN_USER_CREATED, ADMIN_USER_BLOCKED, ADMIN_USER_UNBLOCKED, ADMIN_USER_DELETED -> "ACCOUNT";
 			case BOOKING_CREATED, BOOKING_REMINDER, BOOKING_CANCELED, BOOKING_COMPLETED, MANAGER_BOOKING_ALERT, MANAGER_BOOKING_CANCEL, MANAGER_LOW_AVAILABILITY -> "BOOKING";
 			case PAYMENT_SUCCESS, PAYMENT_FAILED, PAYMENT_REFUNDED -> "PAYMENT";
 			case REVIEW_REQUEST, REVIEW_APPROVED, REVIEW_REJECTED -> "REVIEW";

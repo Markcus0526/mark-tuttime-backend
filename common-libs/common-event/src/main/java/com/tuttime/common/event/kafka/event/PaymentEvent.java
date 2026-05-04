@@ -2,6 +2,7 @@ package com.tuttime.common.event.kafka.event;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.tuttime.common.enums.PaymentStatus;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -21,6 +22,7 @@ public class PaymentEvent {
 			BigDecimal amount,
 			BigDecimal commissionRate,  // Add this: e.g., 0.10 for 10%
 			String currency,
+			PaymentStatus status,
 			OffsetDateTime occurredAt
 	) implements BaseEvent {
 

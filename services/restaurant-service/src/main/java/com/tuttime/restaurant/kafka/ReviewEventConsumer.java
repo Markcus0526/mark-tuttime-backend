@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.common.event.kafka.event.ReviewEvent;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.entity.Branch;
@@ -17,7 +18,7 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_APPROVED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_UPDATED;
 
 
 @Component
@@ -30,32 +31,37 @@ public class ReviewEventConsumer {
 	private final ObjectMapper objectMapper;
 
 	@KafkaListener(
-			topics = TOPIC_REVIEW_APPROVED,
+			topics = TOPIC_REVIEW_UPDATED,
 			groupId = "${spring.kafka.consumer.group-id}")
 	@Transactional
 	public void handleRatingUpdate(String eventString) {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			ReviewEvent.ReviewApprovedEvent event = objectMapper.readValue(eventString, ReviewEvent.ReviewApprovedEvent.class);
+			ReviewEvent.ReviewUpdatedEvent event =
+					objectMapper.readValue(eventString, ReviewEvent.ReviewUpdatedEvent.class);
 			if (event.eventId() == null || event.branchId() == null) {
 				log.debug("Received empty Review update for branch {}", event.branchId());
 				return;
 			}
 
-			// 1. Update Branch Rating
-			Branch branch = branchRepository.findById(event.branchId())
-					.orElseThrow(() -> new InvalidRequestException("Branch not found"));
+			if (event.status() == ReviewStatus.APPROVED) {
+				// 1. Update Branch Rating
+				Branch branch = branchRepository.findById(event.branchId())
+						.orElseThrow(() -> new InvalidRequestException("Branch not found"));
 
-			// Note: In a real production app, the event should carry the
-			// NEW calculated average from the Review Service to ensure 100% sync.
-			branch.setRating(BigDecimal.valueOf(event.rating() != null ? event.rating() : 0.0));
-			branchRepository.save(branch);
+				// Note: In a real production app, the event should carry the
+				// NEW calculated average from the Review Service to ensure 100% sync.
+				branch.setRating(BigDecimal.valueOf(event.rating() != null ? event.rating() : 0.0));
+				branchRepository.save(branch);
 
-			// 2. Update Parent Restaurant Rating (Average of all its branches)
-			updateParentRestaurantRating(branch.getRestaurant().getId());
+				// 2. Update Parent Restaurant Rating (Average of all its branches)
+				updateParentRestaurantRating(branch.getRestaurant().getId());
+			}
+
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}", TOPIC_REVIEW_APPROVED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
+					TOPIC_REVIEW_UPDATED, e.getMessage());
 		}
 	}
 
