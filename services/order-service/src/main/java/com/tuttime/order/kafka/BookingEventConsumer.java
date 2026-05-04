@@ -37,7 +37,8 @@ public class BookingEventConsumer {
 
 			// DO NOT handle PAID here. Let the Payment Consumer do it.
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[order-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[order-service], Error: {}",
+					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
 		}
 	}
 }

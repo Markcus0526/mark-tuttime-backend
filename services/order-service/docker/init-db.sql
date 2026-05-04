@@ -27,8 +27,8 @@ BEGIN
     IF
 NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
 CREATE TYPE order_status AS ENUM (
-            'CREATED', 'PAID', 'SENT_TO_RESTAURANT', 'ACCEPTED',
-            'PREPARING', 'READY', 'COMPLETED', 'SERVED', 'CANCELED', 'REFUNDED'
+            'CREATED', 'SENT_TO_RESTAURANT', 'ACCEPTED',
+            'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'CANCELED'
         );
 END IF;
 END $$;

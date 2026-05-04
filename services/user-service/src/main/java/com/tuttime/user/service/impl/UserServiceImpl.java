@@ -106,18 +106,12 @@ public class UserServiceImpl implements UserService {
 		verificationCodeRepository.save(verificationCode);
 
 		// 7. Fire Kafka Event to Notification Service
-		// We include the 'password' in params so the user knows how to log in
-		Map<String, Object> params = new HashMap<>();
-		params.put("verificationCode", code);
-		params.put("temporaryPassword", rawPassword);
-
 		UserEvent.VerificationEvent event = UserEvent.VerificationEvent.builder()
 				.userId(user.getId())
 				.email(email)
 				.phoneNumber(phoneNumber)
 				.type(type)
-				.templateKey(NotificationTemplateKey.ADMIN_USER_CREATED) // Specific template for admin-created users
-				.parameters(params)
+				.templateKey(NotificationTemplateKey.ADMIN_USER_CREATED)
 				.build();
 
 		eventProducer.sendUserVerificationRequestedEvent(event);
@@ -239,12 +233,18 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// 2. Broadcast to Kafka
-		// This tells the Gateway and Redis to block this ID permanently
+		// We include the 'password' in params so the user knows how to log in
+		Map<String, Object> params = new HashMap<>();
+		params.put("phoneNumber", user.getPhoneNumber());
+		params.put("email", user.getEmail());
+
 		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
 				.userId(userId)
 				.type(UserStatusEvent.USER_DELETED)
 				.jti(null)
 				.ttlMillis(0)
+				.templateKey(NotificationTemplateKey.ADMIN_USER_DELETED)
+				.parameters(params)
 				.build();
 		eventProducer.sendUserSecurityEvent(event);
 
@@ -374,11 +374,17 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// Broadcast to Kafka topic so Gateway updates Redis immediately
+		Map<String, Object> params = new HashMap<>();
+		params.put("phoneNumber", user.getPhoneNumber());
+		params.put("email", user.getEmail());
+
 		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
 				.userId(userId)
 				.type(UserStatusEvent.USER_BLOCKED)
 				.jti(null)
 				.ttlMillis(0)
+				.templateKey(NotificationTemplateKey.ADMIN_USER_BLOCKED)
+				.parameters(params)
 				.build();
 		eventProducer.sendUserSecurityEvent(event);
 
@@ -394,11 +400,17 @@ public class UserServiceImpl implements UserService {
 		userRepository.save(user);
 
 		// Broadcast to Kafka to remove from Redis blocklist
+		Map<String, Object> params = new HashMap<>();
+		params.put("phoneNumber", user.getPhoneNumber());
+		params.put("email", user.getEmail());
+
 		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
 				.userId(userId)
 				.type(UserStatusEvent.USER_UNBLOCKED)
 				.jti(null)
 				.ttlMillis(0)
+				.templateKey(NotificationTemplateKey.ADMIN_USER_UNBLOCKED)
+				.parameters(params)
 				.build();
 		eventProducer.sendUserSecurityEvent(event);
 

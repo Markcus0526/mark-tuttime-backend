@@ -9,6 +9,9 @@ public enum NotificationTemplateKey {
 	MFA_CODE,                   // For high-security logins or sensitive manager actions.
 	ACCOUNT_LOCKED,             // Security alert when too many failed login attempts occur.
 	ADMIN_USER_CREATED,         // Internal staff onboarding.
+	ADMIN_USER_BLOCKED,         // Internal staff onboarding.
+	ADMIN_USER_UNBLOCKED,       // Internal staff onboarding.
+	ADMIN_USER_DELETED,         // Internal staff onboarding.
 
 	// BOOKING (Customer)
 	BOOKING_CREATED,            // Confirmation.

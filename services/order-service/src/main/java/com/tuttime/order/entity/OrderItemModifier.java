@@ -1,6 +1,5 @@
 package com.tuttime.order.entity;
 
-import com.tuttime.common.entity.BaseLockingEntity;
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import jakarta.persistence.*;
 import lombok.*;

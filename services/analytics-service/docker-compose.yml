@@ -42,10 +42,12 @@ services:
       # Inject values directly to override anything in application.yml
       SERVER_PORT: ${ANALYTICS_SERVICE_PORT}
       HOSTNAME: analytics-service
-      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009"
     ports:
       - "${ANALYTICS_SERVICE_PORT}:${ANALYTICS_SERVICE_PORT}"
       - "${ANALYTICS_GRPC_PORT}:${ANALYTICS_GRPC_PORT}"
+      - "0.0.0.0:5009:5009" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for analytics images
     deploy:

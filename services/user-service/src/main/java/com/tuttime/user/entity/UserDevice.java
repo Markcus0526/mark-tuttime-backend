@@ -4,6 +4,7 @@ import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.user.entity.enums.DevicePlatform;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 

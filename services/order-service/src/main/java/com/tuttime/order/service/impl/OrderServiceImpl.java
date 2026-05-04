@@ -215,32 +215,32 @@ public class OrderServiceImpl implements OrderService {
 
 	@Override
 	@Transactional
-	public Order confirmOrderPayment(UUID bookingId, UUID userId, UUID branchId) {
+	public Order createOrUpdateOrder(UUID bookingId, UUID userId, UUID branchId) {
 		// 1. Try to find the existing order
 		return orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
 				.map(order -> {
-					// 2. If it's already PAID or further along, don't repeat the logic
-					if (order.getStatus().ordinal() >= OrderStatus.PAID.ordinal()) {
+					// 2. If it's already CREATED or further along, don't repeat the logic
+					if (order.getStatus().ordinal() >= OrderStatus.CREATED.ordinal()) {
 						log.warn("Order for booking {} is already in status: {}", bookingId, order.getStatus());
 						return order;
 					}
 
-					// 3. Update status to PAID
-					order.setStatus(OrderStatus.PAID);
+					// 3. Update status to CREATED
+					order.setStatus(OrderStatus.CREATED);
 					log.info("Transitioning order {} to PAID for booking {}", order.getId(), bookingId);
 					return orderRepository.save(order);
 				})
 				.orElseGet(() -> {
 					// 4. FALLBACK: If order doesn't exist yet (Race condition), create it.
 					// NOTE: You need to ensure the Payment event contains userId and branchId
-					log.info("Order not found for booking {}. Creating new PAID order.", bookingId);
+					log.info("Order not found for booking {}. Creating new CREATED order.", bookingId);
 
 					Order newOrder = Order.builder()
 							.bookingId(bookingId)
 							// These must come from your event/context
 							.userId(userId)
 							.branchId(branchId)
-							.status(OrderStatus.PAID)
+							.status(OrderStatus.CREATED)
 							.totalAmount(BigDecimal.ZERO)
 							.build();
 

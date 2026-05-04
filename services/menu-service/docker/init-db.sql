@@ -70,7 +70,7 @@ CREATE TABLE modifiers
     description       TEXT,
     price_adjustment  DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     deleted           BOOLEAN        NOT NULL DEFAULT FALSE,
-    deleted_at  TIMESTAMPTZ,
+    deleted_at        TIMESTAMPTZ,
     created_at        TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP
 );
@@ -102,10 +102,10 @@ CREATE TABLE stop_lists
     menu_item_id UUID NOT NULL REFERENCES menu_items (id) ON DELETE CASCADE,
     branch_id    UUID NOT NULL,
     start_date   DATE NOT NULL,
-    end_date     DATE NOT NULL DEFAULT '9999-12-31',
+    end_date     DATE NOT NULL    DEFAULT '9999-12-31',
     reason       VARCHAR(255),
-    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
+    created_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 9. DISCOUNTS (Promotional Rules)
@@ -120,8 +120,8 @@ CREATE TABLE discounts
     start_date    TIMESTAMPTZ,
     end_date      TIMESTAMPTZ,
     active        BOOLEAN          DEFAULT TRUE,
-    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
+    created_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 10. MEDIAS (Polymorphic Images)
@@ -135,15 +135,14 @@ CREATE TABLE medias
     media_type     media_type_enum        DEFAULT 'IMAGE',
     deleted        BOOLEAN       NOT NULL DEFAULT FALSE,
     deleted_at     TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
+    created_at     TIMESTAMPTZ            DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ            DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 11. INDICES (For Query Optimization)
 CREATE INDEX idx_menu_items_category ON menu_items (menu_category_id);
 CREATE INDEX idx_modifiers_group ON modifiers (modifier_group_id);
 CREATE INDEX idx_stop_lists_active
-    ON stop_lists (branch_id, menu_item_id)
-    WHERE end_date >= '9999-12-31';
+    ON stop_lists (branch_id, menu_item_id) WHERE end_date >= '9999-12-31';
 CREATE INDEX idx_medias_entity ON medias (entity_id);
 CREATE INDEX idx_discount_lookup ON discounts (active, applies_to, reference_id);

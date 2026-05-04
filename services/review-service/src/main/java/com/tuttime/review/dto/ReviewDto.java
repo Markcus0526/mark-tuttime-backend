@@ -1,6 +1,6 @@
 package com.tuttime.review.dto;
 
-import com.tuttime.review.entity.enums.ReviewStatus;
+import com.tuttime.common.enums.ReviewStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

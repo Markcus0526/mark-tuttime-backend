@@ -21,10 +21,14 @@ import java.util.UUID;
 public class S3StorageProvider implements StorageProvider {
 
 	private final S3Client s3Client;
-	@Value("${app.media.s3.bucket}") private String bucket;
-	@Value("${app.media.s3.region}") private String region;
-	@Value("${app.media.max-dimension}") private int maxDim;
-	@Value("${app.media.quality}") private float quality;
+	@Value("${app.media.s3.bucket}")
+	private String bucket;
+	@Value("${app.media.s3.region}")
+	private String region;
+	@Value("${app.media.max-dimension}")
+	private int maxDim;
+	@Value("${app.media.quality}")
+	private float quality;
 
 	@Override
 	public String store(MultipartFile file) {
@@ -60,5 +64,7 @@ public class S3StorageProvider implements StorageProvider {
 		s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
 	}
 
-	private boolean isImage(String type) { return type != null && type.startsWith("image/"); }
+	private boolean isImage(String type) {
+		return type != null && type.startsWith("image/");
+	}
 }

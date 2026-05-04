@@ -2,6 +2,7 @@ package com.tuttime.notification.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.NotificationTemplateKey;
+import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.event.PaymentEvent;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,8 @@ public class PaymentEventConsumer {
 			if (!StringUtils.hasText(eventString)) return;
 
 			// 1. Parse the specific event
-			PaymentEvent.PaymentCompletedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+			PaymentEvent.PaymentCompletedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
 			// Map event data to template parameters
 			Map<String, Object> params = Map.of(
@@ -44,16 +46,21 @@ public class PaymentEventConsumer {
 					"transactionId", event.externalPaymentId()
 			);
 
+			NotificationTemplateKey templateKey = NotificationTemplateKey.PAYMENT_SUCCESS;
+			if (event.status() == PaymentStatus.FAILED || event.status() == PaymentStatus.EXPIRED)
+				templateKey = NotificationTemplateKey.PAYMENT_FAILED;
+
 			// 3. Delegate to Notification Service
 			// We assume your event contains the userId who should receive the alert
 			notificationOrchestrator.handleNotification(
 					event.eventId(),
 					event.userId(),
-					NotificationTemplateKey.PAYMENT_SUCCESS,  // The key in your notification_templates table
+					templateKey,
 					params);
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_PAYMENT_COMPLETED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}",
+					TOPIC_PAYMENT_COMPLETED, e.getMessage());
 		}
 	}
 

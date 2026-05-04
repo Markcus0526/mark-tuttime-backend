@@ -30,7 +30,8 @@ public class PosEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PosEvent.PosMenuUpdatedEvent event = objectMapper.readValue(eventString, PosEvent.PosMenuUpdatedEvent.class);
+			PosEvent.PosMenuUpdatedEvent event =
+					objectMapper.readValue(eventString, PosEvent.PosMenuUpdatedEvent.class);
 			if (event.itemIds() == null || event.itemIds().isEmpty()) {
 				log.debug("Received empty POS menu update for branch {}", event.branchId());
 				return;
@@ -45,7 +46,8 @@ public class PosEventConsumer {
 					event.branchId());
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[menu-service], Error: {}", TOPIC_POS_ITEMS_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[menu-service], Error: {}",
+					TOPIC_POS_ITEMS_UPDATED, e.getMessage());
 		}
 	}
 
@@ -56,7 +58,8 @@ public class PosEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PosEvent.PosPriceUpdatedEvent event = objectMapper.readValue(eventString, PosEvent.PosPriceUpdatedEvent.class);
+			PosEvent.PosPriceUpdatedEvent event =
+					objectMapper.readValue(eventString, PosEvent.PosPriceUpdatedEvent.class);
 
 			log.info("Updating price for item {} to {}", event.menuItemId(), event.newPrice());
 
@@ -65,7 +68,8 @@ public class PosEventConsumer {
 					event.newPrice(),
 					event.branchId());
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[menu-service], Error: {}", TOPIC_POS_PRICE_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[menu-service], Error: {}",
+					TOPIC_POS_PRICE_UPDATED, e.getMessage());
 		}
 	}
 }

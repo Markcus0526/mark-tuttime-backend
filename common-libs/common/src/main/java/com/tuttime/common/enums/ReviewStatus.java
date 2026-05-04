@@ -1,4 +1,4 @@
-package com.tuttime.review.entity.enums;
+package com.tuttime.common.enums;
 
 public enum ReviewStatus {
 	PENDING,

@@ -6,7 +6,7 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.review.dto.RatingDto;
 import com.tuttime.review.dto.ReviewDto;
-import com.tuttime.review.entity.enums.ReviewStatus;
+import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -29,7 +29,7 @@ public interface OrderService {
 
 	void deleteOrder(UUID orderId); // Soft delete
 
-	Order confirmOrderPayment(UUID bookingId, UUID userId, UUID branchId);
+	Order createOrUpdateOrder(UUID bookingId, UUID userId, UUID branchId);
 
 	void cancelOrderByBookingId(UUID bookingId);
 }

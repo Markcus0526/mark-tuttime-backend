@@ -24,5 +24,5 @@ public class TopicConstants {
 	public static final String TOPIC_POS_ITEMS_UPDATED = "tuttime.pos.items.updated";
 	public static final String TOPIC_POS_PRICE_UPDATED = "tuttime.pos.price.updated";
 
-	public static final String TOPIC_REVIEW_APPROVED = "tuttime.review.approved";
+	public static final String TOPIC_REVIEW_UPDATED = "tuttime.review.updated";
 }

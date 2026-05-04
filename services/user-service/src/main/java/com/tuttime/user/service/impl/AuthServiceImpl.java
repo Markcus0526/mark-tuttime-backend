@@ -37,7 +37,10 @@ import org.springframework.util.StringUtils;
 import java.net.URL;
 import java.security.PublicKey;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -109,7 +112,10 @@ public class AuthServiceImpl implements AuthService {
 		// 2. Create and link AuthMethod to the SAVED user
 		UserAuthMethod authMethod = new UserAuthMethod();
 		authMethod.setUser(user); // Now 'user' has an ID!
-		authMethod.setCredential(passwordEncoder.encode(request.password()));
+		if (request.password() != null)
+			authMethod.setCredential(passwordEncoder.encode(request.password()));
+		else
+			authMethod.setCredential(passwordEncoder.encode("1234567890"));
 		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
 		authMethod.setVerified(false);
 
@@ -241,9 +247,9 @@ public class AuthServiceImpl implements AuthService {
 		// 2. Fetch User and Validate Registration
 		User user = (StringUtils.hasText(phoneNumber))
 				? userRepository.findByPhoneNumberAndDeletedFalse(phoneNumber)
-				.orElseThrow(() -> new InvalidRequestException("Phone number not registered"))
+				  .orElseThrow(() -> new InvalidRequestException("Phone number not registered"))
 				: userRepository.findByEmailAndDeletedFalse(email)
-				.orElseThrow(() -> new InvalidRequestException("Email not registered"));
+				  .orElseThrow(() -> new InvalidRequestException("Email not registered"));
 
 		// 3. Generate and Save Verification Code
 		String code = tokenUtil.generateRandomCode();
@@ -299,9 +305,9 @@ public class AuthServiceImpl implements AuthService {
 		// 2. Find User
 		User user = (verificationCode.getType() == VerificationType.PHONE_VERIFY)
 				? userRepository.findByPhoneNumberAndDeletedFalse(target)
-				.orElseThrow(() -> new InvalidRequestException("User not found"))
+				  .orElseThrow(() -> new InvalidRequestException("User not found"))
 				: userRepository.findByEmailAndDeletedFalse(target)
-				.orElseThrow(() -> new InvalidRequestException("User not found"));
+				  .orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		// 3. Update User State
 		user.setStatus(UserStatus.ACTIVE);

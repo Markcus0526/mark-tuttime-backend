@@ -44,12 +44,14 @@ public class OrderEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			OrderEvent.OrderCreatedEvent event = objectMapper.readValue(eventString, OrderEvent.OrderCreatedEvent.class);
+			OrderEvent.OrderCreatedEvent event =
+					objectMapper.readValue(eventString, OrderEvent.OrderCreatedEvent.class);
 
 			PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(event.orderId(), event.branchId());
 			posService.syncOrder(request);
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}", TOPIC_ORDER_CREATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+					TOPIC_ORDER_CREATED, e.getMessage());
 		}
 	}
 
@@ -60,10 +62,11 @@ public class OrderEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			OrderEvent.OrderStatusEvent event = objectMapper.readValue(eventString, OrderEvent.OrderStatusEvent.class);
+			OrderEvent.OrderStatusEvent event =
+					objectMapper.readValue(eventString, OrderEvent.OrderStatusEvent.class);
 
-			// Logic: Only process when the order is PAID
-			if (event.newStatus() == OrderStatus.PAID) {
+			// Logic: Only process when the order is CREATED
+			if (event.newStatus() == OrderStatus.CREATED) {
 
 				// 1. Fetch rich data via gRPC
 				OrderDetailResponse details = orderGrpcClient.getOrderDetail(event.orderId());
@@ -107,7 +110,8 @@ public class OrderEventConsumer {
 				adapter.cancelOrder(config, event.orderId(), "User requested cancellation");
 			}
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}", TOPIC_ORDER_STATUS_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+					TOPIC_ORDER_STATUS_UPDATED, e.getMessage());
 		}
 	}
 }

@@ -30,13 +30,14 @@ public class PaymentEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentCompletedEvent event = objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+			PaymentEvent.PaymentCompletedEvent event =
+					objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
-			// 1. Mark as PAID and get the full order (including items for the POS)
-			Order updatedOrder = orderService.confirmOrderPayment(event.bookingId(), event.userId(), event.branchId());
+			// 1. Mark as CREATED and get the full order (including items for the POS)
+			Order updatedOrder = orderService.createOrUpdateOrder(event.bookingId(), event.userId(), event.branchId());
 
 			// 2. IDEMPOTENCY CHECK: Only push if it hasn't been sent yet
-			if (updatedOrder.getStatus() == OrderStatus.PAID) {
+			if (updatedOrder.getStatus() == OrderStatus.CREATED) {
 				posGrpcClient.pushToKitchen(updatedOrder);
 
 				// 3. Move status to SENT_TO_RESTAURANT immediately after successful push
@@ -44,7 +45,8 @@ public class PaymentEventConsumer {
 			}
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA >>> Consumer Error: {}: {}", TOPIC_PAYMENT_COMPLETED, e.getMessage());
+			log.error("<<< KAFKA >>> Consumer Error: {}: {}",
+					TOPIC_PAYMENT_COMPLETED, e.getMessage());
 		}
 	}
 }

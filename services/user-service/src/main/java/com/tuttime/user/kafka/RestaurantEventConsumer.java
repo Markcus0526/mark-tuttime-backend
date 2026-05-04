@@ -36,7 +36,8 @@ public class RestaurantEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			RestaurantEvent.StaffUpdatedEvent event = objectMapper.readValue(eventString, RestaurantEvent.StaffUpdatedEvent.class);
+			RestaurantEvent.StaffUpdatedEvent event =
+					objectMapper.readValue(eventString, RestaurantEvent.StaffUpdatedEvent.class);
 
 			userRepository.findByIdAndDeletedFalse(event.userId()).ifPresentOrElse(user -> {
 
@@ -78,7 +79,8 @@ public class RestaurantEventConsumer {
 			}, () -> log.warn("User {} not found, skipping staff update", event.userId()));
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[user-service], Error: {}", TOPIC_RESTAURANT_STAFF_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[user-service], Error: {}",
+					TOPIC_RESTAURANT_STAFF_UPDATED, e.getMessage());
 		}
 	}
 }

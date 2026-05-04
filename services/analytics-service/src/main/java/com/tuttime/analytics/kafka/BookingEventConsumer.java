@@ -32,7 +32,8 @@ public class BookingEventConsumer {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event = objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+			BookingEvent.BookingStatusUpdatedEvent event =
+					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
 			log.info("Analytics received Booking Event: {} for Restaurant: {}",
 					event.bookingId(), event.bookingId());
@@ -53,7 +54,8 @@ public class BookingEventConsumer {
 						event);
 			}
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
 		}
 	}
 }

@@ -42,10 +42,12 @@ services:
       # Inject values directly to override anything in application.yml
       SERVER_PORT: ${ORDER_SERVICE_PORT}
       HOSTNAME: order-service
-      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     ports:
       - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
       - "${ORDER_GRPC_PORT}:${ORDER_GRPC_PORT}"
+      - "0.0.0.0:5005:5005" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for order images
     deploy:

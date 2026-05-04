@@ -21,14 +21,14 @@ public interface UserDeviceRepository extends JpaRepository<UserDevice, UUID> {
 	@Transactional
 	@Modifying
 	@Query(value = """
-        INSERT INTO user_service.user_devices (user_id, fcm_token, platform, device_name)
-        VALUES (:userId, :token, CAST(:platform AS user_service.device_platform), :name)
-        ON CONFLICT (fcm_token) 
-        DO UPDATE SET 
-            last_active_at = CURRENT_TIMESTAMP,
-            user_id = EXCLUDED.user_id,
-            device_name = EXCLUDED.device_name
-        """, nativeQuery = true)
+			INSERT INTO user_service.user_devices (user_id, fcm_token, platform, device_name)
+			VALUES (:userId, :token, CAST(:platform AS user_service.device_platform), :name)
+			ON CONFLICT (fcm_token) 
+			DO UPDATE SET 
+			    last_active_at = CURRENT_TIMESTAMP,
+			    user_id = EXCLUDED.user_id,
+			    device_name = EXCLUDED.device_name
+			""", nativeQuery = true)
 	void upsertToken(
 			@Param("userId") UUID userId,
 			@Param("token") String token,

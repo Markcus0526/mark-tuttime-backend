@@ -12,7 +12,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Map;
 
-import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_APPROVED;
+import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_UPDATED;
 
 @Service
 @RequiredArgsConstructor
@@ -27,16 +27,24 @@ public class ReviewEventConsumer {
 	 * Tracks 'REVIEW_APPROVED' events for restaurant performance history.
 	 */
 	@KafkaListener(
-			topics = TOPIC_REVIEW_APPROVED,
+			topics = TOPIC_REVIEW_UPDATED,
 			groupId = "${spring.kafka.consumer.group-id}")
 	public void handleReviewApproved(String eventString) {
 		try {
 			if (!StringUtils.hasText(eventString)) return;
 
-			ReviewEvent.ReviewApprovedEvent event = objectMapper.readValue(eventString, ReviewEvent.ReviewApprovedEvent.class);
+			ReviewEvent.ReviewUpdatedEvent event =
+					objectMapper.readValue(eventString, ReviewEvent.ReviewUpdatedEvent.class);
 
 			log.info("Kafka: Review approved for Branch: {}. Notifying user: {}",
 					event.branchId(), event.userId());
+
+			NotificationTemplateKey customerKey = switch (event.status()) {
+				case PENDING -> NotificationTemplateKey.REVIEW_REQUEST;
+				case APPROVED -> NotificationTemplateKey.REVIEW_APPROVED;
+				case REJECTED -> NotificationTemplateKey.REVIEW_REJECTED;
+				default -> null;
+			};
 
 			// 1. Prepare dynamic parameters for the notification template
 			// These can be used in your HTML/SMS via {{rating}}, {{reviewId}}, etc.
@@ -52,10 +60,11 @@ public class ReviewEventConsumer {
 			notificationOrchestrator.handleNotification(
 					event.eventId(),
 					event.userId(),  // The ID of the person being notified (e.g., the Tutor)
-					NotificationTemplateKey.REVIEW_APPROVED,      // The Template Key
+					customerKey,
 					params);
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_REVIEW_APPROVED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}",
+					TOPIC_REVIEW_UPDATED, e.getMessage());
 		}
 	}
 }

@@ -21,10 +21,14 @@ import java.util.UUID;
 @Slf4j
 public class LocalStorageProvider implements StorageProvider {
 
-	@Value("${app.media.local.upload-dir}") private String uploadDir;
-	@Value("${app.media.local.upload-url}") private String uploadUrl;
-	@Value("${app.media.max-dimension}") private int maxDim;
-	@Value("${app.media.quality}") private float quality;
+	@Value("${app.media.local.upload-dir}")
+	private String uploadDir;
+	@Value("${app.media.local.upload-url}")
+	private String uploadUrl;
+	@Value("${app.media.max-dimension}")
+	private int maxDim;
+	@Value("${app.media.quality}")
+	private float quality;
 
 	@Override
 	public String store(MultipartFile file) {
@@ -61,6 +65,8 @@ public class LocalStorageProvider implements StorageProvider {
 		}
 	}
 
-	private boolean isImage(String type) { return type != null && type.startsWith("image/"); }
+	private boolean isImage(String type) {
+		return type != null && type.startsWith("image/");
+	}
 }
 
