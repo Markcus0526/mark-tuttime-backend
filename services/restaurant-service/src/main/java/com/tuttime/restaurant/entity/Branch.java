@@ -7,6 +7,8 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "branches", schema = "restaurant_service", indexes = {
@@ -44,6 +46,20 @@ public class Branch extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "rating", precision = 2, scale = 1)
 	private BigDecimal rating;
+
+	@Builder.Default
+	@Column(name = "closed", nullable = false)
+	private Boolean closed = false;
+
+	@Column(name = "min_price", precision = 12, scale = 2)
+	private BigDecimal minPrice;
+
+	@Column(name = "max_price", precision = 12, scale = 2)
+	private BigDecimal maxPrice;
+
+	@OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, orphanRemoval = true)
+	@Builder.Default
+	private Set<BranchTag> branchTags = new HashSet<>();
 
 	@PrePersist
 	public void prePersist() {

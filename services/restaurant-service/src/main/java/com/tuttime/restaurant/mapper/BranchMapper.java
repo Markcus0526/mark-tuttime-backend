@@ -3,14 +3,21 @@ package com.tuttime.restaurant.mapper;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.MediaDto;
 import com.tuttime.restaurant.entity.Branch;
+import com.tuttime.restaurant.entity.BranchTag;
+import com.tuttime.restaurant.entity.BranchTagId;
+import com.tuttime.restaurant.entity.Tag;
 import com.tuttime.restaurant.repository.MediaRepository;
+import com.tuttime.restaurant.repository.projection.BranchProjection;
+import com.tuttime.restaurant.repository.record.BranchDetailRecord;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
@@ -30,14 +37,19 @@ public abstract class BranchMapper {
 	@Mapping(target = "imageUrl", ignore = true)
 	@Mapping(target = "restaurantId", source = "restaurant.id")
 	@Mapping(target = "restaurantName", source = "restaurant.name")
+	@Mapping(target = "tags", source = "branchTags")
+	@Mapping(target = "priceRangeLabel", expression = "java(formatPriceRange(entity))")
+	@Mapping(target = "distance", ignore = true)
 	public abstract BranchDto.BranchResponse toResponse(Branch entity);
 
 	@Mapping(target = "branchId", source = "id")
 	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
 	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
 	@Mapping(target = "medias", ignore = true)
+	@Mapping(target = "schedules", ignore = true)
 	@Mapping(target = "restaurantId", source = "restaurant.id")
 	@Mapping(target = "restaurantName", source = "restaurant.name")
+	@Mapping(target = "tags", source = "branchTags")
 	public abstract BranchDto.BranchDetailResponse toDetailResponse(Branch entity);
 
 	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")
@@ -68,5 +80,34 @@ public abstract class BranchMapper {
 	protected Point toPoint(Double lon, Double lat) {
 		if (lon == null || lat == null) return null;
 		return new GeometryFactory().createPoint(new Coordinate(lon, lat));
+	}
+
+	protected String formatPriceRange(Branch entity) {
+		if (entity.getMinPrice() == null || entity.getMaxPrice() == null) return null;
+		return String.format("%.0f ~ %.0f", entity.getMinPrice(), entity.getMaxPrice());
+	}
+
+	protected UUID map(BranchTagId branchTagId) {
+		if (branchTagId == null) {
+			return null;
+		}
+		return branchTagId.getTagId();
+	}
+
+	// Helper to extract Tag IDs from the composite key entities
+	protected UUID map(BranchTag branchTag) {
+		return (branchTag != null && branchTag.getId() != null) ? branchTag.getId().getTagId() : null;
+	}
+
+	// Helper for formatting price labels in both mapping types
+	public String formatPriceRange(BigDecimal min, BigDecimal max) {
+		if (min == null || max == null) return "Price N/A";
+		return String.format("$%s - $%s", min.toPlainString(), max.toPlainString());
+	}
+
+	public BranchDto.TagResponse mapTag(BranchTag branchTag) {
+		if (branchTag == null || branchTag.getTag() == null) return null;
+		Tag t = branchTag.getTag();
+		return new BranchDto.TagResponse(t.getId(), t.getName(), t.getIconUrl());
 	}
 }

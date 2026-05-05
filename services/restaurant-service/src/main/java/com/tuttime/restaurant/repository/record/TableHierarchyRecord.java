@@ -13,7 +13,7 @@ public record TableHierarchyRecord(
 		String branchAddress,
 		String branchPhone,
 		String restaurantName,
-		Long totalTables
+		Integer totalTables
 ) {
 }
 

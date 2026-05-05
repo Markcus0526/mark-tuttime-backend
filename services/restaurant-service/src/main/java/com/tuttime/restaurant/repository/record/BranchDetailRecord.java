@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.repository.record;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public record BranchDetailRecord(
@@ -8,6 +9,8 @@ public record BranchDetailRecord(
 		String branchName,
 		String branchAddress,
 		String branchPhone,
-		String restaurantName
+		String restaurantName,
+		BigDecimal minPrice,
+		BigDecimal maxPrice
 ) {
 }

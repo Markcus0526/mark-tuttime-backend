@@ -101,7 +101,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 					.setTableId(record.tableId().toString())
 					.setTableLabel(record.tableLabel())
 					.setBranchName(record.branchName())
-					.setTotalTables(record.totalTables().intValue())
+					.setTotalTables(record.totalTables())
 					.setAvailable(true)
 					.build();
 
@@ -244,7 +244,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());
 
-			BranchDetailRecord details = branchRepository.findRestaurantDetailByBranchId(branchId)
+			BranchDetailRecord details = branchRepository.findBranchDetailById(branchId)
 					.orElseThrow(() -> new InvalidRequestException("Branch not found"));
 
 			// Map Record -> Protobuf Message

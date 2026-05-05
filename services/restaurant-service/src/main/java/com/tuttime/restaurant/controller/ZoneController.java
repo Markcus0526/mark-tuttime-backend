@@ -26,7 +26,7 @@ import java.util.UUID;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/restaurant-zones")
-@Tag(name = "3.Restaurant Zones", description = "Operations related to zones within branches of restaurants")
+@Tag(name = "3.Branch Zones", description = "Operations related to zones within branches of restaurants")
 public class ZoneController {
 
 	private final ZoneService zoneService;

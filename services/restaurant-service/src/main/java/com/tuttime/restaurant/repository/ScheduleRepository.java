@@ -36,4 +36,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, UUID> {
 			"AND s.deleted = false")
 	Optional<ScheduleRecord> findActiveSchedule(@Param("branchId") UUID branchId,
 	                                            @Param("dayOfWeek") int dayOfWeek);
+
+	@Query("SELECT s FROM Schedule s WHERE s.entityId IN :branchIds AND s.deleted = false")
+	List<Schedule> findAllByBranchIds(@Param("branchIds") List<UUID> branchIds);
 }
