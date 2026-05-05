@@ -27,7 +27,7 @@ import java.util.UUID;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/restaurant-tables")
-@Tag(name = "4.Restaurant Tables", description = "Operations related to tables within zones of branches")
+@Tag(name = "4.Branch Tables", description = "Operations related to tables within zones of branches")
 public class TableController {
 
 	private final TableService tableService;

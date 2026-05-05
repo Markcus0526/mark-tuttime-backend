@@ -22,12 +22,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/restaurant-branches")
-@Tag(name = "2.Restaurant Branches", description = "Operations related to branches, schedules & media")
+@Tag(name = "2.Branches of Restaurant", description = "Operations related to branches, schedules & media")
 public class BranchController {
 
 	private final BranchService branchService;
@@ -42,13 +44,15 @@ public class BranchController {
 	@GetMapping
 	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> getAllBranches(
 			@Parameter(description = "Search by name or address")
+			@RequestParam(required = false) List<UUID> tagIds,
 			@RequestParam(required = false) String query,
-
+			@RequestParam(required = false) BigDecimal minPrice,
+			@RequestParam(required = false) BigDecimal maxPrice,
 			@RequestParam(required = false) Double minRating,
 			@RequestParam(required = false) Double maxRating,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
-			@RequestParam(defaultValue = "createdAt") String sort,
+			@RequestParam(defaultValue = "rating") String sort,
 			@RequestParam(defaultValue = "desc") String direction) {
 
 		// Cap the page size for performance
@@ -57,7 +61,8 @@ public class BranchController {
 		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
 		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
 
-		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(null, query, minRating, maxRating, pageable);
+		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(null, tagIds, query,
+				minPrice, maxPrice, minRating, maxRating, pageable);
 		return ResponseEntity.ok(ApiRes.success(branches));
 	}
 
@@ -145,15 +150,16 @@ public class BranchController {
 			@Parameter(description = "UUID of the restaurant", required = true)
 			@PathVariable UUID restaurantId,
 			@Parameter(description = "Search by name or address")
+			@RequestParam(required = false) List<UUID> tagIds,
 			@RequestParam(required = false) String query,
-
+			@RequestParam(required = false) BigDecimal minPrice,
+			@RequestParam(required = false) BigDecimal maxPrice,
 			@RequestParam(required = false) Double minRating,
 			@RequestParam(required = false) Double maxRating,
-
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
-			@RequestParam(defaultValue = "createdAt") String sort,
-			@RequestParam(defaultValue = "desc") String direction) {
+			@RequestParam(defaultValue = "name") String sort,
+			@RequestParam(defaultValue = "asc") String direction) {
 
 		// Cap the page size for performance
 		int pageSize = Math.min(size, 100);
@@ -161,39 +167,71 @@ public class BranchController {
 		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
 		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
 
-		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, query, minRating, maxRating, pageable);
+		Page<BranchDto.BranchResponse> branches = branchService.findAllBranches(restaurantId, tagIds, query,
+				minPrice, maxPrice, minRating, maxRating, pageable);
 		return ResponseEntity.ok(ApiRes.success(branches));
+	}
+
+	@Operation(summary = "Get all master tags", description = "Retrieve a list of all available tags for branches.")
+	@GetMapping("/tags")
+	public ResponseEntity<ApiRes<List<BranchDto.TagResponse>>> getAllTags() {
+		List<BranchDto.TagResponse> tags = branchService.getAllTags();
+		return ResponseEntity.ok(ApiRes.success(tags));
+	}
+
+	@Operation(summary = "Sync branch tags", description = "Add, remove, or create tags for a specific branch. If a tag name doesn't exist globally, it will be created.")
+	@PutMapping("/{branchId}/tags")
+	public ResponseEntity<ApiRes<Void>> syncBranchTags(
+			@PathVariable UUID branchId,
+			@Valid @RequestBody List<BranchDto.TagRequest> tags) {
+
+		// 1. Existing security check in your controller
+		validateAdminOrOwnerOrManager();
+
+		// 2. Extract context for service-level checks
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		// 3. Delegate to service for the "find or create" logic
+		branchService.syncBranchTags(branchId, tags, currentUserId, userRoles);
+
+		return ResponseEntity.ok(ApiRes.success(null));
+	}
+
+	@PostMapping("/{branchId}/bookmark")
+	public ResponseEntity<ApiRes<Boolean>> toggleBookmark(@PathVariable UUID branchId) {
+
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+
+		boolean status = branchService.toggleBookmark(branchId, currentUserId);
+		return ResponseEntity.ok(ApiRes.success(status));
 	}
 
 	// --- Restaurant Search by near ---
 
-	@Operation(summary = "Find branches near a location", description = "Retrieve branches within a radius (in meters) of given latitude and longitude")
+	@Operation(summary = "Find branches near a location", description = "Retrieve branches within a radius of given coordinates, optionally filtered by tag IDs.")
 	@GetMapping("/near")
 	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> findBranchesNear(
 			@RequestParam double latitude,
 			@RequestParam double longitude,
 			@RequestParam(defaultValue = "1000") double radiusMeters,
+			@RequestParam(required = false) List<UUID> tagIds,
+			@RequestParam(required = false) String query,
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "rating") String sort,
+			@RequestParam(defaultValue = "desc") String direction) {
 
-		int maxPageSize = 100;
-		if (size > maxPageSize) size = maxPageSize;
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 
-		Page<BranchDto.BranchResponse> restaurants = branchService.findBranchesNearLocation(latitude, longitude, radiusMeters, page, size);
-		return ResponseEntity.ok(ApiRes.success(restaurants));
-	}
+		int pageSize = Math.min(size, 100);
+		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
+		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
 
-	/**
-	 * Simple SVG validation example.
-	 * You should use a library or custom sanitizer to remove scripts and unsafe elements.
-	 */
-	private boolean isValidSvg(String svgContent) {
-		// Basic check: SVG must start with <svg and end with </svg>
-		if (!svgContent.trim().startsWith("<svg") || !svgContent.trim().endsWith("</svg>")) {
-			return false;
-		}
-		// Additional checks can be added here, e.g., disallow <script> tags
-		return !svgContent.toLowerCase().contains("<script");
+		Page<BranchDto.BranchResponse> branches = branchService.searchMap(
+				latitude, longitude, radiusMeters, tagIds, query, pageable, currentUserId);
+		return ResponseEntity.ok(ApiRes.success(branches));
 	}
 
 	/**

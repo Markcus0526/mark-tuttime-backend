@@ -45,9 +45,9 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "booking_datetime", nullable = false)
 	private OffsetDateTime bookingDatetime;
 
-	@Column(name = "reminder_sent")
+	@Column(name = "reminder_send")
 	@Builder.Default
-	private Boolean reminderSent = false;
+	private Boolean reminderSend = false;
 
 	@Column(name = "duration", nullable = false)
 	private Integer duration; // Minutes: Required for the overlap calculation

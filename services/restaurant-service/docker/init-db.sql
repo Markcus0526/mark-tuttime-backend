@@ -68,12 +68,16 @@ CREATE TABLE branches
     address       VARCHAR(512) NOT NULL,
     phone         VARCHAR(20),
     timezone      VARCHAR(50)  NOT NULL,
-    location    GEOGRAPHY(POINT, 4326),
+    location      GEOGRAPHY(POINT, 4326),
     rating        NUMERIC(2, 1)         DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
+    closed        BOOLEAN      NOT NULL DEFAULT FALSE,
+    min_price     NUMERIC(12, 2)        DEFAULT 0,
+    max_price     NUMERIC(12, 2)        DEFAULT 0,
     deleted       BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at    TIMESTAMPTZ,
     created_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP
+    updated_at    TIMESTAMPTZ           DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_price_range CHECK (min_price <= max_price)
 );
 
 CREATE INDEX idx_branches_rating ON branches (rating DESC) WHERE deleted = FALSE;
@@ -130,8 +134,7 @@ CREATE TABLE tables
 );
 
 CREATE UNIQUE INDEX unique_zone_table_label
-    ON restaurant_service.tables (zone_id, label)
-    WHERE (deleted = FALSE);
+    ON tables (zone_id, label) WHERE (deleted = FALSE);
 
 -- 6. MEDIAS
 CREATE TABLE medias
@@ -165,9 +168,39 @@ CREATE TABLE schedules
     updated_at  TIMESTAMPTZ       DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 8. MASTER TAGS (Managed by Admin Panel)
+CREATE TABLE tags
+(
+    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name       VARCHAR(50) NOT NULL UNIQUE,
+    icon_url   VARCHAR(255),         -- For custom icons or emoji strings
+    category   VARCHAR(30) NOT NULL, -- e.g., 'CUISINE', 'DIETARY', 'VIBE'
+    created_at TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. RESTAURANT-TAG MAPPING (Many-to-Many)
+CREATE TABLE branch_tags
+(
+    branch_id UUID NOT NULL REFERENCES branches (id) ON DELETE CASCADE,
+    tag_id    UUID NOT NULL REFERENCES tags (id) ON DELETE CASCADE,
+    PRIMARY KEY (branch_id, tag_id)
+);
+
+CREATE TABLE user_bookmarks
+(
+    user_id    UUID NOT NULL, -- Linked to your User Service
+    branch_id  UUID NOT NULL REFERENCES branches (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, branch_id)
+);
+
 -- === INDEXES ===
 CREATE INDEX idx_staffs_user_id ON staffs (user_id);
 CREATE INDEX idx_branches_geo ON branches USING GIST(location);
+CREATE INDEX idx_res_tags_lookup ON branch_tags (tag_id);
+CREATE INDEX idx_user_bookmarks_user ON user_bookmarks (user_id);
 
 -- === TRIGGERS ===
 CREATE TRIGGER trg_restaurants_upd
@@ -197,4 +230,8 @@ CREATE TRIGGER trg_medias_upd
 CREATE TRIGGER trg_schedules_upd
     BEFORE UPDATE
     ON schedules
+    FOR EACH ROW EXECUTE PROCEDURE update_modified_column();
+CREATE TRIGGER trg_tags_upd
+    BEFORE UPDATE
+    ON tags
     FOR EACH ROW EXECUTE PROCEDURE update_modified_column();

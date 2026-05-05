@@ -86,7 +86,7 @@ public class BookingScheduler {
 
 		// 2. Fetch eligible bookings
 		List<Booking> toRemind = bookingRepository
-				.findByBookingDatetimeBetweenAndStatusAndReminderSentFalse(
+				.findByBookingDatetimeBetweenAndStatusAndReminderSendFalse(
 						windowStart, windowEnd, BookingStatus.CREATED
 				);
 
@@ -115,7 +115,7 @@ public class BookingScheduler {
 				notificationGrpcClient.sendNotification(request);
 
 				// 4. Mark as sent to prevent duplicates on retry/restart
-				booking.setReminderSent(true);
+				booking.setReminderSend(true);
 
 			} catch (Exception e) {
 				log.error("Failed to send reminder for booking {}: {}", booking.getId(), e.getMessage());

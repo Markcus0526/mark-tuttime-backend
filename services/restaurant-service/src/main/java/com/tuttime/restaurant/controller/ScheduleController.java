@@ -24,7 +24,7 @@ import java.util.UUID;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v1/restaurant-schedules")
-@Tag(name = "5.Restaurant Schedules", description = "Operations related to schedule of restaurants, branches")
+@Tag(name = "5.Branch Schedules", description = "Operations related to schedule of restaurants, branches")
 public class ScheduleController {
 
 	private final ScheduleService scheduleService;

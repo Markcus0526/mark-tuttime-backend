@@ -67,7 +67,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 			nativeQuery = true)
 	List<Booking> findExpiredBookings(@Param("now") OffsetDateTime now);
 
-	List<Booking> findByBookingDatetimeBetweenAndStatusAndReminderSentFalse(
+	List<Booking> findByBookingDatetimeBetweenAndStatusAndReminderSendFalse(
 			OffsetDateTime start,
 			OffsetDateTime end,
 			BookingStatus status
