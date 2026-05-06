@@ -216,21 +216,30 @@ resilience4j:
         registerHealthIndicator: true
         slidingWindowSize: 20
         minimumNumberOfCalls: 5
-        waitDurationInOpenState: 20s
-        failureRateThreshold: 65
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        recordExceptions:
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - java.net.ConnectException
   timelimiter:
     instances:
-      analyticsServiceCircuitBreaker:
+      grpc:
         timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s} # Ensure this is > GRPC_CLIENT_DEADLINE_SECONDS!
+        cancelRunningFuture: true
   retry:
     instances:
       grpc:
-        maxAttempts: 5
+        maxAttempts: 3
         waitDuration: 1s
+        retryExceptions:
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
 
 logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   level:
     root: ${LOG_LEVEL}
     com.tuttime: DEBUG
