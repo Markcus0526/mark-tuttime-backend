@@ -5,6 +5,7 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -32,7 +33,9 @@ public class S3StorageProvider implements StorageProvider {
 
 	@Override
 	public String store(MultipartFile file) {
-		String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
+		String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+		String key = UUID.randomUUID() + (extension != null ? "." + extension : "");
+
 		try {
 			if (isImage(file.getContentType())) {
 				ByteArrayOutputStream os = new ByteArrayOutputStream();

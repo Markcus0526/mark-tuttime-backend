@@ -14,7 +14,7 @@ public class FullMenuDto {
 			String name,
 			String description,
 			Integer priority,
-			List<MenuItemDto.MenuItemResponseSummary> items
+			List<MenuItemDto.MenuItemResponse> items
 	) {
 	}
 

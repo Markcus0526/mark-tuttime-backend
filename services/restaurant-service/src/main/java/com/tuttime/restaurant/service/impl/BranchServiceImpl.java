@@ -199,7 +199,7 @@ public class BranchServiceImpl implements BranchService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<BranchDto.BranchResponse> searchMap(
+	public Page<BranchDto.BranchMapResponse> searchMap(
 			double latitude,
 			double longitude,
 			double radiusMeters,
@@ -243,7 +243,7 @@ public class BranchServiceImpl implements BranchService {
 					.orElseThrow();
 
 			// Use Mapper for base fields and builder to inject dynamic data
-			return branchMapper.toResponse(entity).toBuilder()
+			return branchMapper.toMapResponse(entity).toBuilder()
 					.distance(record.getDistanceInMeters())
 					.availableTables(record.getAvailableTables().intValue()) // Cast Long to Int
 					.minPrice(record.getMinPrice())

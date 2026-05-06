@@ -2,12 +2,14 @@ package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.MenuItemDto;
-import com.tuttime.menu.entity.MenuCategory;
-import com.tuttime.menu.entity.MenuItem;
+import com.tuttime.menu.entity.*;
 import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
 import com.tuttime.menu.mapper.MenuItemMapper;
+import com.tuttime.menu.mapper.MenuTagMapper;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
+import com.tuttime.menu.repository.MenuItemTagRepository;
+import com.tuttime.menu.repository.MenuTagRepository;
 import com.tuttime.menu.service.MenuItemService;
 import com.tuttime.menu.service.ModifierService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,10 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 	private final MenuItemRepository menuItemRepository;
 	private final MenuCategoryRepository menuCategoryRepository;
+	private final MenuTagRepository menuTagRepository;
+	private final MenuItemTagRepository menuItemTagRepository;
 	private final MenuItemMapper menuItemMapper; // Use this instead of manual mapping
+	private final MenuTagMapper menuTagMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final ModifierService modifierService; // Needed for link/unlink
 
@@ -101,9 +106,44 @@ public class MenuItemServiceImpl implements MenuItemService {
 		menuItemRepository.delete(item);
 	}
 
+	@Transactional(readOnly = true)
+	public List<MenuItemDto.TagResponse> getAllTags() {
+		// Fetch all tags and map them to DTOs for the UI
+		return menuTagRepository.findAll().stream()
+				.map(menuTagMapper::toTagResponse) // Uses the iconUrl and name mapping
+				.toList();
+	}
+
+	@Transactional
+	public void syncMenuItemTags(UUID menuItemId, List<MenuItemDto.TagRequest> requests, UUID userId, String roles) {
+		// 1. Security: Verify user has permission for THIS specific branch if not Admin
+		List<UUID> oldTagIds = menuItemTagRepository.findAllByMenuItemId(menuItemId)
+				.stream().map(bt -> bt.getMenuTag().getId()).toList();
+
+		// Logic #2: Only remove the links for this specific branch
+		// Efficiently clears the bridge table entries
+		menuItemTagRepository.deleteByMenuItemId(menuItemId);
+
+		for (MenuItemDto.TagRequest req : requests) {
+			MenuTag tag = menuTagRepository.findByNameIgnoreCase(req.name().trim())
+					.orElseGet(() -> menuTagRepository.save(MenuTag.builder()
+							.name(req.name().trim())
+							.iconUrl(req.iconUrl())
+							.build()));
+
+			menuItemTagRepository.save(MenuItemTag.builder()
+					.id(new MenuItemTagId(menuItemId, tag.getId()))
+					.menuItem(menuItemRepository.getReferenceById(menuItemId))
+					.menuTag(tag)
+					.build());
+		}
+
+		cleanupOrphanTags(oldTagIds);
+	}
+
 	@Override
 	@Transactional(readOnly = true)
-	public List<MenuItemDto.MenuItemResponseSummary> getItemsByCategory(UUID categoryId, String search, String sortBy, String direction) {
+	public List<MenuItemDto.MenuItemResponse> getItemsByCategory(UUID categoryId, String search, String sortBy, String direction) {
 		Sort sortOrder = direction.equalsIgnoreCase("desc") ?
 				Sort.by(sortBy).descending() :
 				Sort.by(sortBy).ascending();
@@ -199,5 +239,14 @@ public class MenuItemServiceImpl implements MenuItemService {
 
 		// Evict cache to reflect the new price in the app
 		evictCacheByBranch(branchId);
+	}
+
+	private void cleanupOrphanTags(List<UUID> tagIdsToCheck) {
+		for (UUID tagId : tagIdsToCheck) {
+			// If no branch is using this tag anymore, delete it from master table
+			if (!menuItemTagRepository.existsByMenuTagId(tagId)) {
+				menuTagRepository.deleteById(tagId);
+			}
+		}
 	}
 }

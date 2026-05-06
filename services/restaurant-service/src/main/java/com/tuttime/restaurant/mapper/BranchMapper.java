@@ -38,8 +38,6 @@ public abstract class BranchMapper {
 	@Mapping(target = "restaurantId", source = "restaurant.id")
 	@Mapping(target = "restaurantName", source = "restaurant.name")
 	@Mapping(target = "tags", source = "branchTags")
-	@Mapping(target = "priceRangeLabel", expression = "java(formatPriceRange(entity))")
-	@Mapping(target = "distance", ignore = true)
 	public abstract BranchDto.BranchResponse toResponse(Branch entity);
 
 	@Mapping(target = "branchId", source = "id")
@@ -51,6 +49,16 @@ public abstract class BranchMapper {
 	@Mapping(target = "restaurantName", source = "restaurant.name")
 	@Mapping(target = "tags", source = "branchTags")
 	public abstract BranchDto.BranchDetailResponse toDetailResponse(Branch entity);
+
+	@Mapping(target = "branchId", source = "id")
+	@Mapping(target = "longitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getX() : null)")
+	@Mapping(target = "latitude", expression = "java(entity.getLocation() != null ? entity.getLocation().getY() : null)")
+	@Mapping(target = "imageUrl", ignore = true)
+	@Mapping(target = "restaurantId", source = "restaurant.id")
+	@Mapping(target = "restaurantName", source = "restaurant.name")
+	@Mapping(target = "tags", source = "branchTags")
+	@Mapping(target = "distance", ignore = true)
+	public abstract BranchDto.BranchMapResponse toMapResponse(Branch entity);
 
 	@Mapping(target = "location", expression = "java(toPoint(request.longitude(), request.latitude()))")
 	public abstract Branch toEntity(BranchDto.BranchRequest request);
@@ -82,11 +90,6 @@ public abstract class BranchMapper {
 		return new GeometryFactory().createPoint(new Coordinate(lon, lat));
 	}
 
-	protected String formatPriceRange(Branch entity) {
-		if (entity.getMinPrice() == null || entity.getMaxPrice() == null) return null;
-		return String.format("%.0f ~ %.0f", entity.getMinPrice(), entity.getMaxPrice());
-	}
-
 	protected UUID map(BranchTagId branchTagId) {
 		if (branchTagId == null) {
 			return null;
@@ -102,7 +105,7 @@ public abstract class BranchMapper {
 	// Helper for formatting price labels in both mapping types
 	public String formatPriceRange(BigDecimal min, BigDecimal max) {
 		if (min == null || max == null) return "Price N/A";
-		return String.format("$%s - $%s", min.toPlainString(), max.toPlainString());
+		return String.format("%d-%d₽", min.intValue(), max.intValue());
 	}
 
 	public BranchDto.TagResponse mapTag(BranchTag branchTag) {

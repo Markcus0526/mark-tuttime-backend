@@ -6,6 +6,7 @@ import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,7 +33,8 @@ public class LocalStorageProvider implements StorageProvider {
 
 	@Override
 	public String store(MultipartFile file) {
-		String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+		String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+		String fileName = UUID.randomUUID() + (extension != null ? "." + extension : "");
 		Path target = Paths.get(uploadDir).resolve(fileName);
 
 		try {
@@ -45,7 +47,7 @@ public class LocalStorageProvider implements StorageProvider {
 			} else {
 				Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 			}
-			return fileName;
+			return getUrl(fileName);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to store local file", e);
 		}
@@ -57,11 +59,22 @@ public class LocalStorageProvider implements StorageProvider {
 	}
 
 	@Override
-	public void delete(String key) {
+	public void delete(String url) {
 		try {
-			Files.deleteIfExists(Paths.get(uploadDir).resolve(key));
-		} catch (IOException e) {
-			log.error("Could not delete file: {}", key);
+			// Extract the filename from the end of the URL
+			String key = url.substring(url.lastIndexOf("/") + 1);
+
+			Path filePath = Paths.get(uploadDir).resolve(key).normalize();
+
+			// Security check: Ensure the file is actually inside the upload directory
+			if (!filePath.startsWith(Paths.get(uploadDir))) {
+				log.warn("Attempted unauthorized file deletion: {}", url);
+				return;
+			}
+
+			Files.deleteIfExists(filePath);
+		} catch (Exception e) {
+			log.error("Could not delete file: {}", url, e);
 		}
 	}
 

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +26,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<ScheduleDto.ScheduleResponse> getSchedules(UUID entityId) {
-		return scheduleRepository.findAllByEntityId(entityId)
+		return scheduleRepository.findAllByEntityIdOrderByDayOfWeekAsc(entityId)
 				.stream()
 				.map(scheduleMapper::toResponse)
 				.toList(); // Simplified for Java 16+
@@ -36,6 +37,11 @@ public class ScheduleServiceImpl implements ScheduleService {
 	public ScheduleDto.ScheduleResponse createSchedule(ScheduleDto.ScheduleRequest request, UUID currentUserId, String userRoles) {
 		// 1. Validation & Permissions (Read-only)
 		staffService.validatePermissions(request.entityId(), currentUserId, userRoles);
+
+		if (!request.closed()) {
+			validateTiming(request);
+			checkForOverlaps(request.entityId(), (int) request.dayOfWeek(), request.openTime(), request.closeTime(), null);
+		}
 
 		// 3. Database Save (Atomic transaction)
 		Schedule schedule = scheduleMapper.toEntity(request);
@@ -50,6 +56,11 @@ public class ScheduleServiceImpl implements ScheduleService {
 				.orElseThrow(() -> new InvalidRequestException("Schedule not found: " + scheduleId));
 
 		staffService.validatePermissions(schedule.getEntityId(), currentUserId, userRoles);
+
+		if (!request.closed()) {
+			validateTiming(request);
+			checkForOverlaps(request.entityId(), (int) request.dayOfWeek(), request.openTime(), request.closeTime(), scheduleId);
+		}
 
 		scheduleMapper.updateEntityFromRequest(request, schedule);
 		Schedule updated = scheduleRepository.save(schedule);
@@ -74,5 +85,18 @@ public class ScheduleServiceImpl implements ScheduleService {
 	@Transactional
 	public void deleteAllByEntityId(UUID entityId) {
 		scheduleRepository.deleteAllByEntityId(entityId);
+	}
+
+	private void validateTiming(ScheduleDto.ScheduleRequest request) {
+		if (request.openTime().isAfter(request.closeTime()) || request.openTime().equals(request.closeTime())) {
+			throw new InvalidRequestException("Close time must be after open time. For overnight shifts, please split into two records (before and after midnight).");
+		}
+	}
+
+	private void checkForOverlaps(UUID entityId, int dayOfWeek, java.time.LocalTime open, java.time.LocalTime close, UUID excludeId) {
+		boolean isOverlapping = scheduleRepository.existsOverlappingSchedule(entityId, dayOfWeek, open, close, excludeId);
+		if (isOverlapping) {
+			throw new InvalidRequestException("Schedule overlaps with an existing time slot for day " + dayOfWeek);
+		}
 	}
 }

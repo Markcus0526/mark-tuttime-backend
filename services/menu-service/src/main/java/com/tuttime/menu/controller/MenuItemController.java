@@ -108,20 +108,46 @@ public class MenuItemController {
 				.body(ApiRes.success(null));
 	}
 
-	@GetMapping("/categorys/{categoryId}")
+	@Operation(summary = "Get all master tags", description = "Retrieve a list of all available tags for menu items.")
+	@GetMapping("/tags")
+	public ResponseEntity<ApiRes<List<MenuItemDto.TagResponse>>> getAllTags() {
+		List<MenuItemDto.TagResponse> tags = menuItemService.getAllTags();
+		return ResponseEntity.ok(ApiRes.success(tags));
+	}
+
+	@Operation(summary = "Sync menu tags", description = "Add, remove, or create tags for a specific menu item. If a tag name doesn't exist globally, it will be created.")
+	@PutMapping("/{itemId}/tags")
+	public ResponseEntity<ApiRes<Void>> syncBranchTags(
+			@PathVariable UUID itemId,
+			@Valid @RequestBody List<MenuItemDto.TagRequest> tags) {
+
+		// 1. Existing security check in your controller
+		validateAdminOrOwnerOrManager();
+
+		// 2. Extract context for service-level checks
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		// 3. Delegate to service for the "find or create" logic
+		menuItemService.syncMenuItemTags(itemId, tags, currentUserId, userRoles);
+
+		return ResponseEntity.ok(ApiRes.success(null));
+	}
+
+	@GetMapping("/categories/{categoryId}")
 	@Operation(summary = "Get searched and sorted items in a category")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "List of items retrieved",
-					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponseSummary.class))))
+					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponse.class))))
 	})
-	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponseSummary>>> getItemsByCategory(
+	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponse>>> getItemsByCategory(
 			@PathVariable UUID categoryId,
 			@Parameter(description = "Search keyword for item name or description") @RequestParam(required = false) String search,
 			@Parameter(description = "Field to sort by (e.g., name, price, priority)") @RequestParam(defaultValue = "name") String sortBy,
 			@Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "asc") String direction) {
 
 		// Pass the 'search' parameter to the service logic
-		List<MenuItemDto.MenuItemResponseSummary> data = menuItemService.getItemsByCategory(categoryId, search, sortBy, direction);
+		List<MenuItemDto.MenuItemResponse> data = menuItemService.getItemsByCategory(categoryId, search, sortBy, direction);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
