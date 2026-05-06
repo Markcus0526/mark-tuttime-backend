@@ -31,8 +31,8 @@ public interface BranchService {
 
 	boolean toggleBookmark(UUID branchId, UUID userId);
 
-	Page<BranchDto.BranchResponse> searchMap(double latitude, double longitude, double radiusMeters,
-	                                         List<UUID> tagIds, String query,
-	                                         Pageable pageable,
-	                                         UUID currentUserId);
+	Page<BranchDto.BranchMapResponse> searchMap(double latitude, double longitude, double radiusMeters,
+	                                            List<UUID> tagIds, String query,
+	                                            Pageable pageable,
+	                                            UUID currentUserId);
 }

@@ -116,42 +116,39 @@ spring:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED}
 
 server:
-  port: ${USER_SERVICE_PORT}
+  port: ${SERVER_PORT}
   shutdown: graceful
 
 grpc:
   server:
-    port: ${USER_GRPC_PORT}
+    port: ${GRPC_PORT}
   client:
-    user-service:
-      address: static://${USER_SERVICE}:${USER_GRPC_PORT}
-      negotiation-type: plaintext
     restaurant-service:
-      address: static://${RESTAURANT_SERVICE}:${RESTAURANT_GRPC_PORT}
+      address: static://${RESTAURANT_GRPC_SERVICE}
       negotiation-type: plaintext
     menu-service:
-      address: static://${MENU_SERVICE}:${MENU_GRPC_PORT}
+      address: static://${MENU_GRPC_SERVICE}
       negotiation-type: plaintext
     booking-service:
-      address: static://${BOOKING_SERVICE}:${BOOKING_GRPC_PORT}
+      address: static://${BOOKING_GRPC_SERVICE}
       negotiation-type: plaintext
     order-service:
-      address: static://${ORDER_SERVICE}:${ORDER_GRPC_PORT}
+      address: static://${ORDER_GRPC_SERVICE}
       negotiation-type: plaintext
     payment-service:
-      address: static://${PAYMENT_SERVICE}:${PAYMENT_GRPC_PORT}
+      address: static://${PAYMENT_GRPC_SERVICE}
       negotiation-type: plaintext
     pos-service:
-      address: static://${POS_SERVICE}:${POS_GRPC_PORT}
+      address: static://${POS_GRPC_SERVICE}
       negotiation-type: plaintext
     review-service:
-      address: static://${REVIEW_SERVICE}:${REVIEW_GRPC_PORT}
+      address: static://${REVIEW_GRPC_SERVICE}
       negotiation-type: plaintext
     analytics-service:
-      address: static://${ANALYTICS_SERVICE}:${ANALYTICS_GRPC_PORT}
+      address: static://${ANALYTICS_GRPC_SERVICE}
       negotiation-type: plaintext
     notification-service:
-      address: static://${NOTIFICATION_SERVICE}:${NOTIFICATION_GRPC_PORT}
+      address: static://${NOTIFICATION_GRPC_SERVICE}
       negotiation-type: plaintext
   security:
     enabled: false
@@ -249,21 +246,30 @@ resilience4j:
         registerHealthIndicator: true
         slidingWindowSize: 20
         minimumNumberOfCalls: 5
-        waitDurationInOpenState: 20s
-        failureRateThreshold: 65
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        recordExceptions:
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - java.net.ConnectException
   timelimiter:
     instances:
-      bookingServiceCircuitBreaker:
+      grpc:
         timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s} # Ensure this is > GRPC_CLIENT_DEADLINE_SECONDS!
+        cancelRunningFuture: true
   retry:
     instances:
       grpc:
-        maxAttempts: 5
+        maxAttempts: 3
         waitDuration: 1s
+        retryExceptions:
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
 
 logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   level:
     root: ${LOG_LEVEL}
     com.tuttime: DEBUG

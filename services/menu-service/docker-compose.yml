@@ -40,13 +40,13 @@ services:
       - .env.docker
     environment:
       # Inject values directly to override anything in application.yml
-      SERVER_PORT: ${MENU_SERVICE_PORT}
-      HOSTNAME: menu-service
+      SERVER_PORT: ${SERVER_PORT}
+      HOSTNAME: ${HOSTNAME}
       # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
       JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5003"
     ports:
-      - "${MENU_SERVICE_PORT}:${MENU_SERVICE_PORT}"
-      - "${MENU_GRPC_PORT}:${MENU_GRPC_PORT}"
+      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${GRPC_PORT}:${GRPC_PORT}"
       - "0.0.0.0:5003:5003" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for menu images
@@ -59,7 +59,7 @@ services:
           cpus: '0.50'
           memory: 1536M
     healthcheck:
-      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${MENU_SERVICE_PORT} || exit 1" ]
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${SERVER_PORT} || exit 1" ]
       interval: 20s
       timeout: 10s
       retries: 3

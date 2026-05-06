@@ -36,7 +36,7 @@ public class BranchController {
 
 	// --- Branch CRUD ---
 
-	@Operation(summary = "Get/Search all branches", description = "Retrieve paginated branches with filters for keyword, owner, and ratings.")
+	@Operation(summary = "Get/Search all branches (for admin, owner, managers)", description = "Retrieve paginated branches with filters for keyword, owner, and ratings.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Restaurants retrieved successfully"),
 			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
@@ -54,6 +54,8 @@ public class BranchController {
 			@RequestParam(defaultValue = "20") int size,
 			@RequestParam(defaultValue = "rating") String sort,
 			@RequestParam(defaultValue = "desc") String direction) {
+
+		validateAdminOrOwnerOrManager();
 
 		// Cap the page size for performance
 		int pageSize = Math.min(size, 100);
@@ -212,7 +214,7 @@ public class BranchController {
 
 	@Operation(summary = "Find branches near a location", description = "Retrieve branches within a radius of given coordinates, optionally filtered by tag IDs.")
 	@GetMapping("/near")
-	public ResponseEntity<ApiRes<Page<BranchDto.BranchResponse>>> findBranchesNear(
+	public ResponseEntity<ApiRes<Page<BranchDto.BranchMapResponse>>> findBranchesNear(
 			@RequestParam double latitude,
 			@RequestParam double longitude,
 			@RequestParam(defaultValue = "1000") double radiusMeters,
@@ -229,7 +231,7 @@ public class BranchController {
 		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
 		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
 
-		Page<BranchDto.BranchResponse> branches = branchService.searchMap(
+		Page<BranchDto.BranchMapResponse> branches = branchService.searchMap(
 				latitude, longitude, radiusMeters, tagIds, query, pageable, currentUserId);
 		return ResponseEntity.ok(ApiRes.success(branches));
 	}

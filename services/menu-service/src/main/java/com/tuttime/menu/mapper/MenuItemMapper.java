@@ -46,7 +46,7 @@ public abstract class MenuItemMapper {
 	@Mapping(target = "menuItemId", source = "id")
 	@Mapping(target = "currentPrice", ignore = true) // Calculated in afterMapping
 	@Mapping(target = "imageUrl", ignore = true)        // Logic to fetch from Media table
-	public abstract MenuItemDto.MenuItemResponseSummary toSummaryResponse(MenuItem item);
+	public abstract MenuItemDto.MenuItemResponse toSummaryResponse(MenuItem item);
 
 	/**
 	 * Logic to merge Item + Category Modifiers and Calculate Prices
@@ -81,12 +81,12 @@ public abstract class MenuItemMapper {
 	}
 
 	@AfterMapping
-	protected void postMappingSummaryLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponseSummary.MenuItemResponseSummaryBuilder builder) {
+	protected void postMappingSummaryLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponse.MenuItemResponseBuilder builder) {
 		builder.currentPrice(pricingService.calculateFinalPrice(item));
 	}
 
 	@AfterMapping
-	protected void addImageUrl(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponseSummary.MenuItemResponseSummaryBuilder builder) {
+	protected void addImageUrl(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponse.MenuItemResponseBuilder builder) {
 		// Find the primary image URL where entityId matches the categoryId
 		mediaRepository.findFirstByEntityIdAndPrimaryEntityTrue(item.getId())
 				.ifPresent(media -> builder.imageUrl(media.getUrl()));

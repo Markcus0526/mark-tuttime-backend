@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
 import java.math.BigDecimal;
@@ -35,6 +36,39 @@ public class MenuItemDto {
 	) {
 	}
 
+	@Schema(description = "Tag request details for branch association")
+	public record TagRequest(
+			@NotBlank(message = "Tag name is required")
+			@Size(max = 50, message = "Tag name must be under 50 characters")
+			String name,
+
+			@NotBlank(message = "Tag icon is required")
+			String iconUrl // Stores the Emoji (e.g., "🌶️")
+	) {
+	}
+
+	@Schema(description = "Tag details for UI display")
+	public record TagResponse(
+			UUID id,
+			String name,
+			String iconUrl // Contains the Emoji (e.g., "🌿") or URL
+	) {
+	}
+
+	@Schema(description = "Compact summary response for category list views")
+	@Builder
+	public record MenuItemResponse(
+			UUID menuItemId,
+			String name,
+			@Schema(description = "The lower price (discounted) to show in lists")
+			BigDecimal currentPrice,
+			Boolean available,
+			Integer priority,
+			String imageUrl,
+
+			List<TagResponse> tags // icons like 🌿, 🌶️
+	) {
+	}
 
 	@Schema(description = "Menu Item response with full customization and pricing logic")
 	@Builder
@@ -59,20 +93,9 @@ public class MenuItemDto {
 			List<ModifierDto.ModifierGroupResponse> modifierGroups,
 
 			@Schema(description = "URL for all images and videos from Media table")
-			List<MediaDto.MediaResponse> medias
-	) {
-	}
+			List<MediaDto.MediaResponse> medias,
 
-	@Schema(description = "Compact summary response for category list views")
-	@Builder
-	public record MenuItemResponseSummary(
-			UUID menuItemId,
-			String name,
-			@Schema(description = "The lower price (discounted) to show in lists")
-			BigDecimal currentPrice,
-			Boolean available,
-			Integer priority,
-			String imageUrl
+			List<TagResponse> tags // icons like 🌿, 🌶️
 	) {
 	}
 }

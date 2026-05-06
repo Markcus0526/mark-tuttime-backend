@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -63,6 +64,9 @@ public class BookingServiceImpl implements BookingService {
 	private final OrderGrpcClient orderGrpcClient;
 	private final RedissonClient redissonClient;
 	private final EventProducer eventProducer;
+
+	@Value("${app.booking.slot-interval}")
+	private int slotInterval;
 
 	private static final String LOCK_PREFIX = "lock:table:";
 
@@ -453,19 +457,6 @@ public class BookingServiceImpl implements BookingService {
 		return bookingMapper.toResponse(booking);
 	}
 
-//	@Override
-//	@Transactional
-//	public void confirmPayment(UUID bookingId) {
-//		updateStatus(bookingId, BookingStatus.PAID, null, "Payment successfully processed");
-//	}
-//
-//	@Override
-//	@Transactional
-//	public void cancelUnpaidBooking(UUID bookingId) {
-//		updateStatus(bookingId, BookingStatus.CANCELED, null, "Canceled due to payment timeout");
-//	}
-
-
 	private List<BookingSetupDto.BookingSetupResponse.AvailableSlot> calculateSlots(
 			OffsetDateTime date, List<TableSlotResponse> physical, List<Booking> occupied, ScheduleResponse schedule) {
 
@@ -520,7 +511,7 @@ public class BookingServiceImpl implements BookingService {
 					result.add(new BookingSetupDto.BookingSetupResponse.AvailableSlot(currentSlot, freeTables));
 				}
 			}
-			currentSlot = currentSlot.plusMinutes(30); // 30-minute interval
+			currentSlot = currentSlot.plusMinutes(slotInterval); // 60-minute interval
 		}
 		return result;
 	}

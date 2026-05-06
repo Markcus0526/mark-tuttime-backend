@@ -96,7 +96,6 @@ public class BranchDto {
 
 			BigDecimal rating,
 
-			@NotNull(message = "closed must not be null")
 			Boolean closed,
 
 			String imageUrl,
@@ -105,20 +104,11 @@ public class BranchDto {
 
 			String restaurantName,
 
-			Double distance, // ST_Distance result
-
 			BigDecimal minPrice,
 
 			BigDecimal maxPrice,
 
-			String priceRangeLabel, // e.g., "1200 ~ 2000"
-
-			@Schema(description = "Count of currently available tables")
-			Integer availableTables, // New field for "24 tables available"
-
-			List<TagResponse> tags, // icons like 🌿, 🌶️
-
-			Boolean favorite
+			List<TagResponse> tags // icons like 🌿, 🌶️
 	) {
 	}
 
@@ -144,7 +134,6 @@ public class BranchDto {
 
 			BigDecimal rating,
 
-			@Schema(description = "URL for all images and videos from Media table")
 			List<MediaDto.MediaResponse> medias,
 
 			UUID restaurantId,
@@ -155,8 +144,6 @@ public class BranchDto {
 
 			BigDecimal maxPrice,
 
-			String priceRangeLabel, // e.g., "1200 ~ 2000"
-
 			List<TagResponse> tags, // icons like 🌿, 🌶️
 
 			Boolean favorite,
@@ -166,6 +153,53 @@ public class BranchDto {
 			OffsetDateTime createdAt,
 
 			OffsetDateTime updatedAt
+	) {
+	}
+
+	@Schema(description = "Branch Map response")
+	@Builder(toBuilder = true)
+	public record BranchMapResponse(
+
+			UUID branchId,
+
+			String name,
+
+			String description,
+
+			String address,
+
+			String phone,
+
+			String timezone,
+
+			Double latitude,
+
+			Double longitude,
+
+			BigDecimal rating,
+
+			Boolean closed,
+
+			String imageUrl,
+
+			UUID restaurantId,
+
+			String restaurantName,
+
+			Double distance, // ST_Distance result
+
+			BigDecimal minPrice,
+
+			BigDecimal maxPrice,
+
+			String priceRangeLabel, // e.g., "1200 ~ 2000"
+
+			@Schema(description = "Count of currently available tables")
+			Integer availableTables, // New field for "24 tables available"
+
+			List<TagResponse> tags, // icons like 🌿, 🌶️
+
+			Boolean favorite
 	) {
 	}
 }

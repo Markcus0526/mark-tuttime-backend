@@ -139,10 +139,28 @@ CREATE TABLE medias
     updated_at     TIMESTAMPTZ            DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. INDICES (For Query Optimization)
+-- 11. MASTER MENU TAGS (Managed by Menu Service)
+CREATE TABLE menu_tags
+(
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name       VARCHAR(50) NOT NULL UNIQUE, -- e.g., 'Spicy', 'Vegan', 'Chef Choice'
+    icon_url   VARCHAR(255),                -- Emoji like '🔥' or '🌱'
+    created_at TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 12. MENU ITEM TAG MAPPING (Junction Table)
+CREATE TABLE menu_item_tags
+(
+    menu_item_id UUID NOT NULL REFERENCES menu_items (id) ON DELETE CASCADE,
+    tag_id       UUID NOT NULL REFERENCES menu_tags (id) ON DELETE CASCADE,
+    PRIMARY KEY (menu_item_id, tag_id)
+);
+
+-- 13. INDICES (For Query Optimization)
 CREATE INDEX idx_menu_items_category ON menu_items (menu_category_id);
 CREATE INDEX idx_modifiers_group ON modifiers (modifier_group_id);
-CREATE INDEX idx_stop_lists_active
-    ON stop_lists (branch_id, menu_item_id) WHERE end_date >= '9999-12-31';
+CREATE INDEX idx_stop_lists_active ON stop_lists (branch_id, menu_item_id) WHERE end_date >= '9999-12-31';
 CREATE INDEX idx_medias_entity ON medias (entity_id);
 CREATE INDEX idx_discount_lookup ON discounts (active, applies_to, reference_id);
+CREATE INDEX idx_menu_item_tags_lookup ON menu_item_tags (tag_id);
