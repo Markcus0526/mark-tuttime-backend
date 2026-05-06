@@ -10,11 +10,11 @@ services:
     environment:
       # Explicitly mapping essential Spring variables to ensure environment consistency
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      SERVER_PORT: ${API_GATEWAY_PORT}
-      HOSTNAME: api-gateway
+      SERVER_PORT: ${SERVER_PORT}
+      HOSTNAME: ${HOSTNAME}
       JAVA_TOOL_OPTIONS: "-XX:InitialRAMPercentage=50.0 -XX:ActiveProcessorCount=2"
     ports:
-      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     deploy:
       resources:
         limits:
@@ -24,7 +24,7 @@ services:
           cpus: '0.25'         # Minimum guaranteed
           memory: 1024M        # 1GB Reserved RAM
     healthcheck:
-      test: [ "CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${API_GATEWAY_PORT}" ]
+      test: [ "CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/${SERVER_PORT}" ]
       interval: 20s
       timeout: 10s
       retries: 3

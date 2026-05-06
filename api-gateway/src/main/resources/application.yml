@@ -48,7 +48,7 @@ spring:
         # Auth Service Routes (consolidated route with filters)
         - id: user-service-auth
           order: 11
-          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
+          uri: http://${USER_SERVICE}
           predicates:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTION
@@ -61,7 +61,7 @@ spring:
         # User Service Routes (GENERAL - comes after specific routes)
         - id: user-service-user
           order: 12
-          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
+          uri: http://${USER_SERVICE}
           predicates:
             - Path=/api/v1/users/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -75,7 +75,7 @@ spring:
         # User Service - App Version Routes
         - id: user-service-app-version
           order: 13
-          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
+          uri: http://${USER_SERVICE}
           predicates:
             - Path=/api/v1/app/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -87,7 +87,7 @@ spring:
 
         - id: user-service-media-files
           order: 14
-          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
+          uri: http://${USER_SERVICE}
           predicates:
             - Path=/user-medias/**
           filters:
@@ -99,7 +99,7 @@ spring:
         ################# Restaurant Service Routes #######################
         - id: restaurant-service-restaurant
           order: 21
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/api/v1/restaurants/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -111,7 +111,7 @@ spring:
 
         - id: restaurant-service-branch
           order: 22
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/api/v1/restaurant-branches/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -123,7 +123,7 @@ spring:
 
         - id: restaurant-service-zone
           order: 23
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/api/v1/restaurant-zones/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -135,7 +135,7 @@ spring:
 
         - id: restaurant-service-table
           order: 24
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/api/v1/restaurant-tables/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -147,7 +147,7 @@ spring:
 
         - id: restaurant-service-schedule
           order: 25
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/api/v1/restaurant-schedules/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -159,7 +159,7 @@ spring:
 
         - id: restaurant-service-media
           order: 26
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/api/v1/restaurant-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -171,7 +171,7 @@ spring:
 
         - id: restaurant-service-media-files
           order: 27
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/restaurant-medias/**
           filters:
@@ -184,7 +184,7 @@ spring:
 
         - id: menu-service-menu
           order: 31
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/api/v1/menus/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -196,7 +196,7 @@ spring:
 
         - id: menu-service-item
           order: 32
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/api/v1/menu-items/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -208,7 +208,7 @@ spring:
 
         - id: menu-service-modifier
           order: 33
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/api/v1/menu-modifiers/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -220,7 +220,7 @@ spring:
 
         - id: menu-service-discount
           order: 34
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/api/v1/menu-discounts/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -232,7 +232,7 @@ spring:
 
         - id: menu-service-stoplist
           order: 35
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/api/v1/menu-stoplists/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -244,7 +244,7 @@ spring:
 
         - id: menu-service-media
           order: 36
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/api/v1/menu-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -256,7 +256,7 @@ spring:
 
         - id: menu-service-media-files
           order: 37
-          uri: http://173.249.29.61:28003
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/menu-medias/**
           filters:
@@ -269,7 +269,7 @@ spring:
 
         - id: booking-service-booking
           order: 41
-          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
+          uri: http://${BOOKING_SERVICE}
           predicates:
             - Path=/api/v1/bookings/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -284,7 +284,7 @@ spring:
 
         - id: order-service-order
           order: 51
-          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
+          uri: http://${ORDER_SERVICE}
           predicates:
             - Path=/api/v1/orders/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -299,7 +299,7 @@ spring:
 
         - id: payment-service-payment
           order: 61
-          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
+          uri: http://${PAYMENT_SERVICE}
           predicates:
             - Path=/api/v1/payments/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -314,7 +314,7 @@ spring:
 
         - id: pos-service-pos
           order: 71
-          uri: http://${POS_SERVICE:localhost}:${POS_SERVICE_PORT:28007}
+          uri: http://${POS_SERVICE}
           predicates:
             - Path=/api/v1/poses/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -329,7 +329,7 @@ spring:
 
         - id: review-service-review
           order: 81
-          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
+          uri: http://${REVIEW_SERVICE}
           predicates:
             - Path=/api/v1/reviews/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -344,7 +344,7 @@ spring:
 
         - id: analytics-service-analytics
           order: 91
-          uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
+          uri: http://${ANALYTICS_SERVICE}
           predicates:
             - Path=/api/v1/analytics/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -359,7 +359,7 @@ spring:
 
         - id: notification-service-notification
           order: 101
-          uri: http://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
+          uri: http://${NOTIFICATION_SERVICE}
           predicates:
             - Path=/api/v1/notifications/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTION
@@ -372,76 +372,76 @@ spring:
 
         - id: notification-service-websocket
           order: 102
-          uri: ws://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
+          uri: ws://${NOTIFICATION_SERVICE}
           predicates:
           - Path=/ws-notifications/**
 
         ################# OpenAPI(Swagger UI) Routes #######################
         - id: user-openapi
-          uri: http://${USER_SERVICE:localhost}:${USER_SERVICE_PORT:28001}
+          uri: http://${USER_SERVICE}
           predicates:
             - Path=/user-docs/**
           filters:
             - RewritePath=/user-docs/(?<segment>.*), /$\{segment}
 
         - id: restaurant-openapi
-          uri: http://${RESTAURANT_SERVICE:localhost}:${RESTAURANT_SERVICE_PORT:28002}
+          uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/restaurant-docs/**
           filters:
             - RewritePath=/restaurant-docs/(?<segment>.*), /$\{segment}
 
         - id: menu-openapi
-          uri: http://${MENU_SERVICE:localhost}:${MENU_SERVICE_PORT:28003}
+          uri: http://${MENU_SERVICE}
           predicates:
             - Path=/menu-docs/**
           filters:
             - RewritePath=/menu-docs/(?<segment>.*), /$\{segment}
 
         - id: booking-openapi
-          uri: http://${BOOKING_SERVICE:localhost}:${BOOKING_SERVICE_PORT:28004}
+          uri: http://${BOOKING_SERVICE}
           predicates:
             - Path=/booking-docs/**
           filters:
             - RewritePath=/booking-docs/(?<segment>.*), /$\{segment}
 
         - id: order-openapi
-          uri: http://${ORDER_SERVICE:localhost}:${ORDER_SERVICE_PORT:28005}
+          uri: http://${ORDER_SERVICE}
           predicates:
             - Path=/order-docs/**
           filters:
             - RewritePath=/order-docs/(?<segment>.*), /$\{segment}
 
         - id: payment-openapi
-          uri: http://${PAYMENT_SERVICE:localhost}:${PAYMENT_SERVICE_PORT:28006}
+          uri: http://${PAYMENT_SERVICE}
           predicates:
             - Path=/payment-docs/**
           filters:
             - RewritePath=/payment-docs/(?<segment>.*), /$\{segment}
 
         - id: pos-openapi
-          uri: http://${POS_SERVICE:localhost}:${POS_SERVICE_PORT:28007}
+          uri: http://${POS_SERVICE}
           predicates:
             - Path=/pos-docs/**
           filters:
             - RewritePath=/pos-docs/(?<segment>.*), /$\{segment}
 
         - id: review-openapi
-          uri: http://${REVIEW_SERVICE:localhost}:${REVIEW_SERVICE_PORT:28008}
+          uri: http://${REVIEW_SERVICE}
           predicates:
             - Path=/review-docs/**
           filters:
             - RewritePath=/review-docs/(?<segment>.*), /$\{segment}
 
         - id: analytics-openapi
-          uri: http://${ANALYTICS_SERVICE:localhost}:${ANALYTICS_SERVICE_PORT:28009}
+          uri: http://${ANALYTICS_SERVICE}
           predicates:
             - Path=/analytics-docs/**
           filters:
             - RewritePath=/analytics-docs/(?<segment>.*), /$\{segment}
 
         - id: notification-openapi
-          uri: http://${NOTIFICATION_SERVICE:localhost}:${NOTIFICATION_SERVICE_PORT:28010}
+          uri: http://${NOTIFICATION_SERVICE}
           predicates:
             - Path=/notification-docs/**
           filters:
@@ -466,22 +466,73 @@ spring:
       enabled: true
 
 server:
-  port: ${API_GATEWAY_PORT:8080}
+  port: ${SERVER_PORT}
   shutdown: graceful
+
+grpc:
+  server:
+    port: ${GRPC_PORT}
+  client:
+    user-service:
+      address: static://${USER_GRPC_SERVICE}
+      negotiation-type: plaintext
+    restaurant-service:
+      address: static://${RESTAURANT_GRPC_SERVICE}
+      negotiation-type: plaintext
+    booking-service:
+      address: static://${BOOKING_GRPC_SERVICE}
+      negotiation-type: plaintext
+    order-service:
+      address: static://${ORDER_GRPC_SERVICE}
+      negotiation-type: plaintext
+    payment-service:
+      address: static://${PAYMENT_GRPC_SERVICE}
+      negotiation-type: plaintext
+    pos-service:
+      address: static://${POS_GRPC_SERVICE}
+      negotiation-type: plaintext
+    review-service:
+      address: static://${REVIEW_GRPC_SERVICE}
+      negotiation-type: plaintext
+    analytics-service:
+      address: static://${ANALYTICS_GRPC_SERVICE}
+      negotiation-type: plaintext
+    notification-service:
+      address: static://${NOTIFICATION_GRPC_SERVICE}
+      negotiation-type: plaintext
+  security:
+    enabled: false
+  client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS}
 
 resilience4j:
   circuitbreaker:
     instances:
-      userServiceCircuitBreaker:
+      grpc:
         registerHealthIndicator: true
         slidingWindowSize: 20
-        failureRateThreshold: 65
-        waitDurationInOpenState: 20s
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        recordExceptions:
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - java.net.ConnectException
   timelimiter:
     instances:
-      userServiceCircuitBreaker:
-        # Optimized: must be slightly higher than spring.cloud.gateway.httpclient.response-timeout
-        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s}
+      grpc:
+        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s} # Ensure this is > GRPC_CLIENT_DEADLINE_SECONDS!
+        cancelRunningFuture: true
+  retry:
+    instances:
+      grpc:
+        maxAttempts: 3
+        waitDuration: 1s
+        retryExceptions:
+          - io.grpc.StatusRuntimeException
+          - java.util.concurrent.TimeoutException
 
 management:
   endpoints:
