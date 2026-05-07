@@ -9,9 +9,6 @@ services:
       - .env.docker
     environment:
       # Explicitly mapping essential Spring variables to ensure environment consistency
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      SERVER_PORT: ${SERVER_PORT}
-      HOSTNAME: ${HOSTNAME}
       JAVA_TOOL_OPTIONS: "-XX:InitialRAMPercentage=50.0 -XX:ActiveProcessorCount=2"
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"

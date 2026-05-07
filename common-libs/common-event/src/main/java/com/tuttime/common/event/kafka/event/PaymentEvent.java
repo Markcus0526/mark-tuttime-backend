@@ -15,6 +15,7 @@ public class PaymentEvent {
 	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 	public record PaymentCompletedEvent(
 			UUID eventId,
+			UUID paymentId,
 			UUID bookingId,
 			UUID userId,
 			UUID branchId,

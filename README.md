@@ -8,3 +8,5 @@ docker inspect tuttime-api-gateway --format='{{json .State.Health}}'
 docker compose config
 
 docker compose up -d --build menu-service
+
+docker compose up -d --force-recreate booking-service

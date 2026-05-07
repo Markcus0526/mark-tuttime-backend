@@ -40,8 +40,6 @@ services:
       - .env.docker
     environment:
       # Inject values directly to override anything in application.yml
-      SERVER_PORT: ${SERVER_PORT}
-      HOSTNAME: ${HOSTNAME}
       # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
       JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5002"
     ports:

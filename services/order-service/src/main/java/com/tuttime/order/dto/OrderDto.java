@@ -53,6 +53,12 @@ public class OrderDto {
 
 			BigDecimal totalAmount,
 
+			String guestName,
+
+			String guestPhone,
+
+			String specialRequest,
+
 			List<OrderItemDto.OrderItemResponse> items,
 
 			OffsetDateTime createdAt
@@ -68,6 +74,12 @@ public class OrderDto {
 			OrderStatus status,
 
 			BigDecimal totalAmount,
+
+			String guestName,
+
+			String guestPhone,
+
+			String specialRequest,
 
 			List<MenuItemDto> items,
 

@@ -34,6 +34,14 @@ public class BookingDto {
 			@Min(value = 1, message = "Party size must be at least 1")
 			Integer partySize,
 
+			@NotNull(message = "Guest name is required for contact")
+			String guestName,
+
+			@NotNull(message = "Guest phone is required for the branch caller")
+			String guestPhone,
+
+			String specialRequest,
+
 			// If a user books a table for 7:00 PM with a leadTimeMinutes of 15,
 			// the system effectively marks that table as "in use" starting from 6:45 PM to ensure it's ready for the guest's arrival.
 			Integer leadTimeMinutes,
@@ -70,6 +78,9 @@ public class BookingDto {
 			Integer gracePeriodMins,
 			BookingStatus status,
 			BigDecimal totalAmount,
+			String guestName,
+			String guestPhone,
+			String specialRequest,
 			String cancellationReason,
 			UserDetailResponse user
 	) {
@@ -91,6 +102,9 @@ public class BookingDto {
 			BookingStatus status,
 			BigDecimal totalAmount,
 			String cancellationReason,
+			String guestName,
+			String guestPhone,
+			String specialRequest,
 			UserDetailResponse user,
 			TableDetailResponse table,
 			List<MenuItemResponse> menuItems

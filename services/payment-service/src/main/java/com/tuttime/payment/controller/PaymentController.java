@@ -66,8 +66,8 @@ public class PaymentController {
 
 		validateAdminOrOwner();
 
-		paymentService.processAdministrativeRefund(paymentId, amount, reason);
-		return ResponseEntity.ok(ApiRes.success("Refund processed"));
+		boolean status = paymentService.processAdministrativeRefund(paymentId, amount, reason);
+		return ResponseEntity.ok(ApiRes.success(status ? "SUCCESS" : "FAILED"));
 	}
 
 	@PostMapping("/test/confirm-booking/{bookingId}")

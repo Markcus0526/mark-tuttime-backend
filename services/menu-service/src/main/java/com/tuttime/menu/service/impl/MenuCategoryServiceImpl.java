@@ -1,13 +1,22 @@
 package com.tuttime.menu.service.impl;
 
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.dto.FullMenuDto;
 import com.tuttime.menu.dto.MenuCategoryDto;
+import com.tuttime.menu.dto.MenuItemDto;
+import com.tuttime.menu.entity.Discount;
 import com.tuttime.menu.entity.MenuCategory;
+import com.tuttime.menu.entity.MenuItem;
+import com.tuttime.menu.entity.MenuItemTag;
 import com.tuttime.menu.grpc.client.RestaurantGrpcClient;
 import com.tuttime.menu.mapper.MenuCategoryMapper;
+import com.tuttime.menu.mapper.MenuItemMapper;
+import com.tuttime.menu.repository.DiscountRepository;
 import com.tuttime.menu.repository.MenuCategoryRepository;
+import com.tuttime.menu.repository.MenuItemTagRepository;
 import com.tuttime.menu.service.MenuCategoryService;
+import com.tuttime.menu.service.PricingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -15,6 +24,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,6 +37,10 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 
 	private final MenuCategoryRepository menuCategoryRepository;
 	private final MenuCategoryMapper menuCategoryMapper;
+	private final MenuItemTagRepository menuItemTagRepository;
+	private final DiscountRepository discountRepository;
+	private final MenuItemMapper menuItemMapper;
+	private final PricingService pricingService;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 
 	@Override
@@ -76,17 +92,24 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Cacheable(value = "branch_menus", key = "#branchId")
 	public List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId, String query, String sortBy, String direction) {
 
-		// 1. Build the Sort object
-		Sort sortOrder = direction.equalsIgnoreCase("desc") ?
-				Sort.by(sortBy).descending() :
-				Sort.by(sortBy).ascending();
+		// 1. Build the Sort object (Default to Priority)
+		Sort sortOrder = (sortBy == null || sortBy.equals("priority"))
+				? Sort.by(Sort.Direction.DESC, "priority")
+				: (direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
 
-		// 2. Fetch categories with dynamic search and sort
+		// 2. Fetch categories
 		List<MenuCategory> categories = menuCategoryRepository.findActiveByBranchWithSearch(branchId, query, sortOrder);
 
-		// 3. Map to DTOs
+		// 3. Map to DTOs and include item counts
 		return categories.stream()
-				.map(menuCategoryMapper::toResponse)
+				.map(category -> {
+					// Efficiently get count of non-deleted items
+					long count = category.getMenuItems().stream()
+							.filter(item -> !item.isDeleted())
+							.count();
+
+					return menuCategoryMapper.toResponseWithCount(category, (int) count);
+				})
 				.collect(Collectors.toList());
 	}
 
@@ -94,15 +117,55 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Transactional(readOnly = true)
 	@Cacheable(value = "branch_menus", key = "#branchId")
 	public FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId) {
-		// 1. Fetch Categories (Optimized with EntityGraph in Repository to avoid N+1)
-		List<MenuCategory> categories = menuCategoryRepository.findByBranchIdAndDeletedFalseOrderByPriorityAsc(branchId);
+		// 1. Fetch Categories & Items (Already sorted by priority in Repo)
+		List<MenuCategory> categories = menuCategoryRepository.findAllByBranchIdWithItemsSorted(branchId);
 
-		// 2. Map to the nested tree structure (Category -> Items -> Modifiers)
-		List<FullMenuDto.CategoryWithItemsResponse> categoryData = categories.stream()
-				.map(menuCategoryMapper::toCategoryWithItemsResponse)
+		if (categories.isEmpty()) {
+			return new FullMenuDto.FullMenuBranchMenuResponse(branchId, Collections.emptyList());
+		}
+
+		// 2. Collect IDs for Batch Fetching
+		List<UUID> categoryIds = categories.stream().map(MenuCategory::getId).toList();
+		List<UUID> itemIds = categories.stream()
+				.flatMap(c -> c.getMenuItems().stream())
+				.map(MenuItem::getId)
 				.toList();
 
-		return new FullMenuDto.FullMenuBranchMenuResponse(branchId, categoryData);
+		// 3. Batch Fetch Tags & Discounts (Prevents N+1)
+		List<MenuItemTag> allItemTags = menuItemTagRepository.findAllByMenuItemIdIn(itemIds);
+		List<Discount> activeDiscounts = discountRepository.findActiveDiscounts(itemIds, categoryIds);
+
+		// 4. Build the response tree
+		List<FullMenuDto.CategoryWithItemsResponse> categoryResponses = categories.stream()
+				.map(cat -> new FullMenuDto.CategoryWithItemsResponse(
+						cat.getId(),
+						cat.getName(),
+						cat.getDescription(),
+						cat.getPriority(),
+						cat.getMenuItems().stream()
+								.filter(item -> !item.isDeleted() && item.getAvailable())
+								.sorted(Comparator.comparing(MenuItem::getPriority).reversed())
+								.map(item -> {
+									// Filter tags for this item
+									List<MenuItemDto.TagResponse> itemTags = allItemTags.stream()
+											.filter(it -> it.getMenuItem().getId().equals(item.getId()))
+											.map(it -> new MenuItemDto.TagResponse(
+													it.getMenuTag().getId(),
+													it.getMenuTag().getName(),
+													it.getMenuTag().getIconUrl()))
+											.toList();
+
+									// Calculate Discounted Price via PricingService (using preloaded list)
+									DiscountDto.PricingResult result = pricingService.calculateFinalPrice(item, activeDiscounts);
+
+									// Map to DTO and set the dynamic discountedPrice
+									return menuItemMapper.toFullResponse(item, itemTags).toBuilder()
+											.discountedPrice(result.finalPrice())
+											.build();
+								}).toList()
+				)).toList();
+
+		return new FullMenuDto.FullMenuBranchMenuResponse(branchId, categoryResponses);
 	}
 
 	@Override

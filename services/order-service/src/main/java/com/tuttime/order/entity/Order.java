@@ -44,6 +44,15 @@ public class Order extends BaseUuidAnDeleteEntity {
 	@Column(name = "total_amount", nullable = false)
 	private BigDecimal totalAmount = BigDecimal.ZERO;
 
+	@Column(name = "guest_name", nullable = false)
+	private String guestName;
+
+	@Column(name = "guest_phone", nullable = false)
+	private String guestPhone;
+
+	@Column(name = "special_request")
+	private String specialRequest;
+
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	@Builder.Default
 	private List<OrderItem> items = new ArrayList<>();

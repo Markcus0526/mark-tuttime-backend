@@ -52,4 +52,9 @@ public class MenuItem extends BaseUuidAnDeleteEntity {
 	)
 	@Builder.Default
 	private Set<ModifierGroup> modifierGroups = new HashSet<>();
+
+	@OneToMany(fetch = FetchType.LAZY)
+	@JoinColumn(name = "entity_id", referencedColumnName = "id", insertable = false, updatable = false)
+	@Builder.Default
+	private Set<Media> medias = new HashSet<>();
 }

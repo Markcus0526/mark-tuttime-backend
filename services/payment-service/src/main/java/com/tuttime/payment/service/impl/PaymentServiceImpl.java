@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.PaymentEvent;
+import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.payment.dto.PaymentMethodDto;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.entity.Refund;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
+import com.tuttime.payment.service.PaymentMethodService;
 import com.tuttime.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,18 +34,19 @@ import java.util.UUID;
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
+	private final PaymentRepository paymentRepository;
+	private final RefundRepository refundRepository;
+	private final PaymentAuditLogRepository paymentAuditLogRepository;
+	private final PaymentMethodService paymentMethodService;
+	private final EventProducer eventProducer;
+	private final ApiClient apiKassaClient;
+	private final ObjectMapper objectMapper;
+
 	@Value("${yookassa.shop-id}")
 	private String shopId;
 
 	@Value("${yookassa.secret-key}")
 	private String secretKey;
-
-	private final PaymentRepository paymentRepository;
-	private final RefundRepository refundRepository;
-	private final PaymentAuditLogRepository paymentAuditLogRepository;
-	private final EventProducer eventProducer;
-	private final ApiClient apiKassaClient;
-	private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional
@@ -81,6 +85,18 @@ public class PaymentServiceImpl implements PaymentService {
 				// 2. Update Status mapping
 				if ("SUCCEEDED".equals(yooStatus)) {
 					payment.setStatus(PaymentStatus.COMPLETED);
+
+					// Check if YooKassa returned a saved payment method in this webhook
+					if (obj.has("payment_method")) {
+						JsonNode pm = obj.get("payment_method");
+						// Only save if it's a card and the 'saved' flag is true
+						if (pm.get("saved").asBoolean() && "bank_card".equals(pm.get("type").asText())) {
+
+							PaymentMethodDto.YooKassaPaymentMethod methodDto = mapToPaymentMethodDto(pm);
+							// Save to user_payment_methods table
+							paymentMethodService.savePaymentMethod(payment.getUserId(), methodDto);
+						}
+					}
 				} else if ("CANCELED".equals(yooStatus)) {
 					payment.setStatus(PaymentStatus.FAILED);
 				}
@@ -107,9 +123,9 @@ public class PaymentServiceImpl implements PaymentService {
 
 	@Override
 	@Transactional
-	public void processAdministrativeRefund(UUID paymentId, BigDecimal amount, String reason) {
+	public boolean processAdministrativeRefund(UUID paymentId, BigDecimal amount, String reason) {
 		Payment payment = paymentRepository.findById(paymentId)
-				.orElseThrow(() -> new RuntimeException("Payment not found"));
+				.orElseThrow(() -> new InvalidRequestException("Payment not found"));
 
 		RefundProcessor processor = new RefundProcessor(apiKassaClient);
 		String idempotencyKey = UUID.randomUUID().toString();
@@ -119,7 +135,7 @@ public class PaymentServiceImpl implements PaymentService {
 				.amount(new Amount(amount.toString(), "RUB"))
 				.build(), idempotencyKey);
 
-		refundRepository.save(Refund.builder()
+		Refund refund = refundRepository.save(Refund.builder()
 				.payment(payment)
 				.yookassaRefundId(yooRefund.getId())
 				.amount(amount)
@@ -128,6 +144,8 @@ public class PaymentServiceImpl implements PaymentService {
 				.build());
 
 		dispatchRefundCompletedEvent(payment, reason);
+
+		return refund.getStatus().equals("SUCCESS");
 	}
 
 	@Override
@@ -219,6 +237,7 @@ public class PaymentServiceImpl implements PaymentService {
 	 */
 	private void dispatchPaymentCompletedEvent(Payment payment, String externalId) {
 		PaymentEvent.PaymentCompletedEvent event = PaymentEvent.PaymentCompletedEvent.builder()
+				.paymentId(payment.getId())
 				.bookingId(payment.getBookingId())
 				.userId(payment.getUserId())
 				.branchId(payment.getBranchId())
@@ -233,6 +252,7 @@ public class PaymentServiceImpl implements PaymentService {
 
 	private void dispatchRefundCompletedEvent(Payment payment, String reason) {
 		PaymentEvent.PaymentRefundedEvent event = PaymentEvent.PaymentRefundedEvent.builder()
+				.paymentId(payment.getId())
 				.bookingId(payment.getBookingId())
 				.userId(payment.getUserId())
 				.branchId(payment.getBranchId())
@@ -241,5 +261,21 @@ public class PaymentServiceImpl implements PaymentService {
 				.reason(reason)
 				.build();
 		eventProducer.sendPaymentRefundEvent(event);
+	}
+
+	private PaymentMethodDto.YooKassaPaymentMethod mapToPaymentMethodDto(JsonNode pm) {
+		JsonNode card = pm.get("card");
+		return PaymentMethodDto.YooKassaPaymentMethod.builder()
+				.id(pm.get("id").asText())
+				.saved(pm.get("saved").asBoolean())
+				.card(new PaymentMethodDto.CardDetails(
+						card.get("first6").asText(),
+						card.get("last4").asText(),
+						card.get("expiry_month").asText(),
+						card.get("expiry_year").asText(),
+						card.get("card_type").asText(),
+						card.has("issuer_name") ? card.get("issuer_name").asText() : "Unknown"
+				))
+				.build();
 	}
 }

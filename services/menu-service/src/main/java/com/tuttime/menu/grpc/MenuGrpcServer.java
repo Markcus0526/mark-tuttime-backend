@@ -29,6 +29,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	private final ModifierRepository modifierRepository;
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getPriceForOrder(PriceRequest request, StreamObserver<PriceResponse> responseObserver) {
 		try {
 			UUID itemId = UUID.fromString(request.getMenuItemId());
@@ -81,7 +82,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 
 			for (MenuCategory category : categories) {
 				// 2. Access the MenuItemCategory relationships
-				for (MenuItem menuItem : category.getItems()) {
+				for (MenuItem menuItem : category.getMenuItems()) {
 					// Skip if the item is not available
 					if (!menuItem.getAvailable()) continue;
 

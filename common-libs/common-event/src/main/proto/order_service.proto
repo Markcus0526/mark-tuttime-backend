@@ -11,8 +11,11 @@ service OrderService {
 
   rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
 
+  rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+
   rpc GetOrderDetail (OrderDetailRequest) returns (OrderDetailResponse);
 
+  rpc CancelAndRefund(CancelOrderRequest) returns (CancelOrderResponse);
 }
 
 // rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
@@ -21,8 +24,11 @@ message CreateOrderRequest {
   string user_id = 2;
   string branch_id = 3;
   string table_id = 4;
+  string guest_name = 5;
+  string guest_phone = 6;
+  string special_request = 7;
   // Use repeated to transfer a list of items
-  repeated OrderItemRequest items = 5;
+  repeated OrderItemRequest items = 8;
 }
 
 message OrderItemRequest {
@@ -40,6 +46,22 @@ message ModifierRequest {
 message CreateOrderResponse {
   string order_id = 1;
   string status = 2;
+}
+
+// rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
+message UpdateOrderRequest {
+  string order_id = 1;
+  string new_booking_time = 2; // Required for KDS scheduling
+  string guest_name = 3;
+  string guest_phone = 4;
+  string special_request = 5;
+  string new_total = 6;        // String for BigDecimal precision
+  repeated OrderItemRequest items = 7; // Updated list of items/modifiers
+}
+
+message UpdateOrderResponse {
+  bool success = 1;
+  string message = 2;
 }
 
 // rpc getOrderDetail (OrderRequest) returns (OrderDetailsResponse);
@@ -63,4 +85,19 @@ message OrderItemDetailResponse {
   int32 quantity = 4;
   double price = 5;
   repeated string modifiers = 6;
+}
+
+// rpc CancelAndRefund(CancelOrderRequest) returns (CancelOrderResponse);
+message CancelOrderRequest {
+  string booking_id = 1;
+  string order_id = 2;
+  string payment_id = 3;
+  string reason = 4;
+}
+
+message CancelOrderResponse {
+  bool success = 1;
+  string refund_transaction_id = 2;
+  string amount_refunded = 3;
+  string reason = 4;
 }

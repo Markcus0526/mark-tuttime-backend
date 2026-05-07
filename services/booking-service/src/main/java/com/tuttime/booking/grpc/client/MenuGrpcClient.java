@@ -35,7 +35,6 @@ public class MenuGrpcClient {
 		return GrpcExecutor.execute(MENU_SERVICE, "getPreOrderMenu", () ->
 				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getPreOrderMenu(request).getItemsList());
-//		return menuServiceBlockingStub.getPreOrderMenu(req).getItemsList();
 	}
 
 	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
@@ -46,13 +45,5 @@ public class MenuGrpcClient {
 		return GrpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
 				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getMenuDetails(request).getItemsList());
-//		try {
-//			// 2. Call the server and return the items list
-//			MenuDetailsResponse response = menuServiceBlockingStub.getMenuDetails(request);
-//			return response.getItemsList();
-//		} catch (StatusRuntimeException e) {
-//			log.error("Failed to fetch menu details: {}", e.getStatus());
-//			throw new InvalidRequestException("Menu service is currently unavailable.");
-//		}
 	}
 }

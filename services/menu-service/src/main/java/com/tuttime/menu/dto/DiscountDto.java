@@ -51,4 +51,13 @@ public class DiscountDto {
 			Boolean active
 	) {
 	}
+
+	/**
+	 * Result of price calculation including the name of the applied discount
+	 * for the "Promotion Applied" section in Figma.
+	 */
+	public record PricingResult(
+			BigDecimal finalPrice,
+			String discountName
+	) {}
 }

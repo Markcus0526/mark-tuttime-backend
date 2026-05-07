@@ -17,6 +17,7 @@ import java.util.UUID;
 public abstract class BookingMapper {
 
 	@Mapping(target = "bookingId", source = "entity.id")
+	@Mapping(target = "user", ignore = true)
 	public abstract BookingDto.BookingResponse toResponse(Booking entity);
 
 	@Mapping(target = "bookingId", source = "entity.id")

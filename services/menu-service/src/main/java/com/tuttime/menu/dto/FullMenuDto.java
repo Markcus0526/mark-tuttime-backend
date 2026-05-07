@@ -1,6 +1,7 @@
 package com.tuttime.menu.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,7 +15,7 @@ public class FullMenuDto {
 			String name,
 			String description,
 			Integer priority,
-			List<MenuItemDto.MenuItemResponse> items
+			List<FullMenuItemResponse> items
 	) {
 	}
 
@@ -26,25 +27,22 @@ public class FullMenuDto {
 	}
 
 	/// /////////////////////////////////////////////////////////
-	// 2. Category Level
-	public record FullMenuCategoryResponse(
-			UUID categoryId,
-			String name,
-			String description,
-			Integer priority,
-			List<FullMenuItemResponse> items
-	) {
-	}
-
+	///
 	// 3. Item Level
+	@Builder(toBuilder = true)
 	public record FullMenuItemResponse(
-			UUID menuItemId,
+			UUID itemId,
 			String name,
 			String description,
-			BigDecimal price,
-			Boolean available,
+			BigDecimal originalPrice,
+			BigDecimal discountedPrice, // Calculated if a discount applies
+			String imageUrl,
+			List<MenuItemDto.TagResponse> tags, // The 🌱 🔥 tags from Figma
 			List<FullMenuModifierGroupResponse> modifierGroups
 	) {
+		public boolean hasDiscount() {
+			return discountedPrice != null && discountedPrice.compareTo(originalPrice) < 0;
+		}
 	}
 
 	// 4. Modifier Group Level
