@@ -56,7 +56,7 @@ public class MenuItemDto {
 	}
 
 	@Schema(description = "Compact summary response for category list views")
-	@Builder
+	@Builder(toBuilder = true)
 	public record MenuItemResponse(
 			UUID menuItemId,
 			String name,

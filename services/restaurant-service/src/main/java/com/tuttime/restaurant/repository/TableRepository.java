@@ -1,6 +1,7 @@
 package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.DishTable;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.repository.record.TableDetailRecord;
 import com.tuttime.restaurant.repository.record.TableHierarchyRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,6 +39,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 			    FROM DishTable t
 			    JOIN t.zone z
 			    WHERE z.branch.id = :branchId 
+			      AND t.status = :status
 			      AND t.deleted = false 
 			      AND t.closed = false 
 			      AND t.seats >= :partySize
@@ -46,7 +48,8 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 			""")
 	List<TableDetailRecord> findTablesByBranchIdAndPartySize(
 			@Param("branchId") UUID branchId,
-			@Param("partySize") int partySize
+			@Param("partySize") int partySize,
+			@Param("status") TableStatus status
 	);
 
 	@Modifying

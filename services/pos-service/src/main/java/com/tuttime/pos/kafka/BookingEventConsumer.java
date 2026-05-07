@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
@@ -30,6 +31,7 @@ public class BookingEventConsumer {
 	@KafkaListener(
 			topics = TOPIC_BOOKING_STATUS_UPDATED,
 			groupId = "${spring.kafka.consumer.group-id}")
+	@Transactional(readOnly = true)
 	public void handleBookingStatusUpdated(String eventString) {
 		try {
 			if (!StringUtils.hasText(eventString)) return;

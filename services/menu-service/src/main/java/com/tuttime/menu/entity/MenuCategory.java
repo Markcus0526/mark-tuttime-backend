@@ -34,7 +34,7 @@ public class MenuCategory extends BaseUuidAnDeleteEntity {
 	@OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
 	@Fetch(FetchMode.SUBSELECT) // Optimizes N+1 for collections
 	@Builder.Default
-	private Set<MenuItem> items = new LinkedHashSet<>();
+	private Set<MenuItem> menuItems = new LinkedHashSet<>();
 
 	@Column(name = "priority")
 	@Builder.Default

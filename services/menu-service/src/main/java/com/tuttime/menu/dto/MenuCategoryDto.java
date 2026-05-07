@@ -35,7 +35,7 @@ public class MenuCategoryDto {
 			String description,
 			Integer priority,
 			String imageUrl,
-			List<MenuItemDto.MenuItemResponse> items
+			Integer itemCount
 	) {
 	}
 }

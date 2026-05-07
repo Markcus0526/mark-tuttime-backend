@@ -200,6 +200,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getUserDetails(UserDetailsRequest request, StreamObserver<UserDetailsResponse> responseObserver) {
 		try {
 			// 1. Extract and convert User IDs from Request
@@ -283,6 +284,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
+	@Transactional
 	public void deleteDeviceToken(DeviceTokenDeleteRequest request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
 		userDeviceRepository.deleteByFcmToken(request.getFcmToken());
 

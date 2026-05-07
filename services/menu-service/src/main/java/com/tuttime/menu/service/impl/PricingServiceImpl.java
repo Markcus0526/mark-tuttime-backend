@@ -1,5 +1,6 @@
 package com.tuttime.menu.service.impl;
 
+import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.entity.Discount;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.enums.DiscountType;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,7 +23,7 @@ public class PricingServiceImpl implements PricingService {
 	private final DiscountRepository discountRepository;
 
 	@Override
-	public BigDecimal calculateFinalPrice(MenuItem item) {
+	public DiscountDto.PricingResult calculateFinalPrice(MenuItem item) {
 		BigDecimal basePrice = item.getPrice();
 
 		// Find discounts for the item or its parent category
@@ -29,14 +31,36 @@ public class PricingServiceImpl implements PricingService {
 		List<Discount> activeDiscounts = discountRepository.findActiveDiscounts(lookupIds);
 
 		if (activeDiscounts.isEmpty()) {
-			return basePrice;
+			return new DiscountDto.PricingResult(basePrice, null);
 		}
 
 		// Strategy: Apply the largest discount found
-		return activeDiscounts.stream()
-				.map(d -> applyDiscount(basePrice, d))
-				.min(BigDecimal::compareTo) // Smallest result = Best discount for customer
-				.orElse(basePrice);
+		Discount bestDiscount = activeDiscounts.stream()
+				.min(Comparator.comparing(d -> applyDiscount(basePrice, d)))
+				.orElseThrow();
+
+		return new DiscountDto.PricingResult(applyDiscount(basePrice, bestDiscount), bestDiscount.getName());
+	}
+
+	@Override
+	public DiscountDto.PricingResult calculateFinalPrice(MenuItem item, List<Discount> preloadedDiscounts) {
+		BigDecimal basePrice = item.getPrice();
+
+		// Filter the preloaded list for this specific item or its category
+		List<Discount> activeDiscounts = preloadedDiscounts.stream()
+				.filter(d -> (d.getAppliesTo().name().equals("ITEM") && d.getReferenceId().equals(item.getId())) ||
+						(d.getAppliesTo().name().equals("CATEGORY") && d.getReferenceId().equals(item.getCategory().getId())))
+				.toList();
+
+		if (activeDiscounts.isEmpty()) {
+			return new DiscountDto.PricingResult(basePrice, null);
+		}
+
+		Discount bestDiscount = activeDiscounts.stream()
+				.min(Comparator.comparing(d -> applyDiscount(basePrice, d)))
+				.orElseThrow();
+
+		return new DiscountDto.PricingResult(applyDiscount(basePrice, bestDiscount), bestDiscount.getName());
 	}
 
 	@Override

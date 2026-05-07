@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
@@ -58,6 +59,7 @@ public class OrderEventConsumer {
 	@KafkaListener(
 			topics = TOPIC_ORDER_STATUS_UPDATED,
 			groupId = "${spring.kafka.consumer.group-id}")
+	@Transactional
 	public void handleOrderStatusChange(String eventString) {
 		try {
 			if (!StringUtils.hasText(eventString)) return;

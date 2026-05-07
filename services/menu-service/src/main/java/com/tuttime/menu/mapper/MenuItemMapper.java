@@ -1,8 +1,6 @@
 package com.tuttime.menu.mapper;
 
-import com.tuttime.menu.dto.MediaDto;
-import com.tuttime.menu.dto.MenuItemDto;
-import com.tuttime.menu.dto.ModifierDto;
+import com.tuttime.menu.dto.*;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.ModifierGroup;
 import com.tuttime.menu.repository.MediaRepository;
@@ -34,6 +32,7 @@ public abstract class MenuItemMapper {
 	@Autowired
 	protected MediaMapper mediaMapper;
 
+	// --- 1. Detail Response (Single Item View) ---
 	@Mapping(target = "menuItemId", source = "id")
 	@Mapping(target = "categoryId", source = "category.id")
 	@Mapping(target = "originalPrice", source = "price")
@@ -48,18 +47,35 @@ public abstract class MenuItemMapper {
 	@Mapping(target = "imageUrl", ignore = true)        // Logic to fetch from Media table
 	public abstract MenuItemDto.MenuItemResponse toSummaryResponse(MenuItem item);
 
+	// --- 2. Full Menu Response (Bulk Map View) ---
+	@Mapping(target = "itemId", source = "item.id")
+	@Mapping(target = "name", source = "item.name")
+	@Mapping(target = "description", source = "item.description")
+	@Mapping(target = "originalPrice", source = "item.price")
+	@Mapping(target = "discountedPrice", ignore = true)
+	@Mapping(target = "imageUrl", ignore = true) // Handled in AfterMapping
+	@Mapping(target = "tags", source = "itemTags") // Passed parameter
+	public abstract FullMenuDto.FullMenuItemResponse toFullResponse(MenuItem item, List<MenuItemDto.TagResponse> itemTags);
+
+	@AfterMapping
+	protected void addImageUrl(MenuItem entity, @MappingTarget FullMenuDto.FullMenuItemResponse.FullMenuItemResponseBuilder builder) {
+		// Logic to fetch primary image for the food item
+		mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
+				.ifPresent(builder::imageUrl);
+	}
+
 	/**
 	 * Logic to merge Item + Category Modifiers and Calculate Prices
 	 */
 	@AfterMapping
 	protected void postMappingLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailResponse.MenuItemDetailResponseBuilder builder) {
 		// 1. Calculate Prices
-		BigDecimal finalPrice = pricingService.calculateFinalPrice(item);
-		builder.discountedPrice(finalPrice);
+		DiscountDto.PricingResult result = pricingService.calculateFinalPrice(item);
+		builder.discountedPrice(result.finalPrice());
 		builder.originalPrice(item.getPrice());
 
-		if (finalPrice.compareTo(item.getPrice()) < 0) {
-			builder.activeDiscountName("Promotion Applied");
+		if (result.finalPrice() != null && result.finalPrice().compareTo(item.getPrice()) < 0) {
+			builder.activeDiscountName(result.discountName());
 		}
 
 		// 2. Merge Modifiers
@@ -82,7 +98,8 @@ public abstract class MenuItemMapper {
 
 	@AfterMapping
 	protected void postMappingSummaryLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemResponse.MenuItemResponseBuilder builder) {
-		builder.currentPrice(pricingService.calculateFinalPrice(item));
+		DiscountDto.PricingResult result = pricingService.calculateFinalPrice(item);
+		builder.currentPrice(result.finalPrice());
 	}
 
 	@AfterMapping
@@ -100,6 +117,43 @@ public abstract class MenuItemMapper {
 				.map(mediaMapper::toResponse)
 				.collect(Collectors.toList());
 
+		builder.medias(allMedia);
+	}
+
+	@AfterMapping
+	protected void addFullMenuImage(MenuItem entity, @MappingTarget FullMenuDto.FullMenuItemResponse.FullMenuItemResponseBuilder builder) {
+		mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
+				.ifPresent(builder::imageUrl);
+	}
+
+	@AfterMapping
+	protected void postMappingDetailLogic(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailResponse.MenuItemDetailResponseBuilder builder) {
+		DiscountDto.PricingResult result = pricingService.calculateFinalPrice(item);
+		builder.discountedPrice(result.finalPrice());
+		builder.originalPrice(item.getPrice());
+
+		if (result.finalPrice() != null && result.finalPrice().compareTo(item.getPrice()) < 0) {
+			builder.activeDiscountName(result.discountName());
+		}
+
+		// Merge Modifiers (Item + Category levels)
+		Set<ModifierGroup> mergedGroups = new LinkedHashSet<>();
+		if (item.getModifierGroups() != null) mergedGroups.addAll(item.getModifierGroups());
+		if (item.getCategory() != null && item.getCategory().getModifierGroups() != null) {
+			mergedGroups.addAll(item.getCategory().getModifierGroups());
+		}
+
+		builder.modifierGroups(mergedGroups.stream()
+				.map(modifierMapper::toGroupResponse)
+				.collect(Collectors.toList()));
+	}
+
+	@AfterMapping
+	protected void addMediasToDetail(MenuItem item, @MappingTarget MenuItemDto.MenuItemDetailResponse.MenuItemDetailResponseBuilder builder) {
+		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllByEntityIdAndDeletedFalse(item.getId())
+				.stream()
+				.map(mediaMapper::toResponse)
+				.toList();
 		builder.medias(allMedia);
 	}
 }

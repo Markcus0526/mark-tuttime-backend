@@ -3,6 +3,7 @@ package com.tuttime.restaurant.grpc;
 import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.*;
 import com.tuttime.restaurant.repository.record.BranchDetailRecord;
@@ -15,6 +16,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -41,6 +43,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void validateBranchPermission(BranchPermissionRequest request, StreamObserver<BranchPermissionResponse> responseObserver) {
 		boolean finalValid = false;
 		try {
@@ -87,6 +90,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getTableDetail(TableDetailRequest request, StreamObserver<TableDetailResponse> responseObserver) {
 		try {
 			UUID tableId = UUID.fromString(request.getTableId());
@@ -120,13 +124,15 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getBranchSlots(BranchSlotsRequest request, StreamObserver<BranchSlotsResponse> responseObserver) {
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());
 			int partySize = request.getPartySize();
 
 			// Fetch using the type-safe projection
-			List<TableDetailRecord> tables = tableRepository.findTablesByBranchIdAndPartySize(branchId, partySize);
+			List<TableDetailRecord> tables = tableRepository.findTablesByBranchIdAndPartySize(
+					branchId, partySize, TableStatus.ACTIVE);
 
 			BranchSlotsResponse.Builder responseBuilder = BranchSlotsResponse.newBuilder();
 
@@ -157,6 +163,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getBranchSchedule(ScheduleRequest request, StreamObserver<ScheduleResponse> responseObserver) {
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());
@@ -198,6 +205,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getStaffForUser(StaffUserRequest request, StreamObserver<StaffUserResponse> responseObserver) {
 		try {
 			UUID userId = UUID.fromString(request.getUserId());
@@ -240,6 +248,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getBranchDetail(BranchDetailRequest request, StreamObserver<BranchDetailResponse> responseObserver) {
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());
@@ -272,6 +281,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getTableHierarchyDetail(TableHierarchyRequest request, StreamObserver<TableHierarchyResponse> responseObserver) {
 		try {
 			UUID tableId = UUID.fromString(request.getTableId());
@@ -307,6 +317,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void validateBranch(BranchValidRequest request, StreamObserver<BranchValidResponse> responseObserver) {
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());
@@ -337,6 +348,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public void getBranchManagers(BranchManagersRequest request, StreamObserver<BranchManagersResponse> responseObserver) {
 		try {
 			UUID branchId = UUID.fromString(request.getBranchId());

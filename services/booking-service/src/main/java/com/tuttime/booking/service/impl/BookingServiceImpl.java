@@ -68,6 +68,9 @@ public class BookingServiceImpl implements BookingService {
 	@Value("${app.booking.slot-interval}")
 	private int slotInterval;
 
+	@Value("${app.booking.dining-duration}")
+	private int diningDuration;
+
 	private static final String LOCK_PREFIX = "lock:table:";
 
 	@Override
@@ -119,6 +122,9 @@ public class BookingServiceImpl implements BookingService {
 					.gracePeriodMins(request.gracePeriodMins())
 					.status(BookingStatus.CREATED)
 					.totalAmount(totalAmount)
+					.guestName(request.guestName())
+					.guestPhone(request.guestPhone())
+					.specialRequest(request.specialRequest())
 					.build();
 
 			Booking savedBooking = bookingRepository.save(booking);
@@ -169,7 +175,10 @@ public class BookingServiceImpl implements BookingService {
 					.setBookingId(savedBooking.getId().toString())
 					.setUserId(savedBooking.getUserId().toString())
 					.setBranchId(savedBooking.getBranchId().toString())
-					.setTableId(savedBooking.getTableId().toString());
+					.setTableId(savedBooking.getTableId().toString())
+					.setGuestName(savedBooking.getGuestName())
+					.setGuestPhone(savedBooking.getGuestPhone())
+					.setSpecialRequest(savedBooking.getSpecialRequest());
 
 			// Loop through the items in your BookingRequest
 			request.preOrderItems().forEach(itemDto -> {
@@ -211,7 +220,10 @@ public class BookingServiceImpl implements BookingService {
 			});
 
 			// Final gRPC Call
-			orderGrpcClient.createOrder(orderRequestBuilder.build());
+			CreateOrderResponse orderResponse = orderGrpcClient.createOrder(orderRequestBuilder.build());
+			savedBooking.setOrderId(UuidUtil.toUuid(orderResponse.getOrderId()));
+
+			savedBooking = bookingRepository.save(booking);
 
 			return bookingMapper.toResponse(savedBooking);
 
@@ -224,28 +236,164 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Override
+	@Transactional
+	public BookingDto.BookingResponse editBooking(UUID bookingId, BookingDto.BookingRequest request, UUID currentUserId, String userRoles) {
+		// 1. Fetch and Guard
+		Booking booking = bookingRepository.findById(bookingId)
+				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
+
+		// Guard: Only allow editing if the status is CREATED or PAID
+		if (booking.getStatus() != BookingStatus.CREATED && booking.getStatus() != BookingStatus.PAID) {
+			throw new InvalidRequestException("Cannot edit booking in status: " + booking.getStatus());
+		}
+
+		OffsetDateTime newStartTime = request.bookingDatetime();
+		OffsetDateTime newEndTime = newStartTime.plus(Duration.ofMinutes(request.duration()));
+		UUID newTableId = request.tableId(); // Or use your Best-Fit logic here
+
+		boolean isSlotChanged = !booking.getBookingDatetime().equals(newStartTime) || !booking.getTableId().equals(newTableId);
+
+		// 2. Handle Table/Time Change with Redisson
+		if (isSlotChanged) {
+			RLock newLock = redissonClient.getLock(LOCK_PREFIX + newTableId);
+			try {
+				// Attempt to acquire the new lock before releasing the old one (Safety First)
+				if (!newLock.tryLock(5, 10, TimeUnit.SECONDS)) {
+					throw new ConflictException("The new table/slot is currently being reserved by someone else.");
+				}
+
+				// Check for DB overlaps in the new slot
+				if (bookingRepository.existsOverlappingBooking(newTableId, newStartTime, newEndTime)) {
+					newLock.unlock(); // Release new lock immediately
+					throw new ConflictException("Table is already booked for this new time range.");
+				}
+
+				// Release the OLD lock now that the new one is secured
+				RLock oldLock = redissonClient.getLock(LOCK_PREFIX + booking.getTableId());
+				if (oldLock.isLocked()) oldLock.unlock();
+
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new BusinessException("System interrupted during re-locking.");
+			}
+		}
+
+		// 3. Price Validation (Re-run Step 3 from your createBooking logic)
+		List<MenuItemDetailResponse> menuDetails = menuGrpcClient.getMenuDetails(
+				request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
+		);
+		validateModifierSelections(request.preOrderItems(), menuDetails);
+		BigDecimal newTotal = calculateFinalPrice(request.preOrderItems(), menuDetails);
+
+		// 4. Update Order Service via gRPC
+		if (booking.getOrderId() != null) {
+			UpdateOrderRequest orderUpdateRequest = UpdateOrderRequest.newBuilder()
+					.setOrderId(booking.getOrderId().toString())
+					.setNewBookingTime(newStartTime.toString())
+					.setNewTotal(newTotal.toString())
+					.setGuestName(request.guestName())
+					.setGuestPhone(request.guestPhone())
+					.build();
+			UpdateOrderResponse orderResponse = orderGrpcClient.updateOrder(orderUpdateRequest);
+			if (!orderResponse.getSuccess())
+				throw new InvalidRequestException("Cannot update of booking.");
+		}
+
+		// 5. Update Local Entity
+		booking.setTableId(newTableId);
+		booking.setBookingDatetime(newStartTime);
+		booking.setPartySize(request.partySize());
+		booking.setTotalAmount(newTotal);
+		booking.setGuestName(request.guestName());
+		booking.setGuestPhone(request.guestPhone());
+		booking.setSpecialRequest(request.specialRequest());
+		booking.setUpdatedAt(OffsetDateTime.now());
+
+		Booking updatedBooking = bookingRepository.save(booking);
+
+		// 6. Audit Trail
+		historyRepository.save(BookingStatusHistory.of(updatedBooking, updatedBooking.getStatus(), currentUserId, "Booking Edited"));
+
+		return bookingMapper.toResponse(updatedBooking);
+	}
+
+	@Override
 	public BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId) {
-		// 1. Setup Time Range for the Target Day
-		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);
-		OffsetDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
+		// 1. Setup Time Context
+		LocalDate requestedDate = date.toLocalDate();
+		ZoneOffset offset = date.getOffset();
+		OffsetDateTime now = OffsetDateTime.now(offset);
+
+		// CRITICAL: Block past dates immediately
+		if (requestedDate.isBefore(now.toLocalDate())) {
+			return new BookingSetupDto.BookingSetupResponse(branchId, Collections.emptyList());
+		}
 
 		// 2. Parallel Data Fetching
 		var tablesFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSlots(branchId, partySize));
-		var scheduleFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSchedule(branchId, date.getDayOfWeek().getValue()));
-		var menuFuture = CompletableFuture.supplyAsync(() -> menuGrpcClient.getPreOrderMenu(branchId));
+		var scheduleFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSchedule(branchId, requestedDate.getDayOfWeek().getValue()));
 
-		// 3. Fetch Local Occupied Data
-		List<Booking> occupied = bookingRepository.findAllByBranchIdAndDayRange(branchId, startOfDay, endOfDay);
+		// Fetch bookings for the single requested day only
+		OffsetDateTime startOfSearch = requestedDate.atStartOfDay().atOffset(offset);
+		OffsetDateTime endOfSearch = startOfSearch.plusDays(1);
+		List<Booking> occupied = bookingRepository.findAllByBranchIdAndDayRange(branchId, startOfSearch, endOfSearch);
 
-		// 4. Combine Results
 		List<TableSlotResponse> physicalTables = tablesFuture.join();
 		ScheduleResponse schedule = scheduleFuture.join();
-		List<MenuItemDetailResponse> menuItems = menuFuture.join();
 
-		// 5. Generate and Filter Slots
-		List<BookingSetupDto.BookingSetupResponse.AvailableSlot> slots = calculateSlots(date, physicalTables, occupied, schedule);
+		if (schedule.getClosed()) {
+			return new BookingSetupDto.BookingSetupResponse(branchId, Collections.emptyList());
+		}
 
-		return new BookingSetupDto.BookingSetupResponse(branchId, slots, mapMenu(menuItems));
+		// 3. Pre-process for performance
+		Map<UUID, List<Booking>> bookingsByTable = occupied.stream()
+				.collect(Collectors.groupingBy(Booking::getTableId));
+
+		// 4. Calculate Same-Day Boundaries
+		OffsetDateTime openTime = requestedDate.atTime(LocalTime.parse(schedule.getOpenTime())).atOffset(offset);
+		OffsetDateTime closeTime = requestedDate.atTime(LocalTime.parse(schedule.getCloseTime())).atOffset(offset);
+
+		// 5. Determine Starting Slot
+		// If today, start from 'now' + 15m buffer, rounded to next interval. If future, start from openTime.
+		OffsetDateTime currentSlot = requestedDate.equals(now.toLocalDate())
+				? roundToNextInterval(now.plusMinutes(15), slotInterval)
+				: openTime;
+
+		// Safety: Ensure start time isn't before the restaurant opens
+		if (currentSlot.isBefore(openTime)) {
+			currentSlot = openTime;
+		}
+
+		List<BookingSetupDto.BookingSetupResponse.AvailableSlot> result = new ArrayList<>();
+
+		// 6. Generate Slots strictly within the same day
+		// Condition ensures we stop as soon as the dining window would hit or exceed closing time
+		while (currentSlot.plusMinutes(diningDuration).isBefore(closeTime) ||
+				currentSlot.plusMinutes(diningDuration).isEqual(closeTime)) {
+
+			final OffsetDateTime start = currentSlot;
+			final OffsetDateTime end = currentSlot.plusMinutes(diningDuration);
+
+			List<TableSlotResponse> freeTables = physicalTables.stream()
+					.filter(pt -> {
+						List<Booking> list = bookingsByTable.get(UUID.fromString(pt.getTableId()));
+						return list == null || list.stream().noneMatch(b ->
+								start.isBefore(b.getBookingDatetime().plusMinutes(b.getDuration())) &&
+										end.isAfter(b.getBookingDatetime()));
+					})
+					.toList();
+
+			result.add(new BookingSetupDto.BookingSetupResponse.AvailableSlot(
+					start,
+					!freeTables.isEmpty(),
+					freeTables.size(),
+					freeTables.stream().map(TableSlotResponse::getZoneName).distinct().toList()
+			));
+
+			currentSlot = currentSlot.plusMinutes(slotInterval);
+		}
+
+		return new BookingSetupDto.BookingSetupResponse(branchId, result);
 	}
 
 	@Override
@@ -314,7 +462,7 @@ public class BookingServiceImpl implements BookingService {
 		// Security check remains sequential as it's a prerequisite
 		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
 
-		return getEnrichedBookings(List.of(booking)).get(0);
+		return getEnrichedBookings(List.of(booking)).getFirst();
 	}
 
 	@Override
@@ -337,21 +485,48 @@ public class BookingServiceImpl implements BookingService {
 			throw new ForbiddenException("You are not authorized to cancel this booking");
 		}
 
-		// 2. Business Rule: Only allow cancellation if not already COMPLETED or CANCELED
-		if (booking.getStatus() == BookingStatus.COMPLETED || booking.getStatus() == BookingStatus.CANCELED) {
-			throw new InvalidRequestException("Booking cannot be canceled in its current state");
+		// 2. Business Rule: Guard against invalid states
+		if (booking.getStatus() == BookingStatus.COMPLETED ||
+				booking.getStatus() == BookingStatus.CANCELED ||
+				booking.getStatus() == BookingStatus.ARRIVED) {
+			throw new InvalidRequestException("Booking cannot be canceled in its current state: " + booking.getStatus());
 		}
 
 		BookingStatus oldStatus = booking.getStatus();
+
+		// 3. REFUND LOGIC: If the user already PAID, call the Order Service via gRPC
+		if (oldStatus == BookingStatus.PAID && booking.getOrderId() != null && booking.getPaymentId() != null) {
+			// This gRPC call should be idempotent using bookingId
+			CancelOrderRequest request = CancelOrderRequest.newBuilder()
+					.setBookingId(booking.getId().toString())
+					.setOrderId(booking.getOrderId().toString())
+					.setPaymentId(booking.getPaymentId().toString())
+					.setReason(reason != null ? reason : "Canceled by user")
+					.build();
+			CancelOrderResponse orderResponse = orderGrpcClient.cancelAndRefund(request);
+			if (!orderResponse.getSuccess()) {
+				log.warn("Booking {} Refund has problem in cancelAndRefund. Current status: {}", bookingId, oldStatus);
+				throw new InvalidRequestException("Refund is failed: " + orderResponse.getReason());
+			}
+		}
+
 		booking.setStatus(BookingStatus.CANCELED);
 		booking.setCancellationReason(reason != null ? reason : "Canceled by user");
 
 		bookingRepository.save(booking);
 
-		// 3. Save Audit History (Required for your booking_status_histories table)
+		// 5. Audit History
 		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, currentUserId, reason));
 
-		// 3. Trigger the Audit and Waitlist Notification logic automatically
+		// 6. Release Table Lock (Redisson)
+		// This allows the 'Eat Now' slot to be immediately visible to other guests
+		String lockKey = "lock:table:" + booking.getTableId() + ":" + booking.getBookingDatetime().toEpochSecond();
+		RLock lock = redissonClient.getLock(lockKey);
+		if (lock.isLocked()) {
+			lock.unlock();
+		}
+
+		// 7. Event Production for Waitlist/Analytics
 		BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 				.bookingId(booking.getId())
 				.tableId(booking.getTableId())
@@ -401,17 +576,20 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	@Transactional
-	public BookingDto.BookingResponse markAsPaid(UUID bookingId, UUID staffOrSystemId, String paymentRef) {
+	public void markAsPaid(UUID paymentId, UUID bookingId, UUID staffOrSystemId, String paymentRef) {
 		// 1. Fetch the booking
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
+
+		booking.setPaymentId(paymentId);
 
 		BookingStatus oldStatus = booking.getStatus();
 
 		// 2. Validate current state (e.g., only CREATED bookings can be PAID)
 		if (oldStatus != BookingStatus.CREATED) {
 			log.warn("Booking {} already processed. Current status: {}", bookingId, oldStatus);
-			return bookingMapper.toResponse(booking); // Return current state for idempotency
+			bookingMapper.toResponse(booking);
+			return; // Return current state for idempotency
 		}
 
 		// 3. Update the state
@@ -454,67 +632,9 @@ public class BookingServiceImpl implements BookingService {
 			}
 		});
 
-		return bookingMapper.toResponse(booking);
+		bookingMapper.toResponse(booking);
 	}
 
-	private List<BookingSetupDto.BookingSetupResponse.AvailableSlot> calculateSlots(
-			OffsetDateTime date, List<TableSlotResponse> physical, List<Booking> occupied, ScheduleResponse schedule) {
-
-		if (schedule.getClosed()) return Collections.emptyList();
-
-		List<BookingSetupDto.BookingSetupResponse.AvailableSlot> result = new ArrayList<>();
-		OffsetDateTime now = OffsetDateTime.now();
-
-		// 1. Extract context from the OffsetDateTime 'date' parameter
-		LocalDate requestedDate = date.toLocalDate();
-		ZoneOffset offset = date.getOffset();
-
-		// 2. Parse the gRPC Strings into LocalTime objects
-		// Assumes format "HH:mm" (e.g., "09:00"). If it includes seconds, use LocalTime.parse(str)
-		LocalTime openLocalTime = LocalTime.parse(schedule.getOpenTime());
-		LocalTime closeLocalTime = LocalTime.parse(schedule.getCloseTime());
-
-		// 3. Combine them to create valid OffsetDateTime boundaries
-		OffsetDateTime openTime = requestedDate.atTime(openLocalTime).atOffset(offset);
-		OffsetDateTime closeTime = requestedDate.atTime(closeLocalTime).atOffset(offset);
-
-		// 4. Handle "Overnight" logic (if close is 02:00 AM, it's actually the next day)
-		if (closeTime.isBefore(openTime)) {
-			closeTime = closeTime.plusDays(1);
-		}
-
-		OffsetDateTime currentSlot = openTime;
-		while (currentSlot.isBefore(closeTime)) {
-			// Skip slots that are in the past
-			if (currentSlot.isAfter(now)) {
-				// Assume a standard 90-minute dining block for the NEW request
-				OffsetDateTime slotEnd = currentSlot.plusMinutes(90);
-
-				// Identify tables busy during THIS specific window
-				final OffsetDateTime finalCurrentSlot = currentSlot;
-				Set<UUID> busyIds = occupied.stream()
-						.filter(b -> {
-							OffsetDateTime bStart = b.getBookingDatetime();
-							OffsetDateTime bEnd = bStart.plusMinutes(b.getDuration());
-							// Overlap Algorithm: (StartA < EndB) AND (EndA > StartB)
-							return finalCurrentSlot.isBefore(bEnd) && slotEnd.isAfter(bStart);
-						})
-						.map(Booking::getTableId)
-						.collect(Collectors.toSet());
-
-				List<BookingSetupDto.BookingSetupResponse.TableInfoDto> freeTables = physical.stream()
-						.filter(pt -> !busyIds.contains(UUID.fromString(pt.getTableId())))
-						.map(this::mapTableToDto)
-						.toList();
-
-				if (!freeTables.isEmpty()) {
-					result.add(new BookingSetupDto.BookingSetupResponse.AvailableSlot(currentSlot, freeTables));
-				}
-			}
-			currentSlot = currentSlot.plusMinutes(slotInterval); // 60-minute interval
-		}
-		return result;
-	}
 
 	private List<BookingSetupDto.BookingSetupResponse.MenuItemDto> mapMenu(List<MenuItemDetailResponse> menuItems) {
 		if (menuItems == null) return Collections.emptyList();
@@ -763,5 +883,16 @@ public class BookingServiceImpl implements BookingService {
 
 	private boolean isActive(BookingStatus status) {
 		return status == BookingStatus.CREATED || status == BookingStatus.PAID || status == BookingStatus.ARRIVED;
+	}
+
+	/**
+	 * Rounds time forward to the next interval (e.g., 18:07 -> 18:30)
+	 * to align with the Figma time-picker grid.
+	 */
+	private OffsetDateTime roundToNextInterval(OffsetDateTime time, int interval) {
+		int minutes = time.getMinute();
+		int mod = minutes % interval;
+		int add = (mod == 0) ? 0 : (interval - mod);
+		return time.plusMinutes(add).withSecond(0).withNano(0);
 	}
 }

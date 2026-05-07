@@ -60,6 +60,21 @@ public class BookingController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
+	@PutMapping("/{bookingId}")
+	@Operation(summary = "Edit a booking", description = "Updates time, party size, or guest info. Handles re-locking tables in Redis.")
+	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> editBooking(
+			@PathVariable UUID bookingId,
+			@Valid @RequestBody BookingDto.BookingRequest request) {
+
+		validateUser();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		// The service will handle releasing the old table lock and acquiring the new one
+		BookingDto.BookingResponse data = bookingService.editBooking(bookingId, request, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(data));
+	}
+
 	@PostMapping("/{bookingId}/status")
 	@Operation(summary = "Update booking state", description = "Updates booking status to COMPLETED/ARRIVED when guest arrives.")
 	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> updateBooking(

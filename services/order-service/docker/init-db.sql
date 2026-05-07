@@ -45,6 +45,9 @@ CREATE TABLE orders
     table_id     UUID           NOT NULL, -- Logical reference to Table Service
     status       order_status   NOT NULL DEFAULT 'CREATED',
     total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
+    guest_name       VARCHAR(100),
+    guest_phone      VARCHAR(20),
+    special_request  TEXT,
     deleted      BOOLEAN        NOT NULL DEFAULT FALSE,
     deleted_at   TIMESTAMPTZ,
     created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,

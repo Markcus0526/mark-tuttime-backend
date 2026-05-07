@@ -19,6 +19,8 @@ CREATE TABLE bookings
     branch_id           UUID                NOT NULL,
     zone_id             UUID                NOT NULL,
     table_id            UUID                NOT NULL,
+    order_id            UUID,
+    payment_id          UUID,
     status              booking_status_enum NOT NULL DEFAULT 'CREATED',
     booking_datetime    TIMESTAMPTZ         NOT NULL, -- Use TZ for global accuracy
     reminder_send       BOOLEAN                      DEFAULT FALSE,
@@ -29,6 +31,9 @@ CREATE TABLE bookings
     grace_period_mins   INT                          DEFAULT 15,
     cancellation_reason VARCHAR(255),
     auto_canceled       BOOLEAN                      DEFAULT FALSE,
+    guest_name          VARCHAR(100),
+    guest_phone         VARCHAR(20),
+    special_request     TEXT,
     created_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP
 );

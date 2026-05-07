@@ -23,7 +23,7 @@ public interface PaymentService {
 	/**
 	 * Admin Panel: Executes a refund for a processed payment.
 	 */
-	void processAdministrativeRefund(UUID paymentId, BigDecimal amount, String reason);
+	boolean processAdministrativeRefund(UUID paymentId, BigDecimal amount, String reason);
 
 	void testManualPaymentSuccess(UUID bookingId, String stripePaymentIntentId);
 }

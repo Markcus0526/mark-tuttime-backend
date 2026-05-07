@@ -36,7 +36,7 @@ public class PaymentEventConsumer {
 
 			log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
 
-			bookingService.markAsPaid(event.bookingId(), event.userId(), event.externalPaymentId());
+			bookingService.markAsPaid(event.paymentId(), event.bookingId(), event.userId(), event.externalPaymentId());
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
 					TOPIC_PAYMENT_COMPLETED, e.getMessage());

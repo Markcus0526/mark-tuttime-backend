@@ -37,6 +37,12 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "table_id", nullable = false)
 	private UUID tableId;
 
+	@Column(name = "order_id")
+	private UUID orderId;
+
+	@Column(name = "payment_id")
+	private UUID paymentId;
+
 	@Enumerated(EnumType.STRING)
 	@Column(columnDefinition = "booking_status_enum", nullable = false)
 	@Builder.Default
@@ -73,6 +79,15 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "auto_canceled")
 	@Builder.Default
 	private Boolean autoCanceled = false;
+
+	@Column(name = "guest_name", nullable = false)
+	private String guestName;
+
+	@Column(name = "guest_phone", nullable = false)
+	private String guestPhone;
+
+	@Column(name = "special_request")
+	private String specialRequest;
 
 	@OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default

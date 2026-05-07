@@ -11,12 +11,13 @@ public class BookingSetupDto {
 
 	public record BookingSetupResponse(
 			UUID branchId,
-			List<BookingSetupResponse.AvailableSlot> slots,
-			List<BookingSetupResponse.MenuItemDto> availableMenu
+			List<BookingSetupResponse.AvailableSlot> slots
 	) {
 		public record AvailableSlot(
 				OffsetDateTime time,
-				List<BookingSetupResponse.TableInfoDto> tables
+				boolean available,
+				int tablesLeft,        // Provides "scarcity" UI cues (e.g., "Only 2 left!")
+				List<String> zones     // e.g., ["Indoor", "Terrace"] - so user knows where they might sit
 		) {
 		}
 

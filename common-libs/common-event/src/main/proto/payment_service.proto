@@ -11,9 +11,10 @@ service PaymentService {
 
   rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
 
+  rpc ProcessRefund(ProcessRefundRequest) returns (ProcessRefundResponse);
 }
 
-// Request from Booking to Payment
+// rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
 message PaymentSessionRequest {
   string booking_id = 1;
   string user_id = 2;
@@ -22,9 +23,22 @@ message PaymentSessionRequest {
   string currency = 5;
 }
 
-// Response from Payment back to Booking
+
 message PaymentSessionResponse {
   string stripe_session_id = 1;
   string checkout_url = 2;
   string status = 3;
+}
+
+// rpc ProcessRefund(ProcessRefundRequest) returns (ProcessRefundResponse);
+message ProcessRefundRequest {
+  string booking_id = 1;
+  string payment_id = 2;
+  string amount = 3;
+  string currency = 4;
+  string reason = 5;
+}
+
+message ProcessRefundResponse {
+  bool status = 1;          // "succeeded", "pending", or "canceled"
 }

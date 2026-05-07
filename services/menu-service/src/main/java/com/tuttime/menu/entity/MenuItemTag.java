@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MenuItemTag extends BaseTimeStampEntity {
+public class MenuItemTag {
 	@EmbeddedId
 	private MenuItemTagId id;
 

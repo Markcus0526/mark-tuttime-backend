@@ -17,11 +17,14 @@ public abstract class MenuCategoryMapper {
 	protected MediaRepository mediaRepository;
 
 	@Mapping(target = "categoryId", source = "id")
-	public abstract FullMenuDto.CategoryWithItemsResponse toCategoryWithItemsResponse(MenuCategory category);
-
-	@Mapping(target = "categoryId", source = "id")
 	@Mapping(target = "imageUrl", ignore = true)
+	@Mapping(target = "itemCount", ignore = true)
 	public abstract MenuCategoryDto.CategoryResponse toResponse(MenuCategory category);
+
+	@Mapping(target = "categoryId", source = "entity.id")
+	@Mapping(target = "imageUrl", ignore = true)
+	@Mapping(target = "itemCount", source = "count")
+	public abstract MenuCategoryDto.CategoryResponse toResponseWithCount(MenuCategory entity, int count);
 
 	@AfterMapping
 	protected void addImageUrl(MenuCategory category, @MappingTarget MenuCategoryDto.CategoryResponse.CategoryResponseBuilder builder) {

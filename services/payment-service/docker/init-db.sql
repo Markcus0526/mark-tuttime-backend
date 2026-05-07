@@ -21,7 +21,7 @@ CREATE TABLE payments
 
     -- YooKassa Identifiers
     yookassa_payment_id VARCHAR(255) UNIQUE,     -- 'id' from YooKassa response
-    idempotency_key     UUID           UNIQUE,     -- Crucial for YooKassa API retries
+    idempotency_key     UUID UNIQUE,             -- Crucial for YooKassa API retries
 
     -- Transaction Details
     amount              NUMERIC(10, 2) NOT NULL,
@@ -54,18 +54,34 @@ CREATE TABLE refunds
 -- 3. Webhook Idempotency & Audit Log
 CREATE TABLE payment_audit_logs
 (
-    id                  BIGSERIAL PRIMARY KEY,
-    payment_id          UUID         REFERENCES payments (id) ON DELETE SET NULL,
-    event_id            VARCHAR(255) UNIQUE,   -- Maps to YooKassa event notification ID
-    event_type          VARCHAR(100) NOT NULL, -- payment.succeeded, refund.succeeded, etc.
-    event_data          JSONB,                 -- Raw YooKassa JSON payload
-    created_at          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    id         BIGSERIAL PRIMARY KEY,
+    payment_id UUID         REFERENCES payments (id) ON DELETE SET NULL,
+    event_id   VARCHAR(255) UNIQUE,   -- Maps to YooKassa event notification ID
+    event_type VARCHAR(100) NOT NULL, -- payment.succeeded, refund.succeeded, etc.
+    event_data JSONB,                 -- Raw YooKassa JSON payload
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_payment_methods
+(
+    id                   UUID PRIMARY KEY         DEFAULT gen_random_uuid(),
+    user_id              UUID         NOT NULL,                  -- Link to the User Profile
+    payment_method_token VARCHAR(255) NOT NULL,                  -- The 'payment_method.id' from YooKassa (e.g., pm-27...)
+    card_type            VARCHAR(50),                            -- e.g., 'Visa', 'MasterCard', 'MIR'
+    last4                VARCHAR(4),                             -- Last 4 digits to show on Figma "Settings" page
+    expiry_month         VARCHAR(2),
+    expiry_year          VARCHAR(4),
+    default_method       BOOLEAN                  DEFAULT false, -- Primary card for "Select Payment" page
+    active               BOOLEAN                  DEFAULT true,  -- For soft-deletion
+    created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indices for YooKassa
 CREATE INDEX idx_payments_booking_id ON payments (booking_id);
 CREATE INDEX idx_payments_yoo_id ON payments (yookassa_payment_id);
 CREATE INDEX idx_audit_event_id ON payment_audit_logs (event_id);
+CREATE INDEX idx_payment_methods_user_id ON user_payment_methods (user_id);
 
 -- Automatic Timestamp Trigger
 CREATE
@@ -86,4 +102,8 @@ CREATE TRIGGER trg_payments_updated_at
 CREATE TRIGGER trg_refunds_updated_at
     BEFORE UPDATE
     ON refunds
+    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+CREATE TRIGGER trg_user_payment_methods_updated_at
+    BEFORE UPDATE
+    ON user_payment_methods
     FOR EACH ROW EXECUTE FUNCTION update_timestamp();
