@@ -39,12 +39,13 @@ spring:
     properties:
       hibernate:
         default_schema: restaurant_service
-        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           batch_size: 50
           time_zone: UTC
         order_inserts: true
         order_updates: true
+    open-in-view: false
 
   data:
     web:

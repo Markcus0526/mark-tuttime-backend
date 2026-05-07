@@ -45,7 +45,7 @@ services:
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
       - "${GRPC_PORT}:${GRPC_PORT}"
-      - "0.0.0.0:5004:5004" # Added debug port mapping
+      - "5004:5004" # Added debug port mapping
     volumes:
       - ./uploads:/app/uploads:rw # Persistent local storage for booking images
     deploy:
