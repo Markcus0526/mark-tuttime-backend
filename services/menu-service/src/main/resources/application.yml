@@ -45,6 +45,7 @@ spring:
           time_zone: UTC
         order_inserts: true
         order_updates: true
+    open-in-view: false
 
   data:
     web:
@@ -103,6 +104,9 @@ spring:
           - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES}
       config:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED}
+
+  aop:
+    proxy-target-class: false
 
 server:
   port: ${SERVER_PORT}
@@ -173,7 +177,7 @@ management:
         enabled: true
       group:
         readiness:
-          include: db,diskSpace,ping
+          include: db,redis,diskSpace,ping
         liveness:
           include: diskSpace,ping
   metrics:
@@ -186,7 +190,7 @@ management:
     grpc:
       enabled: false
     redis:
-      enabled: false
+      enabled: true
   tracing:
     sampling:
       probability: 1.0

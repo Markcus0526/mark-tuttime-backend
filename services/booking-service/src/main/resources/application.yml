@@ -45,6 +45,7 @@ spring:
           time_zone: UTC
         order_inserts: true
         order_updates: true
+    open-in-view: false
 
   data:
     web:
@@ -156,7 +157,7 @@ management:
         enabled: true
       group:
         readiness:
-          include: db,diskSpace,ping
+          include: db,redis,diskSpace,ping
         liveness:
           include: diskSpace,ping
   metrics:

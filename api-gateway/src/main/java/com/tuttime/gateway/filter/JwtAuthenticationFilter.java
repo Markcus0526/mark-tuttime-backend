@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * JWT Authentication Filter: validates JWT tokens, checks whitelist/blacklist, validates ISS/AUD, adds user info to headers.
+ * JWT Authentication Filter: validates JWT tokens, checks whitelist/blacklist,
+ * validates ISS/AUD, adds user info to headers.
+ * <p>
+ * Supports method‑aware public endpoint rules (e.g., GET public, POST protected).
  */
 @Slf4j
 @Component
@@ -41,29 +44,64 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 	}
 
 	/**
-	 * Default public endpoints that don't require JWT authentication
+	 * Rule for public endpoints: path prefix + allowed HTTP methods.
 	 */
-	private static final List<String> DEFAULT_PUBLIC_ENDPOINTS = Arrays.asList(
-			"/health",
-			"/api/v1/health",
-			"/api/v1/auth/register",
-			"/api/v1/auth/register/send-sms",
-			"/api/v1/auth/register/verify-sms",
-			"/api/v1/auth/login",
-			"/api/v1/auth/refresh",
-			"/api/v1/auth/check-username",
-			"/api/v1/auth/check-email",
-			"/api/v1/password/forgot",
-			"/api/v1/password/verify-sms",
-			"/api/v1/password/reset",
-			"/api/v1/users/",
-			"/api/v1/mining/status/public",
-			"/actuator"
-	);
+	private record PublicEndpointRule(String pathPrefix, List<String> allowedMethods) {
+		boolean matches(String path, String method) {
+			return path.startsWith(pathPrefix) && allowedMethods.contains(method);
+		}
+	}
 
 	/**
-	 * Applies JWT authentication: checks public endpoints, extracts token, validates, adds user info to headers.
+	 * Public endpoint rules: path prefix and which HTTP methods are allowed without JWT.
 	 */
+	private static final List<PublicEndpointRule> PUBLIC_ENDPOINT_RULES = Arrays.asList(
+			// Health & monitoring (all methods)
+			new PublicEndpointRule("/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+			new PublicEndpointRule("/api/v1/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+			new PublicEndpointRule("/actuator", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+
+			// medias(user, restaurant, menu)
+			new PublicEndpointRule("/user-medias", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+			new PublicEndpointRule("/restaurant-medias", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+			new PublicEndpointRule("/menu-medias", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+
+			// user-service
+			new PublicEndpointRule("/api/v1/auth/device-token", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/login", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/logout", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/login", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/oauth-login", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/otp/request", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/otp/verify", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/password-reset/confirm", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/password-reset/request", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/refresh-token", List.of("POST")),
+			new PublicEndpointRule("/api/v1/auth/register", List.of("POST")),
+
+			// restaurant-service
+			new PublicEndpointRule("/api/v1/restaurants", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurants/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-branches", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-branches/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-branches/near", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-branches/restaurants/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-branches/tags", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-zones/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-zones/branches/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-tables/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-tables/zones/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-schedules/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/restaurant-medias/", List.of("GET")),
+
+			// menu-service
+			new PublicEndpointRule("/api/v1/menus/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/menus/branches/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/menu-items/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/menu-items/categories/", List.of("GET")),
+			new PublicEndpointRule("/api/v1/menu-items/tags", List.of("GET"))
+	);
+
 	@Override
 	public GatewayFilter apply(Config config) {
 		return (exchange, chain) -> {
@@ -71,22 +109,17 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 			String path = request.getURI().getPath();
 			String method = request.getMethod().name();
 
-			// Inside your custom Gateway Filter
-			if (exchange.getRequest().getURI().getPath().startsWith("/media/")) {
-				return chain.filter(exchange);
-			}
-
 			log.debug("JWT Filter: Checking path: {}, method: {}", path, method);
 
 			// Skip authentication for OPTIONS requests (CORS preflight)
-			if ("OPTIONS".equals(method)) {
-				log.debug("JWT Filter: OPTIONS request detected (CORS preflight), skipping authentication for: {}", path);
+			if ("OPTIONS".equalsIgnoreCase(method)) {
+				log.debug("JWT Filter: OPTIONS request detected (CORS preflight), skipping authentication");
 				return chain.filter(exchange);
 			}
 
 			List<String> skipPaths = config.getSkipPathsList();
-			if (isPublicEndpoint(path, skipPaths)) {
-				log.debug("JWT Filter: Public endpoint detected, skipping authentication for: {}", path);
+			if (isPublicEndpoint(path, method, skipPaths)) {
+				log.debug("JWT Filter: Public endpoint (method {}) detected, skipping authentication for: {}", method, path);
 				return chain.filter(exchange);
 			}
 
@@ -119,58 +152,46 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 							ServerHttpRequest modifiedRequest = request.mutate()
 									.header("X-User-Id", userId.toString())
 									.header("X-User-Email", email)
+									.header("X-User-Role", role != null ? role : "")
 									.build();
 
 							log.debug("JWT Filter: Token validated successfully for user: {} ({})", userId, email);
 							return chain.filter(exchange.mutate().request(modifiedRequest).build());
 						} catch (Exception e) {
-							log.error("JWT Filter: Error processing validated token: {}", e.getMessage());
+							log.error("JWT Filter: Error processing validated token: {}", e.getMessage(), e);
 							return onError(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
 						}
 					})
 					.onErrorResume(e -> {
-						// Only catch token validation errors, not routing errors
-						String errorMessage = e.getMessage();
-						if (errorMessage != null && (
-								errorMessage.contains("No servers available") ||
-										errorMessage.contains("METHOD_NOT_ALLOWED") ||
-										errorMessage.contains("Service") ||
-										errorMessage.contains("routing")
-						)) {
-							log.warn("JWT Filter: Routing error detected (not a token validation error), propagating: {}", errorMessage);
-							return Mono.error(e);
-						}
-
-						log.error("JWT Filter: Token validation error: {}", errorMessage);
-						return onError(exchange, "Invalid or expired token", HttpStatus.UNAUTHORIZED);
+						log.error("JWT Filter: Unexpected error during token validation: {}", e.getMessage(), e);
+						return onError(exchange, "Authentication failed", HttpStatus.INTERNAL_SERVER_ERROR);
 					});
 		};
 	}
 
 	/**
-	 * Checks if the given path is a public endpoint that doesn't require authentication.
+	 * Checks if the given path and method should skip JWT authentication.
 	 */
-	private boolean isPublicEndpoint(String path, List<String> skipPaths) {
-		// Check route-specific skip paths first
+	private boolean isPublicEndpoint(String path, String method, List<String> skipPaths) {
+		// Check route-specific skip paths (from filter config)
 		if (skipPaths != null && !skipPaths.isEmpty()) {
 			for (String skipPath : skipPaths) {
-				// Support wildcard patterns like /api/v1/users/*/image
-				String pattern = skipPath.replace("*", ".*");
-				if (path.matches("^" + pattern + ".*") || path.startsWith(skipPath.replace("*", ""))) {
+				// Support wildcard patterns (e.g., /media/**)
+				if (path.startsWith(skipPath.replace("*", ""))) {
 					return true;
 				}
 			}
 		}
 
-		// Check default public endpoints
-		for (String publicPath : DEFAULT_PUBLIC_ENDPOINTS) {
-			if (path.startsWith(publicPath)) {
+		// Check default public endpoint rules (path prefix + allowed methods)
+		for (PublicEndpointRule rule : PUBLIC_ENDPOINT_RULES) {
+			if (rule.matches(path, method)) {
 				return true;
 			}
 		}
 
-		// Check for user image endpoints (pattern: /api/v1/users/{userId}/image)
-		if (path.matches("^/api/v1/users/\\d+/image.*")) {
+		// Additional dynamic rules
+		if (method.equals("GET") && path.matches("^/api/v1/users/[^/]+/image.*")) {
 			return true;
 		}
 
@@ -178,7 +199,8 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 	}
 
 	/**
-	 * Validate token: extract JTI, check whitelist/blacklist, validate ISS/AUD, validate signature/expiration.
+	 * Validate token: extract JTI, check whitelist/blacklist, validate ISS/AUD, signature, expiration.
+	 * Whitelist and blacklist both fail‑closed for maximum security.
 	 */
 	private Mono<Boolean> validateTokenReactive(String token) {
 		try {
@@ -186,56 +208,49 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
 			String jti = jwtTokenUtil.getJtiFromToken(token);
 			if (jti == null) {
-				log.warn("JWT Filter: Token missing JTI claim - token may be invalid or malformed");
+				log.warn("JWT Filter: Token missing JTI claim - token may be invalid");
 				return Mono.just(false);
 			}
 			log.debug("JWT Filter: Extracted JTI: {}", jti);
 
-			// Validate JWT signature and expiration first (local, fast) before Redis checks
-			// This fails fast for invalid/expired tokens without making Redis calls
+			// Local validation (fast, no Redis)
 			boolean issuerValid = jwtTokenUtil.validateIssuer(token);
 			if (!issuerValid) {
-				log.warn("JWT Filter: Token issuer validation failed - check issuer configuration");
+				log.warn("JWT Filter: Token issuer validation failed");
 				return Mono.just(false);
 			}
 
 			boolean audienceValid = jwtTokenUtil.validateAudience(token);
 			if (!audienceValid) {
-				log.warn("JWT Filter: Token audience validation failed - check audience configuration");
+				log.warn("JWT Filter: Token audience validation failed");
 				return Mono.just(false);
 			}
 
 			boolean tokenValid = jwtTokenUtil.validateToken(token);
 			if (!tokenValid) {
-				log.warn("JWT Filter: Token signature or expiration validation failed - token may be expired or signature invalid");
+				log.warn("JWT Filter: Token signature or expiration validation failed");
 				return Mono.just(false);
 			}
-			log.debug("JWT Filter: Token signature and expiration validation passed");
+			log.debug("JWT Filter: Local validation passed");
 
-			// Run Redis checks in parallel for better performance
-			// Fix 3: Increased whitelist timeout from 500ms to 2000ms and changed to fail-open.
-			// The previous 500ms timeout with fail-closed caused false 401 rejections during Redis
-			// latency spikes, triggering unnecessary token refresh attempts that compounded
-			// the concurrent refresh race condition (Fix 1).
-			// Whitelist check: fail-open (true) on timeout/error to prevent false rejections
+			// Parallel Redis checks: both fail‑closed (return false / blacklisted on error)
 			Mono<Boolean> whitelistCheck = tokenValidationService.isTokenWhitelisted(jti)
 					.timeout(Duration.ofMillis(2000))
-					.doOnError(e -> log.warn("JWT Filter: Whitelist check failed (fail-open, allowing request): jti={}, error={}", jti, e.getMessage()))
-					.onErrorReturn(true);
+					.doOnError(e -> log.warn("Whitelist check error (fail‑closed): jti={}, error={}", jti, e.getMessage()))
+					.onErrorReturn(false);   // Fail‑closed: if error, token considered NOT whitelisted
 
-			// Blacklist check: fail-closed (false) on timeout/error for security
 			Mono<Boolean> blacklistCheck = tokenValidationService.isTokenBlacklisted(token)
 					.timeout(Duration.ofMillis(2000))
-					.onErrorReturn(false);
+					.doOnError(e -> log.warn("Blacklist check error (fail‑closed): jti={}, assuming blacklisted", jti))
+					.onErrorReturn(true);    // Fail‑closed: if error, token considered blacklisted
 
-			// Combine both checks in parallel
 			return Mono.zip(whitelistCheck, blacklistCheck)
 					.flatMap(tuple -> {
 						Boolean isWhitelisted = tuple.getT1();
 						Boolean isBlacklisted = tuple.getT2();
 
 						if (!isWhitelisted) {
-							log.warn("JWT Filter: Token is not whitelisted: jti={}. Token may not have been properly stored in Redis or Redis may be unavailable.", jti);
+							log.warn("JWT Filter: Token not whitelisted: jti={}", jti);
 							return Mono.just(false);
 						}
 						log.debug("JWT Filter: Token is whitelisted: jti={}", jti);
@@ -244,13 +259,13 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 							log.warn("JWT Filter: Token is blacklisted: jti={}", jti);
 							return Mono.just(false);
 						}
-						log.debug("JWT Filter: Token is not blacklisted: jti={}", jti);
+						log.debug("JWT Filter: Token not blacklisted: jti={}", jti);
 
-						log.info("JWT Filter: Token validation successful for jti={}", jti);
+						log.debug("JWT Filter: Token validation successful for jti={}", jti);
 						return Mono.just(true);
 					})
 					.onErrorResume(e -> {
-						log.error("JWT Filter: Token validation error: {}", e.getMessage(), e);
+						log.error("JWT Filter: Error combining whitelist/blacklist: {}", e.getMessage(), e);
 						return Mono.just(false);
 					});
 		} catch (Exception e) {
@@ -273,6 +288,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
 	/**
 	 * Configuration class for JWT Authentication Filter.
+	 * Supports comma‑separated skipPaths (e.g., "/media/**,/public/**").
 	 */
 	public static class Config {
 		private String skipPaths;
@@ -285,9 +301,6 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 			this.skipPaths = skipPaths;
 		}
 
-		/**
-		 * Gets skip paths as a list.
-		 */
 		public List<String> getSkipPathsList() {
 			if (skipPaths == null || skipPaths.trim().isEmpty()) {
 				return List.of();
@@ -299,4 +312,3 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 		}
 	}
 }
-
