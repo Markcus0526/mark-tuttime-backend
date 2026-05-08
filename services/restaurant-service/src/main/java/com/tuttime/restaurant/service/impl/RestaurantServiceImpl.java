@@ -66,9 +66,18 @@ public class RestaurantServiceImpl implements RestaurantService {
 			throw new ConflictException("Restaurant is been created by this user.");
 		}
 
+		// Unique name check
+		if (restaurantRepository.existsByNameIgnoreCase(request.name())) {
+			throw new ConflictException("Restaurant with name '" + request.name() + "' already exists.");
+		}
+
+		// Unique phone check (if phone is provided)
+		if (request.phone() != null && restaurantRepository.existsByPhone(request.phone())) {
+			throw new ConflictException("Restaurant with phone number '" + request.phone() + "' already exists.");
+		}
+
 		// Map request DTO to entity
 		Restaurant restaurant = restaurantMapper.toEntity(request);
-
 		Restaurant savedRestaurant = restaurantRepository.save(restaurant);
 
 		// Create Staff table as owner
@@ -90,7 +99,6 @@ public class RestaurantServiceImpl implements RestaurantService {
 			defaultBranch.setAddress(request.address());
 			defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
 			defaultBranch.setPhone(request.phone());
-			defaultBranch.setRating(request.rating());
 			defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
 			branchRepository.save(defaultBranch);
 		}
@@ -108,7 +116,20 @@ public class RestaurantServiceImpl implements RestaurantService {
 		// 1. Unified Permission Check
 		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
-		// 2. Map fields and handle PostGIS Point
+		// 2. Validate uniqueness of name (if changing)
+		if (request.name() != null && !request.name().equals(restaurant.getName())) {
+			if (restaurantRepository.existsByNameIgnoreCaseAndIdNot(request.name(), restaurantId)) {
+				throw new ConflictException("Restaurant with name '" + request.name() + "' already exists.");
+			}
+		}
+
+		// 3. Validate uniqueness of phone (if changing and phone is provided)
+		if (request.phone() != null && !request.phone().equals(restaurant.getPhone())) {
+			if (restaurantRepository.existsByPhoneAndIdNot(request.phone(), restaurantId)) {
+				throw new ConflictException("Restaurant with phone number '" + request.phone() + "' already exists.");
+			}
+		}
+
 		restaurantMapper.toEntityFromUpdateRequest(request, restaurant);
 
 		// Hibernate dirty checking updates the DB automatically

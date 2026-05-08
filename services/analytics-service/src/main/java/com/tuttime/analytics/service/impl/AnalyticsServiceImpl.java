@@ -40,6 +40,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	private final ObjectMapper objectMapper;
 
 	@Override
+	@Transactional(readOnly = true)
 	public AdminDto.GlobalMetricsResponse getPlatformSummary() {
 		BigDecimal gmv = financialLedgerRepository.sumTotalGmv();
 		BigDecimal commission = financialLedgerRepository.sumTotalCommission();
@@ -54,6 +55,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public AdminDto.UserReliabilityResponse getUserRiskProfile(UUID userId) {
 		return reliabilityRepository.findById(userId)
 				.map(adminMapper::toResponse)
@@ -61,6 +63,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<RestaurantDto.YieldHeatmapResponse> getWeeklyHeatmap(UUID branchId) {
 		// Queries the branch_yield_managements table for the next 7 days
 		List<BranchYieldManagement> entities = yieldRepository.findAllByIdBranchIdOrderByIdTimeSlotAsc(branchId);
@@ -69,6 +72,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public RestaurantDto.BranchPerformanceResponse getBranchStats(UUID branchId) {
 		BranchPerformanceStat entity = branchPerformanceStatRepository.findById(branchId)
 				.orElseGet(() -> {
@@ -85,6 +89,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public RestaurantDto.DailyLedgerResponse getDailyFinancials(UUID branchId, LocalDate date) {
 		FinancialLedger entity = financialLedgerRepository.findByBranchIdAndReportDate(branchId, date)
 				.orElseThrow(() -> new InvalidRequestException("Ledger not found for this date"));
@@ -92,8 +97,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 		return restaurantMapper.toLedgerResponse(entity);
 	}
 
-
 	@Override
+	@Transactional(readOnly = true)
 	public UserReliabilityIndex getUserReliability(UUID userId) {
 		return reliabilityRepository.findById(userId).orElse(null);
 	}

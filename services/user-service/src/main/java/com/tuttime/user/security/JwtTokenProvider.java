@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -24,6 +25,12 @@ public class JwtTokenProvider {
 
 	private final long accessTokenValiditySeconds;
 	private final long refreshTokenValiditySeconds;
+
+	@Value("${spring.security.jwt.issuer}")
+	private String issuer;
+
+	@Value("${spring.security.jwt.audience}")
+	private String audience;
 
 	public JwtTokenProvider(
 			@Value("${spring.security.jwt.access-token.secret}") String accessSecret,
@@ -39,16 +46,14 @@ public class JwtTokenProvider {
 
 	public String generateAccessToken(User user) {
 		Instant now = Instant.now();
-		String id = generateJti();
-
-		String[] rolesArray = user.getRoles().stream()
-				.map(role -> role.getRole().getName())
-				.toArray(String[]::new);
-		Map<String, Object> claims = generateTokenClaims(user.getId(), user.getFullName(), rolesArray, id);
+		String jti = generateJti();
+		Map<String, Object> claims = generateTokenClaims(user, jti);
 
 		return Jwts.builder()
-				.id(id)
+				.id(jti)
 				.claims(claims)
+				.issuer(issuer)
+				.audience().add(audience).and()
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(now.plusSeconds(accessTokenValiditySeconds)))
 				.signWith(accessTokenKey)
@@ -57,19 +62,17 @@ public class JwtTokenProvider {
 
 	public String generateRefreshToken(User user) {
 		Instant now = Instant.now();
-		String id = generateJti();
-
-		String[] rolesArray = user.getRoles().stream()
-				.map(role -> role.getRole().getName())
-				.toArray(String[]::new);
-		Map<String, Object> claims = generateTokenClaims(user.getId(), user.getFullName(), rolesArray, id);
+		String jti = generateJti();
+		Map<String, Object> claims = generateTokenClaims(user, jti);
 
 		return Jwts.builder()
-				.id(id)
+				.id(jti)
 				.claims(claims)
+				.issuer(issuer)
+				.audience().add(audience).and()
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(now.plusSeconds(refreshTokenValiditySeconds)))
-				.signWith(refreshTokenKey)
+				.signWith(accessTokenKey)
 				.compact();
 	}
 
@@ -127,13 +130,20 @@ public class JwtTokenProvider {
 	/**
 	 * Generates JWT token with pre-generated JTI.
 	 */
-	public Map<String, Object> generateTokenClaims(UUID userId, String username, String[] roles, String jti) {
+	public Map<String, Object> generateTokenClaims(User user, String jti) {
 		Map<String, Object> claims = new HashMap<>();
-		claims.put("userId", userId);
-		claims.put("username", username);
-		claims.put("roles", roles);
+		claims.put("sub", user.getId().toString());          // standard subject
+		claims.put("userId", user.getId().toString());       // optional
+		claims.put("email", user.getEmail());                // add email claim
+		claims.put("username", user.getFullName());          // optional
+		// Store roles as a comma‑separated string to match gateway's expectation
+		String rolesStr = user.getRoles().stream()
+				.map(role -> role.getRole().getName())
+				.collect(Collectors.joining(","));
+		claims.put("roles", rolesStr);                       // now a String
 		claims.put("jti", jti);
-
+		claims.put("iss", "tuttime-backend");                // issuer
+		claims.put("aud", "tuttime-frontend");               // audience
 		return claims;
 	}
 

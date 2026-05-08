@@ -33,23 +33,17 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
 
 	boolean existsByEmailAndDeletedFalse(String email);
 
-	@Query(value = "SELECT DISTINCT u FROM User u " +
-			"LEFT JOIN FETCH u.roles ur " + // Changed from userRoles to roles
-			"LEFT JOIN FETCH ur.role r " +
-			"WHERE (cast(:status as string) IS NULL OR u.status = :status) " +
-			"AND (cast(:roleName as string) IS NULL OR r.name = :roleName)",
-			countQuery = "SELECT COUNT(DISTINCT u) FROM User u " +
-					"LEFT JOIN u.roles ur " +
-					"LEFT JOIN ur.role r " +
-					"WHERE (cast(:status as string) IS NULL OR u.status = :status) " +
-					"AND (cast(:roleName as string) IS NULL OR r.name = :roleName)")
-	Page<User> findAllByOptionalStatusAndRole(
-			@Param("status") UserStatus status,
-			@Param("roleName") String roleName,
-			Pageable pageable
-	);
+	@Query("SELECT u FROM User u " +
+			"LEFT JOIN FETCH u.roles r " +
+			"LEFT JOIN FETCH r.role " +
+			"WHERE u.id = :id AND u.deleted = false")
+	Optional<User> findByIdWithRoles(UUID id);
 
-	List<User> findAllByIdInAndDeletedFalse(Collection<UUID> userIds);
+	@Query("SELECT u FROM User u " +
+			"LEFT JOIN FETCH u.roles r " +
+			"LEFT JOIN FETCH r.role " +
+			"WHERE u.id IN :ids AND u.deleted = false")
+	List<User> findAllByIdInWithRoles(List<UUID> ids);
 }
 
 

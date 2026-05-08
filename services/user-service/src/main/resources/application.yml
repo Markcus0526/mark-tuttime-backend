@@ -39,7 +39,7 @@ spring:
     properties:
       hibernate:
         default_schema: user_service
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           batch_size: 50
           time_zone: UTC
@@ -115,6 +115,11 @@ spring:
           - ${SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES}
       config:
         enabled: ${SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED}
+    loadbalancer:
+      enabled: false
+
+  aop:
+    proxy-target-class: false
 
 server:
   port: ${SERVER_PORT}

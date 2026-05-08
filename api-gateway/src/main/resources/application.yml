@@ -39,7 +39,7 @@ spring:
         max-header-size: 16KB
         max-keep-alive-time: ${GATEWAY_HTTP_KEEP_ALIVE:3600s}
         connect-timeout: ${GATEWAY_HTTP_CONNECT_TIMEOUT:60000}
-        response-timeout: ${GATEWAY_HTTP_RESPONSE_TIMEOUT:300s}
+        response-timeout: ${GATEWAY_HTTP_RESPONSE_TIMEOUT:30s}
         pool:
           max-connections: ${GATEWAY_POOL_MAX_CONNECTIONS:5000}
 
@@ -53,6 +53,15 @@ spring:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTIONS
           filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
@@ -67,36 +76,25 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
-        # User Service - App Version Routes
-        - id: user-service-app-version
+        - id: user-service-media-direct
           order: 13
           uri: http://${USER_SERVICE}
           predicates:
-            - Path=/api/v1/app/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
-
-        - id: user-service-media-files
-          order: 14
-          uri: http://${USER_SERVICE}
-          predicates:
             - Path=/user-medias/**
-          filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
 
         ################# Restaurant Service Routes #######################
         - id: restaurant-service-restaurant
@@ -107,6 +105,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -120,6 +127,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -133,6 +149,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -146,6 +171,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -159,6 +193,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -172,22 +215,25 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        - id: restaurant-service-media-files
+        - id: restaurant-service-media-direct
           order: 27
           uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/restaurant-medias/**
-          filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
 
         ################# Menu Service Routes #######################
 
@@ -199,6 +245,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -212,6 +267,24 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -225,6 +298,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -238,6 +320,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -251,6 +342,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -264,22 +364,25 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
-        - id: menu-service-media-files
+        - id: menu-service-media-direct
           order: 37
           uri: http://${MENU_SERVICE}
           predicates:
             - Path=/menu-medias/**
-          filters:
-            - name: JwtAuthentication
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
 
         ################# Booking Service Routes #######################
 
@@ -291,6 +394,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: bookingServiceCircuitBreaker
@@ -306,6 +418,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: orderServiceCircuitBreaker
@@ -321,6 +442,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: paymentServiceCircuitBreaker
@@ -336,6 +466,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: posServiceCircuitBreaker
@@ -351,6 +490,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: reviewServiceCircuitBreaker
@@ -366,6 +514,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: analyticsServiceCircuitBreaker
@@ -381,6 +538,15 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+                methods: GET,POST
+                exceptions:
+                  - java.net.ConnectException
+                  - java.net.SocketTimeoutException
+                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: notificationServiceCircuitBreaker
@@ -463,6 +629,9 @@ spring:
           filters:
             - RewritePath=/notification-docs/(?<segment>.*), /${segment}
 
+    loadbalancer:
+      enabled: false
+
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
     consumer:
@@ -480,6 +649,9 @@ spring:
   threads:
     virtual:
       enabled: true
+
+  aop:
+    proxy-target-class: false
 
 server:
   port: ${SERVER_PORT}
@@ -522,25 +694,82 @@ grpc:
 
 resilience4j:
   circuitbreaker:
-    instances:
-      grpc:
+    configs:
+      default:
         registerHealthIndicator: true
-        slidingWindowSize: 20
+        slidingWindowSize: 30
         minimumNumberOfCalls: 5
-        permittedNumberOfCallsInHalfOpenState: 3
+        permittedNumberOfCallsInHalfOpenState: 5
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 30s
-        failureRateThreshold: 50
+        waitDurationInOpenState: 60s
+        failureRateThreshold: 80
+        slowCallRateThreshold: 100
+        slowCallDurationThreshold: 10s
         recordExceptions:
-          - io.grpc.StatusRuntimeException
+          # - org.springframework.web.server.ResponseStatusException
           - java.util.concurrent.TimeoutException
           - java.io.IOException
           - java.net.ConnectException
+    instances:
+      grpc:
+        baseConfig: default
+      userServiceCircuitBreaker:
+        baseConfig: default
+      restaurantServiceCircuitBreaker:
+        baseConfig: default
+      menuServiceCircuitBreaker:
+        baseConfig: default
+      bookingServiceCircuitBreaker:
+        baseConfig: default
+      orderServiceCircuitBreaker:
+        baseConfig: default
+      paymentServiceCircuitBreaker:
+        baseConfig: default
+      posServiceCircuitBreaker:
+        baseConfig: default
+      reviewServiceCircuitBreaker:
+        baseConfig: default
+      analyticsServiceCircuitBreaker:
+        baseConfig: default
+      notificationServiceCircuitBreaker:
+        baseConfig: default
+
   timelimiter:
     instances:
       grpc:
-        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s} # Ensure this is > GRPC_CLIENT_DEADLINE_SECONDS!
+        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s}
         cancelRunningFuture: true
+      # Add these for HTTP circuit breakers
+      userServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      restaurantServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      menuServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      bookingServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      orderServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      paymentServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      posServiceCircuitBreaker:
+        timeoutDuration: 60s
+      reviewServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      analyticsServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+      notificationServiceCircuitBreaker:
+        timeoutDuration: 60s
+        cancelRunningFuture: true
+
   retry:
     instances:
       grpc:
@@ -570,6 +799,7 @@ logging:
     root: ${LOG_LEVEL:INFO}
     com.tuttime: DEBUG
     org.springframework.cloud.gateway: INFO
+    io.github.resilience4j.circuitbreaker: DEBUG
 
 graylog:
   host: ${GRAYLOG_HOST}

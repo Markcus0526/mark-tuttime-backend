@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.ScheduleDto;
@@ -24,6 +25,8 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+
+import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
 
 @Service
 @AllArgsConstructor
@@ -51,12 +54,21 @@ public class BranchServiceImpl implements BranchService {
 
 		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
-		Branch entity = branchMapper.toEntity(request);
-		entity.setId(UUID.randomUUID());
-		entity.setRestaurant(restaurant);
-		entity = branchRepository.save(entity);
+		// Check unique branch name within the same restaurant
+		if (branchRepository.existsByRestaurantIdAndNameIgnoreCase(restaurant.getId(), request.name())) {
+			throw new ConflictException("Branch name '" + request.name() + "' already exists for this restaurant.");
+		}
 
-		return branchMapper.toResponse(entity);
+		// Check unique phone within the same restaurant (if phone provided)
+		if (request.phone() != null && branchRepository.existsByRestaurantIdAndPhone(restaurant.getId(), request.phone())) {
+			throw new ConflictException("Phone number '" + request.phone() + "' already used by another branch of this restaurant.");
+		}
+
+		Branch branch = branchMapper.toEntity(request);
+		branch.setRestaurant(restaurant);
+		Branch savedBranch = branchRepository.save(branch);
+
+		return branchMapper.toResponse(savedBranch);
 	}
 
 	@Override
@@ -103,7 +115,26 @@ public class BranchServiceImpl implements BranchService {
 		// 1. Unified Permission Check
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
 
-		// 2. Map updates
+		// Unique name check (if changed)
+		if (request.name() != null && !request.name().equals(branch.getName())) {
+			if (branchRepository.existsByRestaurantIdAndNameIgnoreCaseAndIdNot(branch.getRestaurant().getId(), request.name(), branchId)) {
+				throw new ConflictException("Branch name '" + request.name() + "' already exists for this restaurant.");
+			}
+		}
+
+		// Unique phone check (if changed and phone provided)
+		if (request.phone() != null && !request.phone().equals(branch.getPhone())) {
+			if (branchRepository.existsByRestaurantIdAndPhoneAndIdNot(branch.getRestaurant().getId(), request.phone(), branchId)) {
+				throw new ConflictException("Phone number '" + request.phone() + "' already used by another branch.");
+			}
+		}
+
+		// Price range validation
+		if (request.minPrice() != null && request.maxPrice() != null
+				&& request.minPrice().compareTo(request.maxPrice()) > 0) {
+			throw new InvalidRequestException("minPrice must be <= maxPrice");
+		}
+
 		branchMapper.updateEntityFromRequest(request, branch);
 
 		// No need for .save(branch) - Hibernate dirty checking handles it

@@ -98,4 +98,15 @@ public interface BranchRepository extends JpaRepository<Branch, UUID>, JpaSpecif
 	@Query("SELECT DISTINCT b FROM Branch b LEFT JOIN FETCH b.branchTags bt LEFT JOIN FETCH bt.tag WHERE b.id IN :ids")
 	List<Branch> findAllByIdWithTags(@Param("ids") List<UUID> ids);
 
+	// Check existing branch name under the same restaurant (excluding current branch)
+	boolean existsByRestaurantIdAndNameIgnoreCaseAndIdNot(UUID restaurantId, String name, UUID excludeId);
+
+	// Check existing branch phone under the same restaurant (excluding current branch)
+	boolean existsByRestaurantIdAndPhoneAndIdNot(UUID restaurantId, String phone, UUID excludeId);
+
+	// For creation (no exclude)
+	boolean existsByRestaurantIdAndNameIgnoreCase(UUID restaurantId, String name);
+
+	boolean existsByRestaurantIdAndPhone(UUID restaurantId, String phone);
+
 }
