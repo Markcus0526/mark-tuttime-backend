@@ -58,7 +58,7 @@ public class TableServiceImpl implements TableService {
 		// Optional: enforce unique table number within zone
 		boolean exists = tableRepository.existsByZoneIdAndLabelAndDeletedFalse(zone.getId(), request.label());
 		if (exists) {
-			throw new ConflictException("Table number already exists in this zone");
+			throw new ConflictException("Table label already exists in this zone");
 		}
 
 		DishTable dishTable = new DishTable();
@@ -89,7 +89,7 @@ public class TableServiceImpl implements TableService {
 		if (!dishTable.getLabel().equals(request.label())) {
 			boolean exists = tableRepository.existsByZoneIdAndLabelAndDeletedFalse(zone.getId(), request.label());
 			if (exists) {
-				throw new ConflictException("Table number already exists in this zone");
+				throw new ConflictException("Table label already exists in this zone");
 			}
 			dishTable.setLabel(request.label());
 		}

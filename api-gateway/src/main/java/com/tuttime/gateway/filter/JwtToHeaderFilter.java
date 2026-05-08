@@ -27,7 +27,7 @@ public class JwtToHeaderFilter implements GlobalFilter, Ordered {
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 		String path = exchange.getRequest().getURI().getPath();
-		if (path.startsWith("/media/")) {
+		if (path.startsWith("/user-medias/") || path.startsWith("/restaurant-medias/") || path.startsWith("/menu-medias/")) {
 			return chain.filter(exchange);
 		}
 

@@ -20,30 +20,20 @@ import java.util.function.Function;
 @Component
 public class JwtTokenUtil {
 
-	@Value("${spring.security.jwt.secret:tuttime-secret-key-change-in-production-min-256-bits}")
+	@Value("${spring.security.jwt.secret}")
 	private String secret;
 
-	@Value("${spring.security.jwt.issuer:tuttime-backend}")
+	@Value("${spring.security.jwt.issuer}")
 	private String issuer;
 
-	@Value("${spring.security.jwt.audience:tuttime-mobile-app}")
+	@Value("${spring.security.jwt.audience}")
 	private String audience;
 
 	/**
 	 * Get secret key from the configured secret string (matches user-service logic).
 	 */
 	private SecretKey getSigningKey() {
-		byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-		if (keyBytes.length < 32) {
-			byte[] paddedKey = new byte[32];
-			System.arraycopy(keyBytes, 0, paddedKey, 0, keyBytes.length);
-			// Fill remaining bytes with secret repeated
-			for (int i = keyBytes.length; i < 32; i++) {
-				paddedKey[i] = keyBytes[i % keyBytes.length];
-			}
-			keyBytes = paddedKey;
-		}
-		return Keys.hmacShaKeyFor(keyBytes);
+		return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 	}
 
 	/**
@@ -69,7 +59,17 @@ public class JwtTokenUtil {
 	 * Extract user ID from token
 	 */
 	public UUID getUserIdFromToken(String token) {
-		return getClaimFromToken(token, claims -> claims.get("userId", UUID.class));
+		String userIdStr = getClaimFromToken(token, claims -> {
+			Object raw = claims.get("userId");
+			return raw != null ? raw.toString() : null;
+		});
+		if (userIdStr == null) {
+			userIdStr = getClaimFromToken(token, Claims::getSubject);
+		}
+		if (userIdStr == null) {
+			throw new IllegalArgumentException("User ID not found in token");
+		}
+		return UUID.fromString(userIdStr);
 	}
 
 	/**

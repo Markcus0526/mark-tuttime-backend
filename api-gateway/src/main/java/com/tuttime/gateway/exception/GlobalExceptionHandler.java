@@ -1,37 +1,43 @@
 package com.tuttime.gateway.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tuttime.common.exception.StackTraceUtil;
 import com.tuttime.common.exception.ErrorCodes;
+import com.tuttime.common.exception.StackTraceUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
+import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
-/**
- * Global Exception Handler: handles exceptions globally and returns consistent error responses with correlation ID and error codes.
- */
 @Slf4j
 @Component
-@Order(-2) // Higher priority than default error handler
+@Order(-2)
 public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 
 	private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
 	private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+
+	private static final String SWAGGER_UI_HTML = "/swagger-ui.html";
+	private static final String SWAGGER_UI = "/swagger-ui";
+	private static final String SWAGGER_UI_INDEX = "/swagger-ui/index.html";
 
 	private final ObjectMapper objectMapper;
 
@@ -41,56 +47,63 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 
 	@Override
 	public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
-		String path = exchange.getRequest().getURI().getPath();
+		ServerHttpResponse response = exchange.getResponse();
 
-		// 1. Intercept the blank 404 path and force it to open the real index.html
-		if (path.equals("/swagger-ui.html") || path.equals("/swagger-ui")) {
-			exchange.getResponse().setStatusCode(HttpStatus.FOUND); // 302 Redirect
-			exchange.getResponse().getHeaders().setLocation(java.net.URI.create("/swagger-ui/index.html"));
-			return exchange.getResponse().setComplete();
+		// Already committed → do nothing
+		if (response.isCommitted()) {
+			log.debug("Response already committed, ignoring exception: {}", ex.getMessage());
+			return Mono.empty();
 		}
 
-		// 2. Let the background resource handler stream actual assets (js, css, json) undisturbed
+		String path = exchange.getRequest().getURI().getPath();
+
+		// Swagger redirect
+		if (SWAGGER_UI_HTML.equals(path) || SWAGGER_UI.equals(path)) {
+			if (!response.isCommitted()) {
+				response.setStatusCode(HttpStatus.FOUND);
+				response.getHeaders().setLocation(URI.create(SWAGGER_UI_INDEX));
+				return response.setComplete();
+			}
+			return Mono.empty();
+		}
+
+		// Let Swagger assets pass through
 		if (path.contains("swagger-ui") || path.contains("v3/api-docs") || path.contains("webjars")) {
 			return Mono.error(ex);
 		}
 
+		// Determine HTTP status and message from exception type
 		HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-		String errorCode = ErrorCodes.INTERNAL_SERVER_ERROR;
 		String message = "An unexpected error occurred";
 
-		if (ex instanceof ResponseStatusException) {
-			ResponseStatusException responseStatusException = (ResponseStatusException) ex;
-			status = HttpStatus.resolve(responseStatusException.getStatusCode().value());
-			if (status == null) {
-				status = HttpStatus.INTERNAL_SERVER_ERROR;
-			}
-			message = responseStatusException.getReason() != null
-					? responseStatusException.getReason()
-					: status.getReasonPhrase();
-		} else if (ex instanceof org.springframework.web.server.ServerWebInputException) {
+		if (ex instanceof ResponseStatusException rse) {
+			status = HttpStatus.resolve(rse.getStatusCode().value());
+			if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
+			message = rse.getReason() != null ? rse.getReason() : status.getReasonPhrase();
+		} else if (ex instanceof ServerWebInputException) {
 			status = HttpStatus.BAD_REQUEST;
-			errorCode = ErrorCodes.BAD_REQUEST;
 			message = "Invalid request parameters";
-		} else if (ex instanceof java.util.concurrent.TimeoutException) {
+		} else if (ex instanceof WebExchangeBindException) {
+			status = HttpStatus.BAD_REQUEST;
+			message = "Validation failed: " + ex.getMessage();
+		} else if (ex instanceof TimeoutException) {
 			status = HttpStatus.GATEWAY_TIMEOUT;
-			errorCode = ErrorCodes.GATEWAY_TIMEOUT;
 			message = "Request timeout";
-		} else if (ex instanceof org.springframework.cloud.gateway.support.NotFoundException) {
+		} else if (ex instanceof NotFoundException) {
 			status = HttpStatus.NOT_FOUND;
-			errorCode = ErrorCodes.RESOURCE_NOT_FOUND;
 			message = "Resource not found";
 		}
 
-		errorCode = mapStatusToErrorCode(status);
+		// Map status to error code (single source of truth)
+		String errorCode = mapStatusToErrorCode(status);
 		String correlationId = getCorrelationId(exchange);
 
-		// Log error with shortened stack trace (first 5 lines for unexpected errors)
+		// Log error
 		String stackTraceSummary = StackTraceUtil.getStackTraceSummary(ex, 5);
 		log.error("Global exception handler: correlationId={}, errorCode={}, message={}, path={}, stackTrace={}",
 				correlationId, errorCode, message, path, stackTraceSummary);
 
-		// Build standardized error response matching ErrorResponse structure
+		// Build error response body
 		Map<String, Object> errorResponse = new HashMap<>();
 		errorResponse.put("timestamp", OffsetDateTime.now(ZoneOffset.UTC).format(ISO_FORMATTER));
 		errorResponse.put("status", status.value());
@@ -100,45 +113,37 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 		errorResponse.put("path", path);
 		errorResponse.put("correlationId", correlationId);
 
-		// Set response status and headers
-		exchange.getResponse().setStatusCode(status);
-		exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-		// Ensure correlation ID is in response headers
-		if (correlationId != null) {
-			exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+		// Final committed check before writing
+		if (response.isCommitted()) {
+			log.debug("Response became committed before writing error, skipping");
+			return Mono.empty();
 		}
 
-		// Write error response
+		response.setStatusCode(status);
+		response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+		if (correlationId != null) {
+			response.getHeaders().add(CORRELATION_ID_HEADER, correlationId);
+		}
+
 		try {
 			String json = objectMapper.writeValueAsString(errorResponse);
-			DataBufferFactory bufferFactory = exchange.getResponse().bufferFactory();
-			DataBuffer buffer = bufferFactory.wrap(json.getBytes(StandardCharsets.UTF_8));
-			return exchange.getResponse().writeWith(Mono.just(buffer));
+			DataBuffer buffer = response.bufferFactory().wrap(json.getBytes(StandardCharsets.UTF_8));
+			return response.writeWith(Mono.just(buffer));
 		} catch (Exception e) {
-			// Critical error - include shortened stack trace
-			String errorStackTrace = StackTraceUtil.getStackTraceSummary(e, 3);
-			log.error("Failed to serialize error response, stackTrace={}", errorStackTrace);
+			log.error("Failed to serialize error response: {}", e.getMessage());
 			return Mono.empty();
 		}
 	}
 
-	/**
-	 * Extracts correlation ID from request headers or exchange attributes.
-	 */
 	private String getCorrelationId(ServerWebExchange exchange) {
 		String correlationId = exchange.getRequest().getHeaders().getFirst(CORRELATION_ID_HEADER);
-
 		if (correlationId == null || correlationId.isEmpty()) {
-			correlationId = (String) exchange.getAttributes().get(CORRELATION_ID_HEADER);
+			Object attr = exchange.getAttributes().get(CORRELATION_ID_HEADER);
+			correlationId = (attr instanceof String) ? (String) attr : null;
 		}
-
 		return correlationId;
 	}
 
-	/**
-	 * Maps HTTP status code to standardized error code using ErrorCodes constants.
-	 */
 	private String mapStatusToErrorCode(HttpStatus status) {
 		return switch (status.value()) {
 			case 400 -> ErrorCodes.BAD_REQUEST;
@@ -164,4 +169,3 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 		};
 	}
 }
-

@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.service.impl;
 
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.ZoneDto;
 import com.tuttime.restaurant.entity.Branch;
@@ -53,8 +54,12 @@ public class ZoneServiceImpl implements ZoneService {
 
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
 
-		Zone zone = zoneMapper.toEntity(request);
+		// Check for duplicate zone name within the same branch
+		if (zoneRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(branch.getId(), request.name())) {
+			throw new ConflictException("Zone with name '" + request.name() + "' already exists in this branch.");
+		}
 
+		Zone zone = zoneMapper.toEntity(request);
 		zone.setBranch(branch);
 		zone.setDeleted(false);
 		Zone savedZone = zoneRepository.save(zone);
@@ -68,6 +73,12 @@ public class ZoneServiceImpl implements ZoneService {
 				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
+
+		if (request.name() != null && !request.name().equals(zone.getName())) {
+			if (zoneRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(zone.getBranch().getId(), request.name(), zoneId)) {
+				throw new ConflictException("Zone name already exists in this branch.");
+			}
+		}
 
 		zoneMapper.updateEntityFromRequest(request, zone);
 
