@@ -745,6 +745,13 @@ spring:
             - name: JwtAuthentication
             - RewritePath=/notification-docs/(?<segment>.*), /${segment}
 
+        ################# 404 Routes #######################
+        - id: root
+          order: 999
+          uri: forward:/actuator/health
+          predicates:
+            - Path=/
+
     loadbalancer:
       enabled: false
 
@@ -768,6 +775,10 @@ spring:
 
   aop:
     proxy-target-class: false
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:8080}
 
 server:
   port: ${SERVER_PORT}
