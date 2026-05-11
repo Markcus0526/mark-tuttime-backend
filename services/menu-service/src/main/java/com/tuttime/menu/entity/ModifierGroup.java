@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "modifier_groups")
@@ -17,6 +18,9 @@ import java.util.Set;
 @Builder
 @EntityListeners(AuditingEntityListener.class)
 public class ModifierGroup extends BaseUuidAnDeleteEntity {
+
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
 
 	@Column(name = "name", nullable = false)
 	private String name;

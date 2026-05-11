@@ -16,4 +16,7 @@ public interface ModifierMapper {
 	// Converts Individual Modifier Entity -> Modifier Response DTO
 	@Mapping(target = "modifierId", source = "id")
 	ModifierDto.ModifierResponse toModifierResponse(Modifier modifier);
+
+	@Mapping(target = "branchId", source = "branchId")
+	ModifierGroup toEntity(ModifierDto.ModifierGroupRequest request);
 }

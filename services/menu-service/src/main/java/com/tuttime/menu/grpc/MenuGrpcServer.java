@@ -60,4 +60,21 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
+
+	@Override
+	public void getActiveOrderDiscounts(ActiveOrderDiscountsRequest request,
+	                                    StreamObserver<ActiveOrderDiscountsResponse> responseObserver) {
+		try {
+			ActiveOrderDiscountsResponse response = delegate.getActiveOrderDiscounts(request);
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getActiveOrderDiscounts", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
+	}
 }

@@ -39,4 +39,8 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID
     """)
 	List<MenuCategory> findAllByBranchIdWithItemsSorted(@Param("branchId") UUID branchId);
 
+	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
+
+	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
+
 }

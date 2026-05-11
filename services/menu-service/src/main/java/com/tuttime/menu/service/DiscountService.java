@@ -1,6 +1,7 @@
 package com.tuttime.menu.service;
 
 import com.tuttime.menu.dto.DiscountDto;
+import com.tuttime.menu.entity.enums.AppliesTo;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,7 +13,7 @@ public interface DiscountService {
 
 	DiscountDto.DiscountResponse getDiscountById(UUID id);
 
-	List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID referenceId);
+	List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID branchId, AppliesTo appliesTo, UUID referenceId);
 
 	void deleteDiscount(UUID id, UUID currentUserId, String userRoles);
 }

@@ -1,5 +1,6 @@
 package com.tuttime.menu.service.impl;
 
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.MenuItemDto;
 import com.tuttime.menu.entity.*;
@@ -15,10 +16,13 @@ import com.tuttime.menu.service.ModifierService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,19 +36,24 @@ public class MenuItemServiceImpl implements MenuItemService {
 	private final MenuCategoryRepository menuCategoryRepository;
 	private final MenuTagRepository menuTagRepository;
 	private final MenuItemTagRepository menuItemTagRepository;
-	private final MenuItemMapper menuItemMapper; // Use this instead of manual mapping
+	private final MenuItemMapper menuItemMapper;
 	private final MenuTagMapper menuTagMapper;
 	private final RestaurantGrpcClient restaurantGrpcClient;
-	private final ModifierService modifierService; // Needed for link/unlink
+	private final ModifierService modifierService;
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "@menuItemServiceImpl.getBranchIdFromCategory(#request.categoryId())")
-	public MenuItemDto.MenuItemDetailResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
+	public MenuItemDto.MenuItemDetailResponse createMenuItem(MenuItemDto.MenuItemRequest request,
+	                                                         UUID currentUserId, String userRoles) {
 		MenuCategory category = menuCategoryRepository.findById(request.categoryId())
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
 		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
+
+		if (menuItemRepository.existsByCategoryIdAndNameIgnoreCaseAndDeletedFalse(category.getId(), request.name())) {
+			throw new ConflictException("Menu item with name '" + request.name() + "' already exists in this category.");
+		}
 
 		MenuItem item = MenuItem.builder()
 				.category(category)
@@ -55,26 +64,41 @@ public class MenuItemServiceImpl implements MenuItemService {
 				.priority(request.priority() != null ? request.priority() : 0)
 				.build();
 
-		// Use the mapper to get automatic pricing, media, and modifier inheritance
 		return menuItemMapper.toDetailResponse(menuItemRepository.save(item));
 	}
 
 	@Override
 	@Transactional
 	@CacheEvict(value = "branch_menus", key = "#result.categoryId != null ? @menuItemServiceImpl.getBranchIdFromCategory(#result.categoryId) : null")
-	public MenuItemDto.MenuItemDetailResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles) {
+	public MenuItemDto.MenuItemDetailResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request,
+	                                                         UUID currentUserId, String userRoles) {
 		MenuItem existing = menuItemRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
-		MenuCategory category = menuCategoryRepository.findById(request.categoryId())
+		MenuCategory targetCategory = menuCategoryRepository.findById(request.categoryId())
 				.orElseThrow(() -> new InvalidRequestException("Category not found"));
 
-		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
+		restaurantGrpcClient.validateBranchPermission(targetCategory.getBranchId(), currentUserId, userRoles);
+
+		UUID targetCategoryId = targetCategory.getId();
+		boolean nameChanged = !request.name().equals(existing.getName());
+		boolean categoryChanged = !existing.getCategory().getId().equals(targetCategoryId);
+
+		if (nameChanged || categoryChanged) {
+			if (menuItemRepository.existsByCategoryIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(targetCategoryId, request.name(), id)) {
+				throw new ConflictException("Menu item with name '" + request.name() + "' already exists in the target category.");
+			}
+		}
 
 		existing.setName(request.name());
 		existing.setDescription(request.description());
 		existing.setPrice(request.price());
-		existing.setAvailable(request.available());
+		existing.setAvailable(request.available() != null ? request.available() : existing.getAvailable());
+		existing.setPriority(request.priority() != null ? request.priority() : existing.getPriority());
+
+		if (categoryChanged) {
+			existing.setCategory(targetCategory);
+		}
 
 		return menuItemMapper.toDetailResponse(menuItemRepository.save(existing));
 	}
@@ -84,8 +108,6 @@ public class MenuItemServiceImpl implements MenuItemService {
 	public MenuItemDto.MenuItemDetailResponse getMenuItemById(UUID itemId) {
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
-
-		// This now returns discountedPrice, originalPrice, and merged Modifiers
 		return menuItemMapper.toDetailResponse(item);
 	}
 
@@ -95,60 +117,73 @@ public class MenuItemServiceImpl implements MenuItemService {
 		MenuItem item = menuItemRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
 
-		MenuCategory category = menuCategoryRepository.findById(item.getCategory().getId())
-				.orElseThrow(() -> new InvalidRequestException("Category not found"));
+		UUID branchId = getBranchIdFromItem(item);
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
-		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
+		evictCacheByBranch(branchId);
 
-		// Manual eviction helper if SpEL is too complex for delete
-		evictCacheByBranch(item.getCategory().getBranchId());
-
-		menuItemRepository.delete(item);
+		menuItemRepository.delete(item); // soft delete via @SQLDelete
 	}
 
+	@Override
 	@Transactional(readOnly = true)
 	public List<MenuItemDto.TagResponse> getAllTags() {
-		// Fetch all tags and map them to DTOs for the UI
 		return menuTagRepository.findAll().stream()
-				.map(menuTagMapper::toTagResponse) // Uses the iconUrl and name mapping
-				.toList();
+				.map(menuTagMapper::toTagResponse)
+				.collect(Collectors.toList());
 	}
 
+	@Override
 	@Transactional
-	public void syncMenuItemTags(UUID menuItemId, List<MenuItemDto.TagRequest> requests, UUID userId, String roles) {
-		// 1. Security: Verify user has permission for THIS specific branch if not Admin
-		List<UUID> oldTagIds = menuItemTagRepository.findAllByMenuItemId(menuItemId)
-				.stream().map(bt -> bt.getMenuTag().getId()).toList();
+	public void syncMenuItemTags(UUID menuItemId, List<MenuItemDto.TagRequest> requests,
+	                             UUID userId, String userRoles) {
+		// 1. Fetch the menu item and verify permission on its branch
+		MenuItem item = menuItemRepository.findById(menuItemId)
+				.orElseThrow(() -> new InvalidRequestException("Menu item not found: " + menuItemId));
+		UUID branchId = getBranchIdFromItem(item);
+		restaurantGrpcClient.validateBranchPermission(branchId, userId, userRoles);
 
-		// Logic #2: Only remove the links for this specific branch
-		// Efficiently clears the bridge table entries
+		// 2. Store old tag IDs to clean up orphan tags later
+		List<UUID> oldTagIds = menuItemTagRepository.findAllByMenuItemId(menuItemId)
+				.stream().map(mt -> mt.getMenuTag().getId()).toList();
+
+		// 3. Remove all existing links for this menu item
 		menuItemTagRepository.deleteByMenuItemId(menuItemId);
 
+		// 4. Create or fetch each tag and create new links
 		for (MenuItemDto.TagRequest req : requests) {
 			MenuTag tag = menuTagRepository.findByNameIgnoreCase(req.name().trim())
-					.orElseGet(() -> menuTagRepository.save(MenuTag.builder()
-							.name(req.name().trim())
-							.iconUrl(req.iconUrl())
-							.build()));
+					.orElseGet(() -> {
+						try {
+							return menuTagRepository.save(MenuTag.builder()
+									.name(req.name().trim())
+									.iconUrl(req.iconUrl())
+									.build());
+						} catch (DataIntegrityViolationException e) {
+							// Another thread created it; fetch again
+							return menuTagRepository.findByNameIgnoreCase(req.name().trim())
+									.orElseThrow(() -> new InvalidRequestException("Failed to create or find tag: " + req.name()));
+						}
+					});
 
 			menuItemTagRepository.save(MenuItemTag.builder()
 					.id(new MenuItemTagId(menuItemId, tag.getId()))
-					.menuItem(menuItemRepository.getReferenceById(menuItemId))
+					.menuItem(item)
 					.menuTag(tag)
 					.build());
 		}
 
+		// 5. Clean up any tags that are no longer used anywhere
 		cleanupOrphanTags(oldTagIds);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<MenuItemDto.MenuItemResponse> getItemsByCategory(UUID categoryId, String search, String sortBy, String direction) {
+	public List<MenuItemDto.MenuItemResponse> getItemsByCategory(UUID categoryId, String search,
+	                                                             String sortBy, String direction) {
 		Sort sortOrder = direction.equalsIgnoreCase("desc") ?
-				Sort.by(sortBy).descending() :
-				Sort.by(sortBy).ascending();
+				Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
-		// Use the mapper to handle discounted 'currentPrice' and 'imageUrl'
 		return menuItemRepository.findByCategoryAndSearch(categoryId, search, sortOrder).stream()
 				.map(menuItemMapper::toSummaryResponse)
 				.collect(Collectors.toList());
@@ -159,54 +194,23 @@ public class MenuItemServiceImpl implements MenuItemService {
 	public void linkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles) {
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Item not found"));
+		UUID branchId = getBranchIdFromItem(item);
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
-		MenuCategory category = menuCategoryRepository.findById(item.getCategory().getId())
-				.orElseThrow(() -> new InvalidRequestException("Category not found"));
-
-		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
-
-		// Assuming ModifierGroup is fetched and added to item.modifierGroups
-		// Or call a specialized method in modifierService
-		modifierService.linkToItem(groupId, itemId);
-		evictCacheByBranch(item.getCategory().getBranchId());
+		modifierService.linkToItem(groupId, itemId, currentUserId, userRoles);
+		evictCacheByBranch(branchId);
 	}
 
 	@Override
 	@Transactional
 	public void unlinkModifierGroup(UUID itemId, UUID groupId, UUID currentUserId, String userRoles) {
-		// 1. Fetch the item
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Menu Item not found"));
+		UUID branchId = getBranchIdFromItem(item);
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
-		MenuCategory category = menuCategoryRepository.findById(item.getCategory().getId())
-				.orElseThrow(() -> new InvalidRequestException("Category not found"));
-
-		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
-
-		// 2. Remove the association from the set
-		// This triggers a DELETE on the 'menu_item_modifier_groups' table
-		item.getModifierGroups().removeIf(group -> group.getId().equals(groupId));
-
-		// 3. Save to persist changes and evict cache
-		menuItemRepository.save(item);
-		evictCacheByBranch(item.getCategory().getBranchId());
-	}
-
-	@Transactional(readOnly = true)
-	@CacheEvict(value = "branch_menus", key = "#branchId")
-	public void evictCacheByBranch(UUID branchId) {
-		// This method body is empty because the @CacheEvict
-		// annotation does all the work before/after the method runs.
-	}
-
-	/**
-	 * Helper for Cache Eviction SpEL
-	 */
-	@Transactional(readOnly = true)
-	public UUID getBranchIdFromCategory(UUID categoryId) {
-		return menuCategoryRepository.findById(categoryId)
-				.map(MenuCategory::getBranchId)
-				.orElse(null);
+		modifierService.unlinkFromItem(groupId, itemId, currentUserId, userRoles);
+		evictCacheByBranch(branchId);
 	}
 
 	@Override
@@ -215,35 +219,67 @@ public class MenuItemServiceImpl implements MenuItemService {
 		log.info("POS Sync: Setting availability to {} for {} items in branch {}",
 				isAvailable, itemIds.size(), branchId);
 
-		// Bulk update using the repository method we created earlier
+		// Validate that all items belong to the given branch (prevent tampering)
+		for (UUID itemId : itemIds) {
+			MenuItem item = menuItemRepository.findById(itemId)
+					.orElseThrow(() -> new InvalidRequestException("Item not found: " + itemId));
+			UUID actualBranch = getBranchIdFromItem(item);
+			if (!actualBranch.equals(branchId)) {
+				throw new InvalidRequestException("Item " + itemId + " does not belong to branch " + branchId);
+			}
+		}
+
 		if (isAvailable) {
 			menuItemRepository.activateItemsFromPos(itemIds);
 		} else {
 			menuItemRepository.deactivateItemsFromPos(itemIds);
 		}
 
-		// IMPORTANT: Evict cache so customers see the change immediately
 		evictCacheByBranch(branchId);
 	}
 
 	@Override
 	@Transactional
-	public void updatePriceFromPos(UUID itemId, java.math.BigDecimal newPrice, UUID branchId) {
+	public void updatePriceFromPos(UUID itemId, BigDecimal newPrice, UUID branchId) {
 		log.info("POS Sync: Updating price for item {} to {}", itemId, newPrice);
 
 		MenuItem item = menuItemRepository.findById(itemId)
 				.orElseThrow(() -> new InvalidRequestException("Item not found for price sync: " + itemId));
 
+		UUID actualBranch = getBranchIdFromItem(item);
+		if (!actualBranch.equals(branchId)) {
+			throw new InvalidRequestException("Item does not belong to branch " + branchId);
+		}
+
 		item.setPrice(newPrice);
 		menuItemRepository.save(item);
-
-		// Evict cache to reflect the new price in the app
 		evictCacheByBranch(branchId);
+	}
+
+	// ---------- cache eviction helper ----------
+	@Transactional(readOnly = true)
+	@CacheEvict(value = "branch_menus", key = "#branchId")
+	public void evictCacheByBranch(UUID branchId) {
+		// method body empty; annotation does the work
+	}
+
+	// ---------- helpers for SpEL and validation ----------
+	@Transactional(readOnly = true)
+	public UUID getBranchIdFromCategory(UUID categoryId) {
+		return menuCategoryRepository.findById(categoryId)
+				.map(MenuCategory::getBranchId)
+				.orElse(null);
+	}
+
+	private UUID getBranchIdFromItem(MenuItem item) {
+		// Fetch category if not already loaded (safe fallback)
+		return menuCategoryRepository.findById(item.getCategory().getId())
+				.map(MenuCategory::getBranchId)
+				.orElseThrow(() -> new InvalidRequestException("Category not found for item"));
 	}
 
 	private void cleanupOrphanTags(List<UUID> tagIdsToCheck) {
 		for (UUID tagId : tagIdsToCheck) {
-			// If no branch is using this tag anymore, delete it from master table
 			if (!menuItemTagRepository.existsByMenuTagId(tagId)) {
 				menuTagRepository.deleteById(tagId);
 			}

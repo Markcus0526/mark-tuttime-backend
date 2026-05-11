@@ -8,14 +8,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ModifierService {
-	// Group Operations
-	Page<ModifierDto.ModifierGroupResponse> findGroups(String query, UUID restaurantId, Pageable pageable);
 
 	ModifierDto.ModifierGroupResponse createGroup(ModifierDto.ModifierGroupRequest request, UUID currentUserId, String userRoles);
 
 	ModifierDto.ModifierGroupResponse getGroupById(UUID groupId);
 
-	List<ModifierDto.ModifierGroupResponse> getAllGroups();
+	List<ModifierDto.ModifierGroupResponse> getAllGroupsByBranch(UUID branchId, UUID currentUserId, String userRoles);
 
 	ModifierDto.ModifierGroupResponse updateGroup(UUID groupId, ModifierDto.ModifierGroupRequest request, UUID currentUserId, String userRoles);
 
@@ -30,8 +28,8 @@ public interface ModifierService {
 
 	void deleteModifier(UUID modifierId, UUID currentUserId, String userRoles);
 
-	void linkToItem(UUID groupId, UUID itemId);
+	void linkToItem(UUID groupId, UUID itemId, UUID currentUserId, String userRoles);
 
-	void unlinkFromItem(UUID groupId, UUID itemId);
+	void unlinkFromItem(UUID groupId, UUID itemId, UUID currentUserId, String userRoles);
 
 }

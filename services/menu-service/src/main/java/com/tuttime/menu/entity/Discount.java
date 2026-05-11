@@ -1,5 +1,6 @@
 package com.tuttime.menu.entity;
 
+import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
 import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.menu.entity.enums.AppliesTo;
 import com.tuttime.menu.entity.enums.DiscountType;
@@ -21,7 +22,10 @@ import java.util.UUID;
 @Setter
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class Discount extends BaseUuidEntity {
+public class Discount extends BaseUuidAnDeleteEntity {
+
+	@Column(name = "branch_id", nullable = false)
+	private UUID branchId;
 
 	@Column(nullable = false)
 	private String name;
