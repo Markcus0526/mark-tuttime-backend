@@ -11,10 +11,8 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    env_file:
-      - .env.docker
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:***REMOVED***}
+      REDIS_PASSWORD: ""
     command: >
       sh -c "
       if [ -n \"$$REDIS_PASSWORD\" ]; then
@@ -24,7 +22,7 @@ services:
       fi
       "
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,13 +36,10 @@ services:
     ports:
       - "29092:9092"  # Host access (localhost:29092)
       - "9093:9093"   # Container access (tuttime-kafka:9093)
-    env_file:
-      - .env.docker
     environment:
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_NODE_ID: 1
-      KAFKA_KRAFT_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
-      # FIXED: Changed localhost to tuttime-kafka for internal quorum
+      KAFKA_KRAFT_CLUSTER_ID: e9hKOjhvRvyeLAlnqZQpFw
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@tuttime-kafka:9094
       KAFKA_CFG_LISTENERS: INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094
       KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://tuttime-kafka:9093,EXTERNAL://localhost:29092
@@ -59,7 +54,7 @@ services:
     volumes:
       - kafka-data:/bitnami/kafka/data
     healthcheck:
-      test: [ "CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1" ]
+      test: [ "CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9093 || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,32 +62,29 @@ services:
     networks:
       - tuttime-network
 
-  # Kafka UI - Web interface for managing topics and messages
+  # Kafka UI
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: tuttime-kafka-ui
     ports:
       - "9001:8080"
     environment:
-      - KAFKA_CLUSTERS_0_NAME=tuttime-local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=tuttime-kafka:9093
+      KAFKA_CLUSTERS_0_NAME: tuttime-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: tuttime-kafka:9093
     depends_on:
       kafka:
         condition: service_healthy
     networks:
       - tuttime-network
 
-  # Eureka removed - Using Kubernetes Native Discovery / Docker service names
-  # Services communicate directly via Docker service names (e.g., user-service:8080)
-
-  # Zipkin Distributed Tracing (Shared instance for all microservices)
+  # Zipkin Distributed Tracing
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: tuttime-zipkin
     ports:
       - "9411:9411"
     environment:
-      - STORAGE_TYPE=mem
+      STORAGE_TYPE: mem
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9411/health" ]
       interval: 10s
@@ -120,7 +112,7 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - "bootstrap.memory_lock=true"
       - "discovery.type=single-node"
-      - "action.auto_create_index=true" # FIXED: Graylog needs to create indices
+      - "action.auto_create_index=true"
       - "DISABLE_SECURITY_PLUGIN=true"
     ulimits:
       memlock:
@@ -139,16 +131,14 @@ services:
       - opensearch
     ports:
       - "9002:9002/tcp"
-      - "12201:12201/udp" # Standard GELF UDP port
-    env_file:
-      - .env.docker
+      - "12201:12201/udp"
     environment:
-      - GRAYLOG_PASSWORD_SECRET=${GRAYLOG_SECRET}
-      - GRAYLOG_ROOT_PASSWORD_SHA2=${GRAYLOG_ROOT_PASSWORD_SHA2}
-      - GRAYLOG_HTTP_BIND_ADDRESS=0.0.0.0:9002
-      - GRAYLOG_HTTP_EXTERNAL_URI=http://localhost:9002/ # FIXED: For local dev access
-      - GRAYLOG_MONGODB_URI=mongodb://mongodb:27017/graylog
-      - GRAYLOG_ELASTICSEARCH_HOSTS=http://opensearch:9200
+      GRAYLOG_PASSWORD_SECRET: ***REMOVED***
+      GRAYLOG_ROOT_PASSWORD_SHA2: ***REMOVED***   # "admin"
+      GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9002
+      GRAYLOG_HTTP_EXTERNAL_URI: http://localhost:9002/
+      GRAYLOG_MONGODB_URI: mongodb://mongodb:27017/graylog
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://opensearch:9200
     networks:
       - tuttime-network
 
@@ -161,5 +151,4 @@ volumes:
 networks:
   tuttime-network:
     name: tuttime-network
-    # Set to 'external: true' if your .ps1 script creates this network manually
     external: false
