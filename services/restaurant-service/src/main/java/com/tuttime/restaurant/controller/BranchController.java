@@ -55,8 +55,6 @@ public class BranchController {
 			@RequestParam(defaultValue = "rating") String sort,
 			@RequestParam(defaultValue = "desc") String direction) {
 
-		validateAdminOrOwnerOrManager();
-
 		// Cap the page size for performance
 		int pageSize = Math.min(size, 100);
 

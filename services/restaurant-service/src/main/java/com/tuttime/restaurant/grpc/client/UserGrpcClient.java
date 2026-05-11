@@ -2,6 +2,7 @@ package com.tuttime.restaurant.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
 import com.tuttime.common.event.proto.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import static com.tuttime.common.constants.ServiceNames.USER_SERVICE;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class UserGrpcClient {
 
@@ -21,15 +23,19 @@ public class UserGrpcClient {
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public UserValidResponse validateUser(UserValidRequest request) {
-		return GrpcExecutor.execute(USER_SERVICE, "validateUser", () ->
-				userServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(USER_SERVICE, "validateUser", () ->
+				userServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.validateUser(request));
 	}
 
 	public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
-		return GrpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
-				userServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
+				userServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getUserDetails(request));
 	}
 }
