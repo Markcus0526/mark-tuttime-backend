@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 import static com.tuttime.common.constants.ServiceNames.POS_SERVICE;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class PosGrpcClient {
 
 	@Value("${grpc.client-deadline-seconds}")
@@ -28,6 +28,7 @@ public class PosGrpcClient {
 	@GrpcClient("pos-service")
 	private PosServiceGrpc.PosServiceBlockingStub posServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
 	private final OrderService orderService;
 	private final MenuGrpcClient menuGrpcClient;
 
@@ -77,8 +78,9 @@ public class PosGrpcClient {
 			requestBuilder.addItems(itemEntry.build());
 		});
 
-		return GrpcExecutor.execute(POS_SERVICE, "pushToKitchen", () ->
-				posServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(POS_SERVICE, "pushToKitchen", () ->
+				posServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.pushToKitchen(requestBuilder.build()).getSuccess());
 	}
 
