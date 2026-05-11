@@ -37,7 +37,7 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
 		// 1. Fetch the Media (Canvas & Fixtures)
-		Media media = mediaRepository.findByEntityIdAndMediaType(zoneId, MediaType.CANVAS)
+		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(zoneId, MediaType.CANVAS)
 				.orElseThrow(() -> new InvalidRequestException("Layout configuration not found for zone: " + zoneId));
 
 		// 2. Fetch all non-deleted Tables in this Zone
@@ -81,7 +81,7 @@ public class ZoneLayoutServiceImpl implements ZoneLayoutService {
 		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
 		// 2. Sync Media (Using HashMap to allow nulls and prevent Map.of NPE)
-		Media media = mediaRepository.findByEntityIdAndMediaType(zoneId, MediaType.CANVAS)
+		Media media = mediaRepository.findFirstByEntityIdAndMediaTypeAndDeletedFalse(zoneId, MediaType.CANVAS)
 				.orElseGet(() -> {
 					Media m = new Media();
 					m.setEntityId(zoneId);

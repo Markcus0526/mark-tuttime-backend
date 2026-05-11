@@ -9,6 +9,7 @@ import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -96,5 +97,21 @@ public class RestaurantGrpcClient {
 				restaurantServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getTableHierarchyDetail(request));
+	}
+
+	public FindAvailableTableResponse findAvailableTable(UUID branchId, UUID zoneId, int partySize, OffsetDateTime startTime) {
+		FindAvailableTableRequest.Builder requestBuilder = FindAvailableTableRequest.newBuilder()
+				.setBranchId(branchId.toString())
+				.setPartySize(partySize)
+				.setStartTime(startTime.toString());
+		if (zoneId != null) {
+			requestBuilder.setZoneId(zoneId.toString());
+		}
+
+		return grpcExecutor.execute(RESTAURANT_SERVICE, "findAvailableTable", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+						.findAvailableTable(requestBuilder.build())
+		);
 	}
 }

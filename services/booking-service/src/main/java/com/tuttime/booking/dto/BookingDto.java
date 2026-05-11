@@ -1,6 +1,7 @@
 package com.tuttime.booking.dto;
 
 import com.tuttime.common.enums.BookingStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -34,14 +35,6 @@ public class BookingDto {
 			@Min(value = 1, message = "Party size must be at least 1")
 			Integer partySize,
 
-			@NotNull(message = "Guest name is required for contact")
-			String guestName,
-
-			@NotNull(message = "Guest phone is required for the branch caller")
-			String guestPhone,
-
-			String specialRequest,
-
 			// If a user books a table for 7:00 PM with a leadTimeMinutes of 15,
 			// the system effectively marks that table as "in use" starting from 6:45 PM to ensure it's ready for the guest's arrival.
 			Integer leadTimeMinutes,
@@ -49,6 +42,14 @@ public class BookingDto {
 			// If the booking is at 7:00 PM, the gracePeriodMins of 15 means the booking is technically valid until 7:15 PM.
 			@Min(value = 0)
 			Integer gracePeriodMins,
+
+			@NotNull(message = "Guest name is required for contact")
+			String guestName,
+
+			@NotNull(message = "Guest phone is required for the branch caller")
+			String guestPhone,
+
+			String specialRequest,
 
 			List<PreOrderItemRequest> preOrderItems
 	) {
@@ -66,6 +67,30 @@ public class BookingDto {
 			if (gracePeriodMins == null) gracePeriodMins = 15;
 		}
 	}
+
+	@Schema(description = "Partial update request for a booking (all fields optional)")
+	public record BookingUpdateRequest(
+			@Schema(description = "New table UUID")
+			UUID tableId,
+
+			@Schema(description = "New booking datetime")
+			OffsetDateTime bookingDatetime,
+
+			@Schema(description = "New party size")
+			Integer partySize,
+
+			@Schema(description = "Guest name")
+			String guestName,
+
+			@Schema(description = "Guest phone")
+			String guestPhone,
+
+			@Schema(description = "Special request")
+			String specialRequest,
+
+			@Schema(description = "Updated pre-order items")
+			List<BookingRequest.PreOrderItemRequest> preOrderItems
+	) {}
 
 	/**
 	 * Immutable response DTO for client applications.

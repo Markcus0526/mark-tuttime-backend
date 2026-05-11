@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package com.tuttime.common.event.proto;
 
-import "google/protobuf/timestamp.proto";
-
 option java_multiple_files = true;
 option java_package = "com.tuttime.common.event.proto";
 option java_outer_classname = "BookingServiceProto";
@@ -11,18 +9,20 @@ option java_outer_classname = "BookingServiceProto";
 // Booking Service gRPC
 service BookingService {
 
-//  rpc StreamUpcomingBookings(BookingReminderRequest) returns (stream BookingReminderResponse);
+  rpc CreateBookingFromWaitlist(CreateBookingFromWaitlistRequest) returns (CreateBookingFromWaitlistResponse);
 
 }
 
-// rpc StreamUpcomingBookings(BookingReminderRequest) returns (stream BookingReminderResponse);
-message BookingReminderRequest {
-  int32 lead_time_minutes = 1; // e.g., 120 for 2-hour reminders
+// rpc StreamUpcomingBookings(BookingReminderRequest) returns (stream CreateBookingFromWaitlistResponse);
+message CreateBookingFromWaitlistRequest {
+  string user_id = 1;
+  string branch_id = 2;
+  string zone_id = 3;
+  int32 party_size = 4;
+  string booking_datetime = 5; // ISO 8601
 }
 
-message BookingReminderResponse {
+message CreateBookingFromWaitlistResponse {
   string booking_id = 1;
-  string user_id = 2;
-  string branch_name = 3;
-  google.protobuf.Timestamp start_time = 4;
+  string status = 2;
 }

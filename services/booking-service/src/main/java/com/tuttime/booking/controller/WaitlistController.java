@@ -1,11 +1,13 @@
 package com.tuttime.booking.controller;
 
+import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.dto.WaitlistDto;
 import com.tuttime.booking.service.WaitlistService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
+import com.tuttime.common.util.UuidUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -30,15 +32,15 @@ public class WaitlistController {
 
 	@PostMapping
 	@Operation(summary = "Join the waitlist", description = "Adds a user to the virtual queue for a specific branch.")
-	@ApiResponses({
-			@ApiResponse(responseCode = "201", description = "Joined successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid request or user already on waitlist"),
-			@ApiResponse(responseCode = "409", description = "User is already active in this queue")
-	})
-	public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> joinWaitlist(@Valid @RequestBody WaitlistDto.WaitlistRequest request) {
-		WaitlistDto.WaitlistResponse data = waitlistService.addToWaitlist(request);
+	public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> joinWaitlist(
+			@Valid @RequestBody WaitlistDto.WaitlistRequest request) {
 
-		// Perfect REST: Create a location URI for the new waitlist entry
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		WaitlistDto.WaitlistResponse data = waitlistService.addToWaitlist(request, currentUserId, userRoles);
+
 		URI location = ServletUriComponentsBuilder
 				.fromCurrentRequest()
 				.path("/{id}")
@@ -50,26 +52,43 @@ public class WaitlistController {
 
 	@GetMapping("/{id}")
 	@Operation(summary = "Get waitlist status", description = "Check current position and estimated wait time.")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Success"),
-			@ApiResponse(responseCode = "404", description = "Waitlist entry not found")
-	})
 	public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> getWaitlistStatus(@PathVariable UUID id) {
-		WaitlistDto.WaitlistResponse data = waitlistService.getWaitlistEntry(id);
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		WaitlistDto.WaitlistResponse data = waitlistService.getWaitlistEntry(id, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
 	@DeleteMapping("/{id}")
 	@Operation(summary = "Leave the waitlist", description = "Cancels the waitlist entry (soft delete/status update).")
-	@ApiResponse(responseCode = "204", description = "Successfully left the queue")
 	public ResponseEntity<ApiRes<Void>> leaveWaitlist(@PathVariable UUID id) {
-		waitlistService.leaveWaitlist(id);
+
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		waitlistService.leaveWaitlist(id, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
+	@PostMapping("/{id}/claim")
+	@Operation(summary = "Claim a notified waitlist entry and create a booking")
+	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> claimWaitlist(
+			@PathVariable UUID id,
+			@Valid @RequestBody BookingDto.BookingRequest bookingRequest) {
+
+		validateLogin();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		BookingDto.BookingResponse booking =
+				waitlistService.claimWaitlistEntry(id, bookingRequest, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(booking));
+	}
+
+	// -------------------- Helper methods --------------------
 	private void validateLogin() {
 		if (!UserContext.isValidUUID()) {
 			throw new UnauthorizedException("Unauthorized: You should login");

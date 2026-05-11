@@ -79,4 +79,12 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 			""")
 	Optional<TableHierarchyRecord> findTableHierarchy(@Param("tableId") UUID tableId);
 
+	@Query("SELECT t FROM DishTable t " +
+			"WHERE t.zone.branch.id = :branchId " +
+			"AND (:zoneId IS NULL OR t.zone.id = :zoneId) " +
+			"AND t.seats >= :partySize " +
+			"AND t.deleted = false AND t.closed = false")
+	List<DishTable> findEligibleTables(@Param("branchId") UUID branchId,
+	                                   @Param("zoneId") UUID zoneId,
+	                                   @Param("partySize") int partySize);
 }

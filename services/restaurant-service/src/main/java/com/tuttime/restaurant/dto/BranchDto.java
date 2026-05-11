@@ -51,7 +51,7 @@ public class BranchDto {
 			BigDecimal maxPrice,
 
 			@Schema(description = "Status of the Branch", example = "false")
-			boolean closed,
+			Boolean closed,
 
 			Boolean favorite
 	) {

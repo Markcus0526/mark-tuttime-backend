@@ -28,6 +28,8 @@ service RestaurantService {
   rpc ValidateBranch (BranchValidRequest) returns (BranchValidResponse);
 
   rpc GetBranchManagers(BranchManagersRequest) returns (BranchManagersResponse);
+
+  rpc FindAvailableTable(FindAvailableTableRequest) returns (FindAvailableTableResponse);
 }
 
 // rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
@@ -158,4 +160,20 @@ message BranchManagersRequest {
 
 message BranchManagersResponse {
   repeated string manager_ids = 1;
+}
+
+// rpc FindAvailableTable(FindAvailableTableRequest) returns (FindAvailableTableResponse);
+message FindAvailableTableRequest {
+  string branch_id = 1;
+  optional string zone_id = 2;          // optional – if not provided, search entire branch
+  int32 party_size = 3;
+  string start_time = 4;                // ISO 8601 timestamp (e.g., "2025-05-11T19:00:00Z")
+}
+
+message FindAvailableTableResponse {
+  bool available = 1;
+  string table_id = 2;
+  string zone_id = 3;
+  int32 capacity = 4;
+  string table_label = 5;
 }

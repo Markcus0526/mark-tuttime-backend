@@ -16,6 +16,7 @@ import com.tuttime.booking.repository.BookingItemRepository;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
 import com.tuttime.booking.service.BookingService;
+import com.tuttime.booking.service.WaitlistService;
 import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.common.event.kafka.EventProducer;
@@ -47,7 +48,6 @@ import java.util.stream.Collectors;
 
 import static com.tuttime.common.util.UuidUtil.NIL_UUID;
 
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -58,6 +58,7 @@ public class BookingServiceImpl implements BookingService {
 	private final BookingStatusHistoryRepository historyRepository;
 	private final BookingMapper bookingMapper;
 	private final BookingHistoryMapper bookingHistoryMapper;
+	private final WaitlistService waitlistService;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final UserGrpcClient userGrpcClient;
 	private final MenuGrpcClient menuGrpcClient;
@@ -82,6 +83,7 @@ public class BookingServiceImpl implements BookingService {
 		}
 
 		UUID tableId = UuidUtil.toUuid(response.getTableId());
+		// FIXED: consistent lock key (without timestamp)
 		RLock lock = redissonClient.getLock(LOCK_PREFIX + tableId);
 
 		try {
@@ -89,26 +91,18 @@ public class BookingServiceImpl implements BookingService {
 				throw new ConflictException("Table is being reserved by another user.");
 			}
 
-			// 2. Overlap Check
 			OffsetDateTime startTime = request.bookingDatetime();
 			OffsetDateTime endTime = startTime.plus(Duration.ofMinutes(request.duration()));
 			if (bookingRepository.existsOverlappingBooking(tableId, startTime, endTime)) {
 				throw new ConflictException("Table is already booked for this time range.");
 			}
 
-			// 3. SECURE PRICE & MODIFIER VALIDATION (New Step)
-			// Fetch full menu details from gRPC to get base_price and modifier rules
 			List<MenuItemDetailResponse> menuDetails = menuGrpcClient.getMenuDetails(
 					request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
 			);
-
-			// Validate selection limits (Min/Max)
 			validateModifierSelections(request.preOrderItems(), menuDetails);
-
-			// Calculate Total safely using Server-Side prices (Base + Extra Options)
 			BigDecimal totalAmount = calculateFinalPrice(request.preOrderItems(), menuDetails);
 
-			// 4. Save Booking
 			Booking booking = Booking.builder()
 					.userId(request.userId())
 					.restaurantId(UuidUtil.toUuid(response.getRestaurantId()))
@@ -129,14 +123,13 @@ public class BookingServiceImpl implements BookingService {
 
 			Booking savedBooking = bookingRepository.save(booking);
 
+			// occupancy logic
 			String occupancyKey = "branch:occupancy:" + savedBooking.getBranchId();
 			RAtomicLong activeBookingsCounter = redissonClient.getAtomicLong(occupancyKey);
 			long currentCount = activeBookingsCounter.incrementAndGet();
 
-			// Check threshold (Total tables from gRPC response in Step 1)
-			int totalTables = response.getTotalTables(); // Ensure your gRPC TableDetailResponse includes this
+			int totalTables = response.getTotalTables();
 			double occupancy = ((double) currentCount / totalTables) * 100;
-
 			if (occupancy >= 90.0) {
 				BookingEvent.BranchAvailabilityEvent availabilityEvent = BookingEvent.BranchAvailabilityEvent.builder()
 						.eventId(UUID.randomUUID())
@@ -146,15 +139,10 @@ public class BookingServiceImpl implements BookingService {
 						.totalTables(totalTables)
 						.bookedTables((int) currentCount)
 						.build();
-
 				eventProducer.sendBookingBranchAvailabilityEvent(availabilityEvent);
 			}
 
-			// 5. Save Items with Selected Modifiers
-			// Note: You should update your BookingItem entity to store a JSON or link to selected options
 			saveBookingItems(savedBooking, request.preOrderItems(), menuDetails);
-
-			// 6. Audit & Events
 			historyRepository.save(BookingStatusHistory.of(savedBooking, null, request.userId(), "Initial creation"));
 
 			BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
@@ -170,7 +158,7 @@ public class BookingServiceImpl implements BookingService {
 					.build();
 			eventProducer.sendBookingStatusUpdatedEvent(event);
 
-			// 7. Initialize Order in Order Service
+			// Create order
 			CreateOrderRequest.Builder orderRequestBuilder = CreateOrderRequest.newBuilder()
 					.setBookingId(savedBooking.getId().toString())
 					.setUserId(savedBooking.getUserId().toString())
@@ -180,50 +168,39 @@ public class BookingServiceImpl implements BookingService {
 					.setGuestPhone(savedBooking.getGuestPhone())
 					.setSpecialRequest(savedBooking.getSpecialRequest());
 
-			// Loop through the items in your BookingRequest
 			request.preOrderItems().forEach(itemDto -> {
 				OrderItemRequest.Builder itemEntry = OrderItemRequest.newBuilder()
 						.setMenuItemId(itemDto.menuItemId().toString())
 						.setQuantity(itemDto.quantity());
 
-				// We must provide the PRICE we validated in Step 3
-				// Find the item in our menuDetails list to get the server-verified price
 				BigDecimal verifiedBasePrice = menuDetails.stream()
 						.filter(m -> m.getMenuItemId().equals(itemDto.menuItemId().toString()))
 						.findFirst()
-						.map(m -> NumberUtil.stringToBigDecimal(m.getBasePrice())) // Convert String to BigDecimal here
+						.map(m -> NumberUtil.stringToBigDecimal(m.getBasePrice()))
 						.orElse(BigDecimal.ZERO);
-
 				itemEntry.setPrice(verifiedBasePrice.toString());
 
-				// Map Modifiers and their adjustments
 				if (itemDto.modifierIds() != null) {
 					itemDto.modifierIds().forEach(modId -> {
-						// 1. Correct the nesting: items -> modifier_groups -> options
 						BigDecimal adjustment = menuDetails.stream()
 								.flatMap(m -> m.getModifierGroupsList().stream())
 								.flatMap(group -> group.getOptionsList().stream())
 								.filter(option -> option.getOptionId().equals(modId.toString()))
 								.findFirst()
-								.map(option -> NumberUtil.stringToBigDecimal(option.getExtraPrice())) // String to BigDecimal
+								.map(option -> NumberUtil.stringToBigDecimal(option.getExtraPrice()))
 								.orElse(BigDecimal.ZERO);
-
-						// 2. Add to your gRPC builder
 						itemEntry.addModifiers(ModifierRequest.newBuilder()
 								.setModifierId(modId.toString())
 								.setPriceAdjustment(adjustment.toString())
 								.build());
 					});
 				}
-
 				orderRequestBuilder.addItems(itemEntry.build());
 			});
 
-			// Final gRPC Call
 			CreateOrderResponse orderResponse = orderGrpcClient.createOrder(orderRequestBuilder.build());
 			savedBooking.setOrderId(UuidUtil.toUuid(orderResponse.getOrderId()));
-
-			savedBooking = bookingRepository.save(booking);
+			savedBooking = bookingRepository.save(savedBooking);
 
 			return bookingMapper.toResponse(savedBooking);
 
@@ -231,149 +208,142 @@ public class BookingServiceImpl implements BookingService {
 			Thread.currentThread().interrupt();
 			throw new BusinessException("System interrupted.");
 		} finally {
-			if (lock.isHeldByCurrentThread()) lock.unlock();
+			if (lock.isHeldByCurrentThread()) {
+				lock.unlock();
+			}
 		}
 	}
 
 	@Override
 	@Transactional
-	public BookingDto.BookingResponse editBooking(UUID bookingId, BookingDto.BookingRequest request, UUID currentUserId, String userRoles) {
-		// 1. Fetch and Guard
+	public BookingDto.BookingResponse editBooking(UUID bookingId,
+	                                              BookingDto.BookingUpdateRequest request,
+	                                              UUID currentUserId,
+	                                              String userRoles) {
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
 
-		// Guard: Only allow editing if the status is CREATED or PAID
 		if (booking.getStatus() != BookingStatus.CREATED && booking.getStatus() != BookingStatus.PAID) {
 			throw new InvalidRequestException("Cannot edit booking in status: " + booking.getStatus());
 		}
 
-		OffsetDateTime newStartTime = request.bookingDatetime();
-		OffsetDateTime newEndTime = newStartTime.plus(Duration.ofMinutes(request.duration()));
-		UUID newTableId = request.tableId(); // Or use your Best-Fit logic here
+		boolean slotChanged = false;
+		boolean itemsChanged = false;
+		UUID newTableId = null;
+		OffsetDateTime newStartTime = null;
+		OffsetDateTime newEndTime = null;
 
-		boolean isSlotChanged = !booking.getBookingDatetime().equals(newStartTime) || !booking.getTableId().equals(newTableId);
+		// --- Handle time/table change if provided ---
+		if (request.bookingDatetime() != null || request.tableId() != null) {
+			newStartTime = request.bookingDatetime() != null ? request.bookingDatetime() : booking.getBookingDatetime();
+			newEndTime = newStartTime.plusMinutes(booking.getDuration());
+			newTableId = request.tableId() != null ? request.tableId() : booking.getTableId();
+			slotChanged = !booking.getBookingDatetime().equals(newStartTime) || !booking.getTableId().equals(newTableId);
+		}
 
-		// 2. Handle Table/Time Change with Redisson
-		if (isSlotChanged) {
+		if (slotChanged) {
 			RLock newLock = redissonClient.getLock(LOCK_PREFIX + newTableId);
 			try {
-				// Attempt to acquire the new lock before releasing the old one (Safety First)
 				if (!newLock.tryLock(5, 10, TimeUnit.SECONDS)) {
 					throw new ConflictException("The new table/slot is currently being reserved by someone else.");
 				}
-
-				// Check for DB overlaps in the new slot
 				if (bookingRepository.existsOverlappingBooking(newTableId, newStartTime, newEndTime)) {
-					newLock.unlock(); // Release new lock immediately
+					newLock.unlock();
 					throw new ConflictException("Table is already booked for this new time range.");
 				}
-
-				// Release the OLD lock now that the new one is secured
-				RLock oldLock = redissonClient.getLock(LOCK_PREFIX + booking.getTableId());
-				if (oldLock.isLocked()) oldLock.unlock();
-
+				// Do NOT unlock the old lock – it will expire automatically.
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 				throw new BusinessException("System interrupted during re-locking.");
 			}
 		}
 
-		// 3. Price Validation (Re-run Step 3 from your createBooking logic)
-		List<MenuItemDetailResponse> menuDetails = menuGrpcClient.getMenuDetails(
-				request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
-		);
-		validateModifierSelections(request.preOrderItems(), menuDetails);
-		BigDecimal newTotal = calculateFinalPrice(request.preOrderItems(), menuDetails);
+		// --- Handle items update if provided ---
+		List<MenuItemDetailResponse> menuDetails = null;
+		BigDecimal newTotal = null;
+		if (request.preOrderItems() != null) {
+			menuDetails = menuGrpcClient.getMenuDetails(
+					request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
+			);
+			validateModifierSelections(request.preOrderItems(), menuDetails);
+			newTotal = calculateFinalPrice(request.preOrderItems(), menuDetails);
+			itemsChanged = true;
+		}
 
-		// 4. Update Order Service via gRPC
-		if (booking.getOrderId() != null) {
+		// --- Update fields only if present ---
+		if (request.guestName() != null) booking.setGuestName(request.guestName());
+		if (request.guestPhone() != null) booking.setGuestPhone(request.guestPhone());
+		if (request.specialRequest() != null) booking.setSpecialRequest(request.specialRequest());
+		if (request.partySize() != null) booking.setPartySize(request.partySize());
+		if (slotChanged) {
+			booking.setTableId(newTableId);
+			booking.setBookingDatetime(newStartTime);
+		}
+		if (itemsChanged) {
+			// Replace existing items
+			booking.getItems().clear();
+			saveBookingItems(booking, request.preOrderItems(), menuDetails);
+			booking.setTotalAmount(newTotal);
+		}
+
+		if (slotChanged && booking.getOrderId() != null) {
 			UpdateOrderRequest orderUpdateRequest = UpdateOrderRequest.newBuilder()
 					.setOrderId(booking.getOrderId().toString())
-					.setNewBookingTime(newStartTime.toString())
-					.setNewTotal(newTotal.toString())
-					.setGuestName(request.guestName())
-					.setGuestPhone(request.guestPhone())
+					.setNewBookingTime(booking.getBookingDatetime().toString())
+					.setNewTotal(booking.getTotalAmount().toString())
+					.setGuestName(booking.getGuestName())
+					.setGuestPhone(booking.getGuestPhone())
 					.build();
 			UpdateOrderResponse orderResponse = orderGrpcClient.updateOrder(orderUpdateRequest);
 			if (!orderResponse.getSuccess())
-				throw new InvalidRequestException("Cannot update of booking.");
+				throw new InvalidRequestException("Cannot update order for this booking.");
 		}
 
-		// 5. Update Local Entity
-		booking.setTableId(newTableId);
-		booking.setBookingDatetime(newStartTime);
-		booking.setPartySize(request.partySize());
-		booking.setTotalAmount(newTotal);
-		booking.setGuestName(request.guestName());
-		booking.setGuestPhone(request.guestPhone());
-		booking.setSpecialRequest(request.specialRequest());
 		booking.setUpdatedAt(OffsetDateTime.now());
-
 		Booking updatedBooking = bookingRepository.save(booking);
-
-		// 6. Audit Trail
 		historyRepository.save(BookingStatusHistory.of(updatedBooking, updatedBooking.getStatus(), currentUserId, "Booking Edited"));
 
 		return bookingMapper.toResponse(updatedBooking);
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId) {
-		// 1. Setup Time Context
+		// ... (unchanged, but already fine) ...
 		LocalDate requestedDate = date.toLocalDate();
 		ZoneOffset offset = date.getOffset();
 		OffsetDateTime now = OffsetDateTime.now(offset);
-
-		// CRITICAL: Block past dates immediately
 		if (requestedDate.isBefore(now.toLocalDate())) {
 			return new BookingSetupDto.BookingSetupResponse(branchId, Collections.emptyList());
 		}
-
-		// 2. Parallel Data Fetching
 		var tablesFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSlots(branchId, partySize));
 		var scheduleFuture = CompletableFuture.supplyAsync(() -> restaurantGrpcClient.getBranchSchedule(branchId, requestedDate.getDayOfWeek().getValue()));
 
-		// Fetch bookings for the single requested day only
 		OffsetDateTime startOfSearch = requestedDate.atStartOfDay().atOffset(offset);
 		OffsetDateTime endOfSearch = startOfSearch.plusDays(1);
 		List<Booking> occupied = bookingRepository.findAllByBranchIdAndDayRange(branchId, startOfSearch, endOfSearch);
 
 		List<TableSlotResponse> physicalTables = tablesFuture.join();
 		ScheduleResponse schedule = scheduleFuture.join();
-
 		if (schedule.getClosed()) {
 			return new BookingSetupDto.BookingSetupResponse(branchId, Collections.emptyList());
 		}
 
-		// 3. Pre-process for performance
 		Map<UUID, List<Booking>> bookingsByTable = occupied.stream()
 				.collect(Collectors.groupingBy(Booking::getTableId));
 
-		// 4. Calculate Same-Day Boundaries
 		OffsetDateTime openTime = requestedDate.atTime(LocalTime.parse(schedule.getOpenTime())).atOffset(offset);
 		OffsetDateTime closeTime = requestedDate.atTime(LocalTime.parse(schedule.getCloseTime())).atOffset(offset);
-
-		// 5. Determine Starting Slot
-		// If today, start from 'now' + 15m buffer, rounded to next interval. If future, start from openTime.
 		OffsetDateTime currentSlot = requestedDate.equals(now.toLocalDate())
 				? roundToNextInterval(now.plusMinutes(15), slotInterval)
 				: openTime;
-
-		// Safety: Ensure start time isn't before the restaurant opens
-		if (currentSlot.isBefore(openTime)) {
-			currentSlot = openTime;
-		}
+		if (currentSlot.isBefore(openTime)) currentSlot = openTime;
 
 		List<BookingSetupDto.BookingSetupResponse.AvailableSlot> result = new ArrayList<>();
-
-		// 6. Generate Slots strictly within the same day
-		// Condition ensures we stop as soon as the dining window would hit or exceed closing time
 		while (currentSlot.plusMinutes(diningDuration).isBefore(closeTime) ||
 				currentSlot.plusMinutes(diningDuration).isEqual(closeTime)) {
-
 			final OffsetDateTime start = currentSlot;
 			final OffsetDateTime end = currentSlot.plusMinutes(diningDuration);
-
 			List<TableSlotResponse> freeTables = physicalTables.stream()
 					.filter(pt -> {
 						List<Booking> list = bookingsByTable.get(UUID.fromString(pt.getTableId()));
@@ -382,17 +352,14 @@ public class BookingServiceImpl implements BookingService {
 										end.isAfter(b.getBookingDatetime()));
 					})
 					.toList();
-
 			result.add(new BookingSetupDto.BookingSetupResponse.AvailableSlot(
 					start,
 					!freeTables.isEmpty(),
 					freeTables.size(),
 					freeTables.stream().map(TableSlotResponse::getZoneName).distinct().toList()
 			));
-
 			currentSlot = currentSlot.plusMinutes(slotInterval);
 		}
-
 		return new BookingSetupDto.BookingSetupResponse(branchId, result);
 	}
 
@@ -401,42 +368,25 @@ public class BookingServiceImpl implements BookingService {
 	public BookingDto.BookingResponse updateStatus(UUID bookingId, BookingStatus newStatus, String reason, UUID currentUserId, String userRoles) {
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found: " + bookingId));
-
 		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
-
 		BookingStatus oldStatus = booking.getStatus();
-
-		// 1. Validation Logic
 		if (oldStatus == BookingStatus.CANCELED || oldStatus == BookingStatus.COMPLETED) {
 			throw new InvalidRequestException("Cannot change status of a finished or canceled booking.");
 		}
-
-		// 2. Update Entity
 		booking.setStatus(newStatus);
 		if (newStatus == BookingStatus.CANCELED) {
 			booking.setCancellationReason(reason);
 		}
 		bookingRepository.save(booking);
-
-		// 2. Redis Occupancy Counter Logic
 		String occupancyKey = "branch:occupancy:" + booking.getBranchId();
 		RAtomicLong activeBookingsCounter = redissonClient.getAtomicLong(occupancyKey);
-
-		// If moving from Active (CREATED, PAID, ARRIVED) to Inactive (CANCELED, COMPLETED, NO_SHOW)
 		if (isActive(oldStatus) && !isActive(newStatus)) {
 			activeBookingsCounter.decrementAndGet();
-		}
-		// If moving from Inactive to Active (less common, but handles re-activation)
-		else if (!isActive(oldStatus) && isActive(newStatus)) {
+		} else if (!isActive(oldStatus) && isActive(newStatus)) {
 			long currentCount = activeBookingsCounter.incrementAndGet();
 			checkAndNotifyLowAvailability(booking, currentCount);
 		}
-
-		// 3. Save Audit History (Required for your booking_status_histories table)
 		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, currentUserId, reason));
-
-		// 4. Publish Event for Microservices (Kafka)
-		// This notifies the Restaurant Service to mark the table as OCCUPIED or ACTIVE
 		BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 				.bookingId(booking.getId())
 				.tableId(booking.getTableId())
@@ -449,7 +399,6 @@ public class BookingServiceImpl implements BookingService {
 				.reason(reason)
 				.build();
 		eventProducer.sendBookingStatusUpdatedEvent(event);
-
 		return bookingMapper.toResponse(booking);
 	}
 
@@ -458,10 +407,7 @@ public class BookingServiceImpl implements BookingService {
 	public BookingDto.BookingDetailResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles) {
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
-
-		// Security check remains sequential as it's a prerequisite
 		restaurantGrpcClient.validateBranchPermission(booking.getBranchId(), currentUserId, userRoles);
-
 		return getEnrichedBookings(List.of(booking)).getFirst();
 	}
 
@@ -470,7 +416,6 @@ public class BookingServiceImpl implements BookingService {
 	public List<BookingDto.BookingDetailResponse> getBookingsByUser(UUID userId) {
 		List<Booking> bookings = bookingRepository.findAllByUserIdOrderByBookingDatetimeDesc(userId);
 		if (bookings.isEmpty()) return List.of();
-
 		return getEnrichedBookings(bookings);
 	}
 
@@ -479,79 +424,62 @@ public class BookingServiceImpl implements BookingService {
 	public void deleteBooking(UUID bookingId, UUID userId, String reason, UUID currentUserId, String userRoles) {
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
-
-		// 1. Security Check: Ensure the user owns the booking
 		if (!booking.getUserId().equals(userId)) {
 			throw new ForbiddenException("You are not authorized to cancel this booking");
 		}
-
-		// 2. Business Rule: Guard against invalid states
 		if (booking.getStatus() == BookingStatus.COMPLETED ||
 				booking.getStatus() == BookingStatus.CANCELED ||
 				booking.getStatus() == BookingStatus.ARRIVED) {
 			throw new InvalidRequestException("Booking cannot be canceled in its current state: " + booking.getStatus());
 		}
-
 		BookingStatus oldStatus = booking.getStatus();
-
-		// 3. REFUND LOGIC: If the user already PAID, call the Order Service via gRPC
 		if (oldStatus == BookingStatus.PAID && booking.getOrderId() != null && booking.getPaymentId() != null) {
-			// This gRPC call should be idempotent using bookingId
-			CancelOrderRequest request = CancelOrderRequest.newBuilder()
+			CancelOrderRequest cancelRequest = CancelOrderRequest.newBuilder()
 					.setBookingId(booking.getId().toString())
 					.setOrderId(booking.getOrderId().toString())
 					.setPaymentId(booking.getPaymentId().toString())
 					.setReason(reason != null ? reason : "Canceled by user")
 					.build();
-			CancelOrderResponse orderResponse = orderGrpcClient.cancelAndRefund(request);
+			CancelOrderResponse orderResponse = orderGrpcClient.cancelAndRefund(cancelRequest);
 			if (!orderResponse.getSuccess()) {
-				log.warn("Booking {} Refund has problem in cancelAndRefund. Current status: {}", bookingId, oldStatus);
-				throw new InvalidRequestException("Refund is failed: " + orderResponse.getReason());
+				log.warn("Booking {} Refund failed. Current status: {}", bookingId, oldStatus);
+				throw new InvalidRequestException("Refund failed: " + orderResponse.getReason());
 			}
 		}
-
 		booking.setStatus(BookingStatus.CANCELED);
 		booking.setCancellationReason(reason != null ? reason : "Canceled by user");
-
 		bookingRepository.save(booking);
-
-		// 5. Audit History
 		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, currentUserId, reason));
-
-		// 6. Release Table Lock (Redisson)
-		// This allows the 'Eat Now' slot to be immediately visible to other guests
-		String lockKey = "lock:table:" + booking.getTableId() + ":" + booking.getBookingDatetime().toEpochSecond();
-		RLock lock = redissonClient.getLock(lockKey);
-		if (lock.isLocked()) {
+		// FIXED: Use same lock key without timestamp
+		RLock lock = redissonClient.getLock(LOCK_PREFIX + booking.getTableId());
+		if (lock.isHeldByCurrentThread()) {
 			lock.unlock();
 		}
-
-		// 7. Event Production for Waitlist/Analytics
 		BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 				.bookingId(booking.getId())
 				.tableId(booking.getTableId())
 				.branchId(booking.getBranchId())
+				.zoneId(booking.getZoneId())
 				.userId(booking.getUserId())
 				.oldStatus(oldStatus)
 				.newStatus(BookingStatus.CANCELED)
 				.bookingTime(booking.getBookingDatetime())
 				.changedBy(currentUserId)
 				.reason(reason)
+				.partySize(booking.getPartySize())
 				.build();
 		eventProducer.sendBookingStatusUpdatedEvent(event);
+
+		waitlistService.notifyNextWaiting(booking.getBranchId(), booking.getZoneId(), booking.getPartySize());
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public List<BookingHistoryDto.BookingHistoryResponse> getStatusHistory(UUID bookingId) {
-		// 1. Verify booking exists
 		if (!bookingRepository.existsById(bookingId)) {
 			throw new InvalidRequestException("Booking not found");
 		}
-
 		List<BookingStatusHistory> histories = historyRepository.findAllByBookingIdOrderByChangedAtDesc(bookingId);
-
-		// 3. Map to DTOs
 		return histories.stream()
 				.map(bookingHistoryMapper::toResponse)
 				.collect(Collectors.toList());
@@ -559,56 +487,29 @@ public class BookingServiceImpl implements BookingService {
 
 	@Transactional(readOnly = true)
 	public List<BookingDto.BookingDetailResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles) {
-		// 1. Define the start and end of the day for the filter
 		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);
 		OffsetDateTime endOfDay = startOfDay.plusDays(1);
-
-		// 2. Fetch from repository using your SQL index
-		List<Booking> bookings = bookingRepository.findAllByBranchIdAndBookingDatetimeBetween(
-				branchId,
-				startOfDay,
-				endOfDay
-		);
-
+		List<Booking> bookings = bookingRepository.findAllByBranchIdAndBookingDatetimeBetween(branchId, startOfDay, endOfDay);
 		if (bookings.isEmpty()) return List.of();
-
 		return getEnrichedBookings(bookings);
 	}
 
 	@Transactional
 	public void markAsPaid(UUID paymentId, UUID bookingId, UUID staffOrSystemId, String paymentRef) {
-		// 1. Fetch the booking
 		Booking booking = bookingRepository.findById(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("Booking not found"));
-
 		booking.setPaymentId(paymentId);
-
 		BookingStatus oldStatus = booking.getStatus();
-
-		// 2. Validate current state (e.g., only CREATED bookings can be PAID)
 		if (oldStatus != BookingStatus.CREATED) {
 			log.warn("Booking {} already processed. Current status: {}", bookingId, oldStatus);
-			bookingMapper.toResponse(booking);
-			return; // Return current state for idempotency
+			return;
 		}
-
-		// 3. Update the state
 		booking.setStatus(BookingStatus.PAID);
 		bookingRepository.save(booking);
-
-		// 4. Save Audit History (booking_status_histories table)
-		historyRepository.save(BookingStatusHistory.of(
-				booking,
-				oldStatus,
-				staffOrSystemId,
-				"Payment confirmed. Ref: " + paymentRef
-		));
-
-		// 5. REGISTER ACTIONS AFTER COMMIT
+		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, staffOrSystemId, "Payment confirmed. Ref: " + paymentRef));
 		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
 			@Override
 			public void afterCommit() {
-				// Send Kafka message ONLY after DB is updated
 				BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 						.bookingId(booking.getId())
 						.tableId(booking.getTableId())
@@ -621,75 +522,79 @@ public class BookingServiceImpl implements BookingService {
 						.reason("Payment confirmed. Ref: " + paymentRef)
 						.build();
 				eventProducer.sendBookingStatusUpdatedEvent(event);
-
-				// Release lock ONLY after data is visible to other threads/services
-				String lockKey = "lock:table:" + booking.getTableId();
-				try {
-					redissonClient.getLock(lockKey).unlock();
-				} catch (IllegalMonitorStateException e) {
-					log.info("Lock for table {} already released.", booking.getTableId());
-				}
+				// Do NOT unlock – lock is not held by this method.
 			}
 		});
-
-		bookingMapper.toResponse(booking);
 	}
 
+	@Override
+	@Transactional
+	public Booking createBookingFromWaitlist(BookingDto.BookingRequest request, UUID currentUserId, String userRoles) {
+		// 1. Create the booking using the full createBooking flow (status = CREATED)
+		BookingDto.BookingResponse response = createBooking(request, currentUserId, userRoles);
 
-	private List<BookingSetupDto.BookingSetupResponse.MenuItemDto> mapMenu(List<MenuItemDetailResponse> menuItems) {
-		if (menuItems == null) return Collections.emptyList();
+		// 2. Fetch the newly created booking
+		Booking booking = bookingRepository.findById(response.bookingId())
+				.orElseThrow(() -> new InvalidRequestException("Booking not found after creation"));
 
-		return menuItems.stream()
-				.filter(MenuItemDetailResponse::getAvailable) // Only show items that are currently in stock
-				.map(this::mapToDto)
-				.toList();
-	}
+		// 3. Change status to CONFIRMED (skip payment)
+		BookingStatus oldStatus = booking.getStatus();
+		booking.setStatus(BookingStatus.CREATED);
+		bookingRepository.save(booking);
 
-	private BookingSetupDto.BookingSetupResponse.MenuItemDto mapToDto(MenuItemDetailResponse item) {
-		return BookingSetupDto.BookingSetupResponse.MenuItemDto.builder()
-				.menuItemId(UUID.fromString(item.getMenuItemId()))
-				.name(item.getName())
-				.description(item.getDescription())
-				.price(NumberUtil.stringToBigDecimal(item.getBasePrice()))
-				.category(item.getCategory())
-				// Map the repeated modifier groups
-				.modifierGroups(item.getModifierGroupsList().stream()
-						.map(group -> new BookingSetupDto.BookingSetupResponse.ModifierGroupDto(
-								group.getGroupName(),
-								group.getMinSelect(),
-								group.getMaxSelect(),
-								group.getOptionsList().stream() // Map nested options
-										.map(opt -> new BookingSetupDto.BookingSetupResponse.ModifierOptionDto(
-												opt.getName(),
-												NumberUtil.stringToBigDecimal(opt.getExtraPrice())
-										)).toList()
-						)).toList())
+		// 4. Record audit history for the status change
+		historyRepository.save(BookingStatusHistory.of(booking, oldStatus, currentUserId, "Promoted from waitlist claim"));
+
+		// 5. Publish status update event (optional but recommended)
+		BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
+				.bookingId(booking.getId())
+				.tableId(booking.getTableId())
+				.branchId(booking.getBranchId())
+				.userId(booking.getUserId())
+				.oldStatus(oldStatus)
+				.newStatus(BookingStatus.CREATED)
+				.bookingTime(booking.getBookingDatetime())
+				.changedBy(currentUserId)
+				.reason("Waitlist claim")
+				.partySize(booking.getPartySize())
 				.build();
+		eventProducer.sendBookingStatusUpdatedEvent(event);
+
+		return booking;
 	}
 
-	public void validateModifierSelections(List<BookingDto.BookingRequest.PreOrderItemRequest> selections, List<MenuItemDetailResponse> menuDetails) {
+	// ---------- Helper methods ----------
+
+	public void validateModifierSelections(List<BookingDto.BookingRequest.PreOrderItemRequest> selections,
+	                                       List<MenuItemDetailResponse> menuDetails) {
 		for (var selection : selections) {
-			// 1. Find source-of-truth menu detail
 			MenuItemDetailResponse menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(selection.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Menu item not found: " + selection.menuItemId()));
-
-			// 2. Validate each group (e.g., "Sides", "Toppings")
+			// Collect allowed modifier IDs
+			Set<String> allowedModifierIds = menu.getModifierGroupsList().stream()
+					.flatMap(group -> group.getOptionsList().stream())
+					.map(ModifierOptionResponse::getOptionId)
+					.collect(Collectors.toSet());
+			// Reject any modifier not allowed
+			if (selection.modifierIds() != null) {
+				for (UUID modId : selection.modifierIds()) {
+					if (!allowedModifierIds.contains(modId.toString())) {
+						throw new InvalidRequestException("Modifier ID " + modId + " is not valid for item " + selection.menuItemId());
+					}
+				}
+			}
+			// Min/Max validation
 			for (ModifierGroupResponse group : menu.getModifierGroupsList()) {
-				// Count how many of the user's modifierIds belong to this specific group
 				long selectedInGroupCount = selection.modifierIds() == null ? 0 :
 						selection.modifierIds().stream()
-								.filter(id -> group.getOptionsList().stream()
-										.anyMatch(opt -> opt.getOptionId().equals(id.toString())))
-								.count();
-
-				// Check Min rule (Mandatory)
+						.filter(id -> group.getOptionsList().stream()
+						              .anyMatch(opt -> opt.getOptionId().equals(id.toString())))
+						.count();
 				if (selectedInGroupCount < group.getMinSelect()) {
 					throw new InvalidRequestException(String.format("Selection required for '%s' in '%s'", group.getGroupName(), menu.getName()));
 				}
-
-				// Check Max rule (Limit)
 				if (group.getMaxSelect() > 0 && selectedInGroupCount > group.getMaxSelect()) {
 					throw new InvalidRequestException(String.format("Too many selections for '%s' in '%s'", group.getGroupName(), menu.getName()));
 				}
@@ -697,19 +602,15 @@ public class BookingServiceImpl implements BookingService {
 		}
 	}
 
-	private BigDecimal calculateFinalPrice(List<BookingDto.BookingRequest.PreOrderItemRequest> selections, List<MenuItemDetailResponse> menuDetails) {
+	private BigDecimal calculateFinalPrice(List<BookingDto.BookingRequest.PreOrderItemRequest> selections,
+	                                       List<MenuItemDetailResponse> menuDetails) {
 		BigDecimal grandTotal = BigDecimal.ZERO;
-
 		for (var selection : selections) {
 			MenuItemDetailResponse menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(selection.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Menu item mismatch"));
-
-			// Base Price from gRPC
 			BigDecimal itemPrice = NumberUtil.stringToBigDecimal(menu.getBasePrice());
-
-			// Add Extra Prices for chosen modifiers
 			if (selection.modifierIds() != null) {
 				for (UUID modId : selection.modifierIds()) {
 					BigDecimal extra = menu.getModifierGroupsList().stream()
@@ -721,8 +622,6 @@ public class BookingServiceImpl implements BookingService {
 					itemPrice = itemPrice.add(extra);
 				}
 			}
-
-			// Multiply by quantity and add to grand total
 			grandTotal = grandTotal.add(itemPrice.multiply(BigDecimal.valueOf(selection.quantity())));
 		}
 		return grandTotal;
@@ -732,17 +631,12 @@ public class BookingServiceImpl implements BookingService {
 	                              List<BookingDto.BookingRequest.PreOrderItemRequest> preOrderItems,
 	                              List<MenuItemDetailResponse> menuDetails) {
 		if (preOrderItems == null || preOrderItems.isEmpty()) return;
-
 		List<BookingItem> entities = preOrderItems.stream().map(itemDto -> {
-			// 1. Find the specific menu item from gRPC data to get real prices
 			MenuItemDetailResponse menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(itemDto.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Item mismatch"));
-
-			// 2. Calculate the Unit Price (Base Price + all selected Modifier Prices)
 			BigDecimal unitPrice = NumberUtil.stringToBigDecimal(menu.getBasePrice());
-
 			if (itemDto.modifierIds() != null) {
 				for (UUID modId : itemDto.modifierIds()) {
 					BigDecimal extra = menu.getModifierGroupsList().stream()
@@ -754,31 +648,25 @@ public class BookingServiceImpl implements BookingService {
 					unitPrice = unitPrice.add(extra);
 				}
 			}
-
-			// 3. Build the entity matching your SQL columns
 			return BookingItem.builder()
 					.booking(savedBooking)
 					.menuItemId(itemDto.menuItemId())
 					.quantity(itemDto.quantity())
-					.unitPrice(unitPrice) // Calculated server-side for security
+					.unitPrice(unitPrice)
 					.totalPrice(unitPrice.multiply(BigDecimal.valueOf(itemDto.quantity())))
 					.notes(itemDto.notes())
-					// .modifierIds(itemDto.modifierIds()) // Requires the ALTER TABLE step above
 					.build();
 		}).toList();
-
 		bookingItemRepository.saveAll(entities);
 	}
 
 	private List<BookingDto.BookingDetailResponse> getEnrichedBookings(List<Booking> bookings) {
-		// 1. Collect all unique IDs to avoid redundant gRPC calls
 		Set<String> userIds = bookings.stream().map(b -> b.getUserId().toString()).collect(Collectors.toSet());
 		Set<String> tableIds = bookings.stream().map(b -> b.getTableId().toString()).collect(Collectors.toSet());
 		List<String> menuItemIds = bookings.stream()
 				.flatMap(b -> b.getItems().stream().map(i -> i.getMenuItemId().toString()))
 				.distinct().toList();
 
-		// 2. Fetch all external data in parallel
 		var usersFuture = CompletableFuture.supplyAsync(() -> fetchUsersMap(userIds));
 		var tablesFuture = CompletableFuture.supplyAsync(() -> fetchTablesMap(tableIds));
 		var menusFuture = CompletableFuture.supplyAsync(() -> {
@@ -791,25 +679,28 @@ public class BookingServiceImpl implements BookingService {
 			}
 		});
 
-		CompletableFuture.allOf(usersFuture, tablesFuture, menusFuture).join();
+		// FIXED: Add timeout to prevent indefinite blocking
+		try {
+			CompletableFuture.allOf(usersFuture, tablesFuture, menusFuture)
+					.orTimeout(5, TimeUnit.SECONDS)
+					.join();
+		} catch (Exception e) {
+			log.error("Timeout or error while enriching bookings", e);
+		}
 
 		var userMap = usersFuture.join();
 		var tableMap = tablesFuture.join();
 		var menuMap = menusFuture.join();
 
-		// 3. Map and return
 		return bookings.stream().map(booking -> {
 			var user = userMap.getOrDefault(booking.getUserId().toString(),
 					UserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
-
 			var table = tableMap.getOrDefault(booking.getTableId().toString(),
 					TableHierarchyResponse.newBuilder().setTableId(NIL_UUID).setTableLabel("N/A").build());
-
 			var bookingMenus = booking.getItems().stream()
 					.map(i -> menuMap.get(i.getMenuItemId().toString()))
 					.filter(Objects::nonNull)
 					.toList();
-
 			return bookingMapper.toDetailResponse(booking, user, table, bookingMenus);
 		}).toList();
 	}
@@ -835,10 +726,10 @@ public class BookingServiceImpl implements BookingService {
 						return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build());
 					} catch (Exception e) {
 						return TableHierarchyResponse.newBuilder()
-								.setTableId(NIL_UUID)      // Result: "00000000..."
-								.setZoneId(NIL_UUID)       // Result: "00000000..."
-								.setBranchId(NIL_UUID)     // Result: "00000000..."
-								.setRestaurantId(NIL_UUID) // Result: "00000000..."
+								.setTableId(NIL_UUID)
+								.setZoneId(NIL_UUID)
+								.setBranchId(NIL_UUID)
+								.setRestaurantId(NIL_UUID)
 								.setTableLabel("N/A")
 								.setZoneName("Unknown")
 								.setRestaurantName("Unknown")
@@ -851,22 +742,10 @@ public class BookingServiceImpl implements BookingService {
 		));
 	}
 
-	private BookingSetupDto.BookingSetupResponse.TableInfoDto mapTableToDto(TableSlotResponse grpcTable) {
-		return new BookingSetupDto.BookingSetupResponse.TableInfoDto(
-				UUID.fromString(grpcTable.getTableId()),
-				grpcTable.getTableLabel(),
-				grpcTable.getZoneName(),
-				grpcTable.getMaxCapacity()
-		);
-	}
-
 	private void checkAndNotifyLowAvailability(Booking booking, long currentCount) {
-		// This calls the gRPC to get total table capacity for comparison
 		TableDetailResponse tableDetail = restaurantGrpcClient.getTableDetail(booking.getTableId());
 		int totalTables = tableDetail.getTotalTables();
 		double occupancy = ((double) currentCount / totalTables) * 100;
-
-		// 3. If threshold (e.g. 90%) is hit, publish the event
 		if (occupancy >= 90.0) {
 			BookingEvent.BranchAvailabilityEvent event = BookingEvent.BranchAvailabilityEvent.builder()
 					.eventId(UUID.randomUUID())
@@ -876,7 +755,6 @@ public class BookingServiceImpl implements BookingService {
 					.totalTables(totalTables)
 					.bookedTables((int) currentCount)
 					.build();
-
 			eventProducer.sendBookingBranchAvailabilityEvent(event);
 		}
 	}
@@ -885,10 +763,6 @@ public class BookingServiceImpl implements BookingService {
 		return status == BookingStatus.CREATED || status == BookingStatus.PAID || status == BookingStatus.ARRIVED;
 	}
 
-	/**
-	 * Rounds time forward to the next interval (e.g., 18:07 -> 18:30)
-	 * to align with the Figma time-picker grid.
-	 */
 	private OffsetDateTime roundToNextInterval(OffsetDateTime time, int interval) {
 		int minutes = time.getMinute();
 		int mod = minutes % interval;

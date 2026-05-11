@@ -18,26 +18,13 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
 
 	Optional<Media> findByIdAndDeletedFalse(UUID mediaId);
 
-	Optional<Media> findByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
+	List<Media> findByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
 
 	// Find primary SVG map for an entity, excluding soft-deleted
 	Optional<Media> findFirstByEntityIdAndMediaTypeAndDeletedFalse(UUID entityId, MediaType mediaType);
 
 	@Query("SELECT m.url FROM Media m WHERE m.entityId = :entityId AND m.primaryEntity = true AND m.deleted = false")
 	Optional<String> findPrimaryImageUrlByEntityId(@Param("entityId") UUID entityId);
-
-	// Custom query to find primary map by entity (used in setOrUpdateSvgMap)
-	@Query("SELECT m FROM Media m " +
-			"WHERE m.id = :entityId AND m.primaryEntity = true AND m.mapEntity = true AND m.deleted = false")
-	Optional<Media> findPrimaryMapByEntityAndDeletedFalse(
-			@Param("entityId") UUID entityId);
-
-	@Modifying
-	@Query("UPDATE Media m SET m.primaryEntity = :primaryEntity, m.updatedAt = CURRENT_TIMESTAMP " +
-			"WHERE m.id = :entityId AND m.deleted = false")
-	void updatePrimaryEntityByEntityTypeAndEntityIdAndDeletedFalse(
-			@Param("entityId") UUID entityId,
-			@Param("primaryEntity") boolean primaryEntity);
 
 	@Modifying
 	@Query("UPDATE Media m SET m.deleted = true, m.deletedAt = CURRENT_TIMESTAMP " +
@@ -64,4 +51,6 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
 			"AND m.mediaType IN (com.tuttime.restaurant.entity.enums.MediaType.IMAGE, com.tuttime.restaurant.entity.enums.MediaType.VIDEO) " +
 			"AND m.deleted = false")
 	List<Media> findAllImageAndVideoByEntityId(UUID entityId);
+
+	void deleteByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
 }
