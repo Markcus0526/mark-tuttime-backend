@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Force the property into the context immediately -->
-    <property name="HOSTNAME" value="api-gateway" />
+    <property name="HOSTNAME" value="api-gateway"/>
     <contextName>api-gateway</contextName>
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <!-- CUSTOM CONSOLE APPENDER WITH RED ERRORS -->
+    <!-- CONSOLE APPENDER -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) : %highlight(%msg) %n%highlight(%throwable)
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) : %highlight(%msg)
+                %n%highlight(%throwable)
             </pattern>
         </encoder>
     </appender>
@@ -26,9 +26,12 @@
             <originHost>api-gateway</originHost>
             <facility>api-gateway</facility>
 
+            <!-- ADD YOUR CUSTOM FILTER TO SUPPRESS HEALTH CHECKS -->
+            <filter class="com.tuttime.gateway.filter.HealthCheckLogFilter"/>
+
             <encoder class="de.siegmar.logbackgelf.GelfEncoder">
-                <!-- HARDCODED: This prevents the UnknownHostException -->
-                <originHost>api-gateway</originHost>
+                <!-- Remove the duplicate originHost line below -->
+                <!-- <originHost>api-gateway</originHost>   ← DELETE THIS -->
                 <includeRawMessage>false</includeRawMessage>
                 <includeMdcKeyName>correlationId</includeMdcKeyName>
             </encoder>

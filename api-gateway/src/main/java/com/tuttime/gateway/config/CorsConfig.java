@@ -28,50 +28,37 @@ public class CorsConfig {
 	public CorsWebFilter corsWebFilter() {
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-		// CORS configuration for WebSocket endpoints - allow all origins
-		// WebSocket connections don't use CORS preflight, but Spring Gateway checks Origin header
+		// ---------- WebSocket CORS (allows all origins, no credentials) ----------
 		CorsConfiguration websocketConfig = new CorsConfiguration();
-		websocketConfig.setAllowedOrigins(Arrays.asList("*")); // Allow all origins for WebSocket
+		websocketConfig.setAllowedOriginPatterns(List.of("*"));  // allow all origins
 		websocketConfig.setAllowedMethods(Arrays.asList("GET", "OPTIONS"));
-		// Explicitly allow Authorization header for WebSocket connections
 		websocketConfig.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "*"));
-		websocketConfig.setAllowCredentials(false); // Must be false when using "*" origin
+		websocketConfig.setAllowCredentials(false); // must be false with wildcard origin
 		websocketConfig.setMaxAge(3600L);
 		source.registerCorsConfiguration("/ws/**", websocketConfig);
-		log.info("CORS configured for WebSocket endpoints (/ws/**) - allowing all origins and Authorization header");
+		log.info("CORS configured for WebSocket endpoints (/ws/**) - allowing all origins, credentials disabled");
 
-		// CORS configuration for REST API endpoints
+		// ---------- REST API CORS (explicit origins, credentials allowed) ----------
 		CorsConfiguration apiConfig = new CorsConfiguration();
 
 		// Parse allowed origins from comma-separated string
 		List<String> origins = Arrays.asList(allowedOrigins.split(","));
-
-		// Check if "*" is explicitly configured (allow all origins)
-		boolean allowAllOrigins = origins.stream()
-				.map(String::trim)
-				.anyMatch(s -> "*".equals(s));
-
-		List<String> processedOrigins = origins.stream()
+		boolean allowAllOrigins = origins.stream().map(String::trim).anyMatch("*"::equals);
+		List<String> specificOrigins = origins.stream()
 				.map(String::trim)
 				.filter(s -> !s.isEmpty() && !"*".equals(s))
 				.toList();
 
-		// Configure CORS based on whether "*" is set
-		if (allowAllOrigins || processedOrigins.isEmpty()) {
-			// If "*" is configured or no origins specified, allow ALL origins
-			// This includes mobile apps that may not send Origin headers
-//			apiConfig.setAllowedOrigins(Arrays.asList("*"));
-//			apiConfig.setAllowCredentials(false); // Must be false when using "*" (CORS spec)
-//			log.info("CORS configured to allow ALL origins (*) - mobile apps supported, credentials disabled");
+		if (allowAllOrigins || specificOrigins.isEmpty()) {
+			// Wildcard origin: cannot send credentials (CORS spec violation otherwise)
 			apiConfig.setAllowedOriginPatterns(List.of("*"));
-			apiConfig.setAllowCredentials(true);
-			log.info("CORS: Server is now open to ALL computers and devices.");
+			apiConfig.setAllowCredentials(false);
+			log.info("CORS: Wildcard origin allowed for REST APIs – credentials disabled (browsers will not send cookies/auth)");
 		} else {
-			// Specific origins configured - use origin patterns for flexibility
-			// setAllowedOriginPatterns() is more flexible and handles edge cases better
-			apiConfig.setAllowedOriginPatterns(processedOrigins);
+			// Specific origins: credentials allowed
+			apiConfig.setAllowedOriginPatterns(specificOrigins);
 			apiConfig.setAllowCredentials(true);
-			log.info("CORS configured with specific origins: {} - credentials enabled", processedOrigins);
+			log.info("CORS: Specific origins allowed for REST APIs: {} – credentials enabled", specificOrigins);
 		}
 
 		// Allowed HTTP methods
@@ -79,7 +66,7 @@ public class CorsConfig {
 				"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"
 		));
 
-		// Allowed headers - includes device tracking headers for anti-fraud
+		// Allowed headers (including device tracking for anti-fraud)
 		apiConfig.setAllowedHeaders(Arrays.asList(
 				"Authorization",
 				"Content-Type",
@@ -89,24 +76,21 @@ public class CorsConfig {
 				"X-User-Email",
 				"X-Correlation-Id",
 				"X-Request-ID",
-				// Device tracking headers for anti-fraud and device fingerprinting
+				// Device tracking headers for anti-fraud
 				"X-Device-Id",
 				"X-Device-Type",
 				"X-Device-Model",
 				"X-OS-Version",
 				"X-App-Version",
-				// Standard headers that may be used for device fingerprinting
 				"User-Agent",
 				"Accept-Language",
 				"Accept-Encoding",
-				// IP forwarding headers (may be added by proxies/load balancers)
 				"X-Forwarded-For",
 				"X-Real-IP",
-				// Additional headers
 				"X-Telegram-Account"
 		));
 
-		// Exposed headers
+		// Exposed headers (client can read)
 		apiConfig.setExposedHeaders(Arrays.asList(
 				"X-Correlation-Id",
 				"X-Request-ID",
@@ -114,12 +98,10 @@ public class CorsConfig {
 				"X-Rate-Limit-Reset"
 		));
 
-		// Cache preflight requests for 1 hour
-		apiConfig.setMaxAge(3600L);
+		apiConfig.setMaxAge(3600L); // cache preflight for 1 hour
 
 		source.registerCorsConfiguration("/**", apiConfig);
 
 		return new CorsWebFilter(source);
 	}
 }
-

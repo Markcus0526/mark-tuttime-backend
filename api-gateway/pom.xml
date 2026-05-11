@@ -3,31 +3,32 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.tuttime</groupId>
         <artifactId>tuttime-backend</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath/>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <artifactId>api-gateway</artifactId>
     <name>Api Gateway</name>
     <packaging>jar</packaging>
+    <description>TutTime API Gateway (gRPC‑free, production ready)</description>
 
-    <description>TutTime API Gateway</description>
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bucket4j.version>8.10.0</bucket4j.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <jjwt.version>0.12.6</jjwt.version>
+        <springdoc-openapi.version>2.5.0</springdoc-openapi.version>
+        <logback-gelf.version>5.0.0</logback-gelf.version>
     </properties>
 
     <dependencies>
+        <!-- ========== Spring Cloud Gateway ========== -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
             <exclusions>
-                <!-- Exclude Tomcat - Spring Cloud Gateway requires Netty -->
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-tomcat</artifactId>
@@ -35,13 +36,12 @@
             </exclusions>
         </dependency>
 
-        <!-- Commons Exception for Error Codes -->
+        <!-- ========== Internal Common Modules (with full gRPC exclusions) ========== -->
         <dependency>
             <groupId>com.tuttime</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
             <exclusions>
-                <!-- Exclude Tomcat - Spring Cloud Gateway requires Netty -->
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-web</artifactId>
@@ -50,77 +50,55 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-tomcat</artifactId>
                 </exclusion>
+                <!-- Exclude ALL gRPC related artifacts -->
+                <exclusion>
+                    <groupId>net.devh</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>com.tuttime</groupId>
             <artifactId>common-event</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.devh</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.tuttime</groupId>
             <artifactId>common-auth</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <!-- gRPC Server -->
-        <dependency>
-            <groupId>net.devh</groupId>
-            <artifactId>grpc-spring-boot-starter</artifactId>
-            <version>${grpc-spring-boot-starter.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.devh</groupId>
-            <artifactId>grpc-client-spring-boot-starter</artifactId>
-            <version>3.1.0.RELEASE</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- gRPC -->
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty-shaded</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-
-        <!-- 1. The core gRPC Netty library (Not shaded) -->
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-
-        <!-- 2. SSL/TLS Support for Netty (Needed by GrpcSslConfigurer) -->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.65.Final</version>
-        </dependency>
-
-        <!-- Spring Boot Actuator -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
             <exclusions>
-                <!-- Exclude Tomcat - Spring Cloud Gateway requires Netty -->
                 <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                    <groupId>net.devh</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
 
-        <!-- JWT -->
+        <!-- ========== Actuator & Metrics ========== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- ========== JWT ========== -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -139,54 +117,17 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Redis for token blacklist -->
+        <!-- ========== Redis (Reactive) ========== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
         </dependency>
 
-        <!-- Bucket4j for Rate Limiting -->
-        <dependency>
-            <groupId>com.bucket4j</groupId>
-            <artifactId>bucket4j-core</artifactId>
-            <version>${bucket4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.bucket4j</groupId>
-            <artifactId>bucket4j-redis</artifactId>
-            <version>${bucket4j.version}</version>
-        </dependency>
-
-        <!-- Micrometer Tracing -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-brave</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.zipkin.reporter2</groupId>
-            <artifactId>zipkin-reporter-brave</artifactId>
-        </dependency>
-
-        <!-- Spring Cloud Circuit Breaker Resilience4j (Required for CircuitBreaker filter in Gateway) -->
+        <!-- ========== Resilience & Circuit Breaker ========== -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
         </dependency>
-        <!-- Kubernetes Discovery (for K8s only, optional dependency) -->
-        <!-- Version: 3.1.6 compatible with Spring Cloud 2023.0.3 -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-kubernetes-discoveryclient</artifactId>
-            <version>3.1.6</version>
-            <optional>true</optional>
-        </dependency>
-        <!-- Spring Cloud LoadBalancer for Feign clients (required when using service names) -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-
-        <!-- Resilience4j for Circuit Breaker -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-spring-boot3</artifactId>
@@ -196,32 +137,22 @@
             <artifactId>resilience4j-reactor</artifactId>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- ========== Distributed Tracing ========== -->
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.zipkin.reporter2</groupId>
+            <artifactId>zipkin-reporter-brave</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-        </dependency>
-
-        <!-- Spring Doc -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc-openapi.version}</version>
-        </dependency>
-        <!-- Use a very stable 2.5.0 build for both to maintain perfect symmetry -->
+        <!-- ========== OpenAPI / Swagger (WebFlux only) ========== -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
             <version>${springdoc-openapi.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-api</artifactId>
@@ -232,10 +163,30 @@
             <artifactId>webjars-locator-core</artifactId>
         </dependency>
 
-        <!-- Spring Boot Test -->
+        <!-- ========== Logging ========== -->
+        <dependency>
+            <groupId>de.siegmar</groupId>
+            <artifactId>logback-gelf</artifactId>
+            <version>${logback-gelf.version}</version>
+        </dependency>
+
+        <!-- ========== Lombok ========== -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ========== Testing ========== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -257,19 +208,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
-        </dependency>
-        <!-- Reactor Test for StepVerifier -->
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- GELF Logging for Graylog -->
-        <dependency>
-            <groupId>de.siegmar</groupId>
-            <artifactId>logback-gelf</artifactId>
-            <version>5.0.0</version>
         </dependency>
     </dependencies>
 
