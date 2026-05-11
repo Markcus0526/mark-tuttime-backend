@@ -34,6 +34,6 @@ public class TokenBlacklistService {
 	 * Checks if a JTI is blacklisted.
 	 */
 	public boolean isBlacklisted(String jti) {
-		return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + jti));
+		return redisTemplate.hasKey(BLACKLIST_PREFIX + jti);
 	}
 }

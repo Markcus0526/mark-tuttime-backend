@@ -20,8 +20,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 		scanBasePackages = "com.tuttime",
 		exclude = CacheAutoConfiguration.class
 )
-@Slf4j
 @EnableScheduling
+@Slf4j
 public class UserServiceApplication {
 
 	/**

@@ -14,11 +14,12 @@ import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.mapper.UserMapper;
 import com.tuttime.user.provider.StorageProvider;
+import com.tuttime.user.provider.TokenProvider;
 import com.tuttime.user.repository.*;
 import com.tuttime.user.service.UserService;
-import com.tuttime.user.util.TokenUtil;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
@@ -48,7 +50,7 @@ public class UserServiceImpl implements UserService {
 	private final StorageProvider storageProvider;
 	private final PasswordEncoder passwordEncoder;
 	private final EventProducer eventProducer;
-	private final TokenUtil tokenUtil;
+	private final TokenProvider tokenProvider;
 
 	@Override
 	@Transactional
@@ -83,7 +85,7 @@ public class UserServiceImpl implements UserService {
 		user.getRoles().add(UserRole.builder().user(user).role(role).build());
 
 		// 5. Setup Password & Auth Method
-		String rawPassword = tokenUtil.generateRandomPassword();
+		String rawPassword = tokenProvider.generateRandomPassword();
 		UserAuthMethod authMethod = UserAuthMethod.builder()
 				.user(user)
 				.credential(passwordEncoder.encode(rawPassword))
@@ -94,7 +96,7 @@ public class UserServiceImpl implements UserService {
 		authMethodRepository.save(authMethod);
 
 		// 6. Generate Verification Code
-		String code = tokenUtil.generateRandomCode();
+		String code = tokenProvider.generateRandomCode();
 		VerificationType type = (phoneNumber != null) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY;
 
 		VerificationCode verificationCode = new VerificationCode();
@@ -133,39 +135,42 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
+		boolean changed = false;
+
 		if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
 			userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
-					.ifPresent(u -> {
-						throw new ConflictException("Phone number already in use");
-					});
+					.ifPresent(u -> { throw new ConflictException("Phone number already in use"); });
 			user.setPhoneNumber(request.phoneNumber());
+			changed = true;
 		}
 
 		if (request.email() != null && !request.email().equals(user.getEmail())) {
 			userRepository.findByEmailAndDeletedFalse(request.email())
-					.ifPresent(u -> {
-						throw new ConflictException("Email already in use");
-					});
+					.ifPresent(u -> { throw new ConflictException("Email already in use"); });
 			user.setEmail(request.email());
+			changed = true;
 		}
 
-		if (request.fullName() != null) {
+		if (request.fullName() != null && !request.fullName().equals(user.getFullName())) {
 			user.setFullName(request.fullName());
+			changed = true;
 		}
 
-		if (request.profilePicture() != null) {
+		if (request.profilePicture() != null && !request.profilePicture().equals(user.getProfilePicture())) {
 			user.setProfilePicture(request.profilePicture());
+			changed = true;
 		}
 
-		user = userRepository.save(user);
-
-		UserEvent.ProfileUpdatedEvent event = UserEvent.ProfileUpdatedEvent.builder()
-				.userId(user.getId())
-				.fullName(user.getFullName())
-				.profilePicture(user.getProfilePicture())
-				.updatedAt(user.getUpdatedAt())
-				.build();
-		eventProducer.sendUserUpdatedEvent(event);
+		if (changed) {
+			user = userRepository.save(user);
+			UserEvent.ProfileUpdatedEvent event = UserEvent.ProfileUpdatedEvent.builder()
+					.userId(user.getId())
+					.fullName(user.getFullName())
+					.profilePicture(user.getProfilePicture())
+					.updatedAt(user.getUpdatedAt())
+					.build();
+			eventProducer.sendUserUpdatedEvent(event);
+		}
 
 		return userMapper.toResponse(user);
 	}
@@ -176,39 +181,33 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(id)
 				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
+		// 1. Handle profile picture: file takes precedence
 		if (file != null && !file.isEmpty()) {
-			// Clean up old file to save space/money
 			if (StringUtils.hasText(user.getProfilePicture())) {
 				storageProvider.delete(user.getProfilePicture());
 			}
-
-			// Store new file and get the key
 			String key = storageProvider.store(file);
 			user.setProfilePicture(key);
-		}
-
-		if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
-			userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
-					.ifPresent(u -> {
-						throw new ConflictException("Phone number already in use");
-					});
-			user.setPhoneNumber(request.phoneNumber());
-		}
-
-		if (request.email() != null && !request.email().equals(user.getEmail())) {
-			userRepository.findByEmailAndDeletedFalse(request.email())
-					.ifPresent(u -> {
-						throw new ConflictException("Email already in use");
-					});
-			user.setEmail(request.email());
-		}
-
-		if (request.fullName() != null) {
-			user.setFullName(request.fullName());
-		}
-
-		if (request.profilePicture() != null) {
+		} else if (request != null && request.profilePicture() != null) {
+			// Only set from JSON if no file and request is present
 			user.setProfilePicture(request.profilePicture());
+		}
+
+		// 2. Handle other fields only if request is not null
+		if (request != null) {
+			if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
+				userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
+						.ifPresent(u -> { throw new ConflictException("Phone number already in use"); });
+				user.setPhoneNumber(request.phoneNumber());
+			}
+			if (request.email() != null && !request.email().equals(user.getEmail())) {
+				userRepository.findByEmailAndDeletedFalse(request.email())
+						.ifPresent(u -> { throw new ConflictException("Email already in use"); });
+				user.setEmail(request.email());
+			}
+			if (request.fullName() != null) {
+				user.setFullName(request.fullName());
+			}
 		}
 
 		user = userRepository.save(user);
@@ -318,7 +317,30 @@ public class UserServiceImpl implements UserService {
 		UserRole userRole = userRoleRepository.findByUserIdAndRole(user.getId(), role)
 				.orElseThrow(() -> new InvalidRequestException("User role not found"));
 
+		long roleCount = userRoleRepository.countByUserId(userId);
+
+		// If this is the last role, do not allow removal without replacement
+		if (roleCount == 1) {
+			// If the only role is already USER, cannot remove (would leave no roles)
+			if ("USER".equalsIgnoreCase(roleName)) {
+				throw new InvalidRequestException("Cannot remove the last role (USER). User must have at least one role.");
+			}
+			// Replace the last privileged role with USER
+			Role userRoleEntity = roleRepository.findByName("USER")
+					.orElseThrow(() -> new InvalidRequestException("Default role USER not found"));
+			UserRole newUserRole = UserRole.builder()
+					.user(user)
+					.role(userRoleEntity)
+					.build();
+			userRoleRepository.delete(userRole);          // remove the old role
+			userRoleRepository.save(newUserRole);         // assign USER
+			log.info("Replaced last role {} with USER for user {}", roleName, userId);
+			return;
+		}
+
+		// More than one role, safe to delete
 		userRoleRepository.delete(userRole);
+		log.info("Removed role {} from user {}", roleName, userId);
 	}
 
 	@Override
@@ -365,6 +387,7 @@ public class UserServiceImpl implements UserService {
 		userLocationRepository.save(location);
 	}
 
+	@Override
 	@Transactional
 	public UserDto.UserResponse blockUser(UUID userId) {
 		User user = userRepository.findById(userId)
@@ -391,6 +414,7 @@ public class UserServiceImpl implements UserService {
 		return userMapper.toResponse(user);
 	}
 
+	@Override
 	@Transactional
 	public UserDto.UserResponse unblockUser(UUID userId) {
 		User user = userRepository.findById(userId)

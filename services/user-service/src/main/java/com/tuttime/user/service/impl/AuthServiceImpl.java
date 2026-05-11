@@ -5,10 +5,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import com.tuttime.common.enums.NotificationTemplateKey;
-import com.tuttime.common.enums.UserRoleKind;
-import com.tuttime.common.enums.UserStatus;
-import com.tuttime.common.enums.VerificationType;
+import com.tuttime.common.enums.*;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.UserEvent;
 import com.tuttime.common.event.proto.StaffUserRequest;
@@ -20,10 +17,12 @@ import com.tuttime.user.entity.*;
 import com.tuttime.user.entity.enums.AuthProvider;
 import com.tuttime.user.grpc.client.RestaurantGrpcClient;
 import com.tuttime.user.mapper.AuthMapper;
+import com.tuttime.user.provider.JwtTokenProvider;
+import com.tuttime.user.provider.TokenProvider;
 import com.tuttime.user.repository.*;
-import com.tuttime.user.security.JwtTokenProvider;
 import com.tuttime.user.service.AuthService;
-import com.tuttime.user.util.TokenUtil;
+import com.tuttime.user.service.TokenBlacklistService;
+import com.tuttime.user.service.TokenWhitelistService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
@@ -47,12 +46,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-	@Value("${app.oauth.google.client.id}")
-	private String googleClientId;
-
-	@Value("${app.oauth.apple.client.id}")
-	private String appleClientId;
-
 	private final UserRepository userRepository;
 	private final VerificationCodeRepository verificationCodeRepository;
 	private final UserAuthMethodRepository userAuthMethodRepository;
@@ -62,18 +55,27 @@ public class AuthServiceImpl implements AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final AuthMapper authMapper;
-	private final TokenUtil tokenUtil;
+	private final TokenProvider tokenProvider;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final EventProducer eventProducer;
+	private final TokenBlacklistService tokenBlacklistService;
+	private final TokenWhitelistService tokenWhitelistService;
 
+	@Value("${app.oauth.google.client.id}")
+	private String googleClientId;
+
+	@Value("${app.oauth.apple.client.id}")
+	private String appleClientId;
+
+	// ================== REGISTRATION ==================
 	@Override
-	@Transactional // CRITICAL: Ensure both saves happen in one transaction
+	@Transactional
 	public void registerUser(AuthDto.RegisterRequest request) {
+		// ... (unchanged, keep your existing code) ...
 		String phoneNumber = request.phoneNumber();
 		String email = request.email();
 		String password = request.password();
 
-		// Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
 			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
@@ -82,7 +84,6 @@ public class AuthServiceImpl implements AuthService {
 			throw new InvalidRequestException("Password must be provided");
 		}
 
-		// Check if user already exists by phone or email
 		if (StringUtils.hasText(request.phoneNumber()) &&
 				userRepository.existsByPhoneNumberAndDeletedFalse(request.phoneNumber())) {
 			throw new InvalidRequestException("Phone number in use");
@@ -93,45 +94,38 @@ public class AuthServiceImpl implements AuthService {
 			throw new InvalidRequestException("Email in use");
 		}
 
-		// 1. Create and populate User first
 		User user = new User();
 		user.setPhoneNumber(phoneNumber);
 		user.setEmail(email);
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
 		user = userRepository.saveAndFlush(user);
 
-		String targetRole = UserRoleKind.USER.name();
 		Role role = roleRepository.findByName(UserRoleKind.USER.name())
-				.orElseThrow(() -> new InvalidRequestException("Role " + targetRole + " not found"));
-		UserRole userRole = UserRole.builder()
-				.user(user)
-				.role(role)
-				.build();
+				.orElseThrow(() -> new InvalidRequestException("Role USER not found"));
+		UserRole userRole = UserRole.builder().user(user).role(role).build();
 		userRoleRepository.save(userRole);
 
-		// 2. Create and link AuthMethod to the SAVED user
 		UserAuthMethod authMethod = new UserAuthMethod();
-		authMethod.setUser(user); // Now 'user' has an ID!
+		authMethod.setUser(user);
 		if (request.password() != null)
 			authMethod.setCredential(passwordEncoder.encode(request.password()));
 		else
 			authMethod.setCredential(passwordEncoder.encode("1234567890"));
 		authMethod.setAuthType(StringUtils.hasText(phoneNumber) ? AuthProvider.PHONE_SMS : AuthProvider.EMAIL_PASS);
 		authMethod.setVerified(false);
-
 		user.addAuthMethod(authMethod);
-
 		userAuthMethodRepository.save(authMethod);
 		userRepository.save(user);
 
-		// Send verification (email or phone)
 		AuthDto.OtpVerificationRequest optRequest = new AuthDto.OtpVerificationRequest(phoneNumber, email);
 		sendOtpVerificationCode(optRequest, NotificationTemplateKey.USER_REGISTER);
 	}
 
+	// ================== LOGIN ==================
 	@Override
 	@Transactional
 	public void loginUser(AuthDto.LoginRequest request) {
+		// ... (unchanged, keep your existing code) ...
 		String identifier = request.emailOrPhone();
 		String password = request.password();
 
@@ -157,12 +151,10 @@ public class AuthServiceImpl implements AuthService {
 
 		User user = userOpt.get();
 
-		// Check user status
 		if (!user.getStatus().equals(UserStatus.ACTIVE)) {
 			throw new ForbiddenException("User account is not active");
 		}
 
-		// Check auth method and verify password
 		if (StringUtils.hasText(email)) {
 			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
 					.orElseThrow(() -> new ForbiddenException("Authentication method not found"));
@@ -171,28 +163,30 @@ public class AuthServiceImpl implements AuthService {
 				throw new ForbiddenException("Invalid credentials");
 			}
 
-			// Check verification
 			if (!authMethod.isVerified()) {
 				throw new ForbiddenException("User not verified");
 			}
 		}
 
-		// Send verification (email or phone)
 		AuthDto.OtpVerificationRequest optRequest = new AuthDto.OtpVerificationRequest(phoneNumber, email);
 		sendOtpVerificationCode(optRequest, NotificationTemplateKey.USER_LOGIN);
 	}
 
+	// ================== OAUTH LOGIN ==================
 	@Override
+	@Transactional
 	public AuthDto.AuthResponse authenticateOAuthUser(AuthDto.OAuthLoginRequest request) {
-		// 1. Validate and get user info from Provider
 		AuthDto.AuthResponse.OAuthUserInfo userInfo = validateOAuthToken(request.provider(), request.oauthToken());
-
-		// 2. Sync with local Database
 		User user = findOrCreateUserByOAuth(request, userInfo);
 
-		// 3. Generate internal tokens
 		String accessToken = jwtTokenProvider.generateAccessToken(user);
 		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+		// Whitelist both tokens
+		String accessJti = jwtTokenProvider.getJtiFromToken(accessToken);
+		String refreshJti = jwtTokenProvider.getJtiFromToken(refreshToken);
+		tokenWhitelistService.whitelist(accessJti, jwtTokenProvider.getAccessTokenExpirySeconds());
+		tokenWhitelistService.whitelist(refreshJti, jwtTokenProvider.getRefreshTokenExpirySeconds());
 
 		return authMapper.toAuthResponse(
 				user,
@@ -202,17 +196,33 @@ public class AuthServiceImpl implements AuthService {
 				null);
 	}
 
+	// ================== REFRESH TOKEN ==================
 	@Override
+	@Transactional
 	public AuthDto.AuthResponse refreshJwtToken(String refreshToken) {
 		if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
 			throw new ForbiddenException("Invalid refresh token");
 		}
+
+		// Blacklist the old refresh token's JTI to prevent reuse
+		Claims oldClaims = jwtTokenProvider.getRefreshClaims(refreshToken);
+		String oldJti = oldClaims.getId();
+		long remainingMs = oldClaims.getExpiration().getTime() - System.currentTimeMillis();
+		if (remainingMs > 0) {
+			tokenBlacklistService.blacklistJti(oldJti, remainingMs);
+		}
+
 		UUID userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshToken);
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
 		String newAccessToken = jwtTokenProvider.generateAccessToken(user);
 		String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+		String accessJti = jwtTokenProvider.getJtiFromToken(newAccessToken);
+		String refreshJti = jwtTokenProvider.getJtiFromToken(newRefreshToken);
+		tokenWhitelistService.whitelist(accessJti, jwtTokenProvider.getAccessTokenExpirySeconds());
+		tokenWhitelistService.whitelist(refreshJti, jwtTokenProvider.getRefreshTokenExpirySeconds());
 
 		return authMapper.toAuthResponse(
 				user,
@@ -222,79 +232,80 @@ public class AuthServiceImpl implements AuthService {
 				null);
 	}
 
+	// ================== LOGOUT ==================
 	@Override
+	@Transactional
 	public void logoutUser(String refreshToken, String fcmToken) {
-		// Implementation depends on token invalidation strategy
-		// e.g., store refresh token blacklist or remove from persistent store
-		jwtTokenProvider.invalidateRefreshToken(refreshToken);
-
+		// Blacklist the refresh token JTI
+		if (refreshToken != null && jwtTokenProvider.validateRefreshToken(refreshToken)) {
+			Claims claims = jwtTokenProvider.getRefreshClaims(refreshToken);
+			String jti = claims.getId();
+			long remainingMs = claims.getExpiration().getTime() - System.currentTimeMillis();
+			if (remainingMs > 0) {
+				tokenBlacklistService.blacklistJti(jti, remainingMs);
+			}
+			tokenWhitelistService.remove(jti);
+		}
 		if (fcmToken != null) {
 			userDeviceRepository.deleteByFcmToken(fcmToken);
 		}
 	}
 
+	// ================== OTP VERIFICATION & LOGIN ==================
 	@Override
 	@Transactional
 	public void sendOtpVerificationCode(AuthDto.OtpVerificationRequest request, NotificationTemplateKey templateKey) {
+		// ... (unchanged, keep your existing code) ...
 		String phoneNumber = request.phoneNumber();
 		String email = request.email();
 
-		// 1. Validate phone/email presence
 		if (!StringUtils.hasText(phoneNumber) && !StringUtils.hasText(email)) {
 			throw new InvalidRequestException("Either phone number or email must be provided");
 		}
 
-		// 2. Fetch User and Validate Registration
 		User user = (StringUtils.hasText(phoneNumber))
 				? userRepository.findByPhoneNumberAndDeletedFalse(phoneNumber)
 				  .orElseThrow(() -> new InvalidRequestException("Phone number not registered"))
 				: userRepository.findByEmailAndDeletedFalse(email)
 				  .orElseThrow(() -> new InvalidRequestException("Email not registered"));
 
-		// 3. Generate and Save Verification Code
-		String code = tokenUtil.generateRandomCode();
+		String code = tokenProvider.generateRandomCode();
 		VerificationType type = StringUtils.hasText(phoneNumber) ? VerificationType.PHONE_VERIFY : VerificationType.EMAIL_VERIFY;
 
 		VerificationCode verificationCode = new VerificationCode();
 		verificationCode.setType(type);
 		verificationCode.setTarget(StringUtils.hasText(phoneNumber) ? phoneNumber : email);
-		verificationCode.setCodeHash(passwordEncoder.encode(code)); // Security: Hash the code in DB
+		verificationCode.setCodeHash(passwordEncoder.encode(code));
 		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(600));
 		verificationCode.setUsed(false);
 		verificationCodeRepository.save(verificationCode);
 
-		// 4. Send Event to Notification Service via Kafka
-		// We send a single event; the Notification Service routes via 'type'
 		UserEvent.VerificationEvent event = UserEvent.VerificationEvent.builder()
 				.userId(user.getId())
 				.email(user.getEmail())
 				.phoneNumber(user.getPhoneNumber())
-				.verificationCode(code) // Plain code sent ONLY to Kafka
+				.verificationCode(code)
 				.templateKey(templateKey)
 				.type(type)
 				.build();
-
 		eventProducer.sendUserVerificationRequestedEvent(event);
 
 		log.info("Verification event sent for user {} via {}", user.getId(), type);
 	}
 
+	@Override
 	@Transactional
 	public AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request) {
 		String target = StringUtils.hasText(request.phoneNumber()) ? request.phoneNumber() : request.email();
 
-		// 1. Find the latest unused code for the specific target (email or phone)
 		VerificationCode verificationCode = verificationCodeRepository
 				.findTopByTargetAndUsedFalseOrderByCreatedAtDesc(target)
 				.orElseThrow(() -> new InvalidRequestException("Invalid or expired OTP code"));
 
-		// 2. Security Check: Use .matches() to compare raw input with DB Hash
-		// NEVER use passwordEncoder.encode() in a query; it generates a new salt every time.
 		if (!passwordEncoder.matches(request.code(), verificationCode.getCodeHash())) {
 			throw new InvalidRequestException("Invalid or expired OTP code");
 		}
 
-		// 3. Expiration Check: Compare against the expiresAt field you saved
 		if (verificationCode.getExpiresAt().isBefore(OffsetDateTime.now())) {
 			throw new InvalidRequestException("Invalid or expired OTP code");
 		}
@@ -302,19 +313,16 @@ public class AuthServiceImpl implements AuthService {
 		verificationCode.setUsed(true);
 		verificationCodeRepository.save(verificationCode);
 
-		// 2. Find User
 		User user = (verificationCode.getType() == VerificationType.PHONE_VERIFY)
 				? userRepository.findByPhoneNumberAndDeletedFalse(target)
 				  .orElseThrow(() -> new InvalidRequestException("User not found"))
 				: userRepository.findByEmailAndDeletedFalse(target)
 				  .orElseThrow(() -> new InvalidRequestException("User not found"));
 
-		// 3. Update User State
 		user.setStatus(UserStatus.ACTIVE);
 		user.setLastLogin(OffsetDateTime.now());
 		userRepository.save(user);
 
-		// Optional: If you want to ensure the user has an auth method for EMAIL_PASS
 		if (verificationCode.getType() == VerificationType.EMAIL_VERIFY) {
 			UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(user.getId(), AuthProvider.EMAIL_PASS)
 					.orElseThrow(() -> new InvalidRequestException("Authentication method not found"));
@@ -322,7 +330,7 @@ public class AuthServiceImpl implements AuthService {
 			userAuthMethodRepository.save(authMethod);
 		}
 
-		// 4. Fetch Management Context (gRPC) if applicable
+		// Fetch staff context (unchanged)
 		AuthDto.AuthResponse.RestaurantStaffDto staffContext = null;
 		List<String> roleNames = user.getRoles().stream()
 				.map(ur -> ur.getRole().getName())
@@ -333,9 +341,7 @@ public class AuthServiceImpl implements AuthService {
 				StaffUserResponse grpcResponse = restaurantGrpcClient.getStaffForUser(
 						StaffUserRequest.newBuilder().setUserId(user.getId().toString()).build()
 				);
-
 				if (!grpcResponse.getRestaurantId().isEmpty()) {
-					// Since RestaurantStaff is a Record, use the constructor
 					staffContext = new AuthDto.AuthResponse.RestaurantStaffDto(
 							UUID.fromString(grpcResponse.getRestaurantId()),
 							grpcResponse.getBranchId().isEmpty() ? null : UUID.fromString(grpcResponse.getBranchId()),
@@ -348,52 +354,54 @@ public class AuthServiceImpl implements AuthService {
 			}
 		}
 
-		// 5. Use the Mapper (Updated to handle staff parameter)
+		// Generate tokens and whitelist them
+		String accessToken = jwtTokenProvider.generateAccessToken(user);
+		String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+		String accessJti = jwtTokenProvider.getJtiFromToken(accessToken);
+		String refreshJti = jwtTokenProvider.getJtiFromToken(refreshToken);
+		tokenWhitelistService.whitelist(accessJti, jwtTokenProvider.getAccessTokenExpirySeconds());
+		tokenWhitelistService.whitelist(refreshJti, jwtTokenProvider.getRefreshTokenExpirySeconds());
+
 		return authMapper.toAuthResponse(
 				user,
-				jwtTokenProvider.generateAccessToken(user),
-				jwtTokenProvider.generateRefreshToken(user),
+				accessToken,
+				refreshToken,
 				jwtTokenProvider.getAccessTokenExpirySeconds(),
-				staffContext // Pass the context into the mapper
+				staffContext
 		);
 	}
 
-
+	// ================== PASSWORD RESET ==================
 	@Override
 	@Transactional
 	public void initiatePasswordReset(AuthDto.PasswordResetRequest request) {
+		// ... (unchanged, keep your existing code) ...
 		String email = request.email();
 
 		if (!StringUtils.hasText(email)) {
 			throw new InvalidRequestException("Email must be provided");
 		}
 
-		// 1. Fetch User
 		User user = userRepository.findByEmailAndDeletedFalse(email)
 				.orElseThrow(() -> new InvalidRequestException("User with this email not found"));
 
-		// 2. Generate and Save Verification Code
-		String code = tokenUtil.generateRandomCode();
+		String code = tokenProvider.generateRandomCode();
 
 		VerificationCode verificationCode = new VerificationCode();
-		verificationCode.setType(VerificationType.PASSWORD_RESET); // Use a specific type for password resets
+		verificationCode.setType(VerificationType.PASSWORD_RESET);
 		verificationCode.setTarget(email);
-		verificationCode.setCodeHash(passwordEncoder.encode(code)); // Recommended: Hash the code
-		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(600)); // 10 min for reset is better
+		verificationCode.setCodeHash(passwordEncoder.encode(code));
+		verificationCode.setExpiresAt(OffsetDateTime.now().plusSeconds(600));
 		verificationCode.setUsed(false);
 		verificationCodeRepository.save(verificationCode);
 
-		// 3. Send Event to Notification Service
-		// We use a specific template key like 'PASSWORD_RESET' so the
-		// Notification Service can use a different HTML template than OTP.
 		UserEvent.VerificationEvent event = UserEvent.VerificationEvent.builder()
 				.userId(user.getId())
 				.email(email)
 				.verificationCode(code)
 				.type(VerificationType.EMAIL_VERIFY)
-				.templateKey(NotificationTemplateKey.PASSWORD_RESET) // Explicitly set the template to use
+				.templateKey(NotificationTemplateKey.PASSWORD_RESET)
 				.build();
-
 		eventProducer.sendUserVerificationRequestedEvent(event);
 
 		log.info("Password reset event sent to Kafka for user: {}", email);
@@ -402,11 +410,11 @@ public class AuthServiceImpl implements AuthService {
 	@Override
 	@Transactional
 	public void resetPassword(AuthDto.PasswordResetConfirmRequest request) {
+		// ... (unchanged, keep your existing code) ...
 		String email = request.email();
 		String newPassword = request.newPassword();
 		String code = request.code();
 
-		// Validate phone/email presence
 		if (!StringUtils.hasText(email)) {
 			throw new InvalidRequestException("Email must be provided");
 		}
@@ -417,27 +425,21 @@ public class AuthServiceImpl implements AuthService {
 			throw new InvalidRequestException("OTP code must be provided");
 		}
 
-		// 1. Find the latest unused code for the specific target (email or phone)
 		VerificationCode verificationCode = verificationCodeRepository
 				.findTopByTargetAndUsedFalseOrderByCreatedAtDesc(email)
 				.orElseThrow(() -> new InvalidRequestException("Invalid or expired OTP code"));
 
-		// 2. Security Check: Use .matches() to compare raw input with DB Hash
-		// NEVER use passwordEncoder.encode() in a query; it generates a new salt every time.
 		if (!passwordEncoder.matches(request.code(), verificationCode.getCodeHash())) {
 			throw new InvalidRequestException("Invalid or expired OTP code");
 		}
 
-		// 3. Expiration Check: Compare against the expiresAt field you saved
 		if (verificationCode.getExpiresAt().isBefore(OffsetDateTime.now())) {
 			throw new InvalidRequestException("Invalid or expired OTP code");
 		}
 
-		// Step 2: Mark OTP as used
 		verificationCode.setUsed(true);
 		verificationCodeRepository.save(verificationCode);
 
-		// Step 3: Find or create user by phone number
 		User user = userRepository.findByEmailAndDeletedFalse(email)
 				.orElseThrow(() -> new InvalidRequestException("User not found"));
 
@@ -446,6 +448,8 @@ public class AuthServiceImpl implements AuthService {
 		userRepository.save(user);
 	}
 
+	// ================== DEVICE TOKEN ==================
+	@Override
 	@Transactional
 	public void registerDevice(UUID userId, AuthDto.DeviceRegistrationRequest deviceInfo) {
 		userDeviceRepository.upsertToken(
@@ -456,6 +460,61 @@ public class AuthServiceImpl implements AuthService {
 		);
 	}
 
+	// ================== USER BLOCK / UNBLOCK / DELETE (Admin) ==================
+	@Override
+	@Transactional
+	public void blockUser(UUID userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
+		if (user.getStatus() == UserStatus.BLOCKED) {
+			return;
+		}
+		user.setStatus(UserStatus.BLOCKED);
+		userRepository.save(user);
+		// Publish event to gateway
+		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
+				.type(UserStatusEvent.USER_BLOCKED)
+				.userId(userId)
+				.build();
+		eventProducer.sendUserSecurityEvent(event);
+		log.info("User {} blocked, event sent", userId);
+	}
+
+	@Override
+	@Transactional
+	public void unblockUser(UUID userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
+		if (user.getStatus() != UserStatus.BLOCKED) {
+			return;
+		}
+		user.setStatus(UserStatus.ACTIVE);
+		userRepository.save(user);
+		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
+				.type(UserStatusEvent.USER_UNBLOCKED)
+				.userId(userId)
+				.build();
+		eventProducer.sendUserSecurityEvent(event);
+		log.info("User {} unblocked, event sent", userId);
+	}
+
+	@Override
+	@Transactional
+	public void deleteUser(UUID userId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new InvalidRequestException("User not found"));
+		user.setDeleted(true);
+		user.setDeletedAt(OffsetDateTime.now());
+		userRepository.save(user);
+		UserEvent.SecurityEvent event = UserEvent.SecurityEvent.builder()
+				.type(UserStatusEvent.USER_DELETED)
+				.userId(userId)
+				.build();
+		eventProducer.sendUserSecurityEvent(event);
+		log.info("User {} deleted, event sent", userId);
+	}
+
+	// ================== PRIVATE HELPERS ==================
 	private void updatePasswordForUser(UUID userId, String newPassword) {
 		UserAuthMethod authMethod = userAuthMethodRepository.findByUserIdAndAuthType(userId, AuthProvider.EMAIL_PASS)
 				.orElseThrow(() -> new InvalidRequestException("Authentication method not found"));
@@ -463,8 +522,6 @@ public class AuthServiceImpl implements AuthService {
 		authMethod.setVerified(true);
 		userAuthMethodRepository.save(authMethod);
 	}
-
-	// Helper stubs - implement these appropriately
 
 	private AuthDto.AuthResponse.OAuthUserInfo validateOAuthToken(AuthProvider provider, String token) {
 		return switch (provider) {
@@ -476,20 +533,14 @@ public class AuthServiceImpl implements AuthService {
 
 	private AuthDto.AuthResponse.OAuthUserInfo verifyGoogleToken(String token) {
 		try {
-			// 2. Re-run verification with skew allowance
 			GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
 					.setAudience(Collections.singletonList(googleClientId))
 					.setAcceptableTimeSkewSeconds(60)
 					.build();
-
 			GoogleIdToken idToken = verifier.verify(token);
-
 			if (idToken == null) {
-				// If it's still null, compare the 'aud' from the DEBUG print above
-				// with your 'googleClientId' variable. They must be IDENTICAL.
 				throw new ForbiddenException("Invalid Google Token (Verification failed)");
 			}
-
 			GoogleIdToken.Payload payload = idToken.getPayload();
 			return new AuthDto.AuthResponse.OAuthUserInfo(
 					payload.getSubject(),
@@ -509,31 +560,23 @@ public class AuthServiceImpl implements AuthService {
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
-
 		return new AuthDto.AuthResponse.OAuthUserInfo(
-				claims.getSubject(),     // providerId
-				claims.get("email", String.class), // email
-				null); // Apple often doesn't send the name in the token
+				claims.getSubject(),
+				claims.get("email", String.class),
+				null);
 	}
 
 	private User findOrCreateUserByOAuth(AuthDto.OAuthLoginRequest request, AuthDto.AuthResponse.OAuthUserInfo userInfo) {
 		AuthProvider provider = request.provider();
-
-		// 1. Check if this specific OAuth account is already linked
 		return userAuthMethodRepository.findByAuthTypeAndProviderId(provider, userInfo.providerId())
 				.map(UserAuthMethod::getUser)
 				.orElseGet(() -> {
-					// 2. If not, check if a user with this email already exists
 					return userRepository.findByEmailAndDeletedFalse(userInfo.email())
 							.map(existingUser -> {
-								// Link new OAuth method to existing account
-								linkOAuthMethod(existingUser, request.provider(), userInfo.providerId());
+								linkOAuthMethod(existingUser, provider, userInfo.providerId());
 								return existingUser;
 							})
-							.orElseGet(() -> {
-								// 3. Create a brand new User
-								return createNewOAuthUser(request.provider(), userInfo);
-							});
+							.orElseGet(() -> createNewOAuthUser(provider, userInfo));
 				});
 	}
 
@@ -541,16 +584,12 @@ public class AuthServiceImpl implements AuthService {
 		User newUser = User.builder()
 				.email(userInfo.email())
 				.fullName(userInfo.fullName())
-				.status(UserStatus.ACTIVE) // OAuth users are usually pre-verified
+				.status(UserStatus.ACTIVE)
 				.build();
-
 		linkOAuthMethod(newUser, provider, userInfo.providerId());
-
-		// Add default role
 		Role role = roleRepository.findByName(UserRoleKind.USER.name())
-				.orElseThrow(() -> new InvalidRequestException("Role " + UserRoleKind.USER.name() + " not found"));
+				.orElseThrow(() -> new InvalidRequestException("Role USER not found"));
 		newUser.getRoles().add(UserRole.builder().user(newUser).role(role).build());
-
 		return userRepository.save(newUser);
 	}
 
@@ -558,26 +597,16 @@ public class AuthServiceImpl implements AuthService {
 		UserAuthMethod method = UserAuthMethod.builder()
 				.user(user)
 				.authType(provider)
-				.credential(oauthId) // Store the 'sub' ID here
-				.verified(true)      // OAuth providers are pre-verified
+				.credential(oauthId)
+				.verified(true)
 				.build();
 		user.addAuthMethod(method);
 	}
 
 	public PublicKey getApplePublicKey(String token) {
 		try {
-			// 1. Parse the token without verification to extract 'kid' from header
-//			String kid = Jwts.parser()
-//					.build()
-//					.parse(token)
-////					.accept(Jws.class)
-//					.getHeader()
-//					.getKeyId();
-
 			var jwt = Jwts.parser().build().parse(token);
 			String kid = ((io.jsonwebtoken.JwsHeader) jwt.getHeader()).getKeyId();
-
-			// 2. Use the Auth0 library to fetch Apple's keys and find the match
 			UrlJwkProvider provider = new UrlJwkProvider(new URL("https://apple.com"));
 			return provider.get(kid).getPublicKey();
 		} catch (Exception e) {
