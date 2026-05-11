@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 import static com.tuttime.common.constants.ServiceNames.USER_SERVICE;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class UserGrpcClient {
 
 	@Value("${grpc.client-deadline-seconds}")
@@ -26,15 +26,19 @@ public class UserGrpcClient {
 	@GrpcClient("user-service")
 	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public UserDetailResponse getUserDetail(UserDetailRequest request) {
-		return GrpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
-				userServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
+				userServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getUserDetail(request));
 	}
 
 	public void deleteDeviceToken(DeviceTokenDeleteRequest request) {
-		GrpcExecutor.execute(USER_SERVICE, "deleteDeviceToken", () ->
-				userServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		grpcExecutor.execute(USER_SERVICE, "deleteDeviceToken", () ->
+				userServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.deleteDeviceToken(request));
 	}
 }

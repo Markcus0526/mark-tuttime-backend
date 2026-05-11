@@ -13,8 +13,8 @@ import java.util.concurrent.TimeUnit;
 import static com.tuttime.common.constants.ServiceNames.USER_SERVICE;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class RestaurantGrpcClient {
 
 	@Value("${grpc.client-deadline-seconds}")
@@ -23,9 +23,12 @@ public class RestaurantGrpcClient {
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public BranchManagersResponse getBranchManagers(BranchManagersRequest request) {
-		return GrpcExecutor.execute(USER_SERVICE, "getBranchManagers", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(USER_SERVICE, "getBranchManagers", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getBranchManagers(request));
 	}
 }
