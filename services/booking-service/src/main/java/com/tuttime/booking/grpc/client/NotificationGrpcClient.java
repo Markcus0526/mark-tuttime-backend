@@ -25,9 +25,12 @@ public class NotificationGrpcClient {
 	@GrpcClient("notification-service")
 	private NotificationServiceGrpc.NotificationServiceBlockingStub notificationServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public void sendNotification(NotificationRequest request) {
-		GrpcExecutor.execute(NOTIFICATION_SERVICE, "sendNotification", () ->
-				notificationServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		grpcExecutor.execute(NOTIFICATION_SERVICE, "sendNotification", () ->
+				notificationServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.sendNotification(request));
 	}
 }

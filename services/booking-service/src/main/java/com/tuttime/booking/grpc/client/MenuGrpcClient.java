@@ -28,12 +28,15 @@ public class MenuGrpcClient {
 	@GrpcClient("menu-service")
 	private MenuServiceGrpc.MenuServiceBlockingStub menuServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public List<MenuItemDetailResponse> getPreOrderMenu(UUID branchId) {
 		MenuRequest request = MenuRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
-		return GrpcExecutor.execute(MENU_SERVICE, "getPreOrderMenu", () ->
-				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(MENU_SERVICE, "getPreOrderMenu", () ->
+				menuServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getPreOrderMenu(request).getItemsList());
 	}
 
@@ -42,8 +45,9 @@ public class MenuGrpcClient {
 				.addAllMenuItemIds(menuItemIds)
 				.build();
 
-		return GrpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
-				menuServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(MENU_SERVICE, "getMenuDetails", () ->
+				menuServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getMenuDetails(request).getItemsList());
 	}
 }

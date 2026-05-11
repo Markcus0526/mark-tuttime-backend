@@ -25,21 +25,26 @@ public class OrderGrpcClient {
 	@GrpcClient("order-service")
 	private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public CreateOrderResponse createOrder(CreateOrderRequest request) {
-		return GrpcExecutor.execute(ORDER_SERVICE, "createOrder", () ->
-				orderServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(ORDER_SERVICE, "createOrder", () ->
+				orderServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.createOrder(request));
 	}
 
 	public UpdateOrderResponse updateOrder(UpdateOrderRequest request) {
-		return GrpcExecutor.execute(ORDER_SERVICE, "updateOrder", () ->
-				orderServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(ORDER_SERVICE, "updateOrder", () ->
+				orderServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.updateOrder(request));
 	}
 
 	public CancelOrderResponse cancelAndRefund(CancelOrderRequest request) {
-		return GrpcExecutor.execute(ORDER_SERVICE, "cancelAndRefund", () ->
-				orderServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(ORDER_SERVICE, "cancelAndRefund", () ->
+				orderServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.cancelAndRefund(request));
 	}
 }
