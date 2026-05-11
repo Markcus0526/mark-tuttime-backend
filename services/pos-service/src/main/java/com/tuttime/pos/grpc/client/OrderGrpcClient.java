@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 import static com.tuttime.common.constants.ServiceNames.ORDER_SERVICE;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class OrderGrpcClient {
 
 	@Value("${grpc.client-deadline-seconds}")
@@ -26,13 +26,16 @@ public class OrderGrpcClient {
 	@GrpcClient("order-service") // Configuration name in application.yml
 	private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public OrderDetailResponse getOrderDetail(UUID orderId) {
 		OrderDetailRequest request = OrderDetailRequest.newBuilder()
 				.setOrderId(orderId.toString())
 				.build();
 
-		return GrpcExecutor.execute(ORDER_SERVICE, "getOrderDetail", () ->
-				orderServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(ORDER_SERVICE, "getOrderDetail", () ->
+				orderServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getOrderDetail(request));
 	}
 }
