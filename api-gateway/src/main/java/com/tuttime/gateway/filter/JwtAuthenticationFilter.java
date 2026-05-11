@@ -12,17 +12,15 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.ServerWebExchangeDecorator;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.regex.Pattern;
 
-@Slf4j
 @Component
+@Slf4j
 public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> {
 
 	private final JwtTokenUtil jwtTokenUtil;
@@ -44,73 +42,102 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 		return "JwtAuthentication";
 	}
 
+	// ----- Public endpoint rules (exact path prefixes) -----
 	private record PublicEndpointRule(String pathPrefix, List<String> allowedMethods) {
 		boolean matches(String path, String method) {
 			return path.startsWith(pathPrefix) && allowedMethods.contains(method);
 		}
 	}
 
-	private static final List<PublicEndpointRule> PUBLIC_ENDPOINT_RULES = Arrays.asList(
-			// Health & monitoring
-			new PublicEndpointRule("/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
-			new PublicEndpointRule("/api/v1/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
-			new PublicEndpointRule("/actuator", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")),
+	// ----- Regex patterns for public endpoints (supports any service prefix like /user-docs, /restaurant-docs) -----
+	private record PublicEndpointRegexRule(Pattern pattern, List<String> allowedMethods) {
+		boolean matches(String path, String method) {
+			return pattern.matcher(path).matches() && allowedMethods.contains(method);
+		}
+	}
 
-			// OpenAPI spec documents (public)
-//			new PublicEndpointRule("/user-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/restaurant-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/menu-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/booking-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/order-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/payment-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/pos-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/review-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/analytics-docs/v3/api-docs", List.of("GET")),
-//			new PublicEndpointRule("/notification-docs/v3/api-docs", List.of("GET")),
+	private static final List<PublicEndpointRule> PUBLIC_ENDPOINT_RULES = new ArrayList<>();
+	private static final List<PublicEndpointRegexRule> PUBLIC_ENDPOINT_REGEX_RULES = new ArrayList<>();
 
-			// Swagger UI assets
-			new PublicEndpointRule("/swagger-ui", List.of("GET")),
-			new PublicEndpointRule("/v3/api-docs", List.of("GET")),
-			new PublicEndpointRule("/swagger-ui.html", List.of("GET")),
-			new PublicEndpointRule("/webjars", List.of("GET")),
+	static {
+		// -----------------------------------------------------------------
+		// 1. Exact path rules (for direct API calls, e.g., Postman)
+		// -----------------------------------------------------------------
+		// Health & monitoring
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/actuator", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")));
 
-			// Media files
-			new PublicEndpointRule("/user-medias/", List.of("GET")),
-			new PublicEndpointRule("/restaurant-medias/", List.of("GET")),
-			new PublicEndpointRule("/menu-medias/", List.of("GET")),
+		// Swagger UI static assets (direct paths – also handled by regex below, but kept for completeness)
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/swagger-ui", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/swagger-ui.html", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/v3/api-docs", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/webjars", List.of("GET")));
 
-			// Auth endpoints
-			new PublicEndpointRule("/api/v1/auth/device-token", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/login", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/logout", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/oauth-login", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/otp/request", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/otp/verify", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/password-reset/confirm", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/password-reset/request", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/refresh-token", List.of("POST")),
-			new PublicEndpointRule("/api/v1/auth/register", List.of("POST")),
+		// Media files
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/user-medias/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/restaurant-medias/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/menu-medias/", List.of("GET")));
 
-			// Public read-only endpoints
-			new PublicEndpointRule("/api/v1/restaurants", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurants/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-branches", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-branches/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-branches/near", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-branches/restaurants/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-branches/tags", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-zones/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-zones/branches/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-tables/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-tables/zones/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-schedules/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/restaurant-medias/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/menus/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/menus/branches/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/menu-items/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/menu-items/categories/", List.of("GET")),
-			new PublicEndpointRule("/api/v1/menu-items/tags", List.of("GET"))
-	);
+		// Auth endpoints (direct)
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/device-token", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/login", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/logout", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/oauth-login", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/otp/request", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/otp/verify", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/password-reset/confirm", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/password-reset/request", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/refresh-token", List.of("POST")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/register", List.of("POST")));
+
+		// Public read-only endpoints (direct)
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/near", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/restaurants/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/tags", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/branches/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/zones/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-schedules/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-medias/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/branches/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/categories/", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/tags", List.of("GET")));
+
+		// -----------------------------------------------------------------
+		// 2. Regex rules (for SwaggerUI prefixed paths)
+		// -----------------------------------------------------------------
+		// The regex matches any path with a service prefix and the exact API path suffix.
+		// For example: /user-docs/v3/api-docs , /restaurant-docs/api/v1/restaurants , etc.
+
+		// OpenAPI spec documents (public)
+		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
+				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/v3/api-docs$"),
+				List.of("GET")));
+
+		// Auth endpoints (POST) – allow any service prefix
+		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
+				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/api/v1/auth/.*"),
+				List.of("POST")));
+
+		// Public GET endpoints under /api/v1/ (restaurants, branches, menus, etc.) – allow any service prefix
+		// This covers direct API paths like /user-docs/api/v1/restaurants, /restaurant-docs/api/v1/restaurant-branches, etc.
+		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
+				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/api/v1/(restaurants|restaurant-branches|restaurant-zones|restaurant-tables|restaurant-schedules|restaurant-medias|menus|menu-items|health).*"),
+				List.of("GET")));
+
+		// Swagger UI assets (prefixed paths)
+		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
+				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/(swagger-ui|webjars|v3/api-docs).*"),
+				List.of("GET")));
+	}
 
 	@Override
 	public GatewayFilter apply(Config config) {
@@ -150,29 +177,27 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
 	private Mono<ServerWebExchange> validateTokenAndMutateExchange(String token, ServerWebExchange exchange) {
 		try {
-			UUID userId;
-			String email;
-			String role;
-			// Extract user info from token (without Redis checks first, but we still need to validate)
+			// 1. Basic JWT validation
 			if (!jwtTokenUtil.validateToken(token)) {
-				return onErrorMono(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
+				return onErrorMono(exchange, "Invalid token (validateToken)", HttpStatus.UNAUTHORIZED);
 			}
 			if (!jwtTokenUtil.validateIssuer(token) || !jwtTokenUtil.validateAudience(token)) {
-				return onErrorMono(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
+				return onErrorMono(exchange, "Invalid token (validateIssuer)", HttpStatus.UNAUTHORIZED);
 			}
 			String jti = jwtTokenUtil.getJtiFromToken(token);
 			if (jti == null) {
-				return onErrorMono(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
+				return onErrorMono(exchange, "Invalid token (getJtiFromToken)", HttpStatus.UNAUTHORIZED);
 			}
 
-			userId = jwtTokenUtil.getUserIdFromToken(token);
-			email = jwtTokenUtil.getEmailFromToken(token);
-			role = jwtTokenUtil.getRoleFromToken(token);
-			if (userId == null || email == null) {
-				return onErrorMono(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
+			// 2. Extract user info
+			UUID userId = jwtTokenUtil.getUserIdFromToken(token);
+			String email = jwtTokenUtil.getEmailFromToken(token);
+			String role = jwtTokenUtil.getRoleFromToken(token);
+			if (userId == null || role == null) {
+				return onErrorMono(exchange, "Invalid token (userId, role)", HttpStatus.UNAUTHORIZED);
 			}
 
-			// Redis checks (fail‑closed)
+			// 3. Redis checks (fail‑closed)
 			Duration timeout = Duration.ofMillis(redisTimeoutMillis);
 			Mono<Boolean> whitelistCheck = tokenValidationService.isTokenWhitelisted(jti)
 					.timeout(timeout).onErrorReturn(false);
@@ -188,33 +213,31 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 						boolean isUserBlocked = tuple.getT3();
 
 						if (!isWhitelisted) {
-							log.warn("JWT Filter: Token not whitelisted: jti={}", jti);
+							log.warn("Token not whitelisted: jti={}", jti);
 							return onErrorMono(exchange, "Token not whitelisted", HttpStatus.UNAUTHORIZED);
 						}
 						if (isBlacklisted) {
-							log.warn("JWT Filter: Token blacklisted: jti={}", jti);
+							log.warn("Token blacklisted: jti={}", jti);
 							return onErrorMono(exchange, "Token revoked", HttpStatus.UNAUTHORIZED);
 						}
 						if (isUserBlocked) {
-							log.warn("JWT Filter: User blocked: userId={}", userId);
+							log.warn("User blocked: userId={}", userId);
 							return onErrorMono(exchange, "User account blocked", HttpStatus.FORBIDDEN);
 						}
 
-						// Build new exchange with added headers
+						// Add user headers to the request
 						ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
 								.header("X-User-Id", userId.toString())
-								.header("X-User-Email", email)
-								.header("X-User-Roles", role != null ? role : "")
+								.header("X-User-Roles", role)
 								.build();
-						return Mono.just(new ServerWebExchangeDecorator(exchange) {
-							@Override
-							public ServerHttpRequest getRequest() {
-								return mutatedRequest;
-							}
-						});
+						ServerWebExchange modifiedExchange = exchange.mutate()
+								.request(mutatedRequest)
+								.build();
+						log.debug("Token valid for user {} ({})", userId, role);
+						return Mono.just(modifiedExchange);
 					});
 		} catch (Exception e) {
-			log.error("JWT Filter: Token validation exception", e);
+			log.error("Token validation exception", e);
 			return onErrorMono(exchange, "Authentication error", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -232,6 +255,12 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 				return true;
 			}
 		}
+		for (PublicEndpointRegexRule rule : PUBLIC_ENDPOINT_REGEX_RULES) {
+			if (rule.matches(path, method)) {
+				return true;
+			}
+		}
+		// Dynamic rule: user public images
 		if (method.equals("GET") && path.matches("^/api/v1/users/[^/]+/image.*")) {
 			return true;
 		}
