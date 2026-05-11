@@ -3,6 +3,7 @@ package com.tuttime.booking.grpc.client;
 import com.tuttime.common.event.grpc.GrpcExecutor;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static com.tuttime.common.constants.ServiceNames.RESTAURANT_SERVICE;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class RestaurantGrpcClient {
 
@@ -24,6 +26,8 @@ public class RestaurantGrpcClient {
 	@GrpcClient("restaurant-service")
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
 		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
 				.setBranchId(branchId.toString())
@@ -31,8 +35,9 @@ public class RestaurantGrpcClient {
 				.setUserRoles(userRoles)
 				.build();
 
-		boolean valid = GrpcExecutor.execute(RESTAURANT_SERVICE, "validateBranchPermission", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		boolean valid = grpcExecutor.execute(RESTAURANT_SERVICE, "validateBranchPermission", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.validateBranchPermission(request).getValid());
 
 		if (!valid) {
@@ -45,8 +50,9 @@ public class RestaurantGrpcClient {
 				.setTableId(tableId.toString())
 				.build();
 
-		return GrpcExecutor.execute(RESTAURANT_SERVICE, "getTableDetail", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(RESTAURANT_SERVICE, "getTableDetail", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getTableDetail(request));
 	}
 
@@ -56,8 +62,9 @@ public class RestaurantGrpcClient {
 				.setPartySize(partySize)
 				.build();
 
-		return GrpcExecutor.execute(RESTAURANT_SERVICE, "getBranchSlots", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(RESTAURANT_SERVICE, "getBranchSlots", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getBranchSlots(request).getTablesList());
 	}
 
@@ -67,8 +74,9 @@ public class RestaurantGrpcClient {
 				.setDayOfWeek(dayOfWeek)
 				.build();
 
-		return GrpcExecutor.execute(RESTAURANT_SERVICE, "getBranchSchedule", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(RESTAURANT_SERVICE, "getBranchSchedule", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getBranchSchedule(request));
 	}
 
@@ -77,14 +85,16 @@ public class RestaurantGrpcClient {
 				.setBranchId(branchId.toString())
 				.build();
 
-		return GrpcExecutor.execute(RESTAURANT_SERVICE, "getBranchDetail", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(RESTAURANT_SERVICE, "getBranchDetail", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getBranchDetail(request));
 	}
 
 	public TableHierarchyResponse getTableHierarchyDetail(TableHierarchyRequest request) {
-		return GrpcExecutor.execute(RESTAURANT_SERVICE, "getTableHierarchyDetail", () ->
-				restaurantServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(RESTAURANT_SERVICE, "getTableHierarchyDetail", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getTableHierarchyDetail(request));
 	}
 }
