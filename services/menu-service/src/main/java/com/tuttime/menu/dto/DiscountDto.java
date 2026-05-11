@@ -3,6 +3,7 @@ package com.tuttime.menu.dto;
 import com.tuttime.menu.entity.enums.AppliesTo;
 import com.tuttime.menu.entity.enums.DiscountType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,6 +17,9 @@ public class DiscountDto {
 	@Schema(description = "Discount request details")
 	public record DiscountRequest(
 
+			@NotNull
+			UUID branchId,
+
 			@NotBlank(message = "Discount name cannot be empty")
 			String name,
 
@@ -25,8 +29,8 @@ public class DiscountDto {
 			@NotNull @DecimalMin("0.00")
 			BigDecimal amount,
 
-			@NotNull AppliesTo
-			appliesTo,
+			@NotNull
+			AppliesTo appliesTo,
 
 			UUID referenceId, // Category or Item ID
 
@@ -36,6 +40,29 @@ public class DiscountDto {
 
 			Boolean active
 	) {
+		@AssertTrue(message = "Percentage discount must be between 0 and 100")
+		public boolean isPercentageAmountValid() {
+			if (discountType == DiscountType.PERCENTAGE && amount != null) {
+				return amount.compareTo(BigDecimal.ZERO) >= 0 && amount.compareTo(new BigDecimal("100")) <= 0;
+			}
+			return true;
+		}
+
+		@AssertTrue(message = "Fixed amount discount cannot be negative")
+		public boolean isFixedAmountValid() {
+			if (discountType == DiscountType.FIXED_AMOUNT && amount != null) {
+				return amount.compareTo(BigDecimal.ZERO) >= 0;
+			}
+			return true;
+		}
+
+		@AssertTrue(message = "Start date must be before or equal to end date")
+		public boolean isDateRangeValid() {
+			if (startDate != null && endDate != null) {
+				return !startDate.isAfter(endDate);
+			}
+			return true;
+		}
 	}
 
 	@Schema(description = "Discount response details")

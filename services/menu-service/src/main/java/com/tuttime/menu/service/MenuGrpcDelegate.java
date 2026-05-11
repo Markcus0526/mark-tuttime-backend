@@ -2,9 +2,11 @@ package com.tuttime.menu.service;
 
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.entity.MenuItem;
 import com.tuttime.menu.entity.Modifier;
+import com.tuttime.menu.entity.enums.AppliesTo;
 import com.tuttime.menu.repository.MenuCategoryRepository;
 import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.ModifierRepository;
@@ -25,6 +27,7 @@ public class MenuGrpcDelegate {
 	private final MenuCategoryRepository menuCategoryRepository;
 	private final MenuItemRepository menuItemRepository;
 	private final ModifierRepository modifierRepository;
+	private final DiscountService discountService;
 
 	@Transactional(readOnly = true)
 	public PriceResponse getPriceForOrder(PriceRequest request) {
@@ -98,6 +101,28 @@ public class MenuGrpcDelegate {
 		MenuDetailsResponse.Builder responseBuilder = MenuDetailsResponse.newBuilder();
 		for (MenuItem entity : entities) {
 			responseBuilder.addItems(mapToProto(entity));
+		}
+		return responseBuilder.build();
+	}
+
+	@Transactional(readOnly = true)
+	public ActiveOrderDiscountsResponse getActiveOrderDiscounts(ActiveOrderDiscountsRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		// Fetch active order discounts (appliesTo = ORDER, referenceId = null)
+		List<DiscountDto.DiscountResponse> discounts = discountService.getActiveDiscountsForReference(
+				branchId, AppliesTo.ORDER, null);
+
+		ActiveOrderDiscountsResponse.Builder responseBuilder = ActiveOrderDiscountsResponse.newBuilder();
+		for (DiscountDto.DiscountResponse d : discounts) {
+			responseBuilder.addDiscounts(ActiveDiscount.newBuilder()
+					.setId(d.discountId().toString())
+					.setName(d.name())
+					.setDiscountType(d.discountType().name())
+					.setAmount(d.amount().doubleValue())
+					.setAppliesTo(d.appliesTo().name())
+					.setStartDate(d.startDate() != null ? d.startDate().toString() : "")
+					.setEndDate(d.endDate() != null ? d.endDate().toString() : "")
+					.build());
 		}
 		return responseBuilder.build();
 	}

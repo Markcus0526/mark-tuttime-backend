@@ -1,5 +1,6 @@
 package com.tuttime.menu.service.impl;
 
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.menu.dto.DiscountDto;
 import com.tuttime.menu.dto.FullMenuDto;
@@ -50,7 +51,12 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		// 1. Security Check via gRPC
 		restaurantGrpcClient.validateBranchPermission(request.branchId(), currentUserId, userRoles);
 
-		// 2. Build Entity
+		// 2. Unique name check (case-insensitive, ignoring deleted categories)
+		if (menuCategoryRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(request.branchId(), request.name())) {
+			throw new ConflictException("Category with name '" + request.name() + "' already exists in this branch.");
+		}
+
+		// 3. Build Entity
 		MenuCategory category = MenuCategory.builder()
 				.branchId(request.branchId())
 				.name(request.name())
@@ -72,7 +78,14 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		// Ensure user has permission for the branch this category belongs to
 		restaurantGrpcClient.validateBranchPermission(existing.getBranchId(), currentUserId, userRoles);
 
-		existing.setName(request.name());
+		// Unique name check (if name is changed)
+		if (!request.name().equals(existing.getName())) {
+			if (menuCategoryRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(existing.getBranchId(), request.name(), id)) {
+				throw new ConflictException("Category with name '" + request.name() + "' already exists in this branch.");
+			}
+			existing.setName(request.name());
+		}
+
 		existing.setDescription(request.description());
 		existing.setPriority(request.priority());
 

@@ -6,6 +6,7 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.menu.dto.DiscountDto;
+import com.tuttime.menu.entity.enums.AppliesTo;
 import com.tuttime.menu.service.DiscountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,14 +34,13 @@ public class DiscountController {
 	private final DiscountService discountService;
 
 	@PostMapping
-	@Operation(summary = "Launch a discount rule", description = "Establishes a promotion on a designated category or targeted item.")
+	@Operation(summary = "Launch a discount rule", description = "Establishes a promotion on a designated category, item, or whole order.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "201", description = "Discount created",
 					content = @Content(schema = @Schema(implementation = DiscountDto.DiscountResponse.class))),
 			@ApiResponse(responseCode = "400", description = "Invalid request payload")
 	})
 	public ResponseEntity<ApiRes<DiscountDto.DiscountResponse>> createDiscount(@Valid @RequestBody DiscountDto.DiscountRequest request) {
-
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
@@ -57,32 +57,35 @@ public class DiscountController {
 			@ApiResponse(responseCode = "404", description = "Discount not found")
 	})
 	public ResponseEntity<ApiRes<DiscountDto.DiscountResponse>> getDiscountById(@PathVariable UUID discountId) {
-
 		DiscountDto.DiscountResponse data = discountService.getDiscountById(discountId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
 	@GetMapping("/active")
-	@Operation(summary = "Fetch active active-period discounts", description = "Traces down running discounts attached to targeted objects.")
+	@Operation(summary = "Fetch active discounts for a specific branch and scope",
+			description = "Returns all currently active discounts (respecting start/end dates) for the given branch and appliesTo type. " +
+					"For ORDER type, referenceId is optional; for CATEGORY or ITEM it is required.")
 	@ApiResponses({
 			@ApiResponse(responseCode = "200", description = "List of active discounts retrieved",
 					content = @Content(array = @ArraySchema(schema = @Schema(implementation = DiscountDto.DiscountResponse.class))))
 	})
 	public ResponseEntity<ApiRes<List<DiscountDto.DiscountResponse>>> getActiveDiscounts(
-			@Parameter(description = "UUID of the Category or Item") @RequestParam("referenceId") UUID referenceId) {
+			@Parameter(description = "Branch ID (required)") @RequestParam("branchId") UUID branchId,
+			@Parameter(description = "Applies to: CATEGORY, ITEM, or ORDER") @RequestParam("appliesTo") AppliesTo appliesTo,
+			@Parameter(description = "Reference ID (category ID or item ID) – required for CATEGORY/ITEM, optional for ORDER")
+			@RequestParam(value = "referenceId", required = false) UUID referenceId) {
 
-		List<DiscountDto.DiscountResponse> data = discountService.getActiveDiscountsForReference(referenceId);
+		List<DiscountDto.DiscountResponse> data = discountService.getActiveDiscountsForReference(branchId, appliesTo, referenceId);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
 	@DeleteMapping("/{discountId}")
-	@Operation(summary = "Cancel a promotion")
+	@Operation(summary = "Cancel a promotion (soft delete)")
 	@ApiResponses({
 			@ApiResponse(responseCode = "204", description = "Discount permanently dropped"),
 			@ApiResponse(responseCode = "404", description = "Discount not found")
 	})
 	public ResponseEntity<ApiRes<Void>> deleteDiscount(@PathVariable UUID discountId) {
-
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
@@ -91,9 +94,7 @@ public class DiscountController {
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
+	// ---------- helper validation methods (unchanged) ----------
 	private void validateLogin() {
 		if (!UserContext.isValidUUID()) {
 			throw new UnauthorizedException("Unauthorized: You should login");
