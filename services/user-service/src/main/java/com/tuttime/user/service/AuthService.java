@@ -80,4 +80,10 @@ public interface AuthService {
 	AuthDto.AuthResponse loginWithOtp(AuthDto.OtpVerificationConfirmRequest request);
 
 	void registerDevice(UUID userId, AuthDto.DeviceRegistrationRequest deviceInfo);
+
+	void blockUser(UUID userId);
+
+	void unblockUser(UUID userId);
+
+	void deleteUser(UUID userId);
 }

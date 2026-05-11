@@ -12,3 +12,5 @@ docker compose up -d --build menu-service
 docker compose up -d --force-recreate booking-service
 
 docker compose up -d --build
+
+docker exec tuttime-booking-service printenv | grep ORDER_GRPC_SERVICE

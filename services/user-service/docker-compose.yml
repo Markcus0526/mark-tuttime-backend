@@ -4,11 +4,10 @@ services:
     container_name: tuttime-user-service-db
     ports:
       - "5401:5432"
-    env_file: [.env.docker]
     environment:
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: user_service_db
     volumes:
       - user_service_db_data:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
@@ -18,11 +17,12 @@ services:
         limits:
           memory: 1024M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_service_db"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [tuttime-network]
+    networks:
+      - tuttime-network
 
   user-service:
     build:
@@ -33,18 +33,122 @@ services:
     depends_on:
       user-service-db:
         condition: service_healthy
-    env_file:
-      - .env.docker
     environment:
-      # Inject values directly to override anything in application.yml
-      # JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2"
-      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5001"
+      # Spring Boot core
+      SPRING_PROFILES_ACTIVE: docker,graylog-enabled
+      SERVER_PORT: 28001
+      GRPC_PORT: 29001
+
+      # Database
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: password
+      POSTGRES_DB: user_service_db
+      DATABASE_URL: jdbc:postgresql://tuttime-user-service-db:5432/user_service_db?currentSchema=user_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC
+      DB_POOL_MAX_SIZE: 100
+      DB_POOL_MIN_IDLE: 20
+      DB_REPLICA_POOL_MAX_SIZE: 50
+      DB_REPLICA_POOL_MIN_IDLE: 10
+
+      # Redis
+      CACHE_TYPE: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_POOL_MAX_ACTIVE: 20
+      REDIS_POOL_MAX_IDLE: 10
+      REDIS_POOL_MIN_IDLE: 2
+
+      # Kafka
+      KAFKA_ENABLED: true
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
+      SPRING_KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: ""
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: ""
+
+      # JWT
+      JWT_SECRET: ***REMOVED***
+      JWT_EXPIRATION: 86400000
+      JWT_ISSUER: tuttime-backend
+      JWT_AUDIENCE: tuttime-frontend
+
+      # Media storage
+      MEDIA_STORAGE_TYPE: local
+      MEDIA_MAX_SIZE: 5242880
+      MEDIA_MAX_DIMENSION: 1024
+      MEDIA_QUALITY: 0.85
+      S3_ENDPOINT: https://selcloud.ru
+      S3_REGION: ru-7
+      S3_BUCKET: tuttime-storage
+      S3_ACCESS_KEY: your_key
+      S3_SECRET_KEY: your_secret
+      S3_BASE_URL: ""
+      S3_PRESIGNED_URL_EXPIRATION_HOURS: 24
+      LOCAL_STORAGE_PATH: /app/uploads/medias
+      LOCAL_MEDIA_URL_PATH: /user-medias/
+
+      # File uploads
+      SPRING_SERVLET_MULTIPART_ENABLED: true
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 10MB
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 10MB
+      SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD: 2KB
+
+      # gRPC service discovery
+      USER_GRPC_SERVICE: user-service:29001
+      RESTAURANT_GRPC_SERVICE: restaurant-service:29002
+      MENU_GRPC_SERVICE: menu-service:29003
+      BOOKING_GRPC_SERVICE: booking-service:29004
+      ORDER_GRPC_SERVICE: order-service:29005
+      PAYMENT_GRPC_SERVICE: payment-service:29006
+      POS_GRPC_SERVICE: pos-service:29007
+      REVIEW_GRPC_SERVICE: review-service:29008
+      ANALYTICS_GRPC_SERVICE: analytics-service:29009
+      NOTIFICATION_GRPC_SERVICE: notification-service:29010
+      GRPC_CLIENT_DEADLINE_SECONDS: 60
+
+      # Timeouts
+      CIRCUIT_BREAKER_TIMEOUT: 305s
+
+      # Monitoring & logging
+      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+      LOG_LEVEL: INFO
+      GRAYLOG_HOST: 173.249.29.61
+      GRAYLOG_PORT: 12203
+      GRAYLOG_ORIGIN_HOST: user-service
+      GRAYLOG_FACILITY: user-service
+      GRAYLOG_INCLUDE_SOURCE: true
+      GRAYLOG_INCLUDE_MDC: true
+      GRAYLOG_INCLUDE_MARKER: true
+      GRAYLOG_INCLUDE_CALLER_DATA: false
+      GRAYLOG_MAX_MESSAGE_SIZE: 8192
+      GRAYLOG_COMPRESSION_TYPE: GZIP
+
+      # Security & anti‑fraud
+      BRUTEFORCE_WARNING_THRESHOLD: 3
+      BRUTEFORCE_IP_BLOCK_THRESHOLD: 5
+      BRUTEFORCE_PHONE_BLOCK_THRESHOLD: 10
+      BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD: 15
+      BRUTEFORCE_IP_BLOCK_DURATION_MINUTES: 15
+      BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES: 60
+      ANTIFRAUD_MAX_DEVICES_PER_USER: 3
+      ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD: 3
+
+      # Cloud & other
+      CONNECTION_POOL_MONITORING_ENABLED: false
+      SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: false
+      SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES: tuttime
+      SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: false
+      GOOGLE_CLIENT_ID: 815148627550-nsdd7lkipqons554k7crls5c9pd84oh0.apps.googleusercontent.com
+      APPLE_CLIENT_ID: your_id
+
+      # Java options (fixed debug agent)
+      JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5001"
+
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
-      - "${GRPC_PORT}:${GRPC_PORT}"
-      - "5001:5001" # Added debug port mapping
+      - "28001:28001"
+      - "29001:29001"
+      - "5001:5001"
     volumes:
-      - ./uploads:/app/uploads:rw # Persistent local storage for review images
+      - ./uploads:/app/uploads:rw
     deploy:
       resources:
         limits:

@@ -96,7 +96,7 @@ public class AuthController {
 			@ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
 			@ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content)
 	})
-	@PostMapping("/refresh-token")
+	@PostMapping("/refresh")
 	public ResponseEntity<ApiRes<AuthDto.AuthResponse>> refreshToken(
 			@Parameter(description = "Token refresh request with refresh token", required = true)
 			@Valid @RequestBody AuthDto.TokenRefreshRequest request) {

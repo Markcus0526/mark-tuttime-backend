@@ -269,7 +269,7 @@ resilience4j:
   retry:
     instances:
       grpc:
-        maxAttempts: 3
+        maxAttempts: 5
         waitDuration: 1s
         retryExceptions:
           - io.grpc.StatusRuntimeException

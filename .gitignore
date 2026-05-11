@@ -15,4 +15,9 @@ admin-gateway/target
 common-libs/common-auth/target
 common-libs/common-event/target
 common-libs/common/target
-/uploads
+services/menu-service/uploads
+services/restaurant-service/uploads
+services/user-service/uploads
+dbbackup
+migrations
+

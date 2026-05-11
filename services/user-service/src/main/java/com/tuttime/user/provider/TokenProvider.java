@@ -1,9 +1,9 @@
-package com.tuttime.user.util;
+package com.tuttime.user.provider;
 
 import org.springframework.stereotype.Component;
 
 @Component
-public class TokenUtil {
+public class TokenProvider {
 
 	public String generateRandomCode() {
 		// Generate numeric code (e.g., 6-digit)
