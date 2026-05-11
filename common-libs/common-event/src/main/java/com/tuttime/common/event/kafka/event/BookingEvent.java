@@ -17,12 +17,14 @@ public class BookingEvent {
 			UUID bookingId,
 			UUID tableId,
 			UUID branchId,
+			UUID zoneId,
 			UUID userId,
 			BookingStatus oldStatus,
 			BookingStatus newStatus,
 			OffsetDateTime bookingTime,
 			UUID changedBy,
 			String reason,
+			Integer partySize,
 			OffsetDateTime occurredAt
 	) implements BaseEvent {
 

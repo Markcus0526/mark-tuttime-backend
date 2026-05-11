@@ -19,8 +19,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -80,44 +82,30 @@ public class BranchController {
 		return ResponseEntity.ok(ApiRes.success(branch));
 	}
 
-	@Operation(summary = "Create a new branch", description = "Add a new branch to a restaurant")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Branch created successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid input data"),
-			@ApiResponse(responseCode = "403", description = "Access denied")
-	})
-	@PostMapping
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiRes<BranchDto.BranchResponse>> createBranch(
-			@Parameter(description = "Branch creation payload", required = true)
-			@Valid @RequestBody BranchDto.BranchRequest request) {
+			@RequestPart("request") @Valid BranchDto.BranchRequest request,
+			@RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
 		validateAdminOrOwner();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		BranchDto.BranchResponse created = branchService.createBranch(request, currentUserId, userRoles);
+		BranchDto.BranchResponse created = branchService.createBranch(request, files, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
 	}
 
-	@Operation(summary = "Update a branch", description = "Update an existing branch's details")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Branch updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid update data"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	@PutMapping("/{branchId}")
+	@PutMapping(value = "/{branchId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiRes<BranchDto.BranchResponse>> updateBranch(
-			@Parameter(description = "UUID of the branch to update", required = true)
 			@PathVariable UUID branchId,
-			@Parameter(description = "Updated branch details", required = true)
-			@Valid @RequestBody BranchDto.BranchRequest request) {
+			@RequestPart("request") @Valid BranchDto.BranchRequest request,
+			@RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		BranchDto.BranchResponse updated = branchService.updateBranch(branchId, request, currentUserId, userRoles);
+		BranchDto.BranchResponse updated = branchService.updateBranch(branchId, request, files, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(updated));
 	}
 

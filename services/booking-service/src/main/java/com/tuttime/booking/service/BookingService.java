@@ -3,6 +3,7 @@ package com.tuttime.booking.service;
 import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.dto.BookingHistoryDto;
 import com.tuttime.booking.dto.BookingSetupDto;
+import com.tuttime.booking.entity.Booking;
 import com.tuttime.common.enums.BookingStatus;
 
 import java.time.OffsetDateTime;
@@ -16,7 +17,7 @@ public interface BookingService {
 	 */
 	BookingDto.BookingResponse createBooking(BookingDto.BookingRequest request, UUID currentUserId, String userRoles);
 
-	BookingDto.BookingResponse editBooking(UUID bookingId, BookingDto.BookingRequest request,
+	BookingDto.BookingResponse editBooking(UUID bookingId, BookingDto.BookingUpdateRequest request,
 	                                       UUID currentUserId, String userRoles);
 
 	BookingDto.BookingDetailResponse getBooking(UUID bookingId, UUID currentUserId, String userRoles);
@@ -37,5 +38,7 @@ public interface BookingService {
 	                                                       UUID currentUserId);
 
 	void markAsPaid(UUID paymentId, UUID bookingId, UUID staffOrSystemId, String paymentRef);
+
+	Booking createBookingFromWaitlist(BookingDto.BookingRequest request, UUID currentUserId, String userRoles);
 
 }

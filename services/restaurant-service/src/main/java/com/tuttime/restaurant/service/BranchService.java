@@ -3,6 +3,7 @@ package com.tuttime.restaurant.service;
 import com.tuttime.restaurant.dto.BranchDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,11 +16,13 @@ public interface BranchService {
 	                                               Double minRating, Double maxRating,
 	                                               Pageable pageable);
 
-	BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, UUID currentUserId, String userRoles);
+	BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, List<MultipartFile> files,
+	                                      UUID currentUserId, String userRoles);
+
+	BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, List<MultipartFile> files,
+	                                      UUID currentUserId, String userRoles);
 
 	BranchDto.BranchDetailResponse getBranchById(UUID branchId);
-
-	BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, UUID currentUserId, String userRoles);
 
 	void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
 

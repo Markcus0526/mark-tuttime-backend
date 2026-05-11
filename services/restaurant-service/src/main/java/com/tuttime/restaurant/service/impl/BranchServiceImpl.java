@@ -5,20 +5,24 @@ import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.dto.BranchDto;
 import com.tuttime.restaurant.dto.ScheduleDto;
 import com.tuttime.restaurant.entity.*;
+import com.tuttime.restaurant.entity.enums.MediaType;
 import com.tuttime.restaurant.mapper.BranchMapper;
 import com.tuttime.restaurant.mapper.ScheduleMapper;
 import com.tuttime.restaurant.mapper.TagMapper;
+import com.tuttime.restaurant.provider.StorageProvider;
 import com.tuttime.restaurant.repository.*;
 import com.tuttime.restaurant.repository.projection.BranchProjection;
 import com.tuttime.restaurant.service.*;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -30,6 +34,7 @@ import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class BranchServiceImpl implements BranchService {
 
 	private final StaffService staffService;
@@ -39,6 +44,8 @@ public class BranchServiceImpl implements BranchService {
 	private final ScheduleRepository scheduleRepository;
 	private final TagRepository tagRepository;
 	private final BookmarkRepository bookmarkRepository;
+	private final MediaRepository mediaRepository;
+	private final StorageProvider storageProvider;
 	private final BranchMapper branchMapper;
 	private final TagMapper tagMapper;
 	private final ScheduleMapper scheduleMapper;
@@ -48,7 +55,10 @@ public class BranchServiceImpl implements BranchService {
 
 	@Override
 	@Transactional
-	public BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, UUID currentUserId, String userRoles) {
+	public BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request,
+	                                             List<MultipartFile> files,
+	                                             UUID currentUserId,
+	                                             String userRoles) {
 		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(request.restaurantId())
 				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + request.restaurantId()));
 
@@ -67,6 +77,11 @@ public class BranchServiceImpl implements BranchService {
 		Branch branch = branchMapper.toEntity(request);
 		branch.setRestaurant(restaurant);
 		Branch savedBranch = branchRepository.save(branch);
+
+		// Save images if provided
+		if (files != null && !files.isEmpty()) {
+			saveBranchImages(savedBranch.getId(), files, savedBranch.getName());
+		}
 
 		return branchMapper.toResponse(savedBranch);
 	}
@@ -108,36 +123,79 @@ public class BranchServiceImpl implements BranchService {
 
 	@Override
 	@Transactional
-	public BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, UUID currentUserId, String userRoles) {
+	public BranchDto.BranchResponse updateBranch(UUID branchId,
+	                                             BranchDto.BranchRequest request,
+	                                             List<MultipartFile> files,
+	                                             UUID currentUserId,
+	                                             String userRoles) {
 		Branch branch = branchRepository.findByIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
 
-		// 1. Unified Permission Check
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
 
-		// Unique name check (if changed)
+		// --- Update fields only if present in request ---
 		if (request.name() != null && !request.name().equals(branch.getName())) {
 			if (branchRepository.existsByRestaurantIdAndNameIgnoreCaseAndIdNot(branch.getRestaurant().getId(), request.name(), branchId)) {
 				throw new ConflictException("Branch name '" + request.name() + "' already exists for this restaurant.");
 			}
+			branch.setName(request.name());
 		}
 
-		// Unique phone check (if changed and phone provided)
-		if (request.phone() != null && !request.phone().equals(branch.getPhone())) {
+		if (request.description() != null) {
+			branch.setDescription(request.description());
+		}
+		if (request.address() != null) {
+			branch.setAddress(request.address());
+		}
+		if (request.phone() != null) {
 			if (branchRepository.existsByRestaurantIdAndPhoneAndIdNot(branch.getRestaurant().getId(), request.phone(), branchId)) {
 				throw new ConflictException("Phone number '" + request.phone() + "' already used by another branch.");
 			}
+			branch.setPhone(request.phone());
+		}
+		if (request.timezone() != null) {
+			branch.setTimezone(request.timezone());
+		}
+		if (request.minPrice() != null) {
+			branch.setMinPrice(request.minPrice());
+		}
+		if (request.maxPrice() != null) {
+			branch.setMaxPrice(request.maxPrice());
+		}
+		if (request.closed() != null) {
+			branch.setClosed(request.closed());
 		}
 
-		// Price range validation
-		if (request.minPrice() != null && request.maxPrice() != null
-				&& request.minPrice().compareTo(request.maxPrice()) > 0) {
+		// Validate price range after potential updates
+		if (branch.getMinPrice() != null && branch.getMaxPrice() != null
+				&& branch.getMinPrice().compareTo(branch.getMaxPrice()) > 0) {
 			throw new InvalidRequestException("minPrice must be <= maxPrice");
 		}
 
-		branchMapper.updateEntityFromRequest(request, branch);
+		// Update location if latitude and longitude are both provided
+		if (request.latitude() != null && request.longitude() != null) {
+			branch.setLocation(createPoint(request.longitude(), request.latitude()));
+		}
 
-		// No need for .save(branch) - Hibernate dirty checking handles it
+		// --- Handle images ---
+		if (files != null) {
+			// Delete existing physical images and DB records
+			List<Media> existingImages = mediaRepository.findByEntityIdAndMediaType(branchId, MediaType.IMAGE);
+			for (Media media : existingImages) {
+				try {
+					storageProvider.delete(media.getUrl());
+				} catch (Exception e) {
+					log.warn("Failed to delete old image: {}", media.getUrl(), e);
+				}
+			}
+			mediaRepository.deleteByEntityIdAndMediaType(branchId, MediaType.IMAGE);
+
+			if (!files.isEmpty()) {
+				saveBranchImages(branchId, files, branch.getName());
+			}
+		}
+
+		// No explicit save needed – dirty checking will persist changes
 		return branchMapper.toResponse(branch);
 	}
 
@@ -147,30 +205,43 @@ public class BranchServiceImpl implements BranchService {
 		Branch branch = branchRepository.findByIdAndDeletedFalse(branchId)
 				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + branchId));
 
-		// 1. Unified Permission Check
 		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
 
-		// 2. Soft delete
+		// Delete associated images from storage and DB
+		List<Media> images = mediaRepository.findByEntityIdAndMediaType(branchId, MediaType.IMAGE);
+		for (Media media : images) {
+			try {
+				storageProvider.delete(media.getUrl());
+			} catch (Exception e) {
+				log.warn("Failed to delete image: {}", media.getUrl(), e);
+			}
+		}
+		mediaRepository.deleteByEntityIdAndMediaType(branchId, MediaType.IMAGE);
+
+		// Soft delete branch
 		branch.setDeleted(true);
+		branchRepository.save(branch);
 	}
 
 	@Override
 	@Transactional
 	public void deleteAllByRestaurantId(UUID restaurantId) {
 		List<Branch> branches = branchRepository.findAllByRestaurantIdAndDeletedFalse(restaurantId);
-		if (branches.isEmpty()) {
-			return;
-		}
+		if (branches.isEmpty()) return;
 
 		for (Branch branch : branches) {
-			if (!zoneService.deleteAllByBranchId(branch.getId())) {
-				return;
+			// Delete branch images
+			List<Media> images = mediaRepository.findByEntityIdAndMediaType(branch.getId(), MediaType.IMAGE);
+			for (Media media : images) {
+				storageProvider.delete(media.getUrl());
 			}
+			mediaRepository.deleteByEntityIdAndMediaType(branch.getId(), MediaType.IMAGE);
+
+			if (!zoneService.deleteAllByBranchId(branch.getId())) return;
 			mediaService.deleteAllByEntityId(branch.getId());
 			scheduleService.deleteAllByEntityId(branch.getId());
 		}
 		branchRepository.deleteAllByRestaurantId(restaurantId);
-
 	}
 
 	@Transactional(readOnly = true)
@@ -362,6 +433,21 @@ public class BranchServiceImpl implements BranchService {
 			if (!branchTagRepository.existsByTagId(tagId)) {
 				tagRepository.deleteById(tagId);
 			}
+		}
+	}
+
+	private void saveBranchImages(UUID branchId, List<MultipartFile> files, String altText) {
+		for (int i = 0; i < files.size(); i++) {
+			MultipartFile file = files.get(i);
+			String storedKey = storageProvider.store(file);
+			Media media = Media.builder()
+					.entityId(branchId)
+					.url(storedKey)
+					.altText(altText)
+					.primaryEntity(i == 0)
+					.mediaType(MediaType.IMAGE)
+					.build();
+			mediaRepository.save(media);
 		}
 	}
 }

@@ -46,6 +46,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
 	List<Booking> findAllByBranchIdAndBookingDatetimeBetween(UUID branchId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 
+	@Query("SELECT b FROM Booking b WHERE b.status = :status AND b.createdAt < :cutoff")
 	List<Booking> findAllByStatusAndCreatedAtBefore(BookingStatus status, OffsetDateTime cutoff);
 
 	/**
@@ -61,9 +62,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 			@Param("start") OffsetDateTime start,
 			@Param("end") OffsetDateTime end);
 
-	@Query(value = "SELECT * FROM bookings b " +
-			"WHERE b.status IN ('CREATED', 'PAID') " +
-			"AND (b.booking_datetime + (b.grace_period_mins || ' minutes')::interval) < :now",
+	@Query(value = "SELECT * FROM bookings b WHERE b.status IN ('CREATED', 'PAID') " +
+			"AND (b.booking_datetime + (b.grace_period_mins * INTERVAL '1 minute')) < :now",
 			nativeQuery = true)
 	List<Booking> findExpiredBookings(@Param("now") OffsetDateTime now);
 
@@ -73,14 +73,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 			BookingStatus status
 	);
 
-	/**
-	 * Finds all unique branch IDs that currently have bookings in the specified statuses.
-	 */
-	@Query("SELECT DISTINCT b.branchId FROM Booking b WHERE b.status IN :statuses")
-	List<UUID> findDistinctBranchIdsByStatusIn(@Param("statuses") List<BookingStatus> statuses);
-
-	/**
-	 * Counts the total number of bookings for a specific branch that match the specified statuses.
-	 */
-	long countByBranchIdAndStatusIn(UUID branchId, List<BookingStatus> statuses);
+	@Query("SELECT b.branchId, COUNT(b) FROM Booking b WHERE b.status IN ('CREATED','PAID','ARRIVED') GROUP BY b.branchId")
+	List<Object[]> countActiveBookingsByBranch();
 }

@@ -3,6 +3,7 @@ package com.tuttime.restaurant.service;
 import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.*;
@@ -212,6 +213,26 @@ public class RestaurantGrpcDelegate {
 				.toList();
 		return BranchManagersResponse.newBuilder()
 				.addAllManagerIds(managerIds)
+				.build();
+	}
+
+	@Transactional(readOnly = true)
+	public FindAvailableTableResponse findAvailableTable(FindAvailableTableRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		UUID zoneId = request.hasZoneId() ? UUID.fromString(request.getZoneId()) : null;
+		int partySize = request.getPartySize();
+
+		List<DishTable> eligibleTables = tableRepository.findEligibleTables(branchId, zoneId, partySize);
+		if (eligibleTables.isEmpty()) {
+			return FindAvailableTableResponse.newBuilder().setAvailable(false).build();
+		}
+		DishTable table = eligibleTables.getFirst(); // pick the first suitable table
+		return FindAvailableTableResponse.newBuilder()
+				.setAvailable(true)
+				.setTableId(table.getId().toString())
+				.setZoneId(table.getZone().getId().toString())
+				.setCapacity(table.getSeats())
+				.setTableLabel(table.getLabel())
 				.build();
 	}
 }

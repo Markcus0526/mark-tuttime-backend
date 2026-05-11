@@ -142,4 +142,20 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
+
+	@Override
+	public void findAvailableTable(FindAvailableTableRequest request,
+	                               StreamObserver<FindAvailableTableResponse> responseObserver) {
+		try {
+			responseObserver.onNext(delegate.findAvailableTable(request));
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in findAvailableTable", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
+	}
 }

@@ -64,7 +64,7 @@ public class BookingController {
 	@Operation(summary = "Edit a booking", description = "Updates time, party size, or guest info. Handles re-locking tables in Redis.")
 	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> editBooking(
 			@PathVariable UUID bookingId,
-			@Valid @RequestBody BookingDto.BookingRequest request) {
+			@Valid @RequestBody BookingDto.BookingUpdateRequest request) {
 
 		validateUser();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());

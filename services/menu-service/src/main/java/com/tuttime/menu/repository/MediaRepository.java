@@ -41,5 +41,9 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
 	void resetPrimaryStatus(@Param("entityId") UUID entityId);
 
 	Optional<Media> findFirstByEntityIdOrderByCreatedAtAsc(UUID entityId);
+
+	void deleteByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
+
+	List<Media> findByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
 }
 

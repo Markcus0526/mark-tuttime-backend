@@ -19,8 +19,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,24 +36,17 @@ public class MenuItemController {
 	private final MenuCategoryService categoryService;
 	private final MenuItemService menuItemService;
 
-	@PostMapping
-	@Operation(summary = "Create a new dish or drink", description = "Saves a menu item tied directly to an active category.")
-	@io.swagger.v3.oas.annotations.parameters.RequestBody(
-			content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemRequest.class))
-	)
-	@ApiResponses({
-			@ApiResponse(responseCode = "201", description = "Item created",
-					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailResponse.class))),
-			@ApiResponse(responseCode = "400", description = "Invalid request payload")
-	})
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(summary = "Create a new dish or drink", description = "Saves a menu item with optional multiple images.")
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailResponse>> createMenuItem(
-			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
+			@RequestPart("request") @Valid MenuItemDto.MenuItemRequest request,
+			@RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MenuItemDto.MenuItemDetailResponse data = menuItemService.createMenuItem(request, currentUserId, userRoles);
+		MenuItemDto.MenuItemDetailResponse data = menuItemService.createMenuItem(request, files, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
 	}
 
@@ -71,22 +66,17 @@ public class MenuItemController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
-	@PutMapping("/{itemId}")
-	@Operation(summary = "Update an item's parameters")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Update successful",
-					content = @Content(schema = @Schema(implementation = MenuItemDto.MenuItemDetailResponse.class))),
-			@ApiResponse(responseCode = "404", description = "Item not found")
-	})
+	@PutMapping(value = "/{itemId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiRes<MenuItemDto.MenuItemDetailResponse>> updateMenuItem(
 			@PathVariable UUID itemId,
-			@Valid @RequestBody MenuItemDto.MenuItemRequest request) {
+			@RequestPart("request") @Valid MenuItemDto.MenuItemRequest request,
+			@RequestPart(value = "files", required = false) List<MultipartFile> files) {
 
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		MenuItemDto.MenuItemDetailResponse data = menuItemService.updateMenuItem(itemId, request, currentUserId, userRoles);
+		MenuItemDto.MenuItemDetailResponse data = menuItemService.updateMenuItem(itemId, request, files, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

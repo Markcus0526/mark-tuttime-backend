@@ -28,17 +28,6 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, UUID> {
 
 	boolean existsByUserIdAndBranchIdAndStatus(UUID userId, UUID branchId, WaitlistStatus status);
 
-	long countByBranchIdAndStatusAndJoinedAtBefore(UUID branchId, WaitlistStatus status, OffsetDateTime joinedAt);
-
-	/**
-	 * Finds the next person in line for a specific branch.
-	 * Uses the 'joinedAt' timestamp to ensure First-Come, First-Served (FIFO).
-	 */
-	Optional<WaitlistEntry> findFirstByBranchIdAndStatusOrderByJoinedAtAsc(
-			UUID branchId,
-			WaitlistStatus status
-	);
-
 	/**
 	 * Finds the next person in line for a specific branch AND a specific zone (e.g., VIP, Terrace).
 	 */
@@ -47,5 +36,7 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntry, UUID> {
 			UUID zoneId,
 			WaitlistStatus status
 	);
+
+	long countByBranchIdAndZoneIdAndStatusAndJoinedAtBefore(UUID branchId, UUID zoneId, WaitlistStatus status, OffsetDateTime joinedAt);
 
 }

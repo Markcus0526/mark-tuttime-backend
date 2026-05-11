@@ -1,14 +1,15 @@
 package com.tuttime.menu.service;
 
 import com.tuttime.menu.dto.MenuItemDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface MenuItemService {
-	MenuItemDto.MenuItemDetailResponse createMenuItem(MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles);
+	MenuItemDto.MenuItemDetailResponse createMenuItem(MenuItemDto.MenuItemRequest request, List<MultipartFile> files, UUID currentUserId, String userRoles);
 
-	MenuItemDto.MenuItemDetailResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, UUID currentUserId, String userRoles);
+	MenuItemDto.MenuItemDetailResponse updateMenuItem(UUID id, MenuItemDto.MenuItemRequest request, List<MultipartFile> files, UUID currentUserId, String userRoles);
 
 	MenuItemDto.MenuItemDetailResponse getMenuItemById(UUID id);
 
