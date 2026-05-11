@@ -14,6 +14,9 @@ service MenuService {
   rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
 
   rpc GetPriceForOrder (PriceRequest) returns (PriceResponse);
+
+  rpc GetActiveOrderDiscounts(ActiveOrderDiscountsRequest) returns (ActiveOrderDiscountsResponse);
+
 }
 
 // rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
@@ -66,4 +69,23 @@ message PriceRequest {
 
 message PriceResponse {
   string verified_total_price = 1; // Return as string for BigDecimal precision
+}
+
+message ActiveOrderDiscountsRequest {
+  string branch_id = 1;
+}
+
+message ActiveOrderDiscountsResponse {
+  repeated ActiveDiscount discounts = 1;
+}
+
+// rpc GetActiveOrderDiscounts(ActiveOrderDiscountsRequest) returns (ActiveOrderDiscountsResponse);
+message ActiveDiscount {
+  string id = 1;
+  string name = 2;
+  string discount_type = 3;  // "PERCENTAGE" or "FIXED_AMOUNT"
+  double amount = 4;
+  string applies_to = 5;     // "ORDER"
+  string start_date = 6;
+  string end_date = 7;
 }
