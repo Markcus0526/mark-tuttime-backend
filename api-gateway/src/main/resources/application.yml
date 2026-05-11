@@ -38,10 +38,19 @@ spring:
       httpclient:
         max-header-size: 16KB
         max-keep-alive-time: ${GATEWAY_HTTP_KEEP_ALIVE:3600s}
-        connect-timeout: ${GATEWAY_HTTP_CONNECT_TIMEOUT:60000}
+        connect-timeout: ${GATEWAY_HTTP_CONNECT_TIMEOUT:10s}
         response-timeout: ${GATEWAY_HTTP_RESPONSE_TIMEOUT:30s}
         pool:
           max-connections: ${GATEWAY_POOL_MAX_CONNECTIONS:5000}
+
+      default-filters:
+        - AddResponseHeader=X-Content-Type-Options, nosniff
+        - AddResponseHeader=X-Frame-Options, DENY
+        - AddResponseHeader=X-XSS-Protection, 1; mode=block
+        - AddResponseHeader=Referrer-Policy, no-referrer
+
+      #grpc:
+      #  enabled: false
 
       routes:
         ################# User Service Routes #######################
@@ -53,6 +62,12 @@ spring:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTIONS
           filters:
+            - name: BruteForceProtection
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -76,6 +91,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -105,6 +125,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -127,6 +152,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -149,6 +179,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -171,6 +206,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -193,6 +233,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -215,6 +260,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -245,6 +295,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -267,15 +322,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
-            - name: Retry
+            - name: RequestRateLimiter
               args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -298,6 +349,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -320,6 +376,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -342,6 +403,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -364,6 +430,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -394,6 +465,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -418,6 +494,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -442,6 +523,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -466,6 +552,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -490,6 +581,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -514,6 +610,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -538,6 +639,11 @@ spring:
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
             - name: JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
             - name: Retry
               args:
                 retries: 3
@@ -564,6 +670,7 @@ spring:
           predicates:
             - Path=/user-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/user-docs/(?<segment>.*), /${segment}
 
         - id: restaurant-openapi
@@ -571,6 +678,7 @@ spring:
           predicates:
             - Path=/restaurant-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/restaurant-docs/(?<segment>.*), /${segment}
 
         - id: menu-openapi
@@ -578,6 +686,7 @@ spring:
           predicates:
             - Path=/menu-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/menu-docs/(?<segment>.*), /${segment}
 
         - id: booking-openapi
@@ -585,6 +694,7 @@ spring:
           predicates:
             - Path=/booking-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/booking-docs/(?<segment>.*), /${segment}
 
         - id: order-openapi
@@ -592,6 +702,7 @@ spring:
           predicates:
             - Path=/order-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/order-docs/(?<segment>.*), /${segment}
 
         - id: payment-openapi
@@ -599,6 +710,7 @@ spring:
           predicates:
             - Path=/payment-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/payment-docs/(?<segment>.*), /${segment}
 
         - id: pos-openapi
@@ -606,6 +718,7 @@ spring:
           predicates:
             - Path=/pos-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/pos-docs/(?<segment>.*), /${segment}
 
         - id: review-openapi
@@ -613,6 +726,7 @@ spring:
           predicates:
             - Path=/review-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/review-docs/(?<segment>.*), /${segment}
 
         - id: analytics-openapi
@@ -620,6 +734,7 @@ spring:
           predicates:
             - Path=/analytics-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/analytics-docs/(?<segment>.*), /${segment}
 
         - id: notification-openapi
@@ -627,6 +742,7 @@ spring:
           predicates:
             - Path=/notification-docs/**
           filters:
+            - name: JwtAuthentication
             - RewritePath=/notification-docs/(?<segment>.*), /${segment}
 
     loadbalancer:
@@ -657,40 +773,8 @@ server:
   port: ${SERVER_PORT}
   shutdown: graceful
 
-grpc:
-  server:
-    port: ${GRPC_PORT}
-  client:
-    user-service:
-      address: static://${USER_GRPC_SERVICE}
-      negotiation-type: plaintext
-    restaurant-service:
-      address: static://${RESTAURANT_GRPC_SERVICE}
-      negotiation-type: plaintext
-    booking-service:
-      address: static://${BOOKING_GRPC_SERVICE}
-      negotiation-type: plaintext
-    order-service:
-      address: static://${ORDER_GRPC_SERVICE}
-      negotiation-type: plaintext
-    payment-service:
-      address: static://${PAYMENT_GRPC_SERVICE}
-      negotiation-type: plaintext
-    pos-service:
-      address: static://${POS_GRPC_SERVICE}
-      negotiation-type: plaintext
-    review-service:
-      address: static://${REVIEW_GRPC_SERVICE}
-      negotiation-type: plaintext
-    analytics-service:
-      address: static://${ANALYTICS_GRPC_SERVICE}
-      negotiation-type: plaintext
-    notification-service:
-      address: static://${NOTIFICATION_GRPC_SERVICE}
-      negotiation-type: plaintext
-  security:
-    enabled: false
-  client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS}
+jwt:
+  redis-timeout-ms: 2000
 
 resilience4j:
   circuitbreaker:
@@ -703,7 +787,7 @@ resilience4j:
         automaticTransitionFromOpenToHalfOpenEnabled: true
         waitDurationInOpenState: 60s
         failureRateThreshold: 80
-        slowCallRateThreshold: 100
+        slowCallRateThreshold: 80
         slowCallDurationThreshold: 10s
         recordExceptions:
           # - org.springframework.web.server.ResponseStatusException
@@ -711,8 +795,8 @@ resilience4j:
           - java.io.IOException
           - java.net.ConnectException
     instances:
-      grpc:
-        baseConfig: default
+      #grpc:
+      #  baseConfig: default
       userServiceCircuitBreaker:
         baseConfig: default
       restaurantServiceCircuitBreaker:
@@ -736,9 +820,9 @@ resilience4j:
 
   timelimiter:
     instances:
-      grpc:
-        timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s}
-        cancelRunningFuture: true
+      #grpc:
+      #  timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s}
+      #  cancelRunningFuture: true
       # Add these for HTTP circuit breakers
       userServiceCircuitBreaker:
         timeoutDuration: 60s
@@ -760,6 +844,7 @@ resilience4j:
         cancelRunningFuture: true
       posServiceCircuitBreaker:
         timeoutDuration: 60s
+        cancelRunningFuture: true
       reviewServiceCircuitBreaker:
         timeoutDuration: 60s
         cancelRunningFuture: true
@@ -770,14 +855,14 @@ resilience4j:
         timeoutDuration: 60s
         cancelRunningFuture: true
 
-  retry:
-    instances:
-      grpc:
-        maxAttempts: 3
-        waitDuration: 1s
-        retryExceptions:
-          - io.grpc.StatusRuntimeException
-          - java.util.concurrent.TimeoutException
+  #retry:
+    # instances:
+      #grpc:
+      #  maxAttempts: 3
+      #  waitDuration: 1s
+      #  retryExceptions:
+      #    - io.grpc.StatusRuntimeException
+      #    - java.util.concurrent.TimeoutException
 
 management:
   endpoints:
@@ -813,7 +898,6 @@ graylog:
 rate:
   limit:
     authenticated:
-      capacity: ${RATE_LIMIT_AUTHENTICATED_CAPACITY:500}
       refill:
         period:
           minutes: 1

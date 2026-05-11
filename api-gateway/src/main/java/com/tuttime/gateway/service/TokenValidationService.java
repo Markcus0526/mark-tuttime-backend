@@ -6,62 +6,59 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-/**
- * Service for validating token whitelist and blacklist status using Redis. Uses same key structure as user-service.
- */
-@Slf4j
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TokenValidationService {
 
 	private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
-	private static final String TOKEN_METADATA_PREFIX = "whitelist:token:";
-	private static final String TOKEN_BLACKLIST_PREFIX = "blacklist:token:";
+
+	private static final String WHITELIST_PREFIX = "whitelist:token:";
+	private static final String BLACKLIST_PREFIX = "blacklist:jti:";   // matches Kafka consumer
+	private static final String USER_BLOCK_PREFIX = "blocklist:user:";
 
 	/**
-	 * Checks if token is whitelisted. Returns false on errors (fail secure).
+	 * Checks if a token JTI is whitelisted (fail‑closed).
 	 */
 	public Mono<Boolean> isTokenWhitelisted(String jti) {
-		if (jti == null || jti.trim().isEmpty()) {
+		if (jti == null || jti.isBlank()) {
 			return Mono.just(false);
 		}
-
-		try {
-			String tokenKey = TOKEN_METADATA_PREFIX + jti;
-			// Remove retry logic to reduce latency - Redis replication lag should be minimal
-			// If token is not found, it's likely not whitelisted rather than replication lag
-			return reactiveRedisTemplate.hasKey(tokenKey)
-					.defaultIfEmpty(false)
-					.doOnError(error -> {
-						log.error("Error checking token whitelist: jti={}, error={}", jti, error.getMessage());
-					})
-					.onErrorReturn(false); // On error, assume NOT whitelisted (fail secure)
-		} catch (Exception e) {
-			log.error("Exception checking token whitelist: jti={}", jti, e);
-			return Mono.just(false); // Fail secure - only accept if confirmed whitelisted
-		}
+		String key = WHITELIST_PREFIX + jti;
+		return reactiveRedisTemplate.hasKey(key)
+				.defaultIfEmpty(false)
+				.doOnError(e -> log.error("Whitelist check error, rejecting token (fail‑closed): jti={}", jti, e))
+				.onErrorReturn(false);
 	}
 
 	/**
-	 * Check if a token is blacklisted.
+	 * Checks if a token JTI is blacklisted (fail‑closed).
+	 * Uses the same key prefix as the Kafka consumer.
 	 */
-	public Mono<Boolean> isTokenBlacklisted(String token) {
-		if (token == null || token.trim().isEmpty()) {
+	public Mono<Boolean> isTokenBlacklisted(String jti) {
+		if (jti == null || jti.isBlank()) {
 			return Mono.just(false);
 		}
+		String key = BLACKLIST_PREFIX + jti;
+		return reactiveRedisTemplate.hasKey(key)
+				.defaultIfEmpty(false)
+				.doOnError(e -> log.error("Blacklist check error, assuming blacklisted (fail‑closed): jti={}", jti, e))
+				.onErrorReturn(true);   // fail‑closed: assume blacklisted
+	}
 
-		try {
-			String blacklistKey = TOKEN_BLACKLIST_PREFIX + token;
-			return reactiveRedisTemplate.hasKey(blacklistKey)
-					.defaultIfEmpty(false)
-					.doOnError(error -> {
-						log.warn("Error checking token blacklist: error={}", error.getMessage());
-					})
-					.onErrorReturn(false); // On error, assume not blacklisted (fail secure)
-		} catch (Exception e) {
-			log.warn("Exception checking token blacklist", e);
-			return Mono.just(false); // Fail secure
+	/**
+	 * Checks if a user is blocked (fail‑closed).
+	 */
+	public Mono<Boolean> isUserBlocked(UUID userId) {
+		if (userId == null) {
+			return Mono.just(false);
 		}
+		String key = USER_BLOCK_PREFIX + userId.toString();
+		return reactiveRedisTemplate.hasKey(key)
+				.defaultIfEmpty(false)
+				.doOnError(e -> log.error("User block check error, assuming blocked (fail‑closed): userId={}", userId, e))
+				.onErrorReturn(true);
 	}
 }
-

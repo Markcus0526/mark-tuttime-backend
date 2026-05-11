@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.exception.ErrorCodes;
 import com.tuttime.common.exception.StackTraceUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.cloud.gateway.support.NotFoundException;
 import org.springframework.core.annotation.Order;
@@ -46,7 +47,7 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 	}
 
 	@Override
-	public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+	public Mono<Void> handle(ServerWebExchange exchange, @NonNull Throwable ex) {
 		ServerHttpResponse response = exchange.getResponse();
 
 		// Already committed → do nothing
@@ -77,18 +78,23 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 		String message = "An unexpected error occurred";
 
 		if (ex instanceof ResponseStatusException rse) {
-			status = HttpStatus.resolve(rse.getStatusCode().value());
-			if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
+			status = HttpStatus.valueOf(rse.getStatusCode().value());
 			message = rse.getReason() != null ? rse.getReason() : status.getReasonPhrase();
-		} else if (ex instanceof ServerWebInputException) {
-			status = HttpStatus.BAD_REQUEST;
-			message = "Invalid request parameters";
 		} else if (ex instanceof WebExchangeBindException) {
 			status = HttpStatus.BAD_REQUEST;
 			message = "Validation failed: " + ex.getMessage();
+		} else if (ex instanceof ServerWebInputException) {
+			status = HttpStatus.BAD_REQUEST;
+			message = "Invalid request parameters";
 		} else if (ex instanceof TimeoutException) {
 			status = HttpStatus.GATEWAY_TIMEOUT;
 			message = "Request timeout";
+		} else if (ex instanceof java.net.SocketTimeoutException) {
+			status = HttpStatus.GATEWAY_TIMEOUT;
+			message = "Connection timeout";
+		} else if (ex instanceof java.net.ConnectException) {
+			status = HttpStatus.BAD_GATEWAY;
+			message = "Unable to connect to upstream service";
 		} else if (ex instanceof NotFoundException) {
 			status = HttpStatus.NOT_FOUND;
 			message = "Resource not found";

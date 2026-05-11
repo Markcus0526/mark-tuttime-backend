@@ -31,8 +31,9 @@ import org.springframework.core.env.Profiles;
  *   <li>CORS handling</li>
  * </ul>
  */
-@Slf4j
+
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@Slf4j
 public class ApiGatewayApplication {
 
 	public static void main(String[] args) {
