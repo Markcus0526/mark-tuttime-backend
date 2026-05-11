@@ -14,6 +14,7 @@ import com.tuttime.order.grpc.client.RestaurantGrpcClient;
 import com.tuttime.order.grpc.client.UserGrpcClient;
 import com.tuttime.order.mapper.OrderMapper;
 import com.tuttime.order.repository.OrderRepository;
+import com.tuttime.order.service.OrderDiscountCalculator;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
 	private final UserGrpcClient userGrpcClient;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final MenuGrpcClient menuGrpcClient;
+	private final OrderDiscountCalculator discountCalculator;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -124,7 +126,8 @@ public class OrderServiceImpl implements OrderService {
 		}
 
 		// RECALCULATION: Crucial for your NUMERIC(12,2) total_amount column
-		recalculateTotal(order);
+		BigDecimal finalTotal = discountCalculator.calculateFinalTotal(order.getBranchId(), order.getItems());
+		order.setTotalAmount(finalTotal);
 
 		return orderMapper.toResponse(orderRepository.save(order));
 	}
@@ -270,23 +273,6 @@ public class OrderServiceImpl implements OrderService {
 		orderRepository.save(order);
 
 		log.info("Order {} successfully canceled due to booking cancellation event.", order.getId());
-	}
-
-	/**
-	 * Logic to sum Items and their Modifiers to update the Order total_amount
-	 */
-	private void recalculateTotal(Order order) {
-		BigDecimal total = order.getItems().stream()
-				.map(item -> {
-					BigDecimal itemBase = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-					BigDecimal modifiersTotal = item.getModifiers().stream()
-							.map(m -> m.getPriceAdjustment().multiply(BigDecimal.valueOf(item.getQuantity())))
-							.reduce(BigDecimal.ZERO, BigDecimal::add);
-					return itemBase.add(modifiersTotal);
-				})
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-
-		order.setTotalAmount(total);
 	}
 
 	private List<OrderDto.OrderDetailResponse> getEnrichedOrders(List<Order> orders) {

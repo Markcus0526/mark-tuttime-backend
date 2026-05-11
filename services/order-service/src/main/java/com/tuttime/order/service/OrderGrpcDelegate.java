@@ -29,6 +29,7 @@ public class OrderGrpcDelegate {
 	private final OrderRepository orderRepository;
 	private final MenuGrpcClient menuGrpcClient;
 	private final PaymentGrpcClient paymentGrpcClient;
+	private final OrderDiscountCalculator discountCalculator;
 
 	@Transactional
 	public CreateOrderResponse createOrder(CreateOrderRequest request) {
@@ -73,7 +74,8 @@ public class OrderGrpcDelegate {
 			order.addItem(item);
 		}
 
-		order.calculateTotal();
+		BigDecimal finalTotal = discountCalculator.calculateFinalTotal(order.getBranchId(), order.getItems());
+		order.setTotalAmount(finalTotal);
 		Order savedOrder = orderRepository.save(order);
 
 		return CreateOrderResponse.newBuilder()
@@ -127,7 +129,8 @@ public class OrderGrpcDelegate {
 			order.addItem(item);
 		}
 
-		order.calculateTotal();
+		BigDecimal finalTotal = discountCalculator.calculateFinalTotal(order.getBranchId(), order.getItems());
+		order.setTotalAmount(finalTotal);
 		orderRepository.save(order);
 
 		return UpdateOrderResponse.newBuilder()

@@ -16,8 +16,8 @@ import static com.tuttime.common.constants.ServiceNames.MENU_SERVICE;
 import static com.tuttime.common.constants.ServiceNames.PAYMENT_SERVICE;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentGrpcClient {
 
 	@Value("${grpc.client-deadline-seconds}")
@@ -27,9 +27,12 @@ public class PaymentGrpcClient {
 	@GrpcClient("payment-service")
 	private PaymentServiceGrpc.PaymentServiceBlockingStub paymentServiceBlockingStub;
 
+	private final GrpcExecutor grpcExecutor;
+
 	public ProcessRefundResponse processRefund(ProcessRefundRequest request) {
-		return GrpcExecutor.execute(PAYMENT_SERVICE, "processRefund", () ->
-				paymentServiceBlockingStub.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+		return grpcExecutor.execute(PAYMENT_SERVICE, "processRefund", () ->
+				paymentServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.processRefund(request));
 	}
 }
