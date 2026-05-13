@@ -1,0 +1,54 @@
+replicaCount: 2
+
+image:
+  repository: tuttime/user-service
+  tag: v1
+  pullPolicy: Always
+
+service:
+  port: 28001
+  grpcPort: 29001
+  debugPort: 5001
+
+database:
+  user: postgres
+  password: password
+  dbName: user_service_db
+  schema: user_service
+  size: 20Gi
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+
+kafka:
+  bootstrapServers: kafka:9093
+
+jwt:
+  secret: ***REMOVED***
+  expiration: 86400000
+  issuer: tuttime-backend
+  audience: tuttime-frontend
+
+s3:
+  endpoint: https://selcloud.ru
+  region: ru-7
+  bucket: tuttime-storage
+  accessKey: your_key
+  secretKey: your_secret
+
+monitoring:
+  zipkinUrl: http://zipkin:9411/api/v2/spans
+  graylogHost: 173.249.29.61
+  graylogPort: 12203
+
+javaOpts: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5001"
+
+resources:
+  requests:
+    memory: "1024Mi"
+    cpu: "250m"
+  limits:
+    memory: "1800Mi"
+    cpu: "1000m"

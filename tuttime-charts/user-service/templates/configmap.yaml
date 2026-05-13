@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "user-service.fullname" . }}-config
+data:
+  SPRING_PROFILES_ACTIVE: "k8s,graylog-enabled"
+  SERVER_PORT: {{ .Values.service.port | quote }}
+  GRPC_PORT: {{ .Values.service.grpcPort | quote }}
+  DATABASE_URL: "jdbc:postgresql://{{ include "user-service.fullname" . }}-db:5432/{{ .Values.database.dbName }}?currentSchema={{ .Values.database.schema }}&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC"
+  DB_POOL_MAX_SIZE: "100"
+  DB_POOL_MIN_IDLE: "20"
+  REDIS_HOST: {{ .Values.redis.host | quote }}
+  REDIS_PORT: {{ .Values.redis.port | quote }}
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}
+  JWT_EXPIRATION: {{ .Values.jwt.expiration | quote }}
+  JWT_ISSUER: {{ .Values.jwt.issuer | quote }}
+  JWT_AUDIENCE: {{ .Values.jwt.audience | quote }}
+  ZIPKIN_URL: {{ .Values.monitoring.zipkinUrl | quote }}
+  GRAYLOG_HOST: {{ .Values.monitoring.graylogHost | quote }}
+  GRAYLOG_PORT: {{ .Values.monitoring.graylogPort | quote }}
+  LOG_LEVEL: "INFO"
+  # Add other config as needed

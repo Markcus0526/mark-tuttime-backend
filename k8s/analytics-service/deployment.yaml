@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: tuttime
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "28009"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      containers:
+        - name: analytics-service
+          image: tuttime/analytics-service:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 28009
+              name: http
+            - containerPort: 29009
+              name: grpc
+            - containerPort: 5009
+              name: debug
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5009"
+          envFrom:
+            - configMapRef:
+                name: analytics-service-config
+            - secretRef:
+                name: analytics-service-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              memory: "1536Mi"
+              cpu: "500m"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m"
+          livenessProbe:
+            tcpSocket:
+              port: 28009
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 28009
+            initialDelaySeconds: 30
+          terminationGracePeriodSeconds: 60
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: analytics-service-uploads-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: analytics-service-uploads-pvc
+  namespace: tuttime
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

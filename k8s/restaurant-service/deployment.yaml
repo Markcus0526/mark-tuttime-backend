@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-service
+  namespace: tuttime
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: restaurant-service
+  template:
+    metadata:
+      labels:
+        app: restaurant-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "28002"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: restaurant-service
+          image: tuttime/restaurant-service:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 28002
+              name: http
+            - containerPort: 29002
+              name: grpc
+            - containerPort: 5002
+              name: debug
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5002"
+          envFrom:
+            - configMapRef:
+                name: restaurant-service-config
+            - secretRef:
+                name: restaurant-service-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              memory: "1536Mi"
+              cpu: "500m"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m"
+          livenessProbe:
+            tcpSocket:
+              port: 28002
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 28002
+            initialDelaySeconds: 30
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: restaurant-service-uploads-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: restaurant-service-uploads-pvc
+  namespace: tuttime
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

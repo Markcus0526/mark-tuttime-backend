@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pos-service
+  namespace: tuttime
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pos-service
+  template:
+    metadata:
+      labels:
+        app: pos-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "28007"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: pos-service
+          image: tuttime/pos-service:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 28007
+              name: http
+            - containerPort: 29007
+              name: grpc
+            - containerPort: 5007
+              name: debug
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007"
+          envFrom:
+            - configMapRef:
+                name: pos-service-config
+            - secretRef:
+                name: pos-service-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "250m"
+            limits:
+              memory: "1536Mi"
+              cpu: "750m"
+          livenessProbe:
+            tcpSocket:
+              port: 28007
+            initialDelaySeconds: 120
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 28007
+            initialDelaySeconds: 30
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: pos-service-uploads-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pos-service-uploads-pvc
+  namespace: tuttime
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: tuttime
+data:
+  SPRING_PROFILES_ACTIVE: "k8s,graylog-enabled"
+  SERVER_PORT: "8080"
+  SPRING_CODEC_MAX_IN_MEMORY_SIZE: "500MB"
+  GATEWAY_HTTP_KEEP_ALIVE: "3600s"
+  GATEWAY_HTTP_CONNECT_TIMEOUT: "60000"
+  GATEWAY_HTTP_RESPONSE_TIMEOUT: "30s"
+  GATEWAY_POOL_MAX_CONNECTIONS: "5000"
+  CIRCUIT_BREAKER_TIMEOUT: "305s"
+
+  # REST service discovery – use Kubernetes service names
+  USER_SERVICE: "user-service:28001"
+  RESTAURANT_SERVICE: "restaurant-service:28002"
+  MENU_SERVICE: "menu-service:28003"
+  BOOKING_SERVICE: "booking-service:28004"
+  ORDER_SERVICE: "order-service:28005"
+  PAYMENT_SERVICE: "payment-service:28006"
+  POS_SERVICE: "pos-service:28007"
+  REVIEW_SERVICE: "review-service:28008"
+  ANALYTICS_SERVICE: "analytics-service:28009"
+  NOTIFICATION_SERVICE: "notification-service:28010"
+
+  # gRPC service discovery
+  USER_GRPC_SERVICE: "user-service:29001"
+  RESTAURANT_GRPC_SERVICE: "restaurant-service:29002"
+  MENU_GRPC_SERVICE: "menu-service:29003"
+  BOOKING_GRPC_SERVICE: "booking-service:29004"
+  ORDER_GRPC_SERVICE: "order-service:29005"
+  PAYMENT_GRPC_SERVICE: "payment-service:29006"
+  POS_GRPC_SERVICE: "pos-service:29007"
+  REVIEW_GRPC_SERVICE: "review-service:29008"
+  ANALYTICS_GRPC_SERVICE: "analytics-service:29009"
+  NOTIFICATION_GRPC_SERVICE: "notification-service:29010"
+  GRPC_CLIENT_DEADLINE_SECONDS: "60"
+
+  # Redis
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_TIMEOUT: "5000ms"
+  REDIS_POOL_MAX_ACTIVE: "20"
+  REDIS_POOL_MAX_IDLE: "10"
+  REDIS_POOL_MIN_IDLE: "2"
+
+  # Kafka
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  SPRING_KAFKA_SECURITY_PROTOCOL: "PLAINTEXT"
+
+  # CORS
+  APP_CORS_ALLOWED_ORIGINS: "https://tuttime-web.vercel.app,http://localhost:5173,http://localhost:3000,http://localhost:8080"
+
+  # Rate limiting
+  RATE_LIMIT_SIGNIN_CAPACITY: "5"
+  RATE_LIMIT_SIGNUP_CAPACITY: "3"
+
+  # Monitoring
+  ZIPKIN_URL: "http://zipkin:9411/api/v2/spans"
+  LOG_LEVEL: "INFO"
+  GRAYLOG_HOST: "173.249.29.61"
+  GRAYLOG_PORT: "12203"
+  GRAYLOG_ORIGIN_HOST: "api-gateway"
+  GRAYLOG_FACILITY: "api-gateway"
+  GRAYLOG_INCLUDE_SOURCE: "true"
+  GRAYLOG_MAX_MESSAGE_SIZE: "8192"
+  GRAYLOG_COMPRESSION_TYPE: "GZIP"
+
+  # Kubernetes discovery (set false to rely on manual env vars)
+  SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "false"
+  SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: "false"

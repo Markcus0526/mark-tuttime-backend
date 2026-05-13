@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: tuttime
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - name: http
+      port: 28006
+      targetPort: 28006
+    - name: grpc
+      port: 29006
+      targetPort: 29006
+    - name: debug
+      port: 5006
+      targetPort: 5006
+  type: ClusterIP

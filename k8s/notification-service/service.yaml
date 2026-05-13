@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: tuttime
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - name: http
+      port: 28010
+      targetPort: 28010
+    - name: grpc
+      port: 29010
+      targetPort: 29010
+    - name: debug
+      port: 5010
+      targetPort: 5010
+  type: ClusterIP

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: tuttime
+spec:
+  selector:
+    app: order-service
+  ports:
+    - name: http
+      port: 28005
+      targetPort: 28005
+    - name: grpc
+      port: 29005
+      targetPort: 29005
+    - name: debug
+      port: 5005
+      targetPort: 5005
+  type: ClusterIP

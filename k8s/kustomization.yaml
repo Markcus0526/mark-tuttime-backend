@@ -1,0 +1,161 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: tuttime
+
+resources:
+  # Infrastructure
+  - infra/redis-deployment.yaml
+  - infra/redis-service.yaml
+  - infra/kafka-deployment.yaml
+  - infra/kafka-service.yaml
+  - infra/kafka-ui-deployment.yaml
+  - infra/kafka-ui-service.yaml
+  - infra/zipkin-deployment.yaml
+  - infra/zipkin-service.yaml
+  - infra/mongodb-deployment.yaml
+  - infra/mongodb-service.yaml
+  - infra/opensearch-deployment.yaml
+  - infra/opensearch-service.yaml
+  - infra/graylog-deployment.yaml
+  - infra/graylog-service.yaml
+
+  # API Gateway
+  - api-gateway/configmap.yaml
+  - api-gateway/secret.yaml
+  - api-gateway/deployment.yaml
+  - api-gateway/service.yaml
+
+  # User Service + DB
+  - user-service/db-secret.yaml
+  - user-service/db-init-configmap.yaml
+  - user-service/db-deployment.yaml
+  - user-service/db-service.yaml
+  - user-service/configmap.yaml
+  - user-service/secret.yaml
+  - user-service/deployment.yaml
+  - user-service/service.yaml
+
+  # Restaurant Service + DB
+  - restaurant-service/db-secret.yaml
+  - restaurant-service/db-init-configmap.yaml
+  - restaurant-service/db-deployment.yaml
+  - restaurant-service/db-service.yaml
+  - restaurant-service/configmap.yaml
+  - restaurant-service/secret.yaml
+  - restaurant-service/deployment.yaml
+  - restaurant-service/service.yaml
+
+  # Menu Service + DB
+  - menu-service/db-secret.yaml
+  - menu-service/db-init-configmap.yaml
+  - menu-service/db-deployment.yaml
+  - menu-service/db-service.yaml
+  - menu-service/configmap.yaml
+  - menu-service/secret.yaml
+  - menu-service/deployment.yaml
+  - menu-service/service.yaml
+
+  # Booking Service + DB
+  - booking-service/db-secret.yaml
+  - booking-service/db-init-configmap.yaml
+  - booking-service/db-deployment.yaml
+  - booking-service/db-service.yaml
+  - booking-service/configmap.yaml
+  - booking-service/secret.yaml
+  - booking-service/deployment.yaml
+  - booking-service/service.yaml
+
+  # Payment Service + DB
+  - payment-service/db-secret.yaml
+  - payment-service/db-init-configmap.yaml
+  - payment-service/db-deployment.yaml
+  - payment-service/db-service.yaml
+  - payment-service/configmap.yaml
+  - payment-service/secret.yaml
+  - payment-service/deployment.yaml
+  - payment-service/service.yaml
+
+  # Order Service + DB
+  - order-service/db-secret.yaml
+  - order-service/db-init-configmap.yaml
+  - order-service/db-deployment.yaml
+  - order-service/db-service.yaml
+  - order-service/configmap.yaml
+  - order-service/secret.yaml
+  - order-service/deployment.yaml
+  - order-service/service.yaml
+
+  # POS Service + DB
+  - pos-service/db-secret.yaml
+  - pos-service/db-init-configmap.yaml
+  - pos-service/db-deployment.yaml
+  - pos-service/db-service.yaml
+  - pos-service/configmap.yaml
+  - pos-service/secret.yaml
+  - pos-service/deployment.yaml
+  - pos-service/service.yaml
+
+  # Review Service + DB
+  - review-service/db-secret.yaml
+  - review-service/db-init-configmap.yaml
+  - review-service/db-deployment.yaml
+  - review-service/db-service.yaml
+  - review-service/configmap.yaml
+  - review-service/secret.yaml
+  - review-service/deployment.yaml
+  - review-service/service.yaml
+
+  # Analytics Service + DB
+  - analytics-service/db-secret.yaml
+  - analytics-service/db-init-configmap.yaml
+  - analytics-service/db-deployment.yaml
+  - analytics-service/db-service.yaml
+  - analytics-service/configmap.yaml
+  - analytics-service/secret.yaml
+  - analytics-service/deployment.yaml
+  - analytics-service/service.yaml
+
+  # Notification Service + DB
+  - notification-service/db-secret.yaml
+  - notification-service/db-init-configmap.yaml
+  - notification-service/db-deployment.yaml
+  - notification-service/db-service.yaml
+  - notification-service/configmap.yaml
+  - notification-service/secret.yaml
+  - notification-service/deployment.yaml
+  - notification-service/service.yaml
+
+# Optional: override image tags for all services
+images:
+  - name: tuttime/api-gateway
+    newTag: v1
+  - name: tuttime/user-service
+    newTag: v1
+  - name: tuttime/restaurant-service
+    newTag: v1
+  - name: tuttime/menu-service
+    newTag: v1
+  - name: tuttime/booking-service
+    newTag: v1
+  - name: tuttime/payment-service
+    newTag: v1
+  - name: tuttime/order-service
+    newTag: v1
+  - name: tuttime/pos-service
+    newTag: v1
+  - name: tuttime/review-service
+    newTag: v1
+  - name: tuttime/analytics-service
+    newTag: v1
+  - name: tuttime/notification-service
+    newTag: v1
+
+# Common labels to add to all resources
+commonLabels:
+  managed-by: kustomize
+  environment: production
+
+# Common annotations
+commonAnnotations:
+  deployed-by: kubectl-kustomize
