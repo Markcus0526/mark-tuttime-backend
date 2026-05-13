@@ -2,11 +2,12 @@ package com.tuttime.review.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.review.dto.RatingDto;
 import com.tuttime.review.dto.ReviewDto;
-import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,8 +43,8 @@ public class ReviewController {
 	public ResponseEntity<ApiRes<ReviewDto.ReviewResponse>> postReview(@Valid @RequestBody ReviewDto.ReviewRequest request) {
 
 		validateLogin(); // Clean validation call
+		UUID userId = UuidUtil.toUuid(UserContext.getUserId());
 
-		UUID userId = UUID.fromString(UserContext.getUserId());
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(ApiRes.success(reviewService.createReview(userId, request)));
 	}
@@ -89,10 +90,11 @@ public class ReviewController {
 			@PathVariable UUID reviewId,
 			@Valid @RequestBody ReviewDto.ReviewModerationRequest request) {
 
-		validateAdminOrOwnerOrManager(); // Centralized security check
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
 
-		UUID moderatorId = UUID.fromString(UserContext.getUserId());
-		ReviewDto.ReviewResponse response = reviewService.moderateReview(reviewId, moderatorId, request);
+		ReviewDto.ReviewResponse response = reviewService.moderateReview(reviewId, request, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(response));
 	}
 
