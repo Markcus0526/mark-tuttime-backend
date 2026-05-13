@@ -16,11 +16,28 @@ public interface AnalyticsService {
 	AdminDto.UserReliabilityResponse getUserRiskProfile(UUID userId);
 
 	// Restaurant Analytics
-	List<RestaurantDto.YieldHeatmapResponse> getWeeklyHeatmap(UUID branchId);
+	RestaurantDto.OccupancyResponse getRealtimeOccupancy(UUID branchId, UUID userId, String roles);
 
-	RestaurantDto.DailyLedgerResponse getDailyFinancials(UUID branchId, LocalDate date);
+	List<RestaurantDto.TopItemResponse> getTopItems(UUID branchId, LocalDate from, LocalDate to, int limit,
+	                                                UUID userId, String roles);
 
-	RestaurantDto.BranchPerformanceResponse getBranchStats(UUID branchId);
+	RestaurantDto.RevenueBreakdownResponse getRevenueBreakdown(UUID branchId, String granularity,
+	                                                           LocalDate date, UUID userId, String roles);
+
+	RestaurantDto.RetentionResponse getCustomerRetention(UUID branchId, String period, UUID userId, String roles);
+
+	RestaurantDto.PosHealthResponse getPosHealth(UUID branchId, UUID userId, String roles);
+
+	RestaurantDto.FunnelResponse getConversionFunnel(UUID branchId, LocalDate startDate, LocalDate endDate,
+	                                                 UUID userId, String roles);
+
+	RestaurantDto.AovTrendResponse getAovTrend(UUID branchId, String granularity, int limit,
+	                                           UUID userId, String roles);
+
+	List<RestaurantDto.TopCustomerResponse> getTopCustomers(UUID branchId, int limit, UUID userId, String roles);
+
+	RestaurantDto.MenuPerformanceResponse getMenuPerformance(UUID branchId, LocalDate startDate, LocalDate endDate,
+	                                                         String groupBy, UUID userId, String roles);
 
 	// Used by Kafka Consumer
 	void processEvent(String source, String type, UUID branchId, Object payload);

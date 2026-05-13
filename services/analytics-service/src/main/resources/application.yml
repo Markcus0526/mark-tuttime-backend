@@ -10,6 +10,9 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  cache:
+    type: redis
+
   datasource:
     url: ${DATABASE_URL}
     username: ${DATABASE_USERNAME}

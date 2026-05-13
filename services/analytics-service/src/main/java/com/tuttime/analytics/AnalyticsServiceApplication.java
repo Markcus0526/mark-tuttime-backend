@@ -8,19 +8,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
-@SpringBootApplication(
-		scanBasePackages = "com.tuttime",
-		exclude = {
-				RedisAutoConfiguration.class,
-				RedisRepositoriesAutoConfiguration.class,
-				RedisReactiveHealthContributorAutoConfiguration.class,
-				RedisHealthContributorAutoConfiguration.class
-		}
-)
+@SpringBootApplication(scanBasePackages = "com.tuttime")
 @Slf4j
 public class AnalyticsServiceApplication {
 	public static void main(String[] args) {
