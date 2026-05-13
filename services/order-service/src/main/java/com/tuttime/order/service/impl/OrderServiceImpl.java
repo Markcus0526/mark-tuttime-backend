@@ -18,16 +18,17 @@ import com.tuttime.order.service.OrderDiscountCalculator;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.tuttime.common.util.UuidUtil.NIL_UUID;
@@ -45,73 +46,95 @@ public class OrderServiceImpl implements OrderService {
 	private final MenuGrpcClient menuGrpcClient;
 	private final OrderDiscountCalculator discountCalculator;
 
+	@Value("${pos.api.key:}")
+	private String posApiKey;
+
+	// ---------- Helper ----------
+	private boolean isAdmin(String userRoles) {
+		return userRoles != null && userRoles.contains("ADMIN");
+	}
+
+	// ---------- Read Operations ----------
 	@Override
 	@Transactional(readOnly = true)
-	public OrderDto.OrderDetailResponse getOrderById(UUID orderId, UUID requesterId) {
+	public OrderDto.OrderDetailResponse getOrderById(UUID orderId, UUID currentUserId, String userRoles) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
-
-		// 2. Fetch all external data in parallel
+		if (!order.getUserId().equals(currentUserId)) {
+			restaurantGrpcClient.validateBranchPermission(order.getBranchId(), currentUserId, userRoles);
+		}
 		return getEnrichedOrders(List.of(order)).getFirst();
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public Page<OrderDto.OrderDetailResponse> getOrdersByUserId(UUID userId, int page, int size) {
+	public Page<OrderDto.OrderDetailResponse> getOrdersByUserId(UUID userId, UUID branchId, OrderStatus status,
+	                                                            int page, int size, UUID currentUserId, String userRoles) {
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
+
 		PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
-
-		// 1. Fetch the paginated entities
-		Page<Order> orderPage = orderRepository.findByUserIdAndDeletedAtIsNull(userId, pageRequest);
-
-		// 2. Extract content and enrich with User/Branch info
-		// Assuming getEnrichedOrders returns List<OrderDetailResponse>
+		Page<Order> orderPage;
+		if (status != null) {
+			orderPage = orderRepository.findByUserIdAndBranchIdAndStatusAndDeletedAtIsNull(userId, branchId, status, pageRequest);
+		} else {
+			orderPage = orderRepository.findByUserIdAndBranchIdAndDeletedAtIsNull(userId, branchId, pageRequest);
+		}
 		List<OrderDto.OrderDetailResponse> enrichedList = getEnrichedOrders(orderPage.getContent());
-
-		// 3. Wrap back into a Page object to maintain pagination metadata (total elements, total pages)
 		return new PageImpl<>(enrichedList, pageRequest, orderPage.getTotalElements());
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public OrderDto.OrderDetailResponse getOrderByBookingId(UUID bookingId) {
-		Order order = orderRepository.findByBookingIdWithItems(bookingId) // Use the fetch method
-				.orElseThrow(() -> new InvalidRequestException("No order found for booking: " + bookingId));
-
-		// 2. Fetch all external data in parallel
-		return getEnrichedOrders(List.of(order)).getFirst();
+	public Page<OrderDto.OrderDetailResponse> getMyOrders(UUID userId, OrderStatus status, int page, int size) {
+		PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+		Page<Order> orderPage;
+		if (status != null) {
+			orderPage = orderRepository.findByUserIdAndStatusAndDeletedAtIsNull(userId, status, pageRequest);
+		} else {
+			orderPage = orderRepository.findByUserIdAndDeletedAtIsNull(userId, pageRequest);
+		}
+		List<OrderDto.OrderDetailResponse> enriched = getEnrichedOrders(orderPage.getContent());
+		return new PageImpl<>(enriched, pageRequest, orderPage.getTotalElements());
 	}
 
 	@Override
+	@Transactional(readOnly = true)
+	public OrderDto.OrderDetailResponse getOrderByBookingId(UUID bookingId, UUID currentUserId, String userRoles) {
+		Order order = orderRepository.findByBookingIdWithItems(bookingId)
+				.orElseThrow(() -> new InvalidRequestException("No order found for booking: " + bookingId));
+		if (!order.getUserId().equals(currentUserId)) {
+			restaurantGrpcClient.validateBranchPermission(order.getBranchId(), currentUserId, userRoles);
+		}
+		return getEnrichedOrders(List.of(order)).getFirst();
+	}
+
+	// ---------- Write Operations ----------
+	@Override
 	@Transactional
-	public OrderDto.OrderResponse updateOrderContent(UUID orderId, OrderDto.OrderUpdateRequest request, UUID userId) {
+	public OrderDto.OrderResponse updateOrderContent(UUID orderId, OrderDto.OrderUpdateRequest request,
+	                                                 UUID currentUserId, String userRoles) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
-
-		// Business Rule: Cannot edit if restaurant has already started (ACCEPTED/PREPARING)
-		if (order.getStatus().ordinal() >= OrderStatus.ACCEPTED.ordinal()) {
+		if (!order.getUserId().equals(currentUserId)) {
+			restaurantGrpcClient.validateBranchPermission(order.getBranchId(), currentUserId, userRoles);
+		}
+		if (order.getStatus() == OrderStatus.SENT_TO_RESTAURANT
+				|| order.getStatus().ordinal() > OrderStatus.SENT_TO_RESTAURANT.ordinal()) {
 			throw new InvalidRequestException("Cannot modify order after it has been accepted by the restaurant");
 		}
 
-		// 3. Clear existing items (JPA orphanRemoval handles DB cleanup)
 		order.getItems().clear();
-
-		// 4. Manually map and VERIFY prices (Don't trust the DTO prices!)
 		for (var itemReq : request.items()) {
-			// SAFE CHECK: Handle null modifiers list
 			List<UUID> modIds = (itemReq.modifiers() != null)
 					? itemReq.modifiers().stream().map(m -> m.modifierId()).toList()
 					: Collections.emptyList();
-
 			BigDecimal verifiedPrice = menuGrpcClient.getPriceForOrder(itemReq.menuItemId(), modIds);
-
 			OrderItem newItem = OrderItem.builder()
 					.menuItemId(itemReq.menuItemId())
 					.quantity(itemReq.quantity())
-					.price(verifiedPrice) // Use verified price, not DTO price
+					.price(verifiedPrice)
 					.order(order)
 					.build();
-
-			// SAFE LOOP: Only process if modifiers exist
 			if (itemReq.modifiers() != null) {
 				itemReq.modifiers().forEach(mod -> {
 					newItem.getModifiers().add(OrderItemModifier.builder()
@@ -121,169 +144,156 @@ public class OrderServiceImpl implements OrderService {
 							.build());
 				});
 			}
-
 			order.addItem(newItem);
 		}
-
-		// RECALCULATION: Crucial for your NUMERIC(12,2) total_amount column
 		BigDecimal finalTotal = discountCalculator.calculateFinalTotal(order.getBranchId(), order.getItems());
 		order.setTotalAmount(finalTotal);
-
-		return orderMapper.toResponse(orderRepository.save(order));
-	}
-
-	@Override
-	@Transactional // CRITICAL: Pessimistic lock only works inside a transaction
-	public OrderDto.OrderResponse updateStatus(UUID id, OrderStatus newStatus) {
-		// 1. CALL THE LOCKING METHOD
-		// This executes "SELECT ... FOR UPDATE" in Postgres
-		Order order = orderRepository.findByIdWithLock(id)
-				.orElseThrow(() -> new InvalidRequestException("Order not found"));
-
-		// 2. Perform logic while the DB row is LOCKED
-		OrderStatus oldStatus = order.getStatus();
-		order.setStatus(newStatus);
-
-		// 3. Save and Commit
-		// The lock is released automatically when this method finishes (Transaction ends)
-		Order updatedOrder = orderRepository.save(order);
-
-		// Publish Event to Kafka
-		OrderEvent.OrderStatusEvent event = OrderEvent.OrderStatusEvent.builder()
-				.orderId(updatedOrder.getId())
-				.bookingId(updatedOrder.getBookingId())
-				.branchId(updatedOrder.getBranchId())
-				.oldStatus(oldStatus)
-				.newStatus(newStatus)
-				.build();
-		eventProducer.sendOrderStatusUpdatedEvent(event);
-
 		return orderMapper.toResponse(orderRepository.save(order));
 	}
 
 	@Override
 	@Transactional
-	public OrderDto.OrderResponse cancelOrder(UUID orderId, UUID userId) {
+	public List<OrderDto.OrderResponse> updateStatus(List<UUID> orderIds, OrderStatus newStatus, UUID currentUserId, String userRoles) {
+		List<OrderDto.OrderResponse> responses = new ArrayList<>();
+		for (UUID orderId : orderIds) {
+			Order order = orderRepository.findByIdWithLock(orderId)
+					.orElseThrow(() -> new InvalidRequestException("Order not found: " + orderId));
+			restaurantGrpcClient.validateBranchPermission(order.getBranchId(), currentUserId, userRoles);
+			OrderStatus oldStatus = order.getStatus();
+			order.setStatus(newStatus);
+			// No explicit save – dirty checking will update
+			OrderEvent.OrderStatusEvent event = OrderEvent.OrderStatusEvent.builder()
+					.orderId(order.getId())
+					.bookingId(order.getBookingId())
+					.branchId(order.getBranchId())
+					.oldStatus(oldStatus)
+					.newStatus(newStatus)
+					.build();
+			eventProducer.sendOrderStatusUpdatedEvent(event);
+			responses.add(orderMapper.toResponse(order));
+		}
+		return responses;
+	}
+
+	@Override
+	@Transactional
+	public OrderDto.OrderResponse cancelOrder(UUID orderId, UUID currentUserId, String userRoles) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
-
-		if (order.getStatus() == OrderStatus.SENT_TO_RESTAURANT || order.getStatus().ordinal() > 2) {
+		if (order.getStatus().ordinal() >= OrderStatus.ACCEPTED.ordinal()) {
 			throw new InvalidRequestException("Order is already with the kitchen and cannot be canceled");
 		}
-
+		restaurantGrpcClient.validateBranchPermission(order.getBranchId(), currentUserId, userRoles);
 		order.setStatus(OrderStatus.CANCELED);
 		return orderMapper.toResponse(orderRepository.save(order));
 	}
 
 	@Override
 	@Transactional
-	public OrderDto.OrderResponse syncStatusFromPos(UUID orderId, OrderDto.PosSyncRequest request) {
+	public OrderDto.OrderResponse syncStatusFromPos(UUID orderId, OrderDto.PosSyncRequest request, String apiKey) {
+		if (!posApiKey.equals(apiKey)) {
+			throw new InvalidRequestException("Invalid API key");
+		}
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
-
-		// Update status based on POS feedback
 		order.setStatus(request.posStatus());
-
-		// Save the update
-		Order updated = orderRepository.save(order);
-
-		// CRITICAL: Trigger Real-time notification (WebSocket)
-		// "Your order is READY at the kitchen!" TODO
-//		notificationService.sendOrderStatusUpdate(updated.getUserId(), updated.getStatus());
-
-		return orderMapper.toResponse(updated);
+		return orderMapper.toResponse(orderRepository.save(order));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public Page<OrderDto.OrderDetailResponse> searchOrders(UUID branchId, OrderStatus status, int page, int size) {
-		PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+	public Page<OrderDto.OrderDetailResponse> searchOrders(UUID branchId, String query, OrderStatus status,
+	                                                       OffsetDateTime startDateTime, OffsetDateTime endDateTime,
+	                                                       BigDecimal minAmount, BigDecimal maxAmount,
+	                                                       Pageable pageable, UUID currentUserId, String userRoles) {
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
 
-		// 1. Fetch the paginated entities
-		Page<Order> orderPage = orderRepository.searchOrders(branchId, status, pageRequest);
-
-		// 2. Extract content and enrich with User/Branch info
-		// Assuming getEnrichedOrders returns List<OrderDetailResponse>
-		List<OrderDto.OrderDetailResponse> enrichedList = getEnrichedOrders(orderPage.getContent());
-
-		// 3. Wrap back into a Page object to maintain pagination metadata (total elements, total pages)
-		return new PageImpl<>(enrichedList, pageRequest, orderPage.getTotalElements());
+		Page<Order> orders = orderRepository.searchOrders(branchId, query, status,
+				startDateTime, endDateTime,
+				minAmount, maxAmount, pageable);
+		List<OrderDto.OrderDetailResponse> enriched = getEnrichedOrders(orders.getContent());
+		return new PageImpl<>(enriched, pageable, orders.getTotalElements());
 	}
 
 	@Override
 	@Transactional
 	public void deleteOrder(UUID id) {
-		orderRepository.deleteById(id); // Triggers soft delete via @SQLDelete
+		orderRepository.deleteById(id); // soft delete via @SQLDelete
 	}
 
+	// ---------- Saga / Internal ----------
 	@Override
 	@Transactional
 	public Order createOrUpdateOrder(UUID bookingId, UUID userId, UUID branchId) {
-		// 1. Try to find the existing order
-		return orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
-				.map(order -> {
-					// 2. If it's already CREATED or further along, don't repeat the logic
-					if (order.getStatus().ordinal() >= OrderStatus.CREATED.ordinal()) {
-						log.warn("Order for booking {} is already in status: {}", bookingId, order.getStatus());
-						return order;
-					}
-
-					// 3. Update status to CREATED
-					order.setStatus(OrderStatus.CREATED);
-					log.info("Transitioning order {} to PAID for booking {}", order.getId(), bookingId);
-					return orderRepository.save(order);
-				})
-				.orElseGet(() -> {
-					// 4. FALLBACK: If order doesn't exist yet (Race condition), create it.
-					// NOTE: You need to ensure the Payment event contains userId and branchId
-					log.info("Order not found for booking {}. Creating new CREATED order.", bookingId);
-
-					Order newOrder = Order.builder()
-							.bookingId(bookingId)
-							// These must come from your event/context
-							.userId(userId)
-							.branchId(branchId)
-							.status(OrderStatus.CREATED)
-							.totalAmount(BigDecimal.ZERO)
-							.build();
-
-					return orderRepository.save(newOrder);
-				});
+		try {
+			return orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
+					.map(order -> {
+						if (order.getStatus().ordinal() >= OrderStatus.CREATED.ordinal()) {
+							log.warn("Order for booking {} is already in status: {}", bookingId, order.getStatus());
+							return order;
+						}
+						order.setStatus(OrderStatus.CREATED);
+						return orderRepository.save(order);
+					})
+					.orElseGet(() -> {
+						Order newOrder = Order.builder()
+								.bookingId(bookingId)
+								.userId(userId)
+								.branchId(branchId)
+								.status(OrderStatus.CREATED)
+								.totalAmount(BigDecimal.ZERO)
+								.build();
+						return orderRepository.save(newOrder);
+					});
+		} catch (DataIntegrityViolationException e) {
+			// Duplicate bookingId – retry fetch
+			return orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
+					.orElseThrow(() -> new InvalidRequestException("Failed to create or retrieve order for booking"));
+		}
 	}
 
 	@Override
 	@Transactional
 	public void cancelOrderByBookingId(UUID bookingId) {
 		log.info("Attempting to cancel order for booking: {}", bookingId);
-
-		// 1. Find the order by the logical booking ID
 		Order order = orderRepository.findByBookingIdAndDeletedAtIsNull(bookingId)
 				.orElseThrow(() -> new InvalidRequestException("No active order found for booking: " + bookingId));
-
-		// 2. Business Rule: Safety Check
-		// If the order is already PREPARING, READY, or SERVED, don't allow auto-cancellation
 		if (order.getStatus().ordinal() >= OrderStatus.PREPARING.ordinal()) {
 			log.warn("Cannot auto-cancel order {}. It is already in status: {}", order.getId(), order.getStatus());
-			// You might want to trigger a manual alert for staff here
 			return;
 		}
-
-		// 3. Perform Cancellation
 		order.setStatus(OrderStatus.CANCELED);
 		orderRepository.save(order);
-
 		log.info("Order {} successfully canceled due to booking cancellation event.", order.getId());
 	}
 
+	@Override
+	@Transactional
+	public void updateStatusFromPayment(UUID orderId, OrderStatus newStatus) {
+		Order order = orderRepository.findByIdWithLock(orderId)
+				.orElseThrow(() -> new InvalidRequestException("Order not found"));
+		// Optionally add branch permission check if this method is exposed via API
+		// restaurantGrpcClient.validateBranchPermission(order.getBranchId(), ...);
+		OrderStatus oldStatus = order.getStatus();
+		order.setStatus(newStatus);
+		OrderEvent.OrderStatusEvent event = OrderEvent.OrderStatusEvent.builder()
+				.orderId(order.getId())
+				.bookingId(order.getBookingId())
+				.branchId(order.getBranchId())
+				.oldStatus(oldStatus)
+				.newStatus(newStatus)
+				.build();
+		eventProducer.sendOrderStatusUpdatedEvent(event);
+	}
+
+	// ---------- Enrichment (with timeout) ----------
 	private List<OrderDto.OrderDetailResponse> getEnrichedOrders(List<Order> orders) {
-		// 1. Collect all unique IDs to avoid redundant gRPC calls
-		Set<String> userIds = orders.stream().map(b -> b.getUserId().toString()).collect(Collectors.toSet());
-		Set<String> tableIds = orders.stream().map(b -> b.getTableId().toString()).collect(Collectors.toSet());
+		Set<String> userIds = orders.stream().map(o -> o.getUserId().toString()).collect(Collectors.toSet());
+		Set<String> tableIds = orders.stream().map(o -> o.getTableId().toString()).collect(Collectors.toSet());
 		List<String> menuItemIds = orders.stream()
-				.flatMap(b -> b.getItems().stream().map(i -> i.getMenuItemId().toString()))
+				.flatMap(o -> o.getItems().stream().map(i -> i.getMenuItemId().toString()))
 				.distinct().toList();
 
-		// 2. Fetch all external data in parallel
 		var usersFuture = CompletableFuture.supplyAsync(() -> fetchUsersMap(userIds));
 		var tablesFuture = CompletableFuture.supplyAsync(() -> fetchTablesMap(tableIds));
 		var menusFuture = CompletableFuture.supplyAsync(() -> {
@@ -296,26 +306,28 @@ public class OrderServiceImpl implements OrderService {
 			}
 		});
 
-		CompletableFuture.allOf(usersFuture, tablesFuture, menusFuture).join();
+		try {
+			CompletableFuture.allOf(usersFuture, tablesFuture, menusFuture)
+					.orTimeout(5, TimeUnit.SECONDS)
+					.join();
+		} catch (Exception e) {
+			log.error("Timeout or error while enriching orders", e);
+		}
 
 		var userMap = usersFuture.join();
 		var tableMap = tablesFuture.join();
 		var menuMap = menusFuture.join();
 
-		// 3. Map and return
-		return orders.stream().map(booking -> {
-			var user = userMap.getOrDefault(booking.getUserId().toString(),
+		return orders.stream().map(order -> {
+			var user = userMap.getOrDefault(order.getUserId().toString(),
 					UserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
-
-			var table = tableMap.getOrDefault(booking.getTableId().toString(),
+			var table = tableMap.getOrDefault(order.getTableId().toString(),
 					TableHierarchyResponse.newBuilder().setTableId(NIL_UUID).setTableLabel("N/A").build());
-
-			var orderMenus = booking.getItems().stream()
+			var orderMenus = order.getItems().stream()
 					.map(i -> menuMap.get(i.getMenuItemId().toString()))
 					.filter(Objects::nonNull)
 					.toList();
-
-			return orderMapper.toDetailResponse(booking, user, table, orderMenus);
+			return orderMapper.toDetailResponse(order, user, table, orderMenus);
 		}).toList();
 	}
 
@@ -340,10 +352,10 @@ public class OrderServiceImpl implements OrderService {
 						return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build());
 					} catch (Exception e) {
 						return TableHierarchyResponse.newBuilder()
-								.setTableId(NIL_UUID)      // Result: "00000000..."
-								.setZoneId(NIL_UUID)       // Result: "00000000..."
-								.setBranchId(NIL_UUID)     // Result: "00000000..."
-								.setRestaurantId(NIL_UUID) // Result: "00000000..."
+								.setTableId(NIL_UUID)
+								.setZoneId(NIL_UUID)
+								.setBranchId(NIL_UUID)
+								.setRestaurantId(NIL_UUID)
 								.setTableLabel("N/A")
 								.setZoneName("Unknown")
 								.setRestaurantName("Unknown")
@@ -355,5 +367,4 @@ public class OrderServiceImpl implements OrderService {
 				}
 		));
 	}
-
 }

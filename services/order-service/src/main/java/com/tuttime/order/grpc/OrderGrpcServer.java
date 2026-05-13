@@ -75,4 +75,55 @@ public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {
 			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
+
+	@Override
+	public void getTopItems(GetTopItemsRequest request,
+	                        StreamObserver<GetTopItemsResponse> responseObserver) {
+		try {
+			GetTopItemsResponse response = delegate.getTopItems(request);
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getTopItems", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getRevenueBreakdown(GetRevenueBreakdownRequest request,
+	                                StreamObserver<GetRevenueBreakdownResponse> responseObserver) {
+		try {
+			GetRevenueBreakdownResponse response = delegate.getRevenueBreakdown(request);
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getRevenueBreakdown", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getMenuPerformance(GetMenuPerformanceRequest request,
+	                               StreamObserver<GetMenuPerformanceResponse> responseObserver) {
+		try {
+			GetMenuPerformanceResponse response = delegate.getMenuPerformance(request);
+			responseObserver.onNext(response);
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getRevenueBreakdown", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
+	}
 }
