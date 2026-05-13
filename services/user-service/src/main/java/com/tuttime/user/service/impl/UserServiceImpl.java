@@ -77,6 +77,7 @@ public class UserServiceImpl implements UserService {
 		user.setPhoneNumber(phoneNumber);
 		user.setEmail(email);
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
+		user.setLanguage(StringUtils.hasText(request.language()) ? request.language() : "en");
 		user = userRepository.saveAndFlush(user);
 
 		// 4. Assign Role
@@ -161,12 +162,18 @@ public class UserServiceImpl implements UserService {
 			changed = true;
 		}
 
+		if (request.language() != null && !request.language().equals(user.getLanguage())) {
+			user.setLanguage(request.language());
+			changed = true;
+		}
+
 		if (changed) {
 			user = userRepository.save(user);
 			UserEvent.ProfileUpdatedEvent event = UserEvent.ProfileUpdatedEvent.builder()
 					.userId(user.getId())
 					.fullName(user.getFullName())
 					.profilePicture(user.getProfilePicture())
+					.language(user.getLanguage())
 					.updatedAt(user.getUpdatedAt())
 					.build();
 			eventProducer.sendUserUpdatedEvent(event);
@@ -208,6 +215,9 @@ public class UserServiceImpl implements UserService {
 			if (request.fullName() != null) {
 				user.setFullName(request.fullName());
 			}
+			if (request.language() != null) {
+				user.setLanguage(request.language());
+			}
 		}
 
 		user = userRepository.save(user);
@@ -216,6 +226,7 @@ public class UserServiceImpl implements UserService {
 				.userId(user.getId())
 				.fullName(user.getFullName())
 				.profilePicture(user.getProfilePicture())
+				.language(user.getLanguage())
 				.updatedAt(user.getUpdatedAt())
 				.build();
 		eventProducer.sendUserUpdatedEvent(event);

@@ -30,6 +30,8 @@ service RestaurantService {
   rpc GetBranchManagers(BranchManagersRequest) returns (BranchManagersResponse);
 
   rpc FindAvailableTable(FindAvailableTableRequest) returns (FindAvailableTableResponse);
+
+  rpc GetBranchTotalTables(GetBranchTotalTablesRequest) returns (GetBranchTotalTablesResponse);
 }
 
 // rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
@@ -176,4 +178,13 @@ message FindAvailableTableResponse {
   string zone_id = 3;
   int32 capacity = 4;
   string table_label = 5;
+}
+
+// rpc GetBranchTotalTables(GetBranchTotalTablesRequest) returns (GetBranchTotalTablesResponse);
+message GetBranchTotalTablesRequest {
+  string branch_id = 1;
+}
+
+message GetBranchTotalTablesResponse {
+  int32 total_tables = 1;
 }

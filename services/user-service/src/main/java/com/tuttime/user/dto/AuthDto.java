@@ -118,7 +118,10 @@ public class AuthDto {
 
 			@Schema(description = "User password", example = "12345678")
 			// @NotBlank(message = "Password is required")
-			String password
+			String password,
+
+			@Schema(description = "User's UI language", example = "en or ru", nullable = true)
+			String language
 	) {
 	}
 
@@ -161,7 +164,10 @@ public class AuthDto {
 			String phoneNumber,
 
 			@Schema(description = "User profile url", nullable = true)
-			String profilePicture
+			String profilePicture,
+
+			@Schema(description = "User's UI language", example = "en or ru", nullable = true)
+			String language
 	) {
 		// Nested Record for immutability and cleaner code
 		public record RestaurantStaffDto(

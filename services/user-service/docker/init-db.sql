@@ -58,6 +58,7 @@ CREATE TABLE users
     full_name       VARCHAR(255),
     profile_picture TEXT,
     status          user_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    language        VARCHAR(50),
     last_login      TIMESTAMPTZ,
     deleted         BOOLEAN     NOT NULL DEFAULT FALSE,
     deleted_at      TIMESTAMPTZ,

@@ -83,6 +83,7 @@ public class UserEvent {
 			UUID userId,
 			String fullName,
 			String profilePicture,
+			String language,
 			OffsetDateTime updatedAt,
 			OffsetDateTime occurredAt
 	) implements BaseEvent {

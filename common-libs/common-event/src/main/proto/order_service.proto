@@ -16,6 +16,13 @@ service OrderService {
   rpc GetOrderDetail (OrderDetailRequest) returns (OrderDetailResponse);
 
   rpc CancelAndRefund(CancelOrderRequest) returns (CancelOrderResponse);
+
+  rpc GetTopItems(GetTopItemsRequest) returns (GetTopItemsResponse);
+
+  rpc GetRevenueBreakdown(GetRevenueBreakdownRequest) returns (GetRevenueBreakdownResponse);
+
+  rpc GetMenuPerformance(GetMenuPerformanceRequest) returns (GetMenuPerformanceResponse);
+
 }
 
 // rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
@@ -100,4 +107,62 @@ message CancelOrderResponse {
   string refund_transaction_id = 2;
   string amount_refunded = 3;
   string reason = 4;
+}
+
+// rpc GetTopItems(GetTopItemsRequest) returns (GetTopItemsResponse);
+message GetTopItemsRequest {
+  string branch_id = 1;
+  string from_date = 2;   // ISO date string, e.g. "2025-05-01"
+  string to_date = 3;
+  int32 limit = 4;
+}
+
+message GetTopItemsResponse {
+  repeated TopItem items = 1;
+}
+
+message TopItem {
+  string item_id = 1;
+  int32 quantity = 2;
+  string revenue = 3;
+}
+
+// rpc GetRevenueBreakdown(GetRevenueBreakdownRequest) returns (GetRevenueBreakdownResponse);
+message GetRevenueBreakdownRequest {
+  string branch_id = 1;
+  string granularity = 2;   // "HOUR" or "DAY"
+  string date = 3;          // ISO date (e.g., "2025-05-12")
+}
+
+message GetRevenueBreakdownResponse {
+  string granularity = 1;
+  repeated RevenuePoint points = 2;
+  string total_gmv = 3;
+  int32 total_orders = 4;
+}
+
+message RevenuePoint {
+  string period = 1;
+  string gmv = 2;
+  int32 orders = 3;
+}
+
+// rpc GetMenuPerformance(GetMenuPerformanceRequest) returns (GetMenuPerformanceResponse);
+message GetMenuPerformanceRequest {
+  string branch_id = 1;
+  string start_date = 2;   // ISO date
+  string end_date = 3;
+  string group_by = 4;      // "CATEGORY" or "ITEM"
+}
+
+message GetMenuPerformanceResponse {
+  string group_by = 1;
+  repeated MenuPerformancePoint points = 2;
+}
+
+message MenuPerformancePoint {
+  string id = 1;          // category_id or item_id
+  string name = 2;
+  string revenue = 3;      // decimal as string
+  int32 quantity = 4;
 }
