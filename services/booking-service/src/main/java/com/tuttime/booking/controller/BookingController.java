@@ -15,6 +15,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -117,16 +121,26 @@ public class BookingController {
 	}
 
 	@GetMapping("/branch/{branchId}")
-	@Operation(summary = "Admin: Get branch bookings", description = "Allows branch staff to view all bookings for their branch.")
-	public ResponseEntity<ApiRes<List<BookingDto.BookingDetailResponse>>> getBranchBookings(
+	@Operation(summary = "Admin: Get branch bookings with date range, status, and pagination")
+	public ResponseEntity<ApiRes<Page<BookingDto.BookingDetailResponse>>> getBranchBookings(
 			@PathVariable UUID branchId,
-			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date) {
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime fromDate,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime toDate,
+			@RequestParam(required = false) BookingStatus status,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "bookingDateTime") String sort,
+			@RequestParam(defaultValue = "desc") String direction) {
 
 		validateAdminOrOwnerOrManager();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		List<BookingDto.BookingDetailResponse> data = bookingService.getBookingsByBranch(branchId, date, currentUserId, userRoles);
+		Pageable pageable = PageRequest.of(page, size,
+				direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending());
+
+		Page<BookingDto.BookingDetailResponse> data = bookingService.getBookingsByBranch(
+				branchId, fromDate, toDate, status, pageable, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 

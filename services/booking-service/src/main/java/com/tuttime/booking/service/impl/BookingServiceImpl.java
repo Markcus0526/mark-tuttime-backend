@@ -3,9 +3,12 @@ package com.tuttime.booking.service.impl;
 import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.dto.BookingHistoryDto;
 import com.tuttime.booking.dto.BookingSetupDto;
+import com.tuttime.booking.dto.WaitlistDto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingItem;
 import com.tuttime.booking.entity.BookingStatusHistory;
+import com.tuttime.booking.entity.WaitlistEntry;
+import com.tuttime.booking.entity.enums.WaitlistStatus;
 import com.tuttime.booking.grpc.client.MenuGrpcClient;
 import com.tuttime.booking.grpc.client.OrderGrpcClient;
 import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
@@ -15,11 +18,12 @@ import com.tuttime.booking.mapper.BookingMapper;
 import com.tuttime.booking.repository.BookingItemRepository;
 import com.tuttime.booking.repository.BookingRepository;
 import com.tuttime.booking.repository.BookingStatusHistoryRepository;
+import com.tuttime.booking.repository.WaitlistRepository;
 import com.tuttime.booking.service.BookingService;
-import com.tuttime.booking.service.WaitlistService;
 import com.tuttime.common.enums.BookingStatus;
-import com.tuttime.common.event.kafka.event.BookingEvent;
+import com.tuttime.common.enums.UserRoleKind;
 import com.tuttime.common.event.kafka.EventProducer;
+import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.ConflictException;
@@ -27,12 +31,17 @@ import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -54,11 +63,11 @@ import static com.tuttime.common.util.UuidUtil.NIL_UUID;
 public class BookingServiceImpl implements BookingService {
 
 	private final BookingRepository bookingRepository;
+	private final WaitlistRepository waitlistRepository;
 	private final BookingItemRepository bookingItemRepository;
 	private final BookingStatusHistoryRepository historyRepository;
 	private final BookingMapper bookingMapper;
 	private final BookingHistoryMapper bookingHistoryMapper;
-	private final WaitlistService waitlistService;
 	private final RestaurantGrpcClient restaurantGrpcClient;
 	private final UserGrpcClient userGrpcClient;
 	private final MenuGrpcClient menuGrpcClient;
@@ -470,7 +479,7 @@ public class BookingServiceImpl implements BookingService {
 				.build();
 		eventProducer.sendBookingStatusUpdatedEvent(event);
 
-		waitlistService.notifyNextWaiting(booking.getBranchId(), booking.getZoneId(), booking.getPartySize());
+		notifyNextWaiting(booking.getBranchId(), booking.getZoneId(), booking.getPartySize());
 	}
 
 	@Override
@@ -485,13 +494,52 @@ public class BookingServiceImpl implements BookingService {
 				.collect(Collectors.toList());
 	}
 
+	@Override
 	@Transactional(readOnly = true)
-	public List<BookingDto.BookingDetailResponse> getBookingsByBranch(UUID branchId, OffsetDateTime date, UUID currentUserId, String userRoles) {
-		OffsetDateTime startOfDay = date.truncatedTo(ChronoUnit.DAYS);
-		OffsetDateTime endOfDay = startOfDay.plusDays(1);
-		List<Booking> bookings = bookingRepository.findAllByBranchIdAndBookingDatetimeBetween(branchId, startOfDay, endOfDay);
-		if (bookings.isEmpty()) return List.of();
-		return getEnrichedBookings(bookings);
+	public Page<BookingDto.BookingDetailResponse> getBookingsByBranch(
+			UUID branchId,
+			OffsetDateTime fromDate,
+			OffsetDateTime toDate,
+			BookingStatus status,
+			Pageable pageable,
+			UUID currentUserId,
+			String userRoles) {
+
+		// 1. Permission check (ensure user can access this branch)
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
+
+		// 2. Build dynamic specification
+		Specification<Booking> spec = (root, query, cb) -> {
+			List<Predicate> predicates = new ArrayList<>();
+			predicates.add(cb.equal(root.get("branchId"), branchId));
+			predicates.add(cb.isFalse(root.get("deleted")));   // if you have soft delete
+
+			if (fromDate != null) {
+				predicates.add(cb.greaterThanOrEqualTo(root.get("bookingDateTime"), fromDate));
+			}
+			if (toDate != null) {
+				predicates.add(cb.lessThanOrEqualTo(root.get("bookingDateTime"), toDate));
+			}
+			if (status != null) {
+				predicates.add(cb.equal(root.get("status"), status));
+			}
+			return cb.and(predicates.toArray(new Predicate[0]));
+		};
+
+		// 3. Execute paginated query
+		Page<Booking> bookingPage = bookingRepository.findAll(spec, pageable);
+
+		// 4. If no results, return empty page
+		if (!bookingPage.hasContent()) {
+			return Page.empty(pageable);
+		}
+
+		// 5. Enrich each booking with user, table, etc. (reuse your existing helper)
+		List<Booking> bookings = bookingPage.getContent();
+		List<BookingDto.BookingDetailResponse> enriched = getEnrichedBookings(bookings);
+
+		// 6. Return a new PageImpl with the enriched content
+		return new PageImpl<>(enriched, pageable, bookingPage.getTotalElements());
 	}
 
 	@Transactional
@@ -768,5 +816,194 @@ public class BookingServiceImpl implements BookingService {
 		int mod = minutes % interval;
 		int add = (mod == 0) ? 0 : (interval - mod);
 		return time.plusMinutes(add).withSecond(0).withNano(0);
+	}
+
+	//-------------------- Waitlist service ----------------------------------
+
+	@Override
+	@Transactional
+	public WaitlistDto.WaitlistResponse addToWaitlist(WaitlistDto.WaitlistRequest request,
+	                                                  UUID currentUserId,
+	                                                  String userRoles) {
+		// Check if user already waiting at this branch
+		boolean alreadyWaiting = waitlistRepository.existsByUserIdAndBranchIdAndStatus(
+				currentUserId, request.branchId(), WaitlistStatus.WAITING);
+
+		if (alreadyWaiting) {
+			throw new ConflictException("User is already on the waitlist for this branch.");
+		}
+
+		WaitlistEntry entry = WaitlistEntry.builder()
+				.userId(currentUserId)
+				.branchId(request.branchId())
+				.zoneId(request.zoneId())
+				.partySize(request.partySize())
+				.joinedAt(OffsetDateTime.now())
+				.status(WaitlistStatus.WAITING)
+				.build();
+
+		WaitlistEntry saved = waitlistRepository.save(entry);
+		log.info("User {} joined waitlist at branch {}", currentUserId, request.branchId());
+
+		return mapToResponse(saved);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public WaitlistDto.WaitlistResponse getWaitlistEntry(UUID id, UUID currentUserId, String userRoles) {
+		WaitlistEntry entry = waitlistRepository.findById(id)
+				.orElseThrow(() -> new InvalidRequestException("Waitlist entry not found"));
+
+		// Security: allow admin/owner/manager or the owner of the entry
+		if (!isAdminOrOwnerOrManager(userRoles) && !entry.getUserId().equals(currentUserId)) {
+			throw new ForbiddenException("You are not authorized to view this waitlist entry");
+		}
+
+		return mapToResponse(entry);
+	}
+
+	@Override
+	@Transactional
+	public void leaveWaitlist(UUID id, UUID currentUserId, String userRoles) {
+		WaitlistEntry entry = waitlistRepository.findById(id)
+				.orElseThrow(() -> new InvalidRequestException("Waitlist entry not found"));
+
+		// Security: same as above
+		if (!isAdminOrOwnerOrManager(userRoles) && !entry.getUserId().equals(currentUserId)) {
+			throw new ForbiddenException("You are not authorized to remove this waitlist entry");
+		}
+
+		entry.setStatus(WaitlistStatus.CANCELED);
+		waitlistRepository.save(entry);
+		log.info("User {} left the waitlist (entry {})", entry.getUserId(), id);
+	}
+
+	@Override
+	@Transactional
+	public void updateWaitlistStatus(UUID id, WaitlistStatus newStatus, UUID currentUserId, String userRoles) {
+		// This method should be accessible only to admins/managers
+		if (!isAdminOrOwnerOrManager(userRoles)) {
+			throw new ForbiddenException("Only administrators or restaurant staff can update waitlist status.");
+		}
+
+		WaitlistEntry entry = waitlistRepository.findById(id)
+				.orElseThrow(() -> new InvalidRequestException("Waitlist entry not found"));
+
+		entry.setStatus(newStatus);
+		if (newStatus == WaitlistStatus.NOTIFIED) {
+			entry.setNotifiedAt(OffsetDateTime.now());
+		}
+		waitlistRepository.save(entry);
+		log.info("Waitlist entry {} status updated to {}", id, newStatus);
+	}
+
+	@Override
+	@Transactional
+	public void notifyNextWaiting(UUID branchId, UUID zoneId, int partySize) {
+		// Find the earliest waiting entry for this branch and zone (party size can be fuzzy)
+		Optional<WaitlistEntry> next = waitlistRepository.findFirstByBranchIdAndZoneIdAndStatusOrderByJoinedAtAsc(
+				branchId, zoneId, WaitlistStatus.WAITING);
+		if (next.isEmpty()) {
+			log.debug("No waiting users for branch {} zone {}", branchId, zoneId);
+			return;
+		}
+		WaitlistEntry entry = next.get();
+		entry.setStatus(WaitlistStatus.NOTIFIED);
+		entry.setNotifiedAt(OffsetDateTime.now());
+		waitlistRepository.save(entry);
+		log.info("Notified user {} for waitlist entry {}", entry.getUserId(), entry.getId());
+		// TODO: send push notification via Notification Service (gRPC or Kafka)
+	}
+
+	@Override
+	@Transactional
+	public BookingDto.BookingResponse claimWaitlistEntry(UUID entryId,
+	                                                     BookingDto.BookingRequest bookingRequest,
+	                                                     UUID currentUserId,
+	                                                     String userRoles) {
+		// 1. Fetch waitlist entry
+		WaitlistEntry entry = waitlistRepository.findById(entryId)
+				.orElseThrow(() -> new InvalidRequestException("Waitlist entry not found"));
+
+		// 2. Security check
+		if (!entry.getUserId().equals(currentUserId) && !isAdminOrOwnerOrManager(userRoles)) {
+			throw new ForbiddenException("Not authorized to claim this waitlist entry");
+		}
+
+		// 3. Must be in NOTIFIED state
+		if (entry.getStatus() != WaitlistStatus.NOTIFIED) {
+			throw new InvalidRequestException("Waitlist entry is not in NOTIFIED state");
+		}
+
+		// 4. Find an available table (immediate seating)
+		FindAvailableTableResponse tableDetail = restaurantGrpcClient.findAvailableTable(
+				entry.getBranchId(),
+				entry.getZoneId(),
+				entry.getPartySize(),
+				OffsetDateTime.now()
+		);
+		if (!tableDetail.getAvailable()) {
+			throw new InvalidRequestException("No table currently available for your party size. Please try again later.");
+		}
+
+		// 5. Build BookingRequest – all fields are mandatory except those with defaults
+		List<BookingDto.BookingRequest.PreOrderItemRequest> preOrderItems = bookingRequest.preOrderItems() != null
+				? bookingRequest.preOrderItems()
+				: Collections.emptyList();
+
+		BookingDto.BookingRequest mergedRequest = new BookingDto.BookingRequest(
+				currentUserId,                                           // userId
+				UUID.fromString(tableDetail.getTableId()),               // tableId
+				OffsetDateTime.now(),                                    // bookingDatetime
+				bookingRequest.duration() != null ? bookingRequest.duration() : 90, // duration (default 90 min)
+				entry.getPartySize(),                                    // partySize
+				bookingRequest.leadTimeMinutes() != null ? bookingRequest.leadTimeMinutes() : 0,
+				bookingRequest.gracePeriodMins() != null ? bookingRequest.gracePeriodMins() : 15,
+				bookingRequest.guestName(),
+				bookingRequest.guestPhone(),
+				bookingRequest.specialRequest(),
+				preOrderItems
+		);
+
+		// 6. Create the booking (internal method sets status to CONFIRMED)
+		Booking booking = createBookingFromWaitlist(mergedRequest, currentUserId, userRoles);
+
+		// 7. Update waitlist entry to CONVERTED
+		entry.setStatus(WaitlistStatus.CONVERTED);
+		waitlistRepository.save(entry);
+
+		log.info("Waitlist entry {} claimed, created booking {}", entryId, booking.getId());
+
+		// 8. Return response using mapper
+		return bookingMapper.toResponse(booking);
+	}
+
+	// ---------- Helper methods ----------
+	private WaitlistDto.WaitlistResponse mapToResponse(WaitlistEntry entity) {
+		long position = 0;
+		if (entity.getStatus() == WaitlistStatus.WAITING) {
+			// Count entries before this one (by joinedAt) in the same branch and zone
+			position = waitlistRepository.countByBranchIdAndZoneIdAndStatusAndJoinedAtBefore(
+					entity.getBranchId(),
+					entity.getZoneId(),
+					WaitlistStatus.WAITING,
+					entity.getJoinedAt()) + 1;
+		}
+
+		return new WaitlistDto.WaitlistResponse(
+				entity.getId(),
+				entity.getUserId(),
+				entity.getStatus(),
+				entity.getJoinedAt(),
+				(int) position
+		);
+	}
+
+	private boolean isAdminOrOwnerOrManager(String userRoles) {
+		if (userRoles == null) return false;
+		List<String> roles = Arrays.asList(userRoles.split(","));
+		return roles.contains(UserRoleKind.ADMIN.name()) ||
+				roles.contains(UserRoleKind.OWNER.name()) ||
+				roles.contains(UserRoleKind.MANAGER.name());
 	}
 }

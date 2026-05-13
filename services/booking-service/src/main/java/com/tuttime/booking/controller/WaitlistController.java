@@ -2,15 +2,13 @@ package com.tuttime.booking.controller;
 
 import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.dto.WaitlistDto;
-import com.tuttime.booking.service.WaitlistService;
+import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,7 @@ import java.util.UUID;
 @Tag(name = "Waitlist Management", description = "Endpoints for managing the virtual queue when tables are full")
 public class WaitlistController {
 
-	private final WaitlistService waitlistService;
+	private final BookingService bookingService;
 
 	@PostMapping
 	@Operation(summary = "Join the waitlist", description = "Adds a user to the virtual queue for a specific branch.")
@@ -39,7 +37,7 @@ public class WaitlistController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		WaitlistDto.WaitlistResponse data = waitlistService.addToWaitlist(request, currentUserId, userRoles);
+		WaitlistDto.WaitlistResponse data = bookingService.addToWaitlist(request, currentUserId, userRoles);
 
 		URI location = ServletUriComponentsBuilder
 				.fromCurrentRequest()
@@ -57,7 +55,7 @@ public class WaitlistController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		WaitlistDto.WaitlistResponse data = waitlistService.getWaitlistEntry(id, currentUserId, userRoles);
+		WaitlistDto.WaitlistResponse data = bookingService.getWaitlistEntry(id, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
@@ -69,7 +67,7 @@ public class WaitlistController {
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
-		waitlistService.leaveWaitlist(id, currentUserId, userRoles);
+		bookingService.leaveWaitlist(id, currentUserId, userRoles);
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
 	}
 
@@ -84,7 +82,7 @@ public class WaitlistController {
 		String userRoles = UserContext.getRoles();
 
 		BookingDto.BookingResponse booking =
-				waitlistService.claimWaitlistEntry(id, bookingRequest, currentUserId, userRoles);
+				bookingService.claimWaitlistEntry(id, bookingRequest, currentUserId, userRoles);
 		return ResponseEntity.ok(ApiRes.success(booking));
 	}
 
