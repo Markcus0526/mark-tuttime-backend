@@ -56,7 +56,7 @@ public class BookingController {
 	public ResponseEntity<ApiRes<BookingDto.BookingDetailResponse>> getBooking(
 			@PathVariable UUID bookingId) {
 
-		validateAdminOrOwnerOrManager();
+		validateUser();
 		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
 		String userRoles = UserContext.getRoles();
 
@@ -129,7 +129,7 @@ public class BookingController {
 			@RequestParam(required = false) BookingStatus status,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
-			@RequestParam(defaultValue = "bookingDateTime") String sort,
+			@RequestParam(defaultValue = "bookingDatetime") String sort,
 			@RequestParam(defaultValue = "desc") String direction) {
 
 		validateAdminOrOwnerOrManager();

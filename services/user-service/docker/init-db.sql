@@ -60,6 +60,7 @@ CREATE TABLE users
     status          user_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
     language        VARCHAR(50),
     last_login      TIMESTAMPTZ,
+    version         BIGINT      NOT NULL DEFAULT 0,
     deleted         BOOLEAN     NOT NULL DEFAULT FALSE,
     deleted_at      TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -201,14 +202,14 @@ $$
         ON CONFLICT (email) DO UPDATE SET full_name = EXCLUDED.full_name
         RETURNING id INTO v_admin_id;
 
--- 2. Assign ADMIN Role (Corrected column names)
+        -- 2. Assign ADMIN Role (Corrected column names)
         SELECT id INTO v_role_id FROM roles WHERE name = 'ADMIN';
 
         INSERT INTO user_roles (user_id, role_id)
         VALUES (v_admin_id, v_role_id)
         ON CONFLICT DO NOTHING;
 
--- 3. Set Auth Credentials (Corrected logic)
+        -- 3. Set Auth Credentials (Corrected logic)
         INSERT INTO user_auth_methods (user_id, auth_type, credential, verified)
         VALUES (v_admin_id, 'EMAIL_PASS', crypt('password', gen_salt('bf')), TRUE)
         ON CONFLICT (user_id, auth_type) DO NOTHING;

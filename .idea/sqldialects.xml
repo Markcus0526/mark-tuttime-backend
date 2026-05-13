@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/k8s/analytics-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/booking-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/menu-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/notification-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/order-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/payment-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/pos-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/restaurant-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/review-service/db-init-configmap.yaml" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/k8s/user-service/db-init-configmap.yaml" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/services/analytics-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/booking-service/docker/init-db.sql" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/services/menu-service/docker/init-db.sql" dialect="GenericSQL" />

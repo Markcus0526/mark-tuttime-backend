@@ -35,13 +35,12 @@ public abstract class OrderMapper {
 	@Mapping(target = "createdAt", source = "order.createdAt")
 	@Mapping(target = "status", source = "order.status")
 	@Mapping(target = "user", source = "user")
-	@Mapping(target = "table", source = "table")
-// Use 'order' instead of 'entity' to match the parameter name exactly
+	@Mapping(target = "tables", source = "tables")
 	@Mapping(target = "items", expression = "java(mapItemsWithDetails(order.getItems(), menuDetails))")
 	public abstract OrderDto.OrderDetailResponse toDetailResponse(
 			Order order,
 			UserDetailResponse user,
-			TableHierarchyResponse table,
+			List<TableHierarchyResponse> tables,
 			List<MenuItemDetailResponse> menuDetails);
 
 	/**

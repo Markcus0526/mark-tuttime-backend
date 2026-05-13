@@ -18,44 +18,26 @@ import java.util.UUID;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, UUID>, JpaSpecificationExecutor<Booking> {
 
-	@Query(value = "SELECT EXISTS (" +
-			"SELECT 1 FROM bookings " +
-			"WHERE table_id = :tableId " +
-			"AND status NOT IN ('CANCELED') " +
-			"AND (booking_datetime, (booking_datetime + (duration || ' minutes')::interval)) " +
-			"OVERLAPS (:start, :end))", nativeQuery = true)
-	boolean existsOverlappingBooking(UUID tableId, OffsetDateTime start, OffsetDateTime end);
+	@Query(value = """
+        SELECT EXISTS (
+            SELECT 1 FROM booking_tables bt
+            JOIN bookings b ON bt.booking_id = b.id
+            WHERE bt.table_id IN (:tableIds)
+              AND b.status NOT IN ('CANCELED', 'COMPLETED')
+              AND (b.booking_datetime, b.booking_datetime + (b.duration * INTERVAL '1 minute'))
+                  OVERLAPS (:start, :end)
+        )
+        """, nativeQuery = true)
+	boolean existsOverlappingBookingForTables(@Param("tableIds") List<UUID> tableIds,
+	                                          @Param("start") OffsetDateTime start,
+	                                          @Param("end") OffsetDateTime end);
 
-
-	/**
-	 * Bulk updates expired bookings (e.g., CREATED but not PAID within 15 mins).
-	 * Uses JPQL for entity-state consistency.
-	 */
-	@Modifying
-	@Query("""
-			UPDATE Booking b 
-			SET b.status = :newStatus, b.updatedAt = CURRENT_TIMESTAMP 
-			WHERE b.status = :oldStatus 
-			AND b.createdAt < :cutoff
-			""")
-	int cancelExpiredBookings(
-			@Param("oldStatus") BookingStatus oldStatus,
-			@Param("newStatus") BookingStatus newStatus,
-			@Param("cutoff") OffsetDateTime cutoff
-	);
-
-	// Spring Data JPA derives the query: SELECT * FROM bookings WHERE user_id = :userId ORDER BY booking_datetime DESC
+	// -------------------- Existing methods (unchanged) --------------------
 	List<Booking> findAllByUserIdOrderByBookingDatetimeDesc(UUID userId);
-
-	List<Booking> findAllByBranchIdAndBookingDatetimeBetween(UUID branchId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 
 	@Query("SELECT b FROM Booking b WHERE b.status = :status AND b.createdAt < :cutoff")
 	List<Booking> findAllByStatusAndCreatedAtBefore(BookingStatus status, OffsetDateTime cutoff);
 
-	/**
-	 * Fetches all active bookings for a branch within a specific time range.
-	 * Use this to get all bookings for a full day.
-	 */
 	@Query("SELECT b FROM Booking b " +
 			"WHERE b.branchId = :branchId " +
 			"AND b.status != com.tuttime.common.enums.BookingStatus.CANCELED " +

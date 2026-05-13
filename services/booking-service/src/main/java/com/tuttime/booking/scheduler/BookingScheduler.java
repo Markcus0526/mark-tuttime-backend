@@ -72,7 +72,7 @@ public class BookingScheduler {
 
 					BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 							.bookingId(booking.getId())
-							.tableId(booking.getTableId())
+							.tableIds(booking.getTableIds())
 							.branchId(booking.getBranchId())
 							.zoneId(booking.getZoneId())
 							.userId(booking.getUserId())
@@ -130,7 +130,7 @@ public class BookingScheduler {
 
 					BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 							.bookingId(booking.getId())
-							.tableId(booking.getTableId())
+							.tableIds(booking.getTableIds())
 							.branchId(booking.getBranchId())
 							.userId(booking.getUserId())
 							.oldStatus(oldStatus)

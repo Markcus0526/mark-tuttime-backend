@@ -117,5 +117,3 @@ CREATE TABLE branch_performance_stats
 CREATE INDEX idx_analytics_events_time ON system_events (occurred_at DESC);
 CREATE INDEX idx_yield_lookup ON branch_yield_managements (branch_id, demand_level);
 CREATE INDEX idx_user_risk_score ON user_reliability_indexes (reliability_score);
-
-

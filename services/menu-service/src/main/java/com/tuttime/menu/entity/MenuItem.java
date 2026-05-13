@@ -57,4 +57,7 @@ public class MenuItem extends BaseUuidAnDeleteEntity {
 	@JoinColumn(name = "entity_id", referencedColumnName = "id", insertable = false, updatable = false)
 	@Builder.Default
 	private Set<Media> medias = new HashSet<>();
+
+	@Version
+	private Long version;
 }

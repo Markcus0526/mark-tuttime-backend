@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderGrpcDelegate {
 
 	private final OrderRepository orderRepository;
@@ -40,11 +40,15 @@ public class OrderGrpcDelegate {
 
 	@Transactional
 	public CreateOrderResponse createOrder(CreateOrderRequest request) {
+		List<UUID> tableIds = request.getTableIdsList().stream()
+				.map(UuidUtil::toUuid)
+				.collect(Collectors.toList());
+
 		Order order = Order.builder()
 				.bookingId(UuidUtil.toUuid(request.getBookingId()))
 				.userId(UuidUtil.toUuid(request.getUserId()))
 				.branchId(UuidUtil.toUuid(request.getBranchId()))
-				.tableId(UuidUtil.toUuid(request.getTableId()))
+				.tableIds(tableIds)
 				.guestName(request.getGuestName())
 				.guestPhone(request.getGuestPhone())
 				.specialRequest(request.getSpecialRequest())
@@ -103,6 +107,13 @@ public class OrderGrpcDelegate {
 		order.setGuestName(request.getGuestName());
 		order.setGuestPhone(request.getGuestPhone());
 		order.setSpecialRequest(request.getSpecialRequest());
+
+		if (request.getTableIdsCount() > 0) {
+			List<UUID> newTableIds = request.getTableIdsList().stream()
+					.map(UuidUtil::toUuid)
+					.collect(Collectors.toList());
+			order.setTableIds(newTableIds);
+		}
 
 		// Clear existing items (orphan removal should cascade)
 		order.getItems().clear();

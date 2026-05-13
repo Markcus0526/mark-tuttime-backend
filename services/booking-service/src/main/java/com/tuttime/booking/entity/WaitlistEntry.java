@@ -44,4 +44,7 @@ public class WaitlistEntry extends BaseUuidEntity {
 	@Column(name = "status", nullable = false, length = 30)
 	@Builder.Default
 	private WaitlistStatus status = WaitlistStatus.WAITING;
+
+	@Version
+	private Long version;
 }

@@ -31,11 +31,14 @@ public class Booking extends BaseUuidEntity {
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
-	@Column(name = "zone_id", nullable = false)
+	@Column(name = "zone_id")
 	private UUID zoneId;
 
-	@Column(name = "table_id", nullable = false)
-	private UUID tableId;
+	@ElementCollection
+	@CollectionTable(name = "booking_tables", schema = "booking_service",
+			joinColumns = @JoinColumn(name = "booking_id"))
+	@Column(name = "table_id")
+	private List<UUID> tableIds = new ArrayList<>();
 
 	@Column(name = "order_id")
 	private UUID orderId;
@@ -93,6 +96,9 @@ public class Booking extends BaseUuidEntity {
 	@Builder.Default
 	@ToString.Exclude
 	private List<BookingItem> items = new ArrayList<>();
+
+	@Version
+	private Long version;
 
 	public void addItem(BookingItem item) {
 		items.add(item);

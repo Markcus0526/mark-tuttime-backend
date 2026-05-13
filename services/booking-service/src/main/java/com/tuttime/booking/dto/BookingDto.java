@@ -20,8 +20,11 @@ public class BookingDto {
 			@NotNull(message = "User ID is required")
 			UUID userId,
 
-			@NotNull(message = "Table ID is required")
-			UUID tableId,
+			@NotNull(message = "branch ID is required")
+			UUID branchId,
+
+			@NotNull(message = "At least one table ID is required")
+			List<UUID> tableIds,
 
 			@NotNull(message = "Booking time is required")
 			@Future(message = "Booking must be in the future")
@@ -65,13 +68,17 @@ public class BookingDto {
 		public BookingRequest {
 			if (leadTimeMinutes == null) leadTimeMinutes = 0;
 			if (gracePeriodMins == null) gracePeriodMins = 15;
+			// optional: validate that tableIds is not empty
+			if (tableIds == null || tableIds.isEmpty()) {
+				throw new IllegalArgumentException("At least one table must be selected");
+			}
 		}
 	}
 
 	@Schema(description = "Partial update request for a booking (all fields optional)")
 	public record BookingUpdateRequest(
 			@Schema(description = "New table UUID")
-			UUID tableId,
+			List<UUID> tableIds,
 
 			@Schema(description = "New booking datetime")
 			OffsetDateTime bookingDatetime,
@@ -108,7 +115,8 @@ public class BookingDto {
 			String guestPhone,
 			String specialRequest,
 			String cancellationReason,
-			UserDetailResponse user
+			UserDetailResponse user,
+			List<TableInfo> tables
 	) {
 		public record UserDetailResponse(
 				UUID userId,
@@ -117,6 +125,8 @@ public class BookingDto {
 				String fullName
 		) {
 		}
+
+		public record TableInfo(UUID tableId, String label) {}
 	}
 
 	public record BookingDetailResponse(
@@ -132,7 +142,7 @@ public class BookingDto {
 			String guestPhone,
 			String specialRequest,
 			UserDetailResponse user,
-			TableDetailResponse table,
+			List<TableDetailResponse> tables,
 			List<MenuItemResponse> menuItems
 	) {
 		public record UserDetailResponse(

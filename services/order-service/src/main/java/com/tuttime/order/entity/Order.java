@@ -31,8 +31,11 @@ public class Order extends BaseUuidAnDeleteEntity {
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
-	@Column(name = "table_id", nullable = false)
-	private UUID tableId;
+	@ElementCollection
+	@CollectionTable(name = "order_tables",
+			joinColumns = @JoinColumn(name = "order_id"))
+	@Column(name = "table_id")
+	private List<UUID> tableIds = new ArrayList<>();
 
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
@@ -56,6 +59,9 @@ public class Order extends BaseUuidAnDeleteEntity {
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	@Builder.Default
 	private List<OrderItem> items = new ArrayList<>();
+
+	@Version
+	private Long version;
 
 	/**
 	 * Helper to keep totalAmount in sync

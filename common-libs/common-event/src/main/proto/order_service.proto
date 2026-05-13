@@ -30,7 +30,7 @@ message CreateOrderRequest {
   string booking_id = 1;
   string user_id = 2;
   string branch_id = 3;
-  string table_id = 4;
+  repeated string table_ids = 4;
   string guest_name = 5;
   string guest_phone = 6;
   string special_request = 7;
@@ -58,12 +58,13 @@ message CreateOrderResponse {
 // rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
 message UpdateOrderRequest {
   string order_id = 1;
-  string new_booking_time = 2; // Required for KDS scheduling
-  string guest_name = 3;
-  string guest_phone = 4;
-  string special_request = 5;
-  string new_total = 6;        // String for BigDecimal precision
-  repeated OrderItemRequest items = 7; // Updated list of items/modifiers
+  repeated string table_ids = 2;
+  string new_booking_time = 3; // Required for KDS scheduling
+  string guest_name = 4;
+  string guest_phone = 5;
+  string special_request = 6;
+  string new_total = 7;        // String for BigDecimal precision
+  repeated OrderItemRequest items = 8; // Updated list of items/modifiers
 }
 
 message UpdateOrderResponse {

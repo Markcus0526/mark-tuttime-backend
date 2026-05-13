@@ -61,6 +61,9 @@ public class User extends BaseUuidAnDeleteEntity {
 	@Builder.Default
 	private Set<UserLocation> locations = new HashSet<>();
 
+	@Version
+	private Long version;
+
 	// Helper method to keep bi-directional relationship in sync
 	public void addAuthMethod(UserAuthMethod method) {
 		this.authMethods.add(method);

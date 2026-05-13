@@ -38,22 +38,22 @@ END $$;
 -- ADDED: Logical indexing for high-performance lookups.
 CREATE TABLE orders
 (
-    id           UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
-    booking_id   UUID           NOT NULL, -- Logical reference to Booking Service
-    user_id      UUID           NOT NULL, -- Logical reference to User Service
-    branch_id    UUID           NOT NULL, -- Logical reference to Branch Service
-    table_id     UUID           NOT NULL, -- Logical reference to Table Service
-    status       order_status   NOT NULL DEFAULT 'CREATED',
-    total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
-    guest_name       VARCHAR(100),
-    guest_phone      VARCHAR(20),
-    special_request  TEXT,
-    deleted      BOOLEAN        NOT NULL DEFAULT FALSE,
-    deleted_at   TIMESTAMPTZ,
-    created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
-    created_by   UUID,
-    updated_by   UUID
+    id              UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
+    booking_id      UUID           NOT NULL, -- Logical reference to Booking Service
+    user_id         UUID           NOT NULL, -- Logical reference to User Service
+    branch_id       UUID           NOT NULL, -- Logical reference to Branch Service
+    status          order_status   NOT NULL DEFAULT 'CREATED',
+    total_amount    NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
+    guest_name      VARCHAR(100),
+    guest_phone     VARCHAR(20),
+    special_request TEXT,
+    version         BIGINT         NOT NULL DEFAULT 0,
+    deleted         BOOLEAN        NOT NULL DEFAULT FALSE,
+    deleted_at      TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
+    created_by      UUID,
+    updated_by      UUID
 );
 
 -- 3. Order Items Table
@@ -64,6 +64,7 @@ CREATE TABLE order_items
     menu_item_id UUID           NOT NULL,
     quantity     INT            NOT NULL CHECK (quantity > 0),
     price        NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
+    version      BIGINT         NOT NULL DEFAULT 0,
     deleted      BOOLEAN        NOT NULL DEFAULT FALSE,
     deleted_at   TIMESTAMPTZ,
     created_at   TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
@@ -87,12 +88,21 @@ CREATE TABLE order_item_modifiers
         REFERENCES order_items (id) ON DELETE CASCADE
 );
 
+-- 5. Join table for multiple tables per order
+CREATE TABLE order_tables
+(
+    order_id UUID NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+    table_id UUID NOT NULL,
+    PRIMARY KEY (order_id, table_id)
+);
+
 -- 5. Performance Indexes
-CREATE INDEX idx_orders_booking_status ON orders (booking_id, status) WHERE deleted_at IS NULL;
-CREATE INDEX idx_orders_user_id ON orders (user_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_orders_branch_id ON orders (branch_id) WHERE deleted_at IS NULL; -- Optimization for Search
-CREATE INDEX idx_order_items_order_id ON order_items (order_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_modifiers_item_id ON order_item_modifiers (order_item_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_booking_status ON orders (booking_id, status) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders (user_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_branch_id ON orders (branch_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items (order_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_modifiers_item_id ON order_item_modifiers (order_item_id) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_order_tables_table_id ON order_tables (table_id);
 
 -- 6. Trigger for Automated 'updated_at'
 CREATE
