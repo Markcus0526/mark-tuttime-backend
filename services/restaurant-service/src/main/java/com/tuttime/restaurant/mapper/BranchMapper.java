@@ -7,8 +7,6 @@ import com.tuttime.restaurant.entity.BranchTag;
 import com.tuttime.restaurant.entity.BranchTagId;
 import com.tuttime.restaurant.entity.Tag;
 import com.tuttime.restaurant.repository.MediaRepository;
-import com.tuttime.restaurant.repository.projection.BranchProjection;
-import com.tuttime.restaurant.repository.record.BranchDetailRecord;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;

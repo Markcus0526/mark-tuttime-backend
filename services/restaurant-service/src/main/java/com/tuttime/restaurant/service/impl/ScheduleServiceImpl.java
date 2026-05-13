@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,7 +39,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 		if (!request.closed()) {
 			validateTiming(request);
-			checkForOverlaps(request.entityId(), (int) request.dayOfWeek(), request.openTime(), request.closeTime(), null);
+			checkForOverlaps(request.entityId(), request.dayOfWeek(), request.openTime(), request.closeTime(), null);
 		}
 
 		// 3. Database Save (Atomic transaction)
@@ -59,7 +58,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
 		if (!request.closed()) {
 			validateTiming(request);
-			checkForOverlaps(request.entityId(), (int) request.dayOfWeek(), request.openTime(), request.closeTime(), scheduleId);
+			checkForOverlaps(request.entityId(), request.dayOfWeek(), request.openTime(), request.closeTime(), scheduleId);
 		}
 
 		scheduleMapper.updateEntityFromRequest(request, schedule);

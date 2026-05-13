@@ -2,8 +2,8 @@ package com.tuttime.restaurant.repository;
 
 import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.entity.enums.TableStatus;
-import com.tuttime.restaurant.repository.record.TableDetailRecord;
-import com.tuttime.restaurant.repository.record.TableHierarchyRecord;
+import com.tuttime.restaurant.repository.projection.TableDetailProjection;
+import com.tuttime.restaurant.repository.projection.TableHierarchyProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,24 +29,22 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	Optional<DishTable> findByIdAndDeletedFalse(UUID tableId);
 
 	@Query("""
-			    SELECT new com.tuttime.restaurant.repository.record.TableDetailRecord(
-			             t.id,
-			             z.id,
-			             t.label,
-			             z.name,
-			             t.seats
-			         )
-			    FROM DishTable t
-			    JOIN t.zone z
-			    WHERE z.branch.id = :branchId 
-			      AND t.status = :status
-			      AND t.deleted = false 
-			      AND t.closed = false 
-			      AND t.seats >= :partySize
-			      AND z.deleted = false
-			      AND z.closed = false
-			""")
-	List<TableDetailRecord> findTablesByBranchIdAndPartySize(
+	    SELECT t.id AS tableId,
+	           z.id AS zoneId,
+	           t.label AS tableLabel,
+	           z.name AS zoneName,
+	           t.seats AS seats
+	    FROM DishTable t
+	    JOIN t.zone z
+	    WHERE z.branch.id = :branchId 
+	      AND t.status = :status
+	      AND t.deleted = false 
+	      AND t.closed = false 
+	      AND t.seats >= :partySize
+	      AND z.deleted = false
+	      AND z.closed = false
+	""")
+	List<TableDetailProjection> findTablesByBranchIdAndPartySize(
 			@Param("branchId") UUID branchId,
 			@Param("partySize") int partySize,
 			@Param("status") TableStatus status
@@ -58,26 +56,24 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	void deleteAllByZoneId(@Param("zoneId") UUID zoneId);
 
 	@Query("""
-			    SELECT new com.tuttime.restaurant.repository.record.TableHierarchyRecord(
-				    t.id,
-					z.id,
-					z.branch.id,
-			        b.restaurant.id, 
-			        t.label,
-				    z.name, 
-			        b.name,
-				    b.address,
-					b.phone,
-					r.name,
-					CAST((SELECT COUNT(t2) FROM DishTable t2 WHERE t2.zone.branch.id = b.id AND t2.deleted = false) AS int)			
-			    )
-			    FROM DishTable t
-			    JOIN t.zone z
-			    JOIN z.branch b
-				JOIN b.restaurant r
-			    WHERE t.id = :tableId AND t.deleted = false
-			""")
-	Optional<TableHierarchyRecord> findTableHierarchy(@Param("tableId") UUID tableId);
+	    SELECT t.id AS tableId,
+	           z.id AS zoneId,
+	           z.branch.id AS branchId,
+	           b.restaurant.id AS restaurantId,
+	           t.label AS tableLabel,
+	           z.name AS zoneName,
+	           b.name AS branchName,
+	           b.address AS branchAddress,
+	           b.phone AS branchPhone,
+	           r.name AS restaurantName,
+	           (SELECT COUNT(t2) FROM DishTable t2 WHERE t2.zone.branch.id = b.id AND t2.deleted = false) AS totalTables
+	    FROM DishTable t
+	    JOIN t.zone z
+	    JOIN z.branch b
+	    JOIN b.restaurant r
+	    WHERE t.id = :tableId AND t.deleted = false
+	""")
+	Optional<TableHierarchyProjection> findTableHierarchy(@Param("tableId") UUID tableId);
 
 	@Query("SELECT t FROM DishTable t " +
 			"WHERE t.zone.branch.id = :branchId " +
@@ -87,4 +83,7 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 	List<DishTable> findEligibleTables(@Param("branchId") UUID branchId,
 	                                   @Param("zoneId") UUID zoneId,
 	                                   @Param("partySize") int partySize);
+
+	@Query("SELECT COUNT(t) FROM DishTable t WHERE t.zone.branch.id = :branchId AND t.deleted = false AND t.closed = false")
+	int countByBranchId(@Param("branchId") UUID branchId);
 }

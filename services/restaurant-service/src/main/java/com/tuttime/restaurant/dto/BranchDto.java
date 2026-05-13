@@ -65,14 +65,16 @@ public class BranchDto {
 
 			@NotBlank(message = "Tag icon is required")
 			String iconUrl // Stores the Emoji (e.g., "🌶️")
-	) {}
+	) {
+	}
 
 	@Schema(description = "Tag details for UI display")
 	public record TagResponse(
 			UUID id,
 			String name,
 			String iconUrl // Contains the Emoji (e.g., "🌿") or URL
-	) {}
+	) {
+	}
 
 	@Schema(description = "Branch response")
 	@Builder(toBuilder = true)

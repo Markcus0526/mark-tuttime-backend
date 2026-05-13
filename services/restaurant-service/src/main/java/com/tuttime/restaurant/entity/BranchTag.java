@@ -3,9 +3,6 @@ package com.tuttime.restaurant.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
-import java.util.UUID;
-
 @Entity
 @Table(name = "branch_tags", schema = "restaurant_service")
 @Getter

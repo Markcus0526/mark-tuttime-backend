@@ -7,10 +7,10 @@ import com.tuttime.restaurant.entity.DishTable;
 import com.tuttime.restaurant.entity.enums.TableStatus;
 import com.tuttime.restaurant.grpc.client.UserGrpcClient;
 import com.tuttime.restaurant.repository.*;
-import com.tuttime.restaurant.repository.record.BranchDetailRecord;
-import com.tuttime.restaurant.repository.record.ScheduleRecord;
-import com.tuttime.restaurant.repository.record.TableDetailRecord;
-import com.tuttime.restaurant.repository.record.TableHierarchyRecord;
+import com.tuttime.restaurant.repository.projection.BranchDetailProjection;
+import com.tuttime.restaurant.repository.projection.ScheduleProjection;
+import com.tuttime.restaurant.repository.projection.TableDetailProjection;
+import com.tuttime.restaurant.repository.projection.TableHierarchyProjection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -74,17 +74,17 @@ public class RestaurantGrpcDelegate {
 	@Transactional(readOnly = true)
 	public TableDetailResponse getTableDetail(TableDetailRequest request) {
 		UUID tableId = UUID.fromString(request.getTableId());
-		TableHierarchyRecord record = tableRepository.findTableHierarchy(tableId)
+		TableHierarchyProjection record = tableRepository.findTableHierarchy(tableId)
 				.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
 		return TableDetailResponse.newBuilder()
-				.setRestaurantId(record.restaurantId().toString())
-				.setBranchId(record.branchId().toString())
-				.setZoneId(record.zoneId().toString())
-				.setTableId(record.tableId().toString())
-				.setTableLabel(record.tableLabel())
-				.setBranchName(record.branchName())
-				.setTotalTables(record.totalTables())
+				.setRestaurantId(record.getRestaurantId().toString())
+				.setBranchId(record.getBranchId().toString())
+				.setZoneId(record.getZoneId().toString())
+				.setTableId(record.getTableId().toString())
+				.setTableLabel(record.getTableLabel())
+				.setBranchName(record.getBranchName())
+				.setTotalTables(record.getTotalTables())
 				.setAvailable(true)
 				.build();
 	}
@@ -93,17 +93,17 @@ public class RestaurantGrpcDelegate {
 	public BranchSlotsResponse getBranchSlots(BranchSlotsRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		int partySize = request.getPartySize();
-		List<TableDetailRecord> tables = tableRepository.findTablesByBranchIdAndPartySize(
+		List<TableDetailProjection> tables = tableRepository.findTablesByBranchIdAndPartySize(
 				branchId, partySize, TableStatus.ACTIVE);
 
 		BranchSlotsResponse.Builder responseBuilder = BranchSlotsResponse.newBuilder();
-		for (TableDetailRecord table : tables) {
+		for (TableDetailProjection table : tables) {
 			responseBuilder.addTables(TableSlotResponse.newBuilder()
-					.setTableId(table.tableId().toString())
-					.setZoneId(table.zoneId().toString())
-					.setTableLabel(table.tableLabel() != null ? table.tableLabel() : "Standard")
-					.setZoneName(table.zoneName() != null ? table.zoneName() : "Standard")
-					.setMaxCapacity(table.seats())
+					.setTableId(table.getTableId().toString())
+					.setZoneId(table.getZoneId().toString())
+					.setTableLabel(table.getTableLabel() != null ? table.getTableLabel() : "Standard")
+					.setZoneName(table.getZoneName() != null ? table.getZoneName() : "Standard")
+					.setMaxCapacity(table.getSeats())
 					.build());
 		}
 		return responseBuilder.build();
@@ -113,7 +113,7 @@ public class RestaurantGrpcDelegate {
 	public ScheduleResponse getBranchSchedule(ScheduleRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		int dayOfWeek = request.getDayOfWeek();
-		Optional<ScheduleRecord> scheduleOpt = scheduleRepository.findActiveSchedule(branchId, dayOfWeek);
+		Optional<ScheduleProjection> scheduleOpt = scheduleRepository.findActiveSchedule(branchId, dayOfWeek);
 
 		if (scheduleOpt.isEmpty()) {
 			return ScheduleResponse.newBuilder()
@@ -123,11 +123,11 @@ public class RestaurantGrpcDelegate {
 					.build();
 		}
 
-		ScheduleRecord schedule = scheduleOpt.get();
+		ScheduleProjection schedule = scheduleOpt.get();
 		return ScheduleResponse.newBuilder()
-				.setOpenTime(schedule.openTime().format(TIME_FORMATTER))
-				.setCloseTime(schedule.closeTime().format(TIME_FORMATTER))
-				.setClosed(schedule.closed())
+				.setOpenTime(schedule.getOpenTime().format(TIME_FORMATTER))
+				.setCloseTime(schedule.getCloseTime().format(TIME_FORMATTER))
+				.setClosed(schedule.getClosed())
 				.build();
 	}
 
@@ -156,36 +156,36 @@ public class RestaurantGrpcDelegate {
 	@Transactional(readOnly = true)
 	public BranchDetailResponse getBranchDetail(BranchDetailRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
-		BranchDetailRecord details = branchRepository.findBranchDetailById(branchId)
+		BranchDetailProjection details = branchRepository.findBranchDetailById(branchId)
 				.orElseThrow(() -> new InvalidRequestException("Branch not found"));
 
 		return BranchDetailResponse.newBuilder()
-				.setBranchId(details.branchId().toString())
-				.setRestaurantId(details.restaurantId().toString())
-				.setBranchName(details.branchName())
-				.setBranchAddress(details.branchAddress())
-				.setBranchPhone(details.branchPhone() != null ? details.branchPhone() : "")
-				.setRestaurantName(details.restaurantName())
+				.setBranchId(details.getBranchId().toString())
+				.setRestaurantId(details.getRestaurantId().toString())
+				.setBranchName(details.getBranchName())
+				.setBranchAddress(details.getBranchAddress())
+				.setBranchPhone(details.getBranchPhone() != null ? details.getBranchPhone() : "")
+				.setRestaurantName(details.getRestaurantName())
 				.build();
 	}
 
 	@Transactional(readOnly = true)
 	public TableHierarchyResponse getTableHierarchyDetail(TableHierarchyRequest request) {
 		UUID tableId = UUID.fromString(request.getTableId());
-		TableHierarchyRecord record = tableRepository.findTableHierarchy(tableId)
+		TableHierarchyProjection record = tableRepository.findTableHierarchy(tableId)
 				.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
 		return TableHierarchyResponse.newBuilder()
-				.setTableId(record.tableId().toString())
-				.setZoneId(record.zoneId().toString())
-				.setBranchId(record.branchId().toString())
-				.setRestaurantId(record.restaurantId().toString())
-				.setTableLabel(record.tableLabel())
-				.setZoneName(record.zoneName())
-				.setBranchName(record.branchName())
-				.setBranchAddress(record.branchAddress())
-				.setBranchPhone(record.branchPhone())
-				.setRestaurantName(record.restaurantName())
+				.setTableId(record.getTableId().toString())
+				.setZoneId(record.getZoneId().toString())
+				.setBranchId(record.getBranchId().toString())
+				.setRestaurantId(record.getRestaurantId().toString())
+				.setTableLabel(record.getTableLabel())
+				.setZoneName(record.getZoneName())
+				.setBranchName(record.getBranchName())
+				.setBranchAddress(record.getBranchAddress())
+				.setBranchPhone(record.getBranchPhone())
+				.setRestaurantName(record.getRestaurantName())
 				.build();
 	}
 
@@ -234,5 +234,12 @@ public class RestaurantGrpcDelegate {
 				.setCapacity(table.getSeats())
 				.setTableLabel(table.getLabel())
 				.build();
+	}
+
+	@Transactional(readOnly = true)
+	public GetBranchTotalTablesResponse getBranchTotalTables(GetBranchTotalTablesRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		int total = tableRepository.countByBranchId(branchId);
+		return GetBranchTotalTablesResponse.newBuilder().setTotalTables(total).build();
 	}
 }
