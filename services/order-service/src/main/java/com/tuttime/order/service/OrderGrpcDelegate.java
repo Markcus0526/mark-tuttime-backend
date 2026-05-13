@@ -12,14 +12,21 @@ import com.tuttime.order.grpc.client.PaymentGrpcClient;
 import com.tuttime.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -192,6 +199,106 @@ public class OrderGrpcDelegate {
 		responseBuilder.setSuccess(refundResponse.getStatus());
 		if (!refundResponse.getStatus()) {
 			responseBuilder.setReason("Refund is failed by Yoomoney.");
+		}
+		return responseBuilder.build();
+	}
+
+	@Transactional(readOnly = true)
+	public GetTopItemsResponse getTopItems(GetTopItemsRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		LocalDate from = LocalDate.parse(request.getFromDate());
+		LocalDate to = LocalDate.parse(request.getToDate());
+		int limit = request.getLimit();
+
+		OffsetDateTime fromDate = from.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+		OffsetDateTime toDate = to.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+
+		Pageable pageable = PageRequest.of(0, limit);
+		Page<Object[]> results = orderRepository.findTopItemsByBranchAndDateRange(branchId, fromDate, toDate, pageable);
+
+		GetTopItemsResponse.Builder responseBuilder = GetTopItemsResponse.newBuilder();
+		for (Object[] row : results.getContent()) {
+			TopItem item = TopItem.newBuilder()
+					.setItemId(row[0].toString())
+					.setQuantity(((Number) row[1]).intValue())
+					.setRevenue(row[2].toString())
+					.build();
+			responseBuilder.addItems(item);
+		}
+		return responseBuilder.build();
+	}
+
+	@Transactional(readOnly = true)
+	public GetRevenueBreakdownResponse getRevenueBreakdown(GetRevenueBreakdownRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		String granularity = request.getGranularity();
+		LocalDate target = LocalDate.parse(request.getDate());
+		OffsetDateTime targetDate = target.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+
+		List<RevenuePoint> points;
+		BigDecimal totalGmv = BigDecimal.ZERO;
+		int totalOrders = 0;
+
+		if ("HOUR".equalsIgnoreCase(granularity)) {
+			List<Object[]> rows = orderRepository.getHourlyRevenue(branchId, targetDate);
+			points = rows.stream()
+					.map(row -> RevenuePoint.newBuilder()
+							.setPeriod(String.format("%02d:00", ((Number) row[0]).intValue()))
+							.setGmv(row[1].toString())
+							.setOrders(((Number) row[2]).intValue())
+							.build())
+					.collect(Collectors.toList());
+			// Optionally calculate total for the day (sum of hours)
+			totalGmv = points.stream().map(p -> new BigDecimal(p.getGmv())).reduce(BigDecimal.ZERO, BigDecimal::add);
+			totalOrders = points.stream().mapToInt(RevenuePoint::getOrders).sum();
+		} else { // DAY
+			List<Object[]> rows = orderRepository.getDailyRevenue(branchId, targetDate.minusDays(30), targetDate);
+			points = rows.stream()
+					.map(row -> RevenuePoint.newBuilder()
+							.setPeriod(row[0].toString())
+							.setGmv(row[1].toString())
+							.setOrders(((Number) row[2]).intValue())
+							.build())
+					.collect(Collectors.toList());
+			totalGmv = rows.stream().map(row -> (BigDecimal) row[1]).reduce(BigDecimal.ZERO, BigDecimal::add);
+			totalOrders = rows.stream().mapToInt(row -> ((Number) row[2]).intValue()).sum();
+		}
+
+		return GetRevenueBreakdownResponse.newBuilder()
+				.setGranularity(granularity)
+				.addAllPoints(points)
+				.setTotalGmv(totalGmv.toString())
+				.setTotalOrders(totalOrders)
+				.build();
+	}
+
+	@Transactional(readOnly = true)
+	public GetMenuPerformanceResponse getMenuPerformance(GetMenuPerformanceRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		LocalDate start = LocalDate.parse(request.getStartDate());
+		LocalDate end = LocalDate.parse(request.getEndDate());
+		String groupBy = request.getGroupBy();
+
+		OffsetDateTime startDate = start.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+		OffsetDateTime endDate = end.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+
+		GetMenuPerformanceResponse.Builder responseBuilder = GetMenuPerformanceResponse.newBuilder()
+				.setGroupBy(groupBy);
+
+		// Only ITEM grouping is directly supported (returns IDs)
+		if ("ITEM".equalsIgnoreCase(groupBy)) {
+			List<Object[]> results = orderRepository.getItemPerformance(branchId, startDate, endDate);
+			for (Object[] row : results) {
+				MenuPerformancePoint point = MenuPerformancePoint.newBuilder()
+						.setId(row[0].toString())
+						.setRevenue(row[1].toString())
+						.setQuantity(((Number) row[2]).intValue())
+						.build();
+				responseBuilder.addPoints(point);
+			}
+		} else {
+			// For CATEGORY, the order service cannot aggregate – return empty; analytics service will handle.
+			// Or you could return the same ITEM results and let analytics service group.
 		}
 		return responseBuilder.build();
 	}

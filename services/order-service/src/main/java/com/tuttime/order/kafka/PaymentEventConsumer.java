@@ -41,7 +41,7 @@ public class PaymentEventConsumer {
 				posGrpcClient.pushToKitchen(updatedOrder);
 
 				// 3. Move status to SENT_TO_RESTAURANT immediately after successful push
-				orderService.updateStatus(updatedOrder.getId(), OrderStatus.SENT_TO_RESTAURANT);
+				orderService.updateStatusFromPayment(updatedOrder.getId(), OrderStatus.SENT_TO_RESTAURANT);
 			}
 
 		} catch (Exception e) {
