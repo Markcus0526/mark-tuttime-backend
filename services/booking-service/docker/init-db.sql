@@ -17,8 +17,7 @@ CREATE TABLE bookings
     user_id             UUID                NOT NULL,
     restaurant_id       UUID                NOT NULL,
     branch_id           UUID                NOT NULL,
-    zone_id             UUID                NOT NULL,
-    table_id            UUID                NOT NULL,
+    zone_id             UUID,
     order_id            UUID,
     payment_id          UUID,
     status              booking_status_enum NOT NULL DEFAULT 'CREATED',
@@ -34,8 +33,20 @@ CREATE TABLE bookings
     guest_name          VARCHAR(100),
     guest_phone         VARCHAR(20),
     special_request     TEXT,
+    version             BIGINT              NOT NULL DEFAULT 0,
     created_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ                  DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Many-to-Many link between bookings and tables
+CREATE TABLE booking_tables
+(
+    booking_id  UUID        NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+    table_id    UUID        NOT NULL,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    notes       TEXT,
+    PRIMARY KEY (booking_id, table_id)
 );
 
 -- 2. Booking Status History (Auditing)
@@ -96,14 +107,14 @@ CREATE TABLE waitlist_entries
     status      VARCHAR(30) NOT NULL DEFAULT 'WAITING',
     -- Statuses: WAITING, NOTIFIED, CONVERTED, EXPIRED, CANCELED
 
-    -- Audit fields
+    version     BIGINT      NOT NULL DEFAULT 0,
     created_at  TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Indices for performance
 CREATE INDEX idx_bookings_branch_date ON bookings (branch_id, booking_datetime);
-CREATE INDEX idx_bookings_table_status ON bookings (table_id, status);
+CREATE INDEX idx_booking_tables_table_status ON booking_tables (table_id);
 
 -- Index for the "First-Come, First-Served" algorithm
 CREATE INDEX idx_waitlist_priority ON booking_service.waitlist_entries (branch_id, joined_at) WHERE status = 'WAITING';

@@ -49,11 +49,6 @@ public class OrderServiceImpl implements OrderService {
 	@Value("${pos.api.key:}")
 	private String posApiKey;
 
-	// ---------- Helper ----------
-	private boolean isAdmin(String userRoles) {
-		return userRoles != null && userRoles.contains("ADMIN");
-	}
-
 	// ---------- Read Operations ----------
 	@Override
 	@Transactional(readOnly = true)
@@ -287,9 +282,14 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	// ---------- Enrichment (with timeout) ----------
+	// ---------- Enrichment (with timeout) ----------
 	private List<OrderDto.OrderDetailResponse> getEnrichedOrders(List<Order> orders) {
 		Set<String> userIds = orders.stream().map(o -> o.getUserId().toString()).collect(Collectors.toSet());
-		Set<String> tableIds = orders.stream().map(o -> o.getTableId().toString()).collect(Collectors.toSet());
+		// ✅ Collect all table IDs from all orders (flatten the list)
+		Set<String> tableIds = orders.stream()
+				.flatMap(o -> o.getTableIds().stream())
+				.map(UUID::toString)
+				.collect(Collectors.toSet());
 		List<String> menuItemIds = orders.stream()
 				.flatMap(o -> o.getItems().stream().map(i -> i.getMenuItemId().toString()))
 				.distinct().toList();
@@ -321,13 +321,17 @@ public class OrderServiceImpl implements OrderService {
 		return orders.stream().map(order -> {
 			var user = userMap.getOrDefault(order.getUserId().toString(),
 					UserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
-			var table = tableMap.getOrDefault(order.getTableId().toString(),
-					TableHierarchyResponse.newBuilder().setTableId(NIL_UUID).setTableLabel("N/A").build());
+			// ✅ Build list of TableHierarchyResponse for this order's table IDs
+			List<TableHierarchyResponse> tables = order.getTableIds().stream()
+					.map(tid -> tableMap.getOrDefault(tid.toString(),
+							TableHierarchyResponse.newBuilder().setTableId(tid.toString()).setTableLabel("N/A").build()))
+					.toList();
 			var orderMenus = order.getItems().stream()
 					.map(i -> menuMap.get(i.getMenuItemId().toString()))
 					.filter(Objects::nonNull)
 					.toList();
-			return orderMapper.toDetailResponse(order, user, table, orderMenus);
+			// ✅ Pass the list of tables to the mapper (signature changed)
+			return orderMapper.toDetailResponse(order, user, tables, orderMenus);
 		}).toList();
 	}
 

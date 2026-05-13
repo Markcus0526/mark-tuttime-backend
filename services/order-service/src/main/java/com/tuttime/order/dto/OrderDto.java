@@ -83,9 +83,9 @@ public class OrderDto {
 
 			List<MenuItemDto> items,
 
-			UserDetailDto user,
+			List<TableDetailDto> tables,
 
-			TableDetailDto table,
+			UserDetailDto user,
 
 			OffsetDateTime createdAt
 	) {

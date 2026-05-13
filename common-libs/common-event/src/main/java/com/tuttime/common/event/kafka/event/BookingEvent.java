@@ -6,6 +6,7 @@ import com.tuttime.common.enums.BookingStatus;
 import lombok.Builder;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class BookingEvent {
@@ -15,7 +16,7 @@ public class BookingEvent {
 	public record BookingStatusUpdatedEvent(
 			UUID eventId,
 			UUID bookingId,
-			UUID tableId,
+			List<UUID> tableIds,
 			UUID branchId,
 			UUID zoneId,
 			UUID userId,

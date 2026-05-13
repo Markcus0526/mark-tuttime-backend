@@ -94,6 +94,7 @@ CREATE TABLE staffs
     user_id       UUID        NOT NULL,                            -- Logical link to User Service
     role_name     VARCHAR(50) NOT NULL CHECK (role_name IN ('OWNER', 'MANAGER', 'HOSTESS')),
     active        BOOLEAN     NOT NULL DEFAULT TRUE,
+    version       BIGINT      NOT NULL DEFAULT 0,
     created_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMPTZ          DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_staff_per_context UNIQUE (restaurant_id, branch_id, user_id)
@@ -127,6 +128,7 @@ CREATE TABLE tables
     label      VARCHAR(50)       NOT NULL,
     notes      TEXT,
     closed     BOOLEAN           NOT NULL DEFAULT FALSE,
+    version    BIGINT            NOT NULL DEFAULT 0,
     deleted    BOOLEAN           NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ                DEFAULT CURRENT_TIMESTAMP,

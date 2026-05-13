@@ -51,4 +51,7 @@ public class DishTable extends BaseUuidAnDeleteEntity {
 	@Builder.Default
 	@Column(name = "closed", nullable = false)
 	private Boolean closed = false;
+
+	@Version
+	private Long version;
 }

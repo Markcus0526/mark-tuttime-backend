@@ -58,4 +58,7 @@ public class Discount extends BaseUuidAnDeleteEntity {
 	@Column(name = "active")
 	@Builder.Default
 	private Boolean active = true;
+
+	@Version
+	private Long version;
 }
