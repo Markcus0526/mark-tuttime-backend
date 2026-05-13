@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "user-service.fullname" . }}-db
+spec:
+  selector:
+    app: {{ include "user-service.name" . }}-db
+  ports:
+    - port: 5432
+      targetPort: 5432

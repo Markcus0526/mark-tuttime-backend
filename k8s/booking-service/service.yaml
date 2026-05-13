@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service
+  namespace: tuttime
+spec:
+  selector:
+    app: booking-service
+  ports:
+    - name: http
+      port: 28004
+      targetPort: 28004
+    - name: grpc
+      port: 29004
+      targetPort: 29004
+    - name: debug
+      port: 5004
+      targetPort: 5004
+  type: ClusterIP

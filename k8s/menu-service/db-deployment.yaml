@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: menu-service-db-pvc
+  namespace: tuttime
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: menu-service-db
+  namespace: tuttime
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: menu-service-db
+  template:
+    metadata:
+      labels:
+        app: menu-service-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: menu-service-db-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: "menu_service_db"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1024Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "menu_service_db"]
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "menu_service_db"]
+            initialDelaySeconds: 10
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: menu-service-db-pvc
+        - name: init-script
+          configMap:
+            name: menu-service-db-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: menu-service-db
+  namespace: tuttime
+spec:
+  selector:
+    app: menu-service-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP
