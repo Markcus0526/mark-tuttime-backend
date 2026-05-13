@@ -134,6 +134,35 @@ public class MenuCategoryController {
 		return ResponseEntity.ok(ApiRes.success(data));
 	}
 
+	@PutMapping("/branches/{branchId}/categories/priorities")
+	@Operation(summary = "Reorder menu categories for a branch (set priorities based on list order)")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Priorities updated",
+					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class)))),
+			@ApiResponse(responseCode = "400", description = "Invalid input – e.g., category not in branch"),
+			@ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+			@ApiResponse(responseCode = "404", description = "Branch not found")
+	})
+	public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> updateCategoriesPriority(
+			@Parameter(description = "Branch UUID") @PathVariable UUID branchId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+					description = "Ordered list of category UUIDs (first = highest priority)",
+					content = @Content(schema = @Schema(example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]"))
+			)
+			@RequestBody List<UUID> categoryIdsInOrder) {
+
+		// 1. Authentication & role check
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		// 3. Service call
+		List<MenuCategoryDto.CategoryResponse> updated =
+				categoryService.updatePrioritiesForBranch(branchId, categoryIdsInOrder, currentUserId, userRoles);
+
+		return ResponseEntity.ok(ApiRes.success(updated));
+	}
+
 	/**
 	 * Private helper to keep the controller DRY
 	 */

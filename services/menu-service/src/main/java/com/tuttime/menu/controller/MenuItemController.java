@@ -169,6 +169,33 @@ public class MenuItemController {
 		return ResponseEntity.noContent().build();
 	}
 
+	@PutMapping("/categories/{categoryId}/items/priorities")
+	@Operation(summary = "Reorder menu items inside a category (set priorities based on list order)")
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Priorities updated",
+					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuItemDto.MenuItemResponse.class)))),
+			@ApiResponse(responseCode = "400", description = "Invalid input – item does not belong to category"),
+			@ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+			@ApiResponse(responseCode = "404", description = "Category not found")
+	})
+	public ResponseEntity<ApiRes<List<MenuItemDto.MenuItemResponse>>> updateItemsPriority(
+			@Parameter(description = "Category UUID") @PathVariable UUID categoryId,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+					description = "Ordered list of menu item UUIDs (first = highest priority)",
+					content = @Content(schema = @Schema(example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]"))
+			)
+			@RequestBody List<UUID> itemIdsInOrder) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		List<MenuItemDto.MenuItemResponse> updated = menuItemService.updatePrioritiesForCategory(
+				categoryId, itemIdsInOrder, currentUserId, userRoles);
+
+		return ResponseEntity.ok(ApiRes.success(updated));
+	}
+
 	/**
 	 * Private helper to keep the controller DRY
 	 */

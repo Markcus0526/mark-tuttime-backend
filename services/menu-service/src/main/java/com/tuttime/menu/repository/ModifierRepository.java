@@ -1,7 +1,6 @@
 package com.tuttime.menu.repository;
 
 import com.tuttime.menu.entity.Modifier;
-import com.tuttime.menu.entity.ModifierGroup;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

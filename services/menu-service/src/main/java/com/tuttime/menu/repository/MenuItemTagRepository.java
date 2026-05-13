@@ -23,9 +23,9 @@ public interface MenuItemTagRepository extends JpaRepository<MenuItemTag, MenuIt
 
 	// Fetches the bridge entity and the actual MenuTag data for a list of item IDs
 	@Query("""
-        SELECT mit FROM MenuItemTag mit 
-        JOIN FETCH mit.menuTag 
-        WHERE mit.id.menuItemId IN :itemIds
-    """)
+			    SELECT mit FROM MenuItemTag mit 
+			    JOIN FETCH mit.menuTag 
+			    WHERE mit.id.menuItemId IN :itemIds
+			""")
 	List<MenuItemTag> findAllByMenuItemIdIn(@Param("itemIds") List<UUID> itemIds);
 }

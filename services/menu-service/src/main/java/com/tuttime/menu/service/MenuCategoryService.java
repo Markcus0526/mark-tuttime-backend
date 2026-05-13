@@ -18,4 +18,10 @@ public interface MenuCategoryService {
 	FullMenuDto.FullMenuBranchMenuResponse getFullMenuForBranch(UUID branchId); // Master Endpoint
 
 	void deleteCategory(UUID id, UUID currentUserId, String userRoles);
+
+	List<MenuCategoryDto.CategoryResponse> updatePrioritiesForBranch(
+			UUID branchId,
+			List<UUID> categoryIdsInOrder,
+			UUID currentUserId,
+			String userRoles);
 }

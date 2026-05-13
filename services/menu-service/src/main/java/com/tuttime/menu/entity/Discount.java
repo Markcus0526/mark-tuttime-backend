@@ -1,7 +1,6 @@
 package com.tuttime.menu.entity;
 
 import com.tuttime.common.entity.BaseUuidAnDeleteEntity;
-import com.tuttime.common.entity.BaseUuidEntity;
 import com.tuttime.menu.entity.enums.AppliesTo;
 import com.tuttime.menu.entity.enums.DiscountType;
 import jakarta.persistence.*;
