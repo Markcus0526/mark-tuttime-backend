@@ -90,6 +90,7 @@ CREATE TABLE financial_ledgers
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     branch_id             UUID NOT NULL,
     report_date           DATE NOT NULL,
+    order_count INT NOT NULL DEFAULT 0,
     total_gmv             DECIMAL(15, 2)   DEFAULT 0,
     commission_earned     DECIMAL(15, 2)   DEFAULT 0,
     payout_due_restaurant DECIMAL(15, 2)   DEFAULT 0,

@@ -25,6 +25,10 @@ public class FinancialLedger extends BaseUuidEntity {
 	@Column(name = "report_date", nullable = false)
 	private LocalDate reportDate;
 
+	@Column(name = "order_count")
+	@Builder.Default
+	private Integer orderCount = 0;
+
 	@Column(name = "total_gmv", precision = 15, scale = 2)
 	private BigDecimal totalGmv;
 
