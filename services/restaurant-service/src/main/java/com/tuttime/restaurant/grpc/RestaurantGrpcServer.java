@@ -158,4 +158,20 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
+
+	@Override
+	public void getBranchTotalTables(GetBranchTotalTablesRequest request,
+	                                 StreamObserver<GetBranchTotalTablesResponse> responseObserver) {
+		try {
+			responseObserver.onNext(delegate.getBranchTotalTables(request));
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getBranchTotalTables", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+		}
+	}
 }

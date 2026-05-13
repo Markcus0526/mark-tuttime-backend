@@ -98,21 +98,8 @@ public class GeometryUtil {
 	/**
 	 * Blurred coordinates result
 	 */
-	public static class BlurredCoordinates {
-		private final BigDecimal latitude;
-		private final BigDecimal longitude;
+		public record BlurredCoordinates(BigDecimal latitude, BigDecimal longitude) {
 
-		public BlurredCoordinates(BigDecimal latitude, BigDecimal longitude) {
-			this.latitude = latitude;
-			this.longitude = longitude;
-		}
 
-		public BigDecimal getLatitude() {
-			return latitude;
-		}
-
-		public BigDecimal getLongitude() {
-			return longitude;
-		}
 	}
 }
