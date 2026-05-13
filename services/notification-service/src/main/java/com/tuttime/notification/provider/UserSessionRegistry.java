@@ -1,14 +1,12 @@
 package com.tuttime.notification.provider;
 
 import org.springframework.stereotype.Component;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class UserSessionRegistry {
-	// Stores UserId -> Set of Session IDs (to handle multiple tabs)
 	private final Map<String, Set<String>> activeUsers = new ConcurrentHashMap<>();
 
 	public void add(String userId, String sessionId) {

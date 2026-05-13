@@ -7,6 +7,9 @@ import java.util.UUID;
 
 public interface NotificationOrchestrator {
 
-	void handleNotification(UUID eventId, UUID userId, NotificationTemplateKey templateKey, Map<String, Object> params);
+	void handleNotification(UUID eventId, UUID userId,
+	                        NotificationTemplateKey templateKey, Map<String, Object> params);
+
+	void retryNotification(UUID logId);
 
 }

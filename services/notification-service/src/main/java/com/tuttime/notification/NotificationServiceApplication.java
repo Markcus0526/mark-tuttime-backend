@@ -13,15 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(
-		scanBasePackages = "com.tuttime",
-		exclude = {
-				RedisAutoConfiguration.class,
-				RedisRepositoriesAutoConfiguration.class,
-				RedisReactiveHealthContributorAutoConfiguration.class,
-				RedisHealthContributorAutoConfiguration.class
-		}
-)
+@SpringBootApplication(scanBasePackages = "com.tuttime")
 @EnableScheduling
 @Slf4j
 public class NotificationServiceApplication {
