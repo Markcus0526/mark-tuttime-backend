@@ -18,4 +18,5 @@ public interface PosSyncQueueRepository extends JpaRepository<PosSyncQueue, Inte
 
 	Optional<PosSyncQueue> findByBranchIdAndBookingId(@Param("branchId") UUID branchId, @Param("bookingId") UUID bookingId);
 
+	long countByBranchIdAndStatus(UUID branchId, String status);
 }
