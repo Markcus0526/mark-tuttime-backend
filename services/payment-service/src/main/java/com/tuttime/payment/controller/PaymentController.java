@@ -2,18 +2,25 @@ package com.tuttime.payment.controller;
 
 import com.tuttime.common.auth.security.UserContext;
 import com.tuttime.common.dto.ApiRes;
+import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.UnauthorizedException;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.payment.dto.PaymentDto;
 import com.tuttime.payment.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @RestController
@@ -80,6 +87,74 @@ public class PaymentController {
 		paymentService.testManualPaymentSuccess(bookingId, mockYooId);
 
 		return ResponseEntity.ok(ApiRes.success("Success: Kafka event sent for booking " + bookingId));
+	}
+
+	@GetMapping("/branch/{branchId}")
+	@Operation(summary = "Admin: List payments for a branch (with filters)")
+	public ResponseEntity<ApiRes<Page<PaymentDto.AdminPaymentResponse>>> listBranchPayments(
+			@PathVariable UUID branchId,
+			@RequestParam(required = false) PaymentStatus status,
+			@RequestParam(required = false) OffsetDateTime fromDate,
+			@RequestParam(required = false) OffsetDateTime toDate,
+			@RequestParam(required = false) String query, // search by bookingId string
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "createdAt") String sort,
+			@RequestParam(defaultValue = "desc") String direction) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		Pageable pageable = PageRequest.of(page, size,
+				direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending());
+		Page<PaymentDto.AdminPaymentResponse> result = paymentService.listBranchPayments(
+				branchId, status, fromDate, toDate, query, pageable, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(result));
+	}
+
+	@GetMapping("/admin/{paymentId}")
+	@Operation(summary = "Admin: Full payment details (including refunds)")
+	public ResponseEntity<ApiRes<PaymentDto.AdminPaymentDetailResponse>> getPaymentForAdmin(
+			@PathVariable UUID paymentId) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		PaymentDto.AdminPaymentDetailResponse result = paymentService.getPaymentForAdmin(paymentId, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(result));
+	}
+
+	@GetMapping("/branch/{branchId}/summary")
+	@Operation(summary = "Admin: Payment statistics (today, week, month, pending, refunded)")
+	public ResponseEntity<ApiRes<PaymentDto.BranchPaymentSummary>> getBranchPaymentSummary(
+			@PathVariable UUID branchId) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		PaymentDto.BranchPaymentSummary summary = paymentService.getBranchPaymentSummary(branchId, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(summary));
+	}
+
+	@GetMapping("/branch/{branchId}/payouts")
+	@Operation(summary = "Admin: List completed payments ready for settlement")
+	public ResponseEntity<ApiRes<Page<PaymentDto.PayoutResponse>>> listPayouts(
+			@PathVariable UUID branchId,
+			@RequestParam(required = false) OffsetDateTime fromDate,
+			@RequestParam(required = false) OffsetDateTime toDate,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+
+		validateAdminOrOwnerOrManager();
+		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+		String userRoles = UserContext.getRoles();
+
+		Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+		Page<PaymentDto.PayoutResponse> result = paymentService.listPayouts(branchId, fromDate, toDate, pageable, currentUserId, userRoles);
+		return ResponseEntity.ok(ApiRes.success(result));
 	}
 
 	/**

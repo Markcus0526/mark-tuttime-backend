@@ -2,6 +2,7 @@ package com.tuttime.payment.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -17,7 +18,8 @@ public class PaymentMethodDto {
 
 			@Schema(description = "Set as primary card after binding")
 			boolean setAsDefault
-	) {}
+	) {
+	}
 
 	/**
 	 * Response for both Profile & Select Payment pages
@@ -43,7 +45,8 @@ public class PaymentMethodDto {
 
 			@Schema(description = "When the card was linked")
 			OffsetDateTime linkedAt
-	) {}
+	) {
+	}
 
 	/**
 	 * Internal object used during Webhook processing
@@ -54,7 +57,8 @@ public class PaymentMethodDto {
 			String type,       // "bank_card"
 			CardDetails card,
 			boolean saved      // Confirmation that the token is reusable
-	) {}
+	) {
+	}
 
 	public record CardDetails(
 			String first6,
@@ -63,5 +67,6 @@ public class PaymentMethodDto {
 			String expiryYear,
 			String cardType,   // "Visa", "MasterCard", "MIR"
 			String issuerName
-	) {}
+	) {
+	}
 }

@@ -5,19 +5,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.PaymentEvent;
+import com.tuttime.common.event.proto.UserDetailRequest;
+import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.UserDetailsRequest;
+import com.tuttime.common.event.proto.UserDetailsResponse;
 import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.payment.dto.PaymentDto;
 import com.tuttime.payment.dto.PaymentMethodDto;
 import com.tuttime.payment.entity.Payment;
 import com.tuttime.payment.entity.PaymentAuditLog;
 import com.tuttime.payment.entity.Refund;
+import com.tuttime.payment.grpc.client.RestaurantGrpcClient;
+import com.tuttime.payment.grpc.client.UserGrpcClient;
 import com.tuttime.payment.repository.PaymentAuditLogRepository;
 import com.tuttime.payment.repository.PaymentRepository;
 import com.tuttime.payment.repository.RefundRepository;
+import com.tuttime.payment.repository.projection.BranchPaymentSummaryProjection;
 import com.tuttime.payment.service.PaymentMethodService;
 import com.tuttime.payment.service.PaymentService;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.loolzaaa.youkassa.client.ApiClient;
@@ -27,7 +39,12 @@ import ru.loolzaaa.youkassa.processors.PaymentProcessor;
 import ru.loolzaaa.youkassa.processors.RefundProcessor;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +55,8 @@ public class PaymentServiceImpl implements PaymentService {
 	private final RefundRepository refundRepository;
 	private final PaymentAuditLogRepository paymentAuditLogRepository;
 	private final PaymentMethodService paymentMethodService;
+	private final RestaurantGrpcClient restaurantGrpcClient;
+	private final UserGrpcClient userGrpcClient;
 	private final EventProducer eventProducer;
 	private final ApiClient apiKassaClient;
 	private final ObjectMapper objectMapper;
@@ -180,6 +199,223 @@ public class PaymentServiceImpl implements PaymentService {
 		dispatchPaymentCompletedEvent(payment, mockYooId);
 
 		log.info("[TEST] Simulated success for booking {}", bookingId);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Page<PaymentDto.AdminPaymentResponse> listBranchPayments(
+			UUID branchId,
+			PaymentStatus status,
+			OffsetDateTime fromDate,
+			OffsetDateTime toDate,
+			String query,
+			Pageable pageable,
+			UUID currentUserId,
+			String userRoles) {
+
+		// 1. Permission check
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
+
+		// 2. Build dynamic Specification (as before)
+		Specification<Payment> spec = (root, q, cb) -> {
+			List<Predicate> predicates = new ArrayList<>();
+			predicates.add(cb.equal(root.get("branchId"), branchId));
+			if (status != null) predicates.add(cb.equal(root.get("status"), status));
+			if (fromDate != null) predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromDate));
+			if (toDate != null) predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), toDate));
+			if (query != null && !query.isEmpty()) {
+				try {
+					UUID bookingUuid = UUID.fromString(query);
+					predicates.add(cb.equal(root.get("bookingId"), bookingUuid));
+				} catch (IllegalArgumentException ignored) {
+					// not a valid UUID – ignore (or add search by user email/phone later)
+				}
+			}
+			return cb.and(predicates.toArray(new Predicate[0]));
+		};
+
+		// 3. Fetch payments page
+		Page<Payment> paymentPage = paymentRepository.findAll(spec, pageable);
+		if (paymentPage.isEmpty()) {
+			return Page.empty();
+		}
+
+		// 4. Extract unique userIds and batch fetch user details
+		List<UUID> userIds = paymentPage.getContent().stream()
+				.map(Payment::getUserId)
+				.distinct()
+				.collect(Collectors.toList());
+
+		Map<UUID, UserDetailResponse> userDetailsMap = getUsersBatch(userIds);
+
+		// 5. Map to AdminPaymentResponse DTO
+		return paymentPage.map(payment -> {
+			UserDetailResponse user = userDetailsMap.get(payment.getUserId());
+			String displayName = "Unknown";
+			String userEmail = null;
+			String userPhone = null;
+
+			if (user != null) {
+				userEmail = user.getEmail();
+				userPhone = user.getPhoneNumber();
+				// Priority: full_name → email → phone → "Unknown"
+				if (user.getFullName() != null && !user.getFullName().isBlank()) {
+					displayName = user.getFullName();
+				} else if (userEmail != null && !userEmail.isBlank()) {
+					displayName = userEmail;
+				} else if (userPhone != null && !userPhone.isBlank()) {
+					displayName = userPhone;
+				}
+			}
+
+			BigDecimal commission = payment.getAmount().multiply(BigDecimal.valueOf(0.01));
+			BigDecimal net = payment.getAmount().subtract(commission);
+
+			return new PaymentDto.AdminPaymentResponse(
+					payment.getId(),
+					payment.getBookingId(),
+					displayName,
+					userEmail,
+					userPhone,
+					payment.getAmount(),
+					payment.getCurrency(),
+					payment.getStatus(),
+					payment.getPaymentMethodType(),
+					payment.getCreatedAt(),
+					payment.getUpdatedAt(),
+					commission,
+					net
+			);
+		});
+	}
+
+	// -----------------------------------------------------------------
+	// 2. Get full payment details for admin (with refunds)
+	// -----------------------------------------------------------------
+	@Override
+	@Transactional(readOnly = true)
+	public PaymentDto.AdminPaymentDetailResponse getPaymentForAdmin(UUID paymentId, UUID currentUserId, String userRoles) {
+		Payment payment = paymentRepository.findById(paymentId)
+				.orElseThrow(() -> new InvalidRequestException("Payment not found"));
+		restaurantGrpcClient.validateBranchPermission(payment.getBranchId(), currentUserId, userRoles);
+
+		List<Refund> refunds = refundRepository.findByPaymentId(paymentId);
+		BigDecimal totalRefunded = refunds.stream()
+				.map(Refund::getAmount)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+		BigDecimal commission = payment.getAmount().multiply(BigDecimal.valueOf(0.01));
+		BigDecimal net = payment.getAmount().subtract(commission);
+
+		// Fetch user details via gRPC
+		var user = userGrpcClient.getUserDetail(UserDetailRequest.newBuilder()
+				.setUserId(payment.getUserId().toString())
+				.build());
+
+		List<PaymentDto.RefundDto> refundDtos = refunds.stream()
+				.map(r -> new PaymentDto.RefundDto(r.getId(), r.getAmount(), r.getStatus(), r.getReason(), r.getCreatedAt()))
+				.collect(Collectors.toList());
+
+		return new PaymentDto.AdminPaymentDetailResponse(
+				payment.getId(),
+				payment.getBookingId(),
+				payment.getUserId(),
+				user.getFullName(),
+				user.getEmail(),
+				user.getPhoneNumber(),
+				payment.getAmount(),
+				payment.getCurrency(),
+				payment.getStatus(),
+				payment.getYookassaPaymentId(),
+				payment.getPaymentMethodType(),
+				payment.getCreatedAt(),
+				payment.getUpdatedAt(),
+				refundDtos,
+				totalRefunded,
+				commission,
+				net
+		);
+	}
+
+	// -----------------------------------------------------------------
+	// 3. Branch payment summary (dashboard stats)
+	// -----------------------------------------------------------------
+	@Override
+	@Transactional(readOnly = true)
+	public PaymentDto.BranchPaymentSummary getBranchPaymentSummary(UUID branchId, UUID currentUserId, String userRoles) {
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
+
+		BranchPaymentSummaryProjection proj = paymentRepository.getBranchPaymentSummary(branchId);
+		return new PaymentDto.BranchPaymentSummary(
+				proj.getTodayTotal(),
+				proj.getTodayCount(),
+				proj.getWeekTotal(),
+				proj.getWeekCount(),
+				proj.getMonthTotal(),
+				proj.getMonthCount(),
+				proj.getPendingTotal(),
+				proj.getPendingCount(),
+				proj.getRefundedTotal(),
+				proj.getRefundedCount()
+		);
+	}
+
+	// -----------------------------------------------------------------
+	// 4. List payouts (completed payments)
+	// -----------------------------------------------------------------
+	@Override
+	@Transactional(readOnly = true)
+	public Page<PaymentDto.PayoutResponse> listPayouts(UUID branchId, OffsetDateTime fromDate, OffsetDateTime toDate,
+	                                        Pageable pageable, UUID currentUserId, String userRoles) {
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
+
+		Specification<Payment> spec = (root, query, cb) -> {
+			List<Predicate> predicates = new ArrayList<>();
+			predicates.add(cb.equal(root.get("branchId"), branchId));
+			predicates.add(cb.equal(root.get("status"), PaymentStatus.COMPLETED));
+			if (fromDate != null) {
+				predicates.add(cb.greaterThanOrEqualTo(root.get("updatedAt"), fromDate));
+			}
+			if (toDate != null) {
+				predicates.add(cb.lessThanOrEqualTo(root.get("updatedAt"), toDate));
+			}
+			return cb.and(predicates.toArray(new Predicate[0]));
+		};
+
+		Page<Payment> paymentPage = paymentRepository.findAll(spec, pageable);
+
+		return paymentPage.map(payment -> {
+			BigDecimal commission = payment.getAmount().multiply(BigDecimal.valueOf(0.01));
+			BigDecimal net = payment.getAmount().subtract(commission);
+			return new PaymentDto.PayoutResponse(
+					payment.getId(),
+					payment.getUpdatedAt(),
+					payment.getAmount(),
+					commission,
+					net,
+					payment.getYookassaPaymentId()
+			);
+		});
+	}
+
+	// -----------------------------------------------------------------
+	// Helper to fetch user names via gRPC (batch)
+	// -----------------------------------------------------------------
+	public Map<UUID, UserDetailResponse> getUsersBatch(List<UUID> userIds) {
+		if (userIds == null || userIds.isEmpty()) {
+			return Map.of();
+		}
+		// Build request with all userIds as strings
+		UserDetailsRequest request = UserDetailsRequest.newBuilder()
+				.addAllUserIds(userIds.stream().map(UUID::toString).collect(Collectors.toList()))
+				.build();
+		// Call batch RPC (note: method is still called getUserDetails)
+		UserDetailsResponse response = userGrpcClient.getUserDetails(request);
+		// Map to UUID -> UserDetailResponse
+		return response.getProfilesList().stream()
+				.collect(Collectors.toMap(
+						profile -> UUID.fromString(profile.getUserId()),
+						profile -> profile
+				));
 	}
 
 	private String createNewPayment(UUID bookingId, UUID userId, UUID branchId, BigDecimal amount) {

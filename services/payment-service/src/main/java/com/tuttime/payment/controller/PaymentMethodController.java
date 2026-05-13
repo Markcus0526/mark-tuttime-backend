@@ -7,7 +7,6 @@ import com.tuttime.common.exception.UnauthorizedException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.payment.dto.PaymentMethodDto;
 import com.tuttime.payment.service.PaymentMethodService;
-import com.tuttime.payment.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

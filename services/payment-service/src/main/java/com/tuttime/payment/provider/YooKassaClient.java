@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.loolzaaa.youkassa.client.ApiClient;
+import ru.loolzaaa.youkassa.model.Payment; // In 0.2.0, the request is often the model itself
 import ru.loolzaaa.youkassa.pojo.Amount;
 import ru.loolzaaa.youkassa.pojo.Confirmation;
-import ru.loolzaaa.youkassa.model.Payment; // In 0.2.0, the request is often the model itself
 import ru.loolzaaa.youkassa.processors.PaymentProcessor;
 
 import java.util.Map;

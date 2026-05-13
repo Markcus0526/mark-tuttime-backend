@@ -3,17 +3,13 @@ package com.tuttime.payment.grpc;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.util.NumberUtil;
-import com.tuttime.payment.entity.Payment;
-import com.tuttime.payment.entity.Refund;
+import com.tuttime.payment.service.PaymentGrpcDelegate;
 import com.tuttime.payment.service.PaymentService;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
-import org.springframework.transaction.annotation.Transactional;
-import ru.loolzaaa.youkassa.pojo.Amount;
-import ru.loolzaaa.youkassa.processors.RefundProcessor;
 
 import java.util.UUID;
 
@@ -23,6 +19,7 @@ import java.util.UUID;
 public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase {
 
 	private final PaymentService paymentService;
+	private final PaymentGrpcDelegate delegate;
 
 	@Override
 	public void createCheckoutSession(PaymentSessionRequest request,
@@ -82,6 +79,21 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 		} catch (Exception e) {
 			// Keep this for actual system failures (DB down, etc.)
 			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getPaymentCounts(GetPaymentCountsRequest request, StreamObserver<GetPaymentCountsResponse> responseObserver) {
+		try {
+			responseObserver.onNext(delegate.getPaymentCounts(request));
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getCustomerRetention", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
 }
