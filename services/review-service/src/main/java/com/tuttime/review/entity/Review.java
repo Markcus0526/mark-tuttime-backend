@@ -11,7 +11,7 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "reviews", schema = "review_service")
+@Table(name = "reviews", schema = "review_service", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "branch_id"}))
 @Getter
 @Setter
 @NoArgsConstructor

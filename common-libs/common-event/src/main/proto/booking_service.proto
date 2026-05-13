@@ -11,6 +11,12 @@ service BookingService {
 
   rpc CreateBookingFromWaitlist(CreateBookingFromWaitlistRequest) returns (CreateBookingFromWaitlistResponse);
 
+  rpc GetCustomerRetention(GetCustomerRetentionRequest) returns (GetCustomerRetentionResponse);
+
+  rpc GetFunnelCounts(GetFunnelCountsRequest) returns (GetFunnelCountsResponse);
+
+  rpc GetTopCustomers(GetTopCustomersRequest) returns (GetTopCustomersResponse);
+
 }
 
 // rpc StreamUpcomingBookings(BookingReminderRequest) returns (stream CreateBookingFromWaitlistResponse);
@@ -25,4 +31,46 @@ message CreateBookingFromWaitlistRequest {
 message CreateBookingFromWaitlistResponse {
   string booking_id = 1;
   string status = 2;
+}
+
+// rpc GetCustomerRetention(GetCustomerRetentionRequest) returns (GetCustomerRetentionResponse);
+message GetCustomerRetentionRequest {
+  string branch_id = 1;
+  string period = 2;   // "WEEK", "MONTH", "QUARTER"
+}
+
+message GetCustomerRetentionResponse {
+  int32 new_customers = 1;
+  int32 repeat_customers = 2;
+  double repeat_rate = 3;
+  double avg_orders_per_customer = 4;
+}
+
+// rpc GetFunnelCounts(GetFunnelCountsRequest) returns (GetFunnelCountsResponse);
+message GetFunnelCountsRequest {
+  string branch_id = 1;
+  string start_date = 2;   // ISO date (e.g., "2025-05-01")
+  string end_date = 3;
+}
+
+message GetFunnelCountsResponse {
+  int64 views = 1;      // page views (if tracked)
+  int64 bookings = 2;   // number of bookings created
+  int64 arrivals = 3;   // number of arrivals (ARRIVED status)
+}
+
+// rpc GetTopCustomers(GetTopCustomersRequest) returns (GetTopCustomersResponse);
+message GetTopCustomersRequest {
+  string branch_id = 1;
+  int32 limit = 2;
+}
+
+message GetTopCustomersResponse {
+  repeated TopCustomer customers = 1;
+}
+
+message TopCustomer {
+  string user_id = 1;
+  double total_spent = 2;   // use double for simplicity, or string for precision
+  int32 booking_count = 3;
 }

@@ -18,7 +18,10 @@ public class UserDto {
 			String emailOrPhone,
 
 			@Schema(description = "User's role name", example = "USER", nullable = true)
-			String roleName
+			String roleName,
+
+			@Schema(description = "User's UI language", example = "en or ru", nullable = true)
+			String language
 	) {
 	}
 
@@ -39,7 +42,10 @@ public class UserDto {
 			String fullName,
 
 			@Schema(description = "URL to the user's profile picture", example = "https://example.com/pic.jpg", nullable = true)
-			String profilePicture
+			String profilePicture,
+
+			@Schema(description = "User's UI language", example = "en or ru", nullable = true)
+			String language
 	) {
 	}
 
@@ -102,6 +108,9 @@ public class UserDto {
 
 			@Schema(description = "URL to user's profile picture", example = "https://example.com/pic.jpg", nullable = true)
 			String profilePicture,
+
+			@Schema(description = "User's UI language", example = "en or ru", nullable = true)
+			String language,
 
 			@Schema(description = "User's status", example = "ACTIVE")
 			String status,

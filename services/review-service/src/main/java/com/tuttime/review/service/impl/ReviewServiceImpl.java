@@ -1,17 +1,18 @@
 package com.tuttime.review.service.impl;
 
+import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.ReviewEvent;
 import com.tuttime.common.event.proto.UserDetailResponse;
 import com.tuttime.common.event.proto.UserDetailsRequest;
 import com.tuttime.common.event.proto.UserDetailsResponse;
+import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.review.dto.RatingDto;
 import com.tuttime.review.dto.ReviewDto;
 import com.tuttime.review.entity.RatingAggregate;
 import com.tuttime.review.entity.Review;
 import com.tuttime.review.entity.ReviewModerationLog;
-import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.review.grpc.client.RestaurantGrpcClient;
 import com.tuttime.review.grpc.client.UserGrpcClient;
 import com.tuttime.review.mapper.ReviewMapper;
@@ -51,6 +52,10 @@ public class ReviewServiceImpl implements ReviewService {
 	public ReviewDto.ReviewResponse createReview(UUID userId, ReviewDto.ReviewRequest request) {
 		restaurantGrpcClient.validateBranch(request.branchId());
 
+		if (reviewRepository.existsByUserIdAndBranchId(userId, request.branchId())) {
+			throw new ConflictException("You have already reviewed this branch");
+		}
+
 		Review review = Review.builder()
 				.userId(userId)
 				.branchId(request.branchId())
@@ -59,9 +64,9 @@ public class ReviewServiceImpl implements ReviewService {
 				.status(ReviewStatus.PENDING)
 				.build();
 
-		dispatchReviewUpdatedEvent(review);
-
-		return reviewMapper.toReviewResponse(reviewRepository.save(review));
+		Review saved = reviewRepository.save(review);
+		dispatchReviewUpdatedEvent(saved);
+		return reviewMapper.toReviewResponse(saved);
 	}
 
 	@Override
@@ -99,44 +104,40 @@ public class ReviewServiceImpl implements ReviewService {
 
 	@Override
 	@Transactional
-	public ReviewDto.ReviewResponse moderateReview(UUID reviewId, UUID moderatorId, ReviewDto.ReviewModerationRequest request) {
-		// 1. Fetch Review (Optimistic locking version is automatically checked here)
+	public ReviewDto.ReviewResponse moderateReview(UUID reviewId, ReviewDto.ReviewModerationRequest request,
+	                                               UUID currentUserId, String userRoles) {
 		Review review = reviewRepository.findById(reviewId)
-				.orElseThrow(() -> new InvalidRequestException("Review not found with ID: " + reviewId));
+				.orElseThrow(() -> new InvalidRequestException("Review not found"));
 
-		// 2. Business Rule: Prevent redundant processing
+		// Branch permission check
+		restaurantGrpcClient.validateBranchPermission(review.getBranchId(), currentUserId, userRoles);
+
 		ReviewStatus oldStatus = review.getStatus();
 		if (oldStatus == request.status()) {
 			return reviewMapper.toReviewResponse(review);
 		}
 
-		// 3. Update Review Status
 		review.setStatus(request.status());
 
-		// 4. Persistence: Create Moderation Log entry
+		// Log with oldStatus
 		ReviewModerationLog logEntry = ReviewModerationLog.builder()
 				.review(review)
-				.moderatorId(moderatorId)
+				.moderatorId(currentUserId)
 				.action(request.action())
 				.reason(request.reason())
 				.build();
 		moderationLogRepository.save(logEntry);
 
-		// 5. Aggregate logic: Only update stats if the review was JUST approved
-		if (request.status() == ReviewStatus.APPROVED) {
+		// Update aggregate statistics
+		if (request.status() == ReviewStatus.APPROVED && oldStatus != ReviewStatus.APPROVED) {
 			updateRatingAggregate(review.getBranchId(), review.getRating());
+		} else if (oldStatus == ReviewStatus.APPROVED && request.status() != ReviewStatus.APPROVED) {
+			subtractFromRatingAggregate(review.getBranchId(), review.getRating());
 		}
 
-		// 6. If a review was APPROVED and is now being REJECTED/DELETED,
-		// you should ideally subtract it from aggregates (Logic omitted for brevity)
-
-		// Save and return mapped response
-		Review updatedReview = reviewRepository.save(review);
-		log.info("Review {} moderated to {} by moderator {}", reviewId, request.status(), moderatorId);
-
-		dispatchReviewUpdatedEvent(review);
-
-		return reviewMapper.toReviewResponse(updatedReview);
+		Review updated = reviewRepository.save(review);
+		dispatchReviewUpdatedEvent(updated);
+		return reviewMapper.toReviewResponse(updated);
 	}
 
 	@Override
@@ -175,6 +176,27 @@ public class ReviewServiceImpl implements ReviewService {
 		aggregate.setTotalReviews(newTotal);
 		aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
 
+		aggregateRepository.save(aggregate);
+	}
+
+	private void subtractFromRatingAggregate(UUID branchId, Integer rating) {
+		RatingAggregate aggregate = aggregateRepository.findById(branchId)
+				.orElseThrow(() -> new InvalidRequestException("No aggregate found for branch"));
+		// Update distribution (decrement)
+		Map<String, Integer> dist = aggregate.getRatingDistribution();
+		String ratingKey = String.valueOf(rating);
+		dist.put(ratingKey, dist.getOrDefault(ratingKey, 0) - 1);
+		// Update total and average
+		int newTotal = aggregate.getTotalReviews() - 1;
+		if (newTotal == 0) {
+			aggregate.setAverageRating(BigDecimal.ZERO);
+		} else {
+			BigDecimal totalScore = aggregate.getAverageRating()
+					.multiply(BigDecimal.valueOf(aggregate.getTotalReviews()))
+					.subtract(BigDecimal.valueOf(rating));
+			aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
+		}
+		aggregate.setTotalReviews(newTotal);
 		aggregateRepository.save(aggregate);
 	}
 

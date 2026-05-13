@@ -98,6 +98,7 @@ public class AuthServiceImpl implements AuthService {
 		user.setPhoneNumber(phoneNumber);
 		user.setEmail(email);
 		user.setStatus(UserStatus.PENDING_VERIFICATION);
+		user.setLanguage(StringUtils.hasText(request.language()) ? request.language() : "en");
 		user = userRepository.saveAndFlush(user);
 
 		Role role = roleRepository.findByName(UserRoleKind.USER.name())

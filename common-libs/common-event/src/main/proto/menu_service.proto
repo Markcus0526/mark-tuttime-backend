@@ -33,9 +33,10 @@ message MenuItemDetailResponse {
   string name = 2;
   string description = 3;
   string base_price = 4;
-  string category = 5;
-  bool available = 6;
-  repeated ModifierGroupResponse modifier_groups = 7;
+  string category_id = 5;
+  string category_name = 6;
+  bool available = 7;
+  repeated ModifierGroupResponse modifier_groups = 8;
 }
 
 message ModifierGroupResponse {

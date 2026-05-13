@@ -1,6 +1,7 @@
 package com.tuttime.review.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.BranchPermissionRequest;
 import com.tuttime.common.event.proto.BranchValidRequest;
 import com.tuttime.common.event.proto.BranchValidResponse;
 import com.tuttime.common.event.proto.RestaurantServiceGrpc;
@@ -40,6 +41,23 @@ public class RestaurantGrpcClient {
 						.validateBranch(request));
 
 		if (!response.getActive() || !response.getExists()) {
+			throw new InvalidRequestException("You do not manage this specific branch");
+		}
+	}
+
+	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
+		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
+				.setBranchId(branchId.toString())
+				.setUserId(userId.toString())
+				.setUserRoles(userRoles)
+				.build();
+
+		boolean valid = grpcExecutor.execute(RESTAURANT_SERVICE, "validateBranchPermission", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+						.validateBranchPermission(request).getValid());
+
+		if (!valid) {
 			throw new InvalidRequestException("You do not manage this specific branch");
 		}
 	}

@@ -12,6 +12,8 @@ service PaymentService {
   rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
 
   rpc ProcessRefund(ProcessRefundRequest) returns (ProcessRefundResponse);
+
+  rpc GetPaymentCounts(GetPaymentCountsRequest) returns (GetPaymentCountsResponse);
 }
 
 // rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
@@ -41,4 +43,15 @@ message ProcessRefundRequest {
 
 message ProcessRefundResponse {
   bool status = 1;          // "succeeded", "pending", or "canceled"
+}
+
+// rpc GetPaymentCounts(GetPaymentCountsRequest) returns (GetPaymentCountsResponse);
+message GetPaymentCountsRequest {
+  string branch_id = 1;
+  string start_date = 2;
+  string end_date = 3;
+}
+
+message GetPaymentCountsResponse {
+  int64 payments = 1;
 }

@@ -48,10 +48,11 @@ message UserDetailResponse {
   string email = 3;
   string full_name = 4;
   string profile_picture = 5;
-  string status = 6; // Mapping the 'user_status' enum to String
-  string roles = 7;
-  string auth_methods = 8;
-  repeated string fcm_tokens = 9;
+  string language = 6;
+  string status = 7; // Mapping the 'user_status' enum to String
+  string roles = 8;
+  string auth_methods = 9;
+  repeated string fcm_tokens = 10;
 
   // Relationships
   double latitude = 11;           // Latitude for location-based features

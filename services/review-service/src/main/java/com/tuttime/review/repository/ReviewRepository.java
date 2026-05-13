@@ -1,7 +1,7 @@
 package com.tuttime.review.repository;
 
-import com.tuttime.review.entity.Review;
 import com.tuttime.common.enums.ReviewStatus;
+import com.tuttime.review.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

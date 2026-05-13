@@ -42,6 +42,9 @@ public class User extends BaseUuidAnDeleteEntity {
 	@Builder.Default
 	private UserStatus status = UserStatus.PENDING_VERIFICATION;
 
+	@Column(name = "language", length = 50)
+	private String language;
+
 	@Column(name = "last_login")
 	private OffsetDateTime lastLogin;
 
