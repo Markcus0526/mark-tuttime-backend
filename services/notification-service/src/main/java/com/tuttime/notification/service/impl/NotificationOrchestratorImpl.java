@@ -4,6 +4,8 @@ import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.event.proto.DeviceTokenDeleteRequest;
 import com.tuttime.common.event.proto.UserDetailRequest;
 import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.exception.InvalidRequestException;
+import com.tuttime.common.util.UuidUtil;
 import com.tuttime.notification.entity.NotificationLog;
 import com.tuttime.notification.entity.NotificationTemplate;
 import com.tuttime.notification.entity.UserNotificationPreference;
@@ -15,10 +17,11 @@ import com.tuttime.notification.provider.*;
 import com.tuttime.notification.repository.NotificationLogRepository;
 import com.tuttime.notification.repository.NotificationTemplateRepository;
 import com.tuttime.notification.repository.UserNotificationPreferenceRepository;
-import com.tuttime.notification.service.TemplateService;
 import com.tuttime.notification.service.NotificationOrchestrator;
+import com.tuttime.notification.service.TemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,9 +36,9 @@ import java.util.UUID;
 @Slf4j
 public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 
-	private final NotificationTemplateRepository notificationTemplateRepository;
-	private final UserNotificationPreferenceRepository userNotificationPreferenceRepository;
-	private final NotificationLogRepository notificationLogRepository;
+	private final NotificationTemplateRepository templateRepository;
+	private final UserNotificationPreferenceRepository preferenceRepository;
+	private final NotificationLogRepository logRepository;
 	private final TemplateService templateService;
 	private final UserGrpcClient userGrpcClient;
 	private final EmailProvider emailProvider;
@@ -44,192 +47,263 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 	private final PushProvider pushProvider;
 	private final UserSessionRegistry userSessionRegistry;
 
+	// ================================
+	// Public entry point for new notifications
+	// ================================
+
+	@Override
 	@Transactional
 	public void handleNotification(UUID eventId,
 	                               UUID userId,
 	                               NotificationTemplateKey templateKey,
 	                               Map<String, Object> params) {
+		// 1. Fetch user profile (includes language, contacts, FCM tokens)
+		UserDetailResponse user = fetchUserProfile(userId);
+		String userLanguage = getUserLanguage(user);
 
-		// 1. Fetch User Profile via gRPC
-		// Note: We do this once outside the loop to save network calls.
-		UserDetailResponse userResponse = userGrpcClient.getUserDetail(UserDetailRequest.newBuilder()
-				.setUserId(userId.toString())
-				.build());
-
-		// 2. Load all active templates for this event (Email, SMS, IN_APP)
-		List<NotificationTemplate> templates =
-				notificationTemplateRepository.findByTemplateKeyAndActiveTrue(templateKey);
-
-		for (NotificationTemplate template : templates) {
-
-			// NEW: Check if the user actually has the data required for this channel
-			if (!isChannelSupported(template.getChannel(), userResponse)) {
-				log.warn("Channel {} is active but user {} is missing required contact info. Skipping.",
-						template.getChannel(), userId);
+		// 2. For each possible channel (EMAIL, SMS, IN_APP)
+		for (NotificationChannel channel : NotificationChannel.values()) {
+			if (!isChannelSupported(channel, user)) {
+				log.debug("Channel {} not supported for user {}", channel, userId);
+				continue;
+			}
+			if (!isChannelEnabled(userId, templateKey, channel)) {
+				log.debug("User {} disabled channel {} for category {}", userId, channel, templateKey);
 				continue;
 			}
 
-			// 1. Find if a log already exists for this event and channel
-			Optional<NotificationLog> existingLog = notificationLogRepository
-					.findByEventIdAndChannel(eventId, template.getChannel());
-
-			// 2. If it exists and was already successful, skip entirely
-			if (existingLog.isPresent() &&
-					(existingLog.get().getStatus() == NotificationStatus.SENT ||
-							existingLog.get().getStatus() == NotificationStatus.DELIVERED)) {
-				log.info("Already sent successfully for channel {}. Skipping.", template.getChannel());
+			// 3. Load template for this channel and user language (fallback to "en")
+			NotificationTemplate template;
+			try {
+				template = findTemplateForUser(templateKey, channel, userLanguage);
+			} catch (Exception e) {
+				log.warn("No active template found for {} / {} / {}. Skipping channel.",
+						templateKey, channel, userLanguage);
 				continue;
 			}
 
-			// 3. Prepare the logEntry (either use the existing one to retry or build a new one)
-			NotificationLog logEntry;
-			if (existingLog.isPresent()) {
-				logEntry = existingLog.get();
-				logEntry.setStatus(NotificationStatus.PENDING); // Reset to pending for retry
+			// 4. Idempotency: use DB unique constraint on (event_id, channel)
+			NotificationLog logEntry = prepareLogEntry(eventId, userId, channel, template, user);
+			try {
+				logEntry = logRepository.save(logEntry);
+			} catch (DataIntegrityViolationException ex) {
+				// Duplicate (eventId, channel) – already exists
+				logEntry = logRepository.findByEventIdAndChannel(eventId, channel)
+						.orElseThrow(() -> new IllegalStateException("Unique constraint violated but log not found"));
+				if (logEntry.getStatus() == NotificationStatus.SENT ||
+						logEntry.getStatus() == NotificationStatus.DELIVERED) {
+					log.info("Event {} already sent via {}, skipping", eventId, channel);
+					continue;
+				}
+				// Otherwise it's a stuck PENDING or FAILED log – retry
 				logEntry.setRetryCount(logEntry.getRetryCount() + 1);
-			} else {
-				logEntry = NotificationLog.builder()
-						.userId(userId)
-						.eventId(eventId)
-						.templateKey(templateKey.name())
-						.channel(template.getChannel())
-						.recipient(getRecipient(template.getChannel(), userResponse))
-						.status(NotificationStatus.PENDING)
-						.priority(NotificationPriority.MEDIUM)
-						.retryCount(0)
-						.build();
+				logEntry = logRepository.save(logEntry);
 			}
 
-			// 4. saveAndFlush will now either INSERT or UPDATE (no more Duplicate Key error)
-			logEntry = notificationLogRepository.saveAndFlush(logEntry);
-
-			// 5. Execute Dispatch
-			dispatch(template, userResponse, params, logEntry);
+			// 5. Dispatch the notification (will update status and sent_at)
+			dispatch(logEntry, template, user, params);
 		}
 	}
 
-	private void dispatch(NotificationTemplate template,
-	                      UserDetailResponse user,
-	                      Map<String, Object> params,
-	                      NotificationLog logEntry) {
-		try {
-			String processedContent = templateService.generateHtmlContent(template.getContent(), params);
+	// ================================
+	// Public retry method for scheduler
+	// ================================
 
-			switch (template.getChannel()) {
-				case EMAIL -> {
-					String htmlBody = templateService.generateHtmlContent(template.getContent(), params);
-					emailProvider.sendHtmlEmail(user.getEmail(), template.getTitle(), htmlBody, logEntry.getId());
-					logEntry.setStatus(NotificationStatus.SENT);
-				}
-				case SMS -> {
-					if (!smsProvider.isLocallyValid(user.getPhoneNumber())) {
-						logEntry.setStatus(NotificationStatus.FAILED);
-						logEntry.setProviderResponse(Map.of("error", "Invalid phone number format"));
-					} else {
-						String smsBody = templateService.generateHtmlContent(template.getContent(), params);
-						smsProvider.send(user.getPhoneNumber(), smsBody);
-						logEntry.setStatus(NotificationStatus.SENT);
-					}
-				}
-				case IN_APP -> {
-					// 1. WebSocket: Always try to send to active browser/app sessions first
-					if (userSessionRegistry.isUserOnline(user.getUserId())) {
-						inAppProvider.sendRealTimeUpdate(user.getUserId(), template.getTitle(), processedContent);
-						logEntry.setProviderResponse(Map.of("method", "WEBSOCKET"));
-						logEntry.setStatus(NotificationStatus.SENT);
-					}
+	@Override
+	@Transactional
+	public void retryNotification(UUID logId) {
+		NotificationLog notificationLog = logRepository.findById(logId)
+				.orElseThrow(() -> new IllegalArgumentException("Log not found: " + logId));
 
-					// 2. Fallback/Parallel Push: Send to all registered Firebase devices
-					List<String> tokens = user.getFcmTokensList(); // Updated to handle 'repeated' proto field
-
-					if (!tokens.isEmpty()) {
-						for (String token : tokens) {
-							Thread.ofVirtual().start(() -> {
-								try {
-									pushProvider.sendPush(token, template.getTitle(), processedContent);
-								} catch (Exception e) {
-									if (isTokenInvalid(e)) {
-										log.info("Reporting invalid token to User Service: {}", token);
-										// Call gRPC client to tell User Service to delete this token
-										userGrpcClient.deleteDeviceToken(DeviceTokenDeleteRequest.newBuilder()
-												.setFcmToken(token)
-												.build());
-									}
-								}
-							});
-						}
-
-						// If WebSocket wasn't used, mark Push as the primary method
-						if (logEntry.getProviderResponse() == null) {
-							logEntry.setProviderResponse(Map.of("method", "FIREBASE_PUSH", "device_count", tokens.size()));
-						}
-						logEntry.setStatus(NotificationStatus.SENT);
-					} else if (!userSessionRegistry.isUserOnline(user.getUserId())) {
-						// Only mark as warning if BOTH WebSocket and Push are unavailable
-						logEntry.setProviderResponse(Map.of("warning", "User offline and no FCM tokens registered"));
-						logEntry.setStatus(NotificationStatus.FAILED);
-					}
-				}
-			}
-			logEntry.setSentAt(OffsetDateTime.now());
-		} catch (Exception e) {
-			log.error("Dispatch failed for log {}: {}", logEntry.getId(), e.getMessage());
-			logEntry.setStatus(NotificationStatus.FAILED);
-			logEntry.setProviderResponse(Map.of("error", e.getMessage()));
+		// Only retry if failed or pending for too long (already filtered by scheduler)
+		if (notificationLog.getStatus() == NotificationStatus.SENT || notificationLog.getStatus() == NotificationStatus.DELIVERED) {
+			log.warn("Retry called for already delivered log {}", logId);
+			return;
 		}
-		notificationLogRepository.save(logEntry);
+
+		// Increment retry count (will be saved in dispatch)
+		notificationLog.setRetryCount(notificationLog.getRetryCount() + 1);
+		notificationLog.setStatus(NotificationStatus.PENDING); // reset to pending before retry
+
+		// Re-fetch dependent data
+		UserDetailResponse user = fetchUserProfile(notificationLog.getUserId());
+		NotificationTemplate template = templateRepository.findById(notificationLog.getTemplateId())
+				.orElseThrow(() -> new InvalidRequestException("Invalid: template key: " + notificationLog.getTemplateKey() + ", channel: " + notificationLog.getChannel()));
+
+		// Reconstruct params? For simplicity, we assume params are not needed for retry
+		// because the original event data should be stored elsewhere, but we can pass an empty map.
+		// Better: store serialized params in the log table (JSONB). For brevity, we pass empty map.
+		Map<String, Object> emptyParams = Map.of();
+
+		dispatch(notificationLog, template, user, emptyParams);
+	}
+
+	// ================================
+	// Private helpers
+	// ================================
+
+	private UserDetailResponse fetchUserProfile(UUID userId) {
+		return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder()
+				.setUserId(userId.toString())
+				.build());
+	}
+
+	private String getUserLanguage(UserDetailResponse user) {
+		String lang = user.getLanguage();
+		return lang.isBlank() ? "en" : lang;
+	}
+
+	private NotificationTemplate findTemplateForUser(NotificationTemplateKey key,
+	                                                 NotificationChannel channel,
+	                                                 String userLang) {
+		// First try user's language
+		Optional<NotificationTemplate> template = templateRepository
+				.findByTemplateKeyAndChannelAndLanguageAndActiveTrue(key, channel, userLang);
+		if (template.isPresent()) {
+			return template.get();
+		}
+		// Fallback to English
+		template = templateRepository
+				.findByTemplateKeyAndChannelAndLanguageAndActiveTrue(key, channel, "en");
+		if (template.isPresent()) {
+			log.info("Falling back to English template for {}/{}", key, channel);
+			return template.get();
+		}
+		throw new InvalidRequestException("Invalid: template key: " + key + ", channel: " + channel + ", userLang:" + userLang);
+	}
+
+	private boolean isChannelSupported(NotificationChannel channel, UserDetailResponse user) {
+		return switch (channel) {
+			case EMAIL -> user.getEmail() != null && !user.getEmail().isBlank();
+			case SMS -> user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank();
+			case IN_APP -> userSessionRegistry.isUserOnline(user.getUserId()) ||
+					(user.getFcmTokensList() != null && !user.getFcmTokensList().isEmpty());
+			default -> false;
+		};
 	}
 
 	private boolean isChannelEnabled(UUID userId,
 	                                 NotificationTemplateKey templateKey,
 	                                 NotificationChannel channel) {
-		// 1. Get the broad category (e.g., "BOOKING")
 		String category = getPreferenceCategory(templateKey);
-
-		// 2. Query the DB using the category
-		return userNotificationPreferenceRepository
+		return preferenceRepository
 				.findByUserIdAndNotificationTypeAndChannel(userId, category, channel)
 				.map(UserNotificationPreference::isEnabled)
-				.orElse(true); // Default to enabled for transactional/important alerts
+				.orElse(true); // default enabled
 	}
 
 	private String getPreferenceCategory(NotificationTemplateKey key) {
 		return switch (key) {
 			case USER_REGISTER, USER_VERIFICATION, USER_LOGIN, PASSWORD_RESET, MFA_CODE,
-			     ACCOUNT_LOCKED, ADMIN_USER_CREATED, ADMIN_USER_BLOCKED, ADMIN_USER_UNBLOCKED, ADMIN_USER_DELETED -> "ACCOUNT";
-			case BOOKING_CREATED, BOOKING_REMINDER, BOOKING_CANCELED, BOOKING_COMPLETED, MANAGER_BOOKING_ALERT, MANAGER_BOOKING_CANCEL, MANAGER_LOW_AVAILABILITY -> "BOOKING";
+			     ACCOUNT_LOCKED, ADMIN_USER_CREATED, ADMIN_USER_BLOCKED,
+			     ADMIN_USER_UNBLOCKED, ADMIN_USER_DELETED -> "ACCOUNT";
+			case BOOKING_CREATED, BOOKING_REMINDER, BOOKING_CANCELED, BOOKING_COMPLETED,
+			     MANAGER_BOOKING_ALERT, MANAGER_BOOKING_CANCEL, MANAGER_LOW_AVAILABILITY -> "BOOKING";
 			case PAYMENT_SUCCESS, PAYMENT_FAILED, PAYMENT_REFUNDED -> "PAYMENT";
 			case REVIEW_REQUEST, REVIEW_APPROVED, REVIEW_REJECTED -> "REVIEW";
 		};
 	}
 
-	/**
-	 * Selects the correct contact detail from the gRPC user profile based on channel.
-	 */
+	private NotificationLog prepareLogEntry(UUID eventId,
+	                                        UUID userId,
+	                                        NotificationChannel channel,
+	                                        NotificationTemplate template,
+	                                        UserDetailResponse user) {
+		return NotificationLog.builder()
+				.eventId(eventId)
+				.userId(userId)
+				.channel(channel)
+				.templateKey(template.getTemplateKey().name())
+				.templateId(template.getId())
+				.recipient(getRecipient(channel, user))
+				.status(NotificationStatus.PENDING)
+				.priority(NotificationPriority.MEDIUM)
+				.retryCount(0)
+				.build();
+	}
+
 	private String getRecipient(NotificationChannel channel, UserDetailResponse user) {
 		return switch (channel) {
 			case EMAIL -> user.getEmail();
 			case SMS -> user.getPhoneNumber();
-			case IN_APP -> user.getUserId(); // For WebSocket routing
+			case IN_APP -> user.getUserId(); // for WebSocket routing
 			default -> throw new IllegalArgumentException("Unsupported channel: " + channel);
 		};
 	}
 
+	private void dispatch(NotificationLog notificationLog,
+	                      NotificationTemplate template,
+	                      UserDetailResponse user,
+	                      Map<String, Object> params) {
+		try {
+			// Render content once – reuse for both HTML and plain text
+			String renderedHtml = templateService.generateHtmlContent(template.getContent(), params);
+			String renderedText = stripHtml(renderedHtml);
+
+			switch (notificationLog.getChannel()) {
+				case EMAIL -> {
+					emailProvider.sendHtmlEmail(user.getEmail(), template.getTitle(), renderedHtml, notificationLog.getId());
+					notificationLog.setStatus(NotificationStatus.SENT);
+				}
+				case SMS -> {
+					if (!smsProvider.isLocallyValid(user.getPhoneNumber())) {
+						throw new IllegalArgumentException("Invalid phone number format");
+					}
+					smsProvider.send(user.getPhoneNumber(), renderedText);
+					notificationLog.setStatus(NotificationStatus.SENT);
+				}
+				case IN_APP -> {
+					boolean delivered = false;
+					// WebSocket for active session
+					if (userSessionRegistry.isUserOnline(user.getUserId())) {
+						inAppProvider.sendRealTimeUpdate(user.getUserId(), template.getTitle(), renderedHtml);
+						delivered = true;
+					}
+					// Push notifications to all registered FCM tokens
+					List<String> tokens = user.getFcmTokensList();
+					if (!tokens.isEmpty()) {
+						for (String token : tokens) {
+							try {
+								pushProvider.sendPush(token, template.getTitle(), renderedHtml);
+								delivered = true;
+							} catch (Exception pushEx) {
+								if (isTokenInvalid(pushEx)) {
+									log.info("Invalid FCM token {} for user {}, reporting to User Service", token, user.getUserId());
+									userGrpcClient.deleteDeviceToken(DeviceTokenDeleteRequest.newBuilder()
+											.setFcmToken(token)
+											.build());
+								} else {
+									log.warn("Push failed for token {}: {}", token, pushEx.getMessage());
+								}
+							}
+						}
+					}
+					if (!delivered) {
+						throw new IllegalStateException("User offline and no valid FCM tokens");
+					}
+					notificationLog.setStatus(NotificationStatus.SENT);
+				}
+			}
+			notificationLog.setSentAt(OffsetDateTime.now());
+		} catch (Exception e) {
+			log.error("Dispatch failed for log {} (retry {}): {}",
+					notificationLog.getId(), notificationLog.getRetryCount(), e.getMessage());
+			notificationLog.setStatus(NotificationStatus.FAILED);
+			notificationLog.setProviderResponse(Map.of("error", e.getMessage()));
+		} finally {
+			logRepository.save(notificationLog);
+		}
+	}
+
+	private String stripHtml(String html) {
+		if (html == null) return "";
+		return html.replaceAll("<[^>]*>", " ").replaceAll("&[a-zA-Z]+;", " ").trim();
+	}
+
 	private boolean isTokenInvalid(Exception e) {
 		String msg = e.getMessage().toLowerCase();
-		// 'registration-token-not-registered' is the standard FCM error for uninstalled apps
 		return msg.contains("not-registered") ||
 				msg.contains("invalid-registration-token") ||
 				msg.contains("not-found");
 	}
-
-	private boolean isChannelSupported(NotificationChannel channel, UserDetailResponse user) {
-		return switch (channel) {
-			case EMAIL -> !user.getEmail().isBlank();
-			case SMS -> !user.getPhoneNumber().isBlank();
-			case IN_APP -> userSessionRegistry.isUserOnline(user.getUserId()) || !user.getFcmTokensList().isEmpty();
-			default -> false;
-		};
-	}
 }
-

@@ -85,6 +85,12 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER}
+      audience: ${JWT_AUDIENCE}
+
   servlet:
     multipart:
       enabled: ${SPRING_SERVLET_MULTIPART_ENABLED}
@@ -121,6 +127,9 @@ spring:
 
   aop:
     proxy-target-class: false
+
+  cache:
+    type: redis
 
 server:
   port: ${SERVER_PORT}
@@ -208,6 +217,12 @@ twilio:
   account-sid: ${TWILIO_ACCOUNT_SID}
   auth-token: ${TWILIO_AUTH_TOKEN}
   phone-number: ${TWILIO_PHONE_NUMBER}
+
+notification:
+  retry:
+    interval:
+      ms: 300000
+
 
 springdoc:
   cache:

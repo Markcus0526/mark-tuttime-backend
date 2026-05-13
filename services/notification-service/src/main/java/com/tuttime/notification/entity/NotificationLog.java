@@ -31,6 +31,9 @@ public class NotificationLog {
 	@Column(name = "user_id", nullable = false)
 	private UUID userId;
 
+	@Column(name = "template_id")
+	private Integer templateId;
+
 	@Column(name = "template_key", length = 100)
 	private String templateKey;
 
@@ -75,4 +78,7 @@ public class NotificationLog {
 	@CreationTimestamp
 	@Column(name = "created_at", updatable = false)
 	private OffsetDateTime createdAt;
+
+	@Version
+	private Long version;
 }
