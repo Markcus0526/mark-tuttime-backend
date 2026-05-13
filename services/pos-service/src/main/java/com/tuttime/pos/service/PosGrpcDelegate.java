@@ -1,5 +1,7 @@
 package com.tuttime.pos.service;
 
+import com.tuttime.common.event.proto.GetPosHealthRequest;
+import com.tuttime.common.event.proto.GetPosHealthResponse;
 import com.tuttime.common.event.proto.KitchenOrderRequest;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.util.NumberUtil;
@@ -18,10 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 
 @Service
@@ -94,5 +93,31 @@ public class PosGrpcDelegate {
 		return new PosSyncResult(savedQueue.getId().toString());
 	}
 
-	public record PosSyncResult(String posTransactionId) {}
+	public record PosSyncResult(String posTransactionId) {
+	}
+
+	@Transactional(readOnly = true)
+	public GetPosHealthResponse getPosHealth(GetPosHealthRequest request) {
+		UUID branchId = UUID.fromString(request.getBranchId());
+		OffsetDateTime last24h = OffsetDateTime.now().minusHours(24);
+
+		// 1. Count total logs and successful logs in the last 24 hours
+		long totalLogs = posLogRepository.countByBranchIdAndCreatedAtAfter(branchId, last24h);
+		long successLogs = posLogRepository.countByBranchIdAndStatusAndCreatedAtAfter(branchId, "SUCCESS", last24h);
+		double successRate = totalLogs > 0 ? (successLogs * 100.0 / totalLogs) : 100.0; // assume 100% if no logs
+
+		// 2. Latest successful sync timestamp
+		Optional<OffsetDateTime> lastSync = posLogRepository.findLatestSuccessTimestamp(branchId, last24h);
+
+		// 3. Count pending sync queue entries
+		long pending = posSyncQueueRepository.countByBranchIdAndStatus(branchId, "PENDING");
+
+		// 4. No latency data available – return 0
+		return GetPosHealthResponse.newBuilder()
+				.setLastSyncTime(lastSync.map(OffsetDateTime::toString).orElse(""))
+				.setSuccessRate(successRate)
+				.setPendingOrders((int) pending)
+				.setAverageLatencyMs(0.0)
+				.build();
+	}
 }

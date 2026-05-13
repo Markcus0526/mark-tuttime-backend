@@ -1,8 +1,6 @@
 package com.tuttime.pos.grpc;
 
-import com.tuttime.common.event.proto.KitchenOrderRequest;
-import com.tuttime.common.event.proto.KitchenOrderResponse;
-import com.tuttime.common.event.proto.PosServiceGrpc;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.pos.service.PosGrpcDelegate;
 import io.grpc.Status;
@@ -16,12 +14,12 @@ import net.devh.boot.grpc.server.service.GrpcService;
 @Slf4j
 public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 
-	private final PosGrpcDelegate posGrpcDelegate;
+	private final PosGrpcDelegate delegate;
 
 	@Override
 	public void pushToKitchen(KitchenOrderRequest request, StreamObserver<KitchenOrderResponse> responseObserver) {
 		try {
-			PosGrpcDelegate.PosSyncResult result = posGrpcDelegate.pushToKitchen(request);
+			PosGrpcDelegate.PosSyncResult result = delegate.pushToKitchen(request);
 			responseObserver.onNext(KitchenOrderResponse.newBuilder()
 					.setSuccess(true)
 					.setPosTransactionId(result.posTransactionId())
@@ -37,6 +35,22 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 		} catch (Exception e) {
 			responseObserver.onError(Status.INTERNAL
 					.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+		}
+	}
+
+	@Override
+	public void getPosHealth(GetPosHealthRequest request,
+	                         StreamObserver<GetPosHealthResponse> responseObserver) {
+		try {
+			responseObserver.onNext(delegate.getPosHealth(request));
+			responseObserver.onCompleted();
+		} catch (IllegalArgumentException e) {
+			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+		} catch (InvalidRequestException e) {
+			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+		} catch (Exception e) {
+			log.error("Unexpected error in getPosHealth", e);
+			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
 		}
 	}
 }

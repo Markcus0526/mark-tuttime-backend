@@ -11,7 +11,7 @@ CREATE
 EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Payments Table
--- Handles initial Stripe Checkout Sessions and resulting Payment Intents
+-- Handles initial Yoomoney Checkout Sessions and resulting Payment Intents
 CREATE TABLE payments
 (
     id                  UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
@@ -43,7 +43,7 @@ CREATE TABLE refunds
 (
     id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     payment_id       UUID           NOT NULL REFERENCES payments (id) ON DELETE CASCADE,
-    stripe_refund_id VARCHAR(255)   NOT NULL UNIQUE,
+    yookassa_refund_id VARCHAR(255)   NOT NULL UNIQUE,
     amount           NUMERIC(10, 2) NOT NULL,
     status           VARCHAR(20)    NOT NULL, -- SUCCEEDED, FAILED, PENDING
     reason           VARCHAR(255),

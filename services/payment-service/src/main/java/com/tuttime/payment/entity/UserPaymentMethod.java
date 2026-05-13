@@ -7,7 +7,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.*;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity

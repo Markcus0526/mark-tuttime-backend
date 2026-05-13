@@ -117,7 +117,7 @@ public class RKeeperPosAdapter implements PosAdapter {
 						"  </Order>" +
 						"</RK7Command2></RK7Query>",
 				order.getTableId(),
-				itemsXml.toString()
+				itemsXml
 		);
 
 		// 3. Execute with 7-argument helper for logging

@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -24,4 +26,12 @@ public interface PosLogRepository extends JpaRepository<PosLog, Integer> {
 			AND request_payload ->> 'branch_id' = :branchId
 			""", nativeQuery = true)
 	List<PosLog> findAllFailedByBranch(@Param("branchId") String branchId);
+
+	long countByBranchIdAndCreatedAtAfter(UUID branchId, OffsetDateTime since);
+
+	long countByBranchIdAndStatusAndCreatedAtAfter(UUID branchId, String status, OffsetDateTime since);
+
+	@Query("SELECT MAX(createdAt) FROM PosLog WHERE branchId = :branchId AND status = 'SUCCESS' AND createdAt >= :since")
+	Optional<OffsetDateTime> findLatestSuccessTimestamp(@Param("branchId") UUID branchId,
+	                                                    @Param("since") OffsetDateTime since);
 }
