@@ -25,11 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -104,16 +100,17 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 	@Transactional(readOnly = true)
 	@Cacheable(value = "branch_menus", key = "#branchId")
 	public List<MenuCategoryDto.CategoryResponse> getCategoriesByBranch(UUID branchId, String query, String sortBy, String direction) {
+		Set<String> allowedSortFields = Set.of("priority", "name", "createdAt");
+		String sortField = (sortBy != null && allowedSortFields.contains(sortBy)) ? sortBy : "priority";
 
-		// 1. Build the Sort object (Default to Priority)
-		Sort sortOrder = (sortBy == null || sortBy.equals("priority"))
-				? Sort.by(Sort.Direction.DESC, "priority")
-				: (direction.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending());
+		Sort.Direction dir = Sort.Direction.ASC;
+		if ("desc".equalsIgnoreCase(direction)) {
+			dir = Sort.Direction.DESC;
+		}
+		Sort sortOrder = Sort.by(dir, sortField);
 
-		// 2. Fetch categories
 		List<MenuCategory> categories = menuCategoryRepository.findActiveByBranchWithSearch(branchId, query, sortOrder);
 
-		// 3. Map to DTOs and include item counts
 		return categories.stream()
 				.map(category -> {
 					// Efficiently get count of non-deleted items
@@ -193,6 +190,63 @@ public class MenuCategoryServiceImpl implements MenuCategoryService {
 		evictBranchCache(category.getBranchId());
 
 		menuCategoryRepository.delete(category);
+	}
+
+	@Override
+	@Transactional
+	@CacheEvict(value = "branch_menus", key = "#branchId")
+	public List<MenuCategoryDto.CategoryResponse> updatePrioritiesForBranch(
+			UUID branchId,
+			List<UUID> categoryIdsInOrder,
+			UUID currentUserId,
+			String userRoles) {
+
+		// 1. Permission check
+		restaurantGrpcClient.validateBranchPermission(branchId, currentUserId, userRoles);
+
+		// 2. Fetch all categories (non‑deleted) for this branch
+		List<MenuCategory> branchCategories = menuCategoryRepository.findByBranchIdAndDeletedFalse(branchId);
+		if (branchCategories.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		// 3. Validate input: no duplicate UUIDs
+		if (categoryIdsInOrder.size() != new HashSet<>(categoryIdsInOrder).size()) {
+			throw new InvalidRequestException("Duplicate category IDs are not allowed in the priority list");
+		}
+
+		// 4. Build map from category ID → new priority (order index)
+		Map<UUID, Integer> priorityMap = new HashMap<>();
+		for (int i = 0; i < categoryIdsInOrder.size(); i++) {
+			priorityMap.put(categoryIdsInOrder.get(i), i);
+		}
+
+		// 5. Verify every requested category belongs to this branch
+		Set<UUID> existingIds = branchCategories.stream()
+				.map(MenuCategory::getId)
+				.collect(Collectors.toSet());
+		for (UUID requestedId : categoryIdsInOrder) {
+			if (!existingIds.contains(requestedId)) {
+				throw new InvalidRequestException("Category " + requestedId + " does not belong to branch " + branchId);
+			}
+		}
+
+		// 6. Update priorities for categories present in the request
+		//    Categories not in the request keep their existing priority
+		for (MenuCategory cat : branchCategories) {
+			Integer newPriority = priorityMap.get(cat.getId());
+			if (newPriority != null) {
+				cat.setPriority(newPriority);
+			}
+		}
+
+		// 7. Bulk save (calls `saveAll` – each entity is already managed)
+		List<MenuCategory> saved = menuCategoryRepository.saveAll(branchCategories);
+
+		// 8. Return DTOs (without item counts, suitable for admin reorder response)
+		return saved.stream()
+				.map(menuCategoryMapper::toResponse)
+				.collect(Collectors.toList());
 	}
 
 	/**

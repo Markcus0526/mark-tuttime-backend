@@ -16,8 +16,10 @@ public interface ModifierGroupRepository extends JpaRepository<ModifierGroup, UU
 
 	// For creation
 	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
+
 	// For update
 	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
+
 	// Optionally find by branch
 	List<ModifierGroup> findByBranchIdAndDeletedFalse(UUID branchId);
 

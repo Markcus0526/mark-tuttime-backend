@@ -86,5 +86,6 @@ public class DiscountDto {
 	public record PricingResult(
 			BigDecimal finalPrice,
 			String discountName
-	) {}
+	) {
+	}
 }

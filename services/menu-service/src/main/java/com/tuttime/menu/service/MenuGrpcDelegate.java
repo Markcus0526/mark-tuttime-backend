@@ -66,7 +66,8 @@ public class MenuGrpcDelegate {
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
 						.setBasePrice(menuItem.getPrice().toString())
-						.setCategory(category.getName())
+						.setCategoryId(category.getId().toString())
+						.setCategoryName(category.getName())
 						.setAvailable(menuItem.getAvailable());
 
 				if (menuItem.getModifierGroups() != null) {
@@ -133,6 +134,8 @@ public class MenuGrpcDelegate {
 				.setName(entity.getName())
 				.setDescription(entity.getDescription() != null ? entity.getDescription() : "")
 				.setBasePrice(entity.getPrice().toString())
+				.setCategoryId(entity.getCategory().getId().toString())
+				.setCategoryName(entity.getCategory().getName())
 				.setAvailable(entity.getAvailable());
 
 		if (entity.getModifierGroups() != null) {

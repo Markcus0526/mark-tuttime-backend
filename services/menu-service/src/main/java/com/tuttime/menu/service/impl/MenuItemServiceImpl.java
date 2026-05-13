@@ -15,7 +15,6 @@ import com.tuttime.menu.service.ModifierService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -23,8 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -316,6 +314,57 @@ public class MenuItemServiceImpl implements MenuItemService {
 		item.setPrice(newPrice);
 		menuItemRepository.save(item);
 		evictCacheByBranch(branchId);
+	}
+
+	@Override
+	@Transactional
+	@CacheEvict(value = "branch_menus", key = "#result[0].branchId != null ? #result[0].branchId : null")
+	public List<MenuItemDto.MenuItemResponse> updatePrioritiesForCategory(
+			UUID categoryId,
+			List<UUID> itemIdsInOrder,
+			UUID currentUserId,
+			String userRoles) {
+
+		// 1. Fetch category & validate permission on its branch
+		MenuCategory category = menuCategoryRepository.findById(categoryId)
+				.orElseThrow(() -> new InvalidRequestException("Category not found: " + categoryId));
+		restaurantGrpcClient.validateBranchPermission(category.getBranchId(), currentUserId, userRoles);
+
+		// 2. Fetch all items in this category (excluding deleted)
+		List<MenuItem> items = menuItemRepository.findByCategoryIdAndDeletedFalse(categoryId);
+		if (items.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		// 3. Build priority map (index = new priority)
+		Map<UUID, Integer> priorityMap = new HashMap<>();
+		for (int i = 0; i < itemIdsInOrder.size(); i++) {
+			priorityMap.put(itemIdsInOrder.get(i), i);
+		}
+
+		// 4. Validate every given item belongs to this category
+		Set<UUID> existingIds = items.stream().map(MenuItem::getId).collect(Collectors.toSet());
+		for (UUID requestedId : itemIdsInOrder) {
+			if (!existingIds.contains(requestedId)) {
+				throw new InvalidRequestException("Item " + requestedId + " does not belong to category " + categoryId);
+			}
+		}
+
+		// 5. Update priorities for items that are in the map (others keep original priority)
+		for (MenuItem item : items) {
+			Integer newPriority = priorityMap.get(item.getId());
+			if (newPriority != null) {
+				item.setPriority(newPriority);
+			}
+		}
+
+		// 6. Bulk save
+		List<MenuItem> saved = menuItemRepository.saveAll(items);
+
+		// 7. Convert to summary response (same as getItemsByCategory uses)
+		return saved.stream()
+				.map(menuItemMapper::toSummaryResponse)
+				.collect(Collectors.toList());
 	}
 
 	// ---------- cache eviction helper ----------

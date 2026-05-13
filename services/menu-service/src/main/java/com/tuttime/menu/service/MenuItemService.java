@@ -28,4 +28,10 @@ public interface MenuItemService {
 	void updateAvailabilityFromPos(List<UUID> itemIds, boolean isAvailable, UUID branchId);
 
 	void updatePriceFromPos(UUID itemId, java.math.BigDecimal newPrice, UUID branchId);
+
+	List<MenuItemDto.MenuItemResponse> updatePrioritiesForCategory(
+			UUID categoryId,
+			List<UUID> itemIdsInOrder,
+			UUID currentUserId,
+			String userRoles);
 }

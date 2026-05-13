@@ -1,6 +1,5 @@
 package com.tuttime.menu.mapper;
 
-import com.tuttime.menu.dto.FullMenuDto;
 import com.tuttime.menu.dto.MenuCategoryDto;
 import com.tuttime.menu.entity.MenuCategory;
 import com.tuttime.menu.repository.MediaRepository;

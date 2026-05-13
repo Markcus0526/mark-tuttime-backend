@@ -30,17 +30,18 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategory, UUID
 	boolean existsById(UUID id);
 
 	@Query("""
-        SELECT DISTINCT c FROM MenuCategory c 
-        LEFT JOIN FETCH c.menuItems i 
-        WHERE c.branchId = :branchId 
-        AND c.deleted = false 
-        AND (i IS NULL OR i.deleted = false)
-        ORDER BY c.priority DESC, i.priority DESC
-    """)
+			    SELECT DISTINCT c FROM MenuCategory c 
+			    LEFT JOIN FETCH c.menuItems i 
+			    WHERE c.branchId = :branchId 
+			    AND c.deleted = false 
+			    AND (i IS NULL OR i.deleted = false)
+			    ORDER BY c.priority DESC, i.priority DESC
+			""")
 	List<MenuCategory> findAllByBranchIdWithItemsSorted(@Param("branchId") UUID branchId);
 
 	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
 
 	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
 
+	List<MenuCategory> findByBranchIdAndDeletedFalse(UUID branchId);
 }
