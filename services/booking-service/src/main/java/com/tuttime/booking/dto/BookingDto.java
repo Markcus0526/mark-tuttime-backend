@@ -90,7 +90,8 @@ public class BookingDto {
 
 			@Schema(description = "Updated pre-order items")
 			List<BookingRequest.PreOrderItemRequest> preOrderItems
-	) {}
+	) {
+	}
 
 	/**
 	 * Immutable response DTO for client applications.

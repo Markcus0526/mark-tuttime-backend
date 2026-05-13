@@ -2,14 +2,12 @@ package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
 import com.tuttime.common.event.proto.*;
-import com.tuttime.common.util.UuidUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.tuttime.common.constants.ServiceNames.ORDER_SERVICE;
