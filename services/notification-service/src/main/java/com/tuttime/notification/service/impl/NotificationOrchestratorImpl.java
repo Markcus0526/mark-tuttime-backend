@@ -1,9 +1,7 @@
 package com.tuttime.notification.service.impl;
 
 import com.tuttime.common.enums.NotificationTemplateKey;
-import com.tuttime.common.event.proto.DeviceTokenDeleteRequest;
-import com.tuttime.common.event.proto.UserDetailRequest;
-import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.notification.entity.NotificationLog;
@@ -58,7 +56,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 	                               NotificationTemplateKey templateKey,
 	                               Map<String, Object> params) {
 		// 1. Fetch user profile (includes language, contacts, FCM tokens)
-		UserDetailResponse user = fetchUserProfile(userId);
+		GetUserDetailResponse user = fetchUserProfile(userId);
 		String userLanguage = getUserLanguage(user);
 
 		// 2. For each possible channel (EMAIL, SMS, IN_APP)
@@ -126,7 +124,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 		notificationLog.setStatus(NotificationStatus.PENDING); // reset to pending before retry
 
 		// Re-fetch dependent data
-		UserDetailResponse user = fetchUserProfile(notificationLog.getUserId());
+		GetUserDetailResponse user = fetchUserProfile(notificationLog.getUserId());
 		NotificationTemplate template = templateRepository.findById(notificationLog.getTemplateId())
 				.orElseThrow(() -> new InvalidRequestException("Invalid: template key: " + notificationLog.getTemplateKey() + ", channel: " + notificationLog.getChannel()));
 
@@ -142,13 +140,13 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 	// Private helpers
 	// ================================
 
-	private UserDetailResponse fetchUserProfile(UUID userId) {
-		return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder()
+	private GetUserDetailResponse fetchUserProfile(UUID userId) {
+		return userGrpcClient.getUserDetail(GetUserDetailRequest.newBuilder()
 				.setUserId(userId.toString())
 				.build());
 	}
 
-	private String getUserLanguage(UserDetailResponse user) {
+	private String getUserLanguage(GetUserDetailResponse user) {
 		String lang = user.getLanguage();
 		return lang.isBlank() ? "en" : lang;
 	}
@@ -172,7 +170,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 		throw new InvalidRequestException("Invalid: template key: " + key + ", channel: " + channel + ", userLang:" + userLang);
 	}
 
-	private boolean isChannelSupported(NotificationChannel channel, UserDetailResponse user) {
+	private boolean isChannelSupported(NotificationChannel channel, GetUserDetailResponse user) {
 		return switch (channel) {
 			case EMAIL -> user.getEmail() != null && !user.getEmail().isBlank();
 			case SMS -> user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank();
@@ -208,7 +206,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 	                                        UUID userId,
 	                                        NotificationChannel channel,
 	                                        NotificationTemplate template,
-	                                        UserDetailResponse user) {
+	                                        GetUserDetailResponse user) {
 		return NotificationLog.builder()
 				.eventId(eventId)
 				.userId(userId)
@@ -222,7 +220,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 				.build();
 	}
 
-	private String getRecipient(NotificationChannel channel, UserDetailResponse user) {
+	private String getRecipient(NotificationChannel channel, GetUserDetailResponse user) {
 		return switch (channel) {
 			case EMAIL -> user.getEmail();
 			case SMS -> user.getPhoneNumber();
@@ -233,7 +231,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 
 	private void dispatch(NotificationLog notificationLog,
 	                      NotificationTemplate template,
-	                      UserDetailResponse user,
+	                      GetUserDetailResponse user,
 	                      Map<String, Object> params) {
 		try {
 			// Render content once – reuse for both HTML and plain text
@@ -269,7 +267,7 @@ public class NotificationOrchestratorImpl implements NotificationOrchestrator {
 							} catch (Exception pushEx) {
 								if (isTokenInvalid(pushEx)) {
 									log.info("Invalid FCM token {} for user {}, reporting to User Service", token, user.getUserId());
-									userGrpcClient.deleteDeviceToken(DeviceTokenDeleteRequest.newBuilder()
+									userGrpcClient.deleteDeviceToken(DeleteDeviceTokenRequest.newBuilder()
 											.setFcmToken(token)
 											.build());
 								} else {

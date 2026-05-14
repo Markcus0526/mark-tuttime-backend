@@ -22,8 +22,8 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 	private final PaymentGrpcDelegate delegate;
 
 	@Override
-	public void createCheckoutSession(PaymentSessionRequest request,
-	                                  StreamObserver<PaymentSessionResponse> responseObserver) {
+	public void createCheckoutSession(CreateCheckoutSessionRequest request,
+	                                  StreamObserver<CreateCheckoutSessionResponse> responseObserver) {
 		try {
 			// 1. Business Logic call (uses Stripe)
 			// We use the service we wrote earlier to handle the Stripe API call
@@ -35,7 +35,7 @@ public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase
 			);
 
 			// 2. Build Response
-			PaymentSessionResponse response = PaymentSessionResponse.newBuilder()
+			CreateCheckoutSessionResponse response = CreateCheckoutSessionResponse.newBuilder()
 					.setCheckoutUrl(checkoutUrl)
 					.setStatus("PENDING")
 					.build();

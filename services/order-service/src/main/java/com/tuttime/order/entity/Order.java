@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -31,11 +32,8 @@ public class Order extends BaseUuidAnDeleteEntity {
 	@Column(name = "branch_id", nullable = false)
 	private UUID branchId;
 
-	@ElementCollection
-	@CollectionTable(name = "order_tables",
-			joinColumns = @JoinColumn(name = "order_id"))
-	@Column(name = "table_id")
-	private List<UUID> tableIds = new ArrayList<>();
+	@Column(name = "booking_datetime", nullable = false)
+	private OffsetDateTime bookingDatetime;
 
 	@Enumerated(EnumType.STRING)
 	@Builder.Default
@@ -55,6 +53,12 @@ public class Order extends BaseUuidAnDeleteEntity {
 
 	@Column(name = "special_request")
 	private String specialRequest;
+
+	@ElementCollection
+	@CollectionTable(name = "order_tables",
+			joinColumns = @JoinColumn(name = "order_id"))
+	@Column(name = "table_id")
+	private List<UUID> tableIds = new ArrayList<>();
 
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	@Builder.Default

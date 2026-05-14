@@ -9,15 +9,15 @@ option java_outer_classname = "PaymentServiceProto";
 // Payment Service gRPC
 service PaymentService {
 
-  rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
 
   rpc ProcessRefund(ProcessRefundRequest) returns (ProcessRefundResponse);
 
   rpc GetPaymentCounts(GetPaymentCountsRequest) returns (GetPaymentCountsResponse);
 }
 
-// rpc CreateCheckoutSession (PaymentSessionRequest) returns (PaymentSessionResponse);
-message PaymentSessionRequest {
+// rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
+message CreateCheckoutSessionRequest {
   string booking_id = 1;
   string user_id = 2;
   string branch_id = 3;
@@ -25,8 +25,7 @@ message PaymentSessionRequest {
   string currency = 5;
 }
 
-
-message PaymentSessionResponse {
+message CreateCheckoutSessionResponse {
   string stripe_session_id = 1;
   string checkout_url = 2;
   string status = 3;

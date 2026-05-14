@@ -94,9 +94,9 @@ public class BookingServiceImpl implements BookingService {
 			throw new InvalidRequestException("At least one table must be selected");
 		}
 
-		List<TableDetailResponse> tableDetails = new ArrayList<>();
+		List<GetTableDetailResponse> tableDetails = new ArrayList<>();
 		for (UUID tid : tableIds) {
-			TableDetailResponse resp = restaurantGrpcClient.getTableDetail(tid);
+			GetTableDetailResponse resp = restaurantGrpcClient.getTableDetail(tid);
 			if (!resp.getAvailable()) {
 				throw new InvalidRequestException("Table " + tid + " is no longer available.");
 			}
@@ -125,7 +125,7 @@ public class BookingServiceImpl implements BookingService {
 			}
 
 			// 4. Fetch menu details and calculate total amount
-			List<MenuItemDetailResponse> menuDetails = menuGrpcClient.getMenuDetails(
+			List<MenuItemDetailPto> menuDetails = menuGrpcClient.getMenuDetails(
 					request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
 			);
 			validateModifierSelections(request.preOrderItems(), menuDetails);
@@ -274,7 +274,7 @@ public class BookingServiceImpl implements BookingService {
 		}
 
 		// --- Handle items update if provided ---
-		List<MenuItemDetailResponse> menuDetails = null;
+		List<MenuItemDetailPto> menuDetails = null;
 		BigDecimal newTotal = null;
 		if (request.preOrderItems() != null) {
 			menuDetails = menuGrpcClient.getMenuDetails(
@@ -323,29 +323,39 @@ public class BookingServiceImpl implements BookingService {
 	@Override
 	@Transactional(readOnly = true)
 	public BookingSetupDto.BookingSetupResponse getAvailableSlots(UUID branchId, OffsetDateTime date, int partySize, UUID currentUserId) {
-		// ... (unchanged, but already fine) ...
 		LocalDate requestedDate = date.toLocalDate();
 		ZoneOffset offset = date.getOffset();
 		OffsetDateTime now = OffsetDateTime.now(offset);
+
+		// 1. Past date → no slots
 		if (requestedDate.isBefore(now.toLocalDate())) {
 			return new BookingSetupDto.BookingSetupResponse(branchId, Collections.emptyList());
 		}
-		var tablesFuture = CompletableFuture.supplyAsync(() ->
-				restaurantGrpcClient.getBranchSlots(branchId, partySize));
-		var scheduleFuture = CompletableFuture.supplyAsync(() ->
+
+		// 2. Fetch tables and schedule in parallel
+		CompletableFuture<List<TableSlotPto>> tablesFuture = CompletableFuture.supplyAsync(() ->
+				restaurantGrpcClient.getBranchSlots(branchId, 1)); // ignore partySize
+		CompletableFuture<GetBranchScheduleResponse> scheduleFuture = CompletableFuture.supplyAsync(() ->
 				restaurantGrpcClient.getBranchSchedule(branchId, requestedDate.getDayOfWeek().getValue()));
 
-		OffsetDateTime startOfSearch = requestedDate.atStartOfDay().atOffset(offset);
-		OffsetDateTime endOfSearch = startOfSearch.plusDays(1);
-		List<Booking> occupied = bookingRepository.findAllByBranchIdAndDayRange(branchId, startOfSearch, endOfSearch);
+		// 3. Fetch all bookings for the day (needed to know which tables are occupied)
+		OffsetDateTime startOfDay = requestedDate.atStartOfDay().atOffset(offset);
+		OffsetDateTime endOfDay = startOfDay.plusDays(1);
+		List<Booking> dailyBookings = bookingRepository.findAllByBranchIdAndDayRange(branchId, startOfDay, endOfDay);
 
-		List<TableSlotResponse> physicalTables = tablesFuture.join();
-		ScheduleResponse schedule = scheduleFuture.join();
+		// 4. Wait for external calls
+		List<TableSlotPto> allTables = tablesFuture.join();
+		GetBranchScheduleResponse schedule = scheduleFuture.join();
+
+		// 5. If branch is closed that day, return empty
 		if (schedule.getClosed()) {
 			return new BookingSetupDto.BookingSetupResponse(branchId, Collections.emptyList());
 		}
 
-		Map<UUID, List<Booking>> bookingsByTable = occupied.stream()
+		// 6. Build occupation map: tableId -> list of bookings that occupy it
+		//    Flatten because a booking can occupy multiple tables
+		Map<UUID, List<Booking>> tableOccupation = dailyBookings.stream()
+				.filter(b -> b.getTableIds() != null && !b.getTableIds().isEmpty())
 				.flatMap(booking -> booking.getTableIds().stream()
 						.map(tableId -> Map.entry(tableId, booking)))
 				.collect(Collectors.groupingBy(
@@ -353,34 +363,62 @@ public class BookingServiceImpl implements BookingService {
 						Collectors.mapping(Map.Entry::getValue, Collectors.toList())
 				));
 
-		OffsetDateTime openTime = requestedDate.atTime(LocalTime.parse(schedule.getOpenTime())).atOffset(offset);
-		OffsetDateTime closeTime = requestedDate.atTime(LocalTime.parse(schedule.getCloseTime())).atOffset(offset);
+		// 7. Determine opening & closing times for the day
+		LocalTime openLocal = LocalTime.parse(schedule.getOpenTime());
+		LocalTime closeLocal = LocalTime.parse(schedule.getCloseTime());
+		OffsetDateTime openTime = requestedDate.atTime(openLocal).atOffset(offset);
+		OffsetDateTime closeTime = requestedDate.atTime(closeLocal).atOffset(offset);
+
+		// 8. Starting slot (rounded to next interval if it's today)
 		OffsetDateTime currentSlot = requestedDate.equals(now.toLocalDate())
 				? roundToNextInterval(now.plusMinutes(15), slotInterval)
 				: openTime;
 		if (currentSlot.isBefore(openTime)) currentSlot = openTime;
 
 		List<BookingSetupDto.BookingSetupResponse.AvailableSlot> result = new ArrayList<>();
+
+		// 9. Iterate through slots until we exceed closing time
 		while (currentSlot.plusMinutes(diningDuration).isBefore(closeTime) ||
 				currentSlot.plusMinutes(diningDuration).isEqual(closeTime)) {
-			final OffsetDateTime start = currentSlot;
-			final OffsetDateTime end = currentSlot.plusMinutes(diningDuration);
-			List<TableSlotResponse> freeTables = physicalTables.stream()
-					.filter(pt -> {
-						List<Booking> list = bookingsByTable.get(UUID.fromString(pt.getTableId()));
-						return list == null || list.stream().noneMatch(b ->
-								start.isBefore(b.getBookingDatetime().plusMinutes(b.getDuration())) &&
-										end.isAfter(b.getBookingDatetime()));
+			final OffsetDateTime slotStart = currentSlot;
+			final OffsetDateTime slotEnd = currentSlot.plusMinutes(diningDuration);
+
+			// Filter tables that are free during this slot
+			List<TableSlotPto> freeTables = allTables.stream()
+					.filter(table -> {
+						UUID tableId = UUID.fromString(table.getTableId());
+						List<Booking> occupying = tableOccupation.get(tableId);
+						if (occupying == null) return true;
+						// Check for any overlapping booking
+						return occupying.stream().noneMatch(booking ->
+								slotStart.isBefore(booking.getBookingDatetime().plusMinutes(booking.getDuration())) &&
+										slotEnd.isAfter(booking.getBookingDatetime())
+						);
 					})
 					.toList();
+
+			// Build TableInfoDto list for this slot
+			List<BookingSetupDto.BookingSetupResponse.TableInfoDto> tableInfos = freeTables.stream()
+					.map(t -> new BookingSetupDto.BookingSetupResponse.TableInfoDto(
+							UUID.fromString(t.getTableId()),
+							t.getTableLabel(),
+							t.getZoneName(),
+							t.getMaxCapacity()
+					))
+					.collect(Collectors.toList());
+
+			// Create available slot DTO
 			result.add(new BookingSetupDto.BookingSetupResponse.AvailableSlot(
-					start,
+					slotStart,
 					!freeTables.isEmpty(),
 					freeTables.size(),
-					freeTables.stream().map(TableSlotResponse::getZoneName).distinct().toList()
+					freeTables.stream().map(TableSlotPto::getZoneName).distinct().collect(Collectors.toList()),
+					tableInfos
 			));
+
 			currentSlot = currentSlot.plusMinutes(slotInterval);
 		}
+
 		return new BookingSetupDto.BookingSetupResponse(branchId, result);
 	}
 
@@ -461,13 +499,13 @@ public class BookingServiceImpl implements BookingService {
 		}
 		BookingStatus oldStatus = booking.getStatus();
 		if (oldStatus == BookingStatus.PAID && booking.getOrderId() != null && booking.getPaymentId() != null) {
-			CancelOrderRequest cancelRequest = CancelOrderRequest.newBuilder()
+			CancelAndRefundRequest cancelRequest = CancelAndRefundRequest.newBuilder()
 					.setBookingId(booking.getId().toString())
 					.setOrderId(booking.getOrderId().toString())
 					.setPaymentId(booking.getPaymentId().toString())
 					.setReason(reason != null ? reason : "Canceled by user")
 					.build();
-			CancelOrderResponse orderResponse = orderGrpcClient.cancelAndRefund(cancelRequest);
+			CancelAndRefundResponse orderResponse = orderGrpcClient.cancelAndRefund(cancelRequest);
 			if (!orderResponse.getSuccess()) {
 				log.warn("Booking {} Refund failed. Current status: {}", bookingId, oldStatus);
 				throw new InvalidRequestException("Refund failed: " + orderResponse.getReason());
@@ -634,16 +672,16 @@ public class BookingServiceImpl implements BookingService {
 	// ---------- Helper methods ----------
 
 	public void validateModifierSelections(List<BookingDto.BookingRequest.PreOrderItemRequest> selections,
-	                                       List<MenuItemDetailResponse> menuDetails) {
+	                                       List<MenuItemDetailPto> menuDetails) {
 		for (var selection : selections) {
-			MenuItemDetailResponse menu = menuDetails.stream()
+			MenuItemDetailPto menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(selection.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Menu item not found: " + selection.menuItemId()));
 			// Collect allowed modifier IDs
 			Set<String> allowedModifierIds = menu.getModifierGroupsList().stream()
 					.flatMap(group -> group.getOptionsList().stream())
-					.map(ModifierOptionResponse::getOptionId)
+					.map(ModifierOptionPto::getOptionId)
 					.collect(Collectors.toSet());
 			// Reject any modifier not allowed
 			if (selection.modifierIds() != null) {
@@ -654,7 +692,7 @@ public class BookingServiceImpl implements BookingService {
 				}
 			}
 			// Min/Max validation
-			for (ModifierGroupResponse group : menu.getModifierGroupsList()) {
+			for (ModifierGroupPto group : menu.getModifierGroupsList()) {
 				long selectedInGroupCount = selection.modifierIds() == null ? 0 :
 						selection.modifierIds().stream()
 						.filter(id -> group.getOptionsList().stream()
@@ -671,10 +709,10 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	private BigDecimal calculateFinalPrice(List<BookingDto.BookingRequest.PreOrderItemRequest> selections,
-	                                       List<MenuItemDetailResponse> menuDetails) {
+	                                       List<MenuItemDetailPto> menuDetails) {
 		BigDecimal grandTotal = BigDecimal.ZERO;
 		for (var selection : selections) {
-			MenuItemDetailResponse menu = menuDetails.stream()
+			MenuItemDetailPto menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(selection.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Menu item mismatch"));
@@ -697,10 +735,10 @@ public class BookingServiceImpl implements BookingService {
 
 	private void saveBookingItems(Booking savedBooking,
 	                              List<BookingDto.BookingRequest.PreOrderItemRequest> preOrderItems,
-	                              List<MenuItemDetailResponse> menuDetails) {
+	                              List<MenuItemDetailPto> menuDetails) {
 		if (preOrderItems == null || preOrderItems.isEmpty()) return;
 		List<BookingItem> entities = preOrderItems.stream().map(itemDto -> {
-			MenuItemDetailResponse menu = menuDetails.stream()
+			MenuItemDetailPto menu = menuDetails.stream()
 					.filter(m -> m.getMenuItemId().equals(itemDto.menuItemId().toString()))
 					.findFirst()
 					.orElseThrow(() -> new BusinessException("Item mismatch"));
@@ -752,11 +790,11 @@ public class BookingServiceImpl implements BookingService {
 
 		return bookings.stream().map(booking -> {
 			var user = userMap.getOrDefault(booking.getUserId().toString(),
-					UserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
+					GetUserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
 			// Get list of TableHierarchyResponse for each table ID
-			List<TableHierarchyResponse> tables = booking.getTableIds().stream()
+			List<GetTableHierarchyDetailResponse> tables = booking.getTableIds().stream()
 					.map(tid -> tableMap.getOrDefault(tid.toString(),
-							TableHierarchyResponse.newBuilder().setTableId(tid.toString()).setTableLabel("N/A").build()))
+							GetTableHierarchyDetailResponse.newBuilder().setTableId(tid.toString()).setTableLabel("N/A").build()))
 					.toList();
 			var bookingMenus = booking.getItems().stream()
 					.map(i -> menuMap.get(i.getMenuItemId().toString()))
@@ -767,14 +805,14 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	// -------------------- Helper: fetch tables map --------------------
-	private Map<String, TableHierarchyResponse> fetchTablesMap(Set<String> ids) {
+	private Map<String, GetTableHierarchyDetailResponse> fetchTablesMap(Set<String> ids) {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
 					try {
-						return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build());
+						return restaurantGrpcClient.getTableHierarchyDetail(GetTableHierarchyDetailRequest.newBuilder().setTableId(id).build());
 					} catch (Exception e) {
-						return TableHierarchyResponse.newBuilder()
+						return GetTableHierarchyDetailResponse.newBuilder()
 								.setTableId(NIL_UUID)
 								.setZoneId(NIL_UUID)
 								.setBranchId(NIL_UUID)
@@ -791,23 +829,23 @@ public class BookingServiceImpl implements BookingService {
 		));
 	}
 
-	private Map<String, UserDetailResponse> fetchUsersMap(Set<String> ids) {
+	private Map<String, GetUserDetailResponse> fetchUsersMap(Set<String> ids) {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
 					try {
-						return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build());
+						return userGrpcClient.getUserDetail(GetUserDetailRequest.newBuilder().setUserId(id).build());
 					} catch (Exception e) {
-						return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build();
+						return GetUserDetailResponse.newBuilder().setUserId(NIL_UUID).build();
 					}
 				}
 		));
 	}
 
-	private Map<String, MenuItemDetailResponse> fetchMenuMap(List<String> menuItemIds) {
+	private Map<String, MenuItemDetailPto> fetchMenuMap(List<String> menuItemIds) {
 		try {
 			return menuGrpcClient.getMenuDetails(menuItemIds).stream()
-					.collect(Collectors.toMap(MenuItemDetailResponse::getMenuItemId, m -> m));
+					.collect(Collectors.toMap(MenuItemDetailPto::getMenuItemId, m -> m));
 		} catch (Exception e) {
 			log.warn("Menu service failed", e);
 			return Collections.emptyMap();
@@ -822,7 +860,7 @@ public class BookingServiceImpl implements BookingService {
 
 		// Use the first table to fetch branch-level details (all tables share same branch)
 		UUID anyTableId = booking.getTableIds().get(0);
-		TableDetailResponse tableDetail = restaurantGrpcClient.getTableDetail(anyTableId);
+		GetTableDetailResponse tableDetail = restaurantGrpcClient.getTableDetail(anyTableId);
 		int totalTables = tableDetail.getTotalTables();
 		double occupancy = ((double) currentCount / totalTables) * 100;
 		if (occupancy >= 90.0) {

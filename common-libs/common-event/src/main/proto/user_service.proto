@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package com.tuttime.common.event.proto;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 option java_multiple_files = true;
@@ -11,38 +10,37 @@ option java_outer_classname = "UserServiceProto";
 
 // User Service gRPC
 service UserService {
-  // Synchronous call for Gateway and Services to validate a user
-  rpc ValidateUserToken (TokenValidRequest) returns (ValidTokenResponse);
 
-  // Fetch basic profile info for display in Reviews/Bookings
-  rpc GetUserDetail (UserDetailRequest) returns (UserDetailResponse);
+  rpc ValidateUserToken(ValidateUserTokenRequest) returns (ValidateUserTokenResponse);
 
-  rpc ValidateUser (UserValidRequest) returns (UserValidResponse);
+  rpc GetUserDetail(GetUserDetailRequest) returns (GetUserDetailResponse);
 
-  rpc GetUserDetails (UserDetailsRequest) returns (UserDetailsResponse);
+  rpc ValidateUser(ValidateUserRequest) returns (ValidateUserResponse);
 
-  rpc DeleteDeviceToken(DeviceTokenDeleteRequest) returns (google.protobuf.Empty);
+  rpc GetUserDetails(GetUserDetailsRequest) returns (GetUserDetailsResponse);
+
+  rpc DeleteDeviceToken(DeleteDeviceTokenRequest) returns (google.protobuf.Empty);
 
 }
 
-// rpc ValidateUserToken (TokenValidRequest) returns (ValidTokenResponse);
-message TokenValidRequest {
+// rpc ValidateUserToken(ValidateUserTokenRequest) returns (ValidateUserTokenResponse);
+message ValidateUserTokenRequest {
   string jwt_token = 1;
 }
 
-message ValidTokenResponse {
+message ValidateUserTokenResponse {
   string user_id = 1;
   string email = 2;
   string roles = 3;
   string status = 4;        // 'ACTIVE', 'INACTIVE', etc.
 }
 
-// rpc GetUserDetail (UserDetailRequest) returns (UserDetailResponse);
-message UserDetailRequest {
+// rpc GetUserDetail(GetUserDetailRequest) returns (GetUserDetailResponse);
+message GetUserDetailRequest {
   string user_id = 1;
 }
 
-message UserDetailResponse {
+message GetUserDetailResponse {
   string user_id = 1;
   string phone_number = 2;
   string email = 3;
@@ -58,31 +56,31 @@ message UserDetailResponse {
   double latitude = 11;           // Latitude for location-based features
   double longitude = 12;          // Longitude for location-based features
 
-  google.protobuf.Timestamp last_login = 21;
-  google.protobuf.Timestamp created_at = 22;
-  google.protobuf.Timestamp updated_at = 23;
+  string last_login = 21;
+  string created_at = 22;
+  string updated_at = 23;
 }
 
-// rpc ValidateUser (UserValidRequest) returns (UserValidResponse);
-message UserValidRequest {
+// rpc ValidateUser(ValidateUserRequest) returns (ValidateUserResponse);
+message ValidateUserRequest {
   string user_id = 1;
 }
 
-message UserValidResponse {
+message ValidateUserResponse {
   string roles = 1;
   bool valid = 2;
 }
 
-// rpc GetUserDetails (UserDetailsRequest) returns (UserDetailsResponse);
-message UserDetailsRequest {
+// rpc GetUserDetails(GetUserDetailsRequest) returns (GetUserDetailsResponse);
+message GetUserDetailsRequest {
   repeated string userIds = 1;
 }
 
-message UserDetailsResponse {
-  repeated UserDetailResponse profiles = 1;
+message GetUserDetailsResponse {
+  repeated GetUserDetailResponse profiles = 1;
 }
 
-// rpc DeleteDeviceToken(DeviceTokenDeleteRequest) returns (google.protobuf.Empty);
-message DeviceTokenDeleteRequest {
+// rpc DeleteDeviceToken(DeleteDeviceTokenRequest) returns (google.protobuf.Empty);
+message DeleteDeviceTokenRequest {
   string fcm_token = 1;
 }

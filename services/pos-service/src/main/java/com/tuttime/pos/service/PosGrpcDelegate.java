@@ -2,7 +2,7 @@ package com.tuttime.pos.service;
 
 import com.tuttime.common.event.proto.GetPosHealthRequest;
 import com.tuttime.common.event.proto.GetPosHealthResponse;
-import com.tuttime.common.event.proto.KitchenOrderRequest;
+import com.tuttime.common.event.proto.PushToKitchenRequest;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.common.util.NumberUtil;
 import com.tuttime.common.util.UuidUtil;
@@ -35,7 +35,7 @@ public class PosGrpcDelegate {
 	private final RKeeperPosAdapter rKeeperPosAdapter;
 
 	@Transactional
-	public PosSyncResult pushToKitchen(KitchenOrderRequest request) {
+	public PosSyncResult pushToKitchen(PushToKitchenRequest request) {
 		UUID branchId = UuidUtil.toUuid(request.getBranchId());
 
 		// 1. Lookup the Branch Configuration

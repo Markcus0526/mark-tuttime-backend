@@ -29,9 +29,9 @@ public class MenuGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public MenuDetailsResponse getMenuDetails(List<String> menuItemIds) {
+	public GetMenuDetailsResponse getMenuDetails(List<String> menuItemIds) {
 		// 1. Build the request with repeated IDs
-		MenuDetailsRequest request = MenuDetailsRequest.newBuilder()
+		GetMenuDetailsRequest request = GetMenuDetailsRequest.newBuilder()
 				.addAllMenuItemIds(menuItemIds)
 				.build();
 

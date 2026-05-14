@@ -17,7 +17,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	private final UserGrpcDelegate delegate;
 
 	@Override
-	public void validateUserToken(TokenValidRequest request, StreamObserver<ValidTokenResponse> responseObserver) {
+	public void validateUserToken(ValidateUserTokenRequest request, StreamObserver<ValidateUserTokenResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.validateUserToken(request));
 			responseObserver.onCompleted();
@@ -32,7 +32,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
-	public void getUserDetail(UserDetailRequest request, StreamObserver<UserDetailResponse> responseObserver) {
+	public void getUserDetail(GetUserDetailRequest request, StreamObserver<GetUserDetailResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getUserDetail(request));
 			responseObserver.onCompleted();
@@ -47,7 +47,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
-	public void validateUser(UserValidRequest request, StreamObserver<UserValidResponse> responseObserver) {
+	public void validateUser(ValidateUserRequest request, StreamObserver<ValidateUserResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.validateUser(request));
 			responseObserver.onCompleted();
@@ -60,7 +60,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
-	public void getUserDetails(UserDetailsRequest request, StreamObserver<UserDetailsResponse> responseObserver) {
+	public void getUserDetails(GetUserDetailsRequest request, StreamObserver<GetUserDetailsResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getUserDetails(request));
 			responseObserver.onCompleted();
@@ -75,7 +75,7 @@ public class UserGrpcServer extends UserServiceGrpc.UserServiceImplBase {
 	}
 
 	@Override
-	public void deleteDeviceToken(DeviceTokenDeleteRequest request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
+	public void deleteDeviceToken(DeleteDeviceTokenRequest request, StreamObserver<com.google.protobuf.Empty> responseObserver) {
 		try {
 			delegate.deleteDeviceToken(request);
 			responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());

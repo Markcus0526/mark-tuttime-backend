@@ -17,8 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.tuttime.common.event.util.ProtoUtil.convertOffsetDatetimeToProtobuf;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,7 +28,7 @@ public class UserGrpcDelegate {
 	private final TokenBlacklistService tokenBlacklistService;
 
 	@Transactional(readOnly = true)
-	public ValidTokenResponse validateUserToken(TokenValidRequest request) {
+	public ValidateUserTokenResponse validateUserToken(ValidateUserTokenRequest request) {
 		String token = request.getJwtToken();
 
 		if (!jwtTokenProvider.validateAccessToken(token)) {
@@ -52,7 +50,7 @@ public class UserGrpcDelegate {
 						.withDescription("User account is inactive, blocked, or not found")
 						.asRuntimeException());
 
-		return ValidTokenResponse.newBuilder()
+		return ValidateUserTokenResponse.newBuilder()
 				.setUserId(user.getId().toString())
 				.setEmail(Optional.ofNullable(user.getEmail()).orElse(""))
 				.setStatus(user.getStatus().name())
@@ -61,7 +59,7 @@ public class UserGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public UserDetailResponse getUserDetail(UserDetailRequest request) {
+	public GetUserDetailResponse getUserDetail(GetUserDetailRequest request) {
 		UUID userId = UUID.fromString(request.getUserId());
 		User user = userRepository.findByIdWithRoles(userId)
 				.orElseThrow(() -> new InvalidRequestException("User not found or deleted"));
@@ -69,7 +67,7 @@ public class UserGrpcDelegate {
 		List<String> fcmTokens = userDeviceRepository.findByUserId(userId)
 				.stream().map(UserDevice::getFcmToken).toList();
 
-		UserDetailResponse.Builder builder = UserDetailResponse.newBuilder()
+		GetUserDetailResponse.Builder builder = GetUserDetailResponse.newBuilder()
 				.setUserId(user.getId().toString())
 				.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
 				.setEmail(user.getEmail() != null ? user.getEmail() : "")
@@ -78,8 +76,8 @@ public class UserGrpcDelegate {
 				.setLanguage(user.getLanguage())
 				.setStatus(user.getStatus().toString())
 				.addAllFcmTokens(fcmTokens)
-				.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
-				.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
+				.setCreatedAt(user.getCreatedAt().toString())
+				.setUpdatedAt(user.getUpdatedAt().toString());
 
 		if (user.getRoles() != null && !user.getRoles().isEmpty()) {
 			String combinedRoles = user.getRoles().stream()
@@ -104,30 +102,30 @@ public class UserGrpcDelegate {
 			builder.setLatitude(lastLocation.getLocation().getY());
 		}
 		if (user.getLastLogin() != null) {
-			builder.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
+			builder.setLastLogin(user.getLastLogin().toString());
 		}
 		return builder.build();
 	}
 
 	@Transactional(readOnly = true)
-	public UserValidResponse validateUser(UserValidRequest request) {
+	public ValidateUserResponse validateUser(ValidateUserRequest request) {
 		UUID userId = UUID.fromString(request.getUserId());
 		Optional<User> userOpt = userRepository.findByIdWithRoles(userId);
 		if (userOpt.isPresent()) {
 			User user = userOpt.get();
-			return UserValidResponse.newBuilder()
+			return ValidateUserResponse.newBuilder()
 					.setValid(user.getStatus() == UserStatus.ACTIVE)
 					.setRoles(combineUserRoles(user))
 					.build();
 		}
-		return UserValidResponse.newBuilder()
+		return ValidateUserResponse.newBuilder()
 				.setValid(false)
 				.setRoles("")
 				.build();
 	}
 
 	@Transactional(readOnly = true)
-	public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
+	public GetUserDetailsResponse getUserDetails(GetUserDetailsRequest request) {
 		List<UUID> userIds = request.getUserIdsList().stream()
 				.map(UUID::fromString).toList();
 
@@ -139,10 +137,10 @@ public class UserGrpcDelegate {
 						Collectors.mapping(UserDevice::getFcmToken, Collectors.toList())
 				));
 
-		UserDetailsResponse.Builder responseBuilder = UserDetailsResponse.newBuilder();
+		GetUserDetailsResponse.Builder responseBuilder = GetUserDetailsResponse.newBuilder();
 		for (User user : users) {
 			List<String> tokens = userTokensMap.getOrDefault(user.getId(), Collections.emptyList());
-			UserDetailResponse.Builder profile = UserDetailResponse.newBuilder()
+			GetUserDetailResponse.Builder profile = GetUserDetailResponse.newBuilder()
 					.setUserId(user.getId().toString())
 					.setPhoneNumber(user.getPhoneNumber() != null ? user.getPhoneNumber() : "")
 					.setEmail(user.getEmail() != null ? user.getEmail() : "")
@@ -151,8 +149,8 @@ public class UserGrpcDelegate {
 					.setLanguage(user.getLanguage())
 					.setStatus(user.getStatus().toString())
 					.addAllFcmTokens(tokens)
-					.setCreatedAt(convertOffsetDatetimeToProtobuf(user.getCreatedAt()))
-					.setUpdatedAt(convertOffsetDatetimeToProtobuf(user.getUpdatedAt()));
+					.setCreatedAt(user.getCreatedAt().toString())
+					.setUpdatedAt(user.getUpdatedAt().toString());
 
 			if (user.getRoles() != null && !user.getRoles().isEmpty()) {
 				String combinedRoles = user.getRoles().stream()
@@ -174,7 +172,7 @@ public class UserGrpcDelegate {
 				profile.setLatitude(lastLocation.getLocation().getY());
 			}
 			if (user.getLastLogin() != null) {
-				profile.setLastLogin(convertOffsetDatetimeToProtobuf(user.getLastLogin()));
+				profile.setLastLogin(user.getLastLogin().toString());
 			}
 			responseBuilder.addProfiles(profile);
 		}
@@ -182,7 +180,7 @@ public class UserGrpcDelegate {
 	}
 
 	@Transactional
-	public void deleteDeviceToken(DeviceTokenDeleteRequest request) {
+	public void deleteDeviceToken(DeleteDeviceTokenRequest request) {
 		userDeviceRepository.deleteByFcmToken(request.getFcmToken());
 	}
 

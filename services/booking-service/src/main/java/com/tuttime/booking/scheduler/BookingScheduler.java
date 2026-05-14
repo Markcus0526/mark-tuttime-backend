@@ -11,7 +11,7 @@ import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.BookingEvent;
-import com.tuttime.common.event.proto.NotificationRequest;
+import com.tuttime.common.event.proto.SendNotificationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -186,7 +186,7 @@ public class BookingScheduler {
 					params.forEach((k, v) -> structBuilder.putFields(k,
 							Value.newBuilder().setStringValue(v.toString()).build()));
 
-					NotificationRequest request = NotificationRequest.newBuilder()
+					SendNotificationRequest request = SendNotificationRequest.newBuilder()
 							.setUserId(booking.getUserId().toString())
 							.setTemplateKey(NotificationTemplateKey.BOOKING_REMINDER.name())
 							.setParams(structBuilder.build())

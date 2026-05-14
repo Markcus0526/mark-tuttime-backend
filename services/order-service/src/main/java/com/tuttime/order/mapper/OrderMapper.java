@@ -1,8 +1,6 @@
 package com.tuttime.order.mapper;
 
-import com.tuttime.common.event.proto.MenuItemDetailResponse;
-import com.tuttime.common.event.proto.TableHierarchyResponse;
-import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.util.UuidUtil;
 import com.tuttime.order.dto.OrderDto;
 import com.tuttime.order.dto.OrderItemDto;
@@ -39,16 +37,16 @@ public abstract class OrderMapper {
 	@Mapping(target = "items", expression = "java(mapItemsWithDetails(order.getItems(), menuDetails))")
 	public abstract OrderDto.OrderDetailResponse toDetailResponse(
 			Order order,
-			UserDetailResponse user,
-			List<TableHierarchyResponse> tables,
-			List<MenuItemDetailResponse> menuDetails);
+			GetUserDetailResponse user,
+			List<GetTableHierarchyDetailResponse> tables,
+			List<MenuItemDetailPto> menuDetails);
 
 	/**
 	 * Enhanced mapping to include Item Names and Modifiers
 	 */
 	protected List<OrderDto.OrderDetailResponse.MenuItemDto> mapItemsWithDetails(
 			List<OrderItem> items,
-			List<MenuItemDetailResponse> details) {
+			List<MenuItemDetailPto> details) {
 
 		if (items == null) return Collections.emptyList();
 
@@ -72,7 +70,7 @@ public abstract class OrderMapper {
 
 	protected List<OrderDto.OrderDetailResponse.ModifierDto> mapModifiersWithDetails(
 			List<OrderItemModifier> selectedModifiers,
-			MenuItemDetailResponse menuDetail) {
+			MenuItemDetailPto menuDetail) {
 
 		if (selectedModifiers == null || selectedModifiers.isEmpty()) {
 			return Collections.emptyList();

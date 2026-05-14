@@ -1,6 +1,6 @@
 package com.tuttime.pos.adapter;
 
-import com.tuttime.common.event.proto.OrderDetailResponse;
+import com.tuttime.common.event.proto.GetOrderDetailResponse;
 import com.tuttime.common.exception.BusinessException;
 import com.tuttime.common.exception.PosSyncException;
 import com.tuttime.pos.dto.liko.IikoErrorResponse;
@@ -91,7 +91,7 @@ public class IikoPosAdapter implements PosAdapter {
 	}
 
 	@Override
-	public void sendOrder(PosConfig config, OrderDetailResponse order) {
+	public void sendOrder(PosConfig config, GetOrderDetailResponse order) {
 		String url = "/api/1/order/create";
 
 		List<Map<String, Object>> items = order.getItemsList().stream()

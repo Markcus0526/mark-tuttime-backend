@@ -1,8 +1,8 @@
 package com.tuttime.menu.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.BranchPermissionRequest;
 import com.tuttime.common.event.proto.RestaurantServiceGrpc;
+import com.tuttime.common.event.proto.ValidateBranchPermissionRequest;
 import com.tuttime.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class RestaurantGrpcClient {
 	private final GrpcExecutor grpcExecutor;
 
 	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
-		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
+		ValidateBranchPermissionRequest request = ValidateBranchPermissionRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.setUserId(userId.toString())
 				.setUserRoles(userRoles)

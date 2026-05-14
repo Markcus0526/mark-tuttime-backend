@@ -9,26 +9,26 @@ option java_outer_classname = "MenuServiceProto";
 // Menu Service gRPC
 service MenuService {
 
-  rpc GetPreOrderMenu (MenuRequest) returns (MenuResponse);
+  rpc GetPreOrderMenu (GetPreOrderMenuRequest) returns (GetPreOrderMenuResponse);
 
-  rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
+  rpc GetMenuDetails(GetMenuDetailsRequest) returns (GetMenuDetailsResponse);
 
-  rpc GetPriceForOrder (PriceRequest) returns (PriceResponse);
+  rpc GetPriceForOrder (GetPriceForOrderRequest) returns (GetPriceForOrderResponse);
 
-  rpc GetActiveOrderDiscounts(ActiveOrderDiscountsRequest) returns (ActiveOrderDiscountsResponse);
+  rpc GetActiveOrderDiscounts(GetActiveOrderDiscountsRequest) returns (GetActiveOrderDiscountsResponse);
 
 }
 
-// rpc getPreOrderMenu (MenuRequest) returns (MenuResponse);
-message MenuRequest {
+// rpc GetPreOrderMenu (GetPreOrderMenuRequest) returns (GetPreOrderMenuResponse);
+message GetPreOrderMenuRequest {
   string branch_id = 1;
 }
 
-message MenuResponse {
-  repeated MenuItemDetailResponse items = 1;
+message GetPreOrderMenuResponse {
+  repeated MenuItemDetailPto items = 1;
 }
 
-message MenuItemDetailResponse {
+message MenuItemDetailPto {
   string menu_item_id = 1;
   string name = 2;
   string description = 3;
@@ -36,52 +36,52 @@ message MenuItemDetailResponse {
   string category_id = 5;
   string category_name = 6;
   bool available = 7;
-  repeated ModifierGroupResponse modifier_groups = 8;
+  repeated ModifierGroupPto modifier_groups = 8;
 }
 
-message ModifierGroupResponse {
+message ModifierGroupPto {
   string group_id = 1;
   string group_name = 2;
   int32 min_select = 3;
   int32 max_select = 4;
-  repeated ModifierOptionResponse options = 5;
+  repeated ModifierOptionPto options = 5;
 }
 
-message ModifierOptionResponse {
+message ModifierOptionPto {
   string option_id = 1;
   string name = 2;
   string extra_price = 3;
 }
 
-// rpc GetMenuDetails(MenuDetailsRequest) returns (MenuDetailsResponse);
-message MenuDetailsRequest {
+// rpc GetMenuDetails(GetMenuDetailsRequest) returns (GetMenuDetailsResponse);
+message GetMenuDetailsRequest {
   repeated string menu_item_ids = 1;
 }
 
-message MenuDetailsResponse {
-  repeated MenuItemDetailResponse items = 1;
+message GetMenuDetailsResponse {
+  repeated MenuItemDetailPto items = 1;
 }
 
-// rpc GetPriceForOrder (PriceRequest) returns (PriceResponse);
-message PriceRequest {
+// rpc GetPriceForOrder (GetPriceForOrderRequest) returns (GetPriceForOrderResponse);
+message GetPriceForOrderRequest {
   string menu_item_id = 1;
   repeated string modifier_ids = 2; // List of selected modifiers
 }
 
-message PriceResponse {
+message GetPriceForOrderResponse {
   string verified_total_price = 1; // Return as string for BigDecimal precision
 }
 
-message ActiveOrderDiscountsRequest {
+// rpc GetActiveOrderDiscounts(GetActiveOrderDiscountsRequest) returns (GetActiveOrderDiscountsResponse);
+message GetActiveOrderDiscountsRequest {
   string branch_id = 1;
 }
 
-message ActiveOrderDiscountsResponse {
-  repeated ActiveDiscount discounts = 1;
+message GetActiveOrderDiscountsResponse {
+  repeated ActiveDiscountDto discounts = 1;
 }
 
-// rpc GetActiveOrderDiscounts(ActiveOrderDiscountsRequest) returns (ActiveOrderDiscountsResponse);
-message ActiveDiscount {
+message ActiveDiscountDto {
   string id = 1;
   string name = 2;
   string discount_type = 3;  // "PERCENTAGE" or "FIXED_AMOUNT"

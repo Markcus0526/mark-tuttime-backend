@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -48,6 +49,7 @@ public class OrderGrpcDelegate {
 				.bookingId(UuidUtil.toUuid(request.getBookingId()))
 				.userId(UuidUtil.toUuid(request.getUserId()))
 				.branchId(UuidUtil.toUuid(request.getBranchId()))
+				.bookingDatetime(OffsetDateTime.parse(request.getBookingDatetime()))
 				.tableIds(tableIds)
 				.guestName(request.getGuestName())
 				.guestPhone(request.getGuestPhone())
@@ -104,6 +106,7 @@ public class OrderGrpcDelegate {
 			throw new InvalidRequestException("Cannot edit an order that is already served or completed.");
 		}
 
+		order.setBookingDatetime(OffsetDateTime.parse(request.getGuestName()));
 		order.setGuestName(request.getGuestName());
 		order.setGuestPhone(request.getGuestPhone());
 		order.setSpecialRequest(request.getSpecialRequest());
@@ -158,18 +161,18 @@ public class OrderGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public OrderDetailResponse getOrderDetail(OrderDetailRequest request) {
+	public GetOrderDetailResponse getOrderDetail(GetOrderDetailRequest request) {
 		Order order = orderRepository.findById(UUID.fromString(request.getOrderId()))
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
-		OrderDetailResponse.Builder responseBuilder = OrderDetailResponse.newBuilder()
+		GetOrderDetailResponse.Builder responseBuilder = GetOrderDetailResponse.newBuilder()
 				.setOrderId(order.getId().toString())
 				.setBookingId(order.getBookingId().toString())
 				.setTotalAmount(order.getTotalAmount().doubleValue());
 
 		// In real code, fetch menu item names via gRPC to MenuService
 		order.getItems().forEach(item -> {
-			responseBuilder.addItems(OrderItemDetailResponse.newBuilder()
+			responseBuilder.addItems(OrderItemDetailPto.newBuilder()
 					.setMenuItemName("Burger") // placeholder
 					.setQuantity(item.getQuantity())
 					.setPrice(item.getPrice().doubleValue())
@@ -180,11 +183,11 @@ public class OrderGrpcDelegate {
 	}
 
 	@Transactional
-	public CancelOrderResponse cancelAndRefund(CancelOrderRequest request) {
+	public CancelAndRefundResponse cancelAndRefund(CancelAndRefundRequest request) {
 		Order order = orderRepository.findById(UUID.fromString(request.getOrderId()))
 				.orElseThrow(() -> new InvalidRequestException("Order not found"));
 
-		CancelOrderResponse.Builder responseBuilder = CancelOrderResponse.newBuilder();
+		CancelAndRefundResponse.Builder responseBuilder = CancelAndRefundResponse.newBuilder();
 
 		if (order.getStatus() == OrderStatus.CANCELED) {
 			return responseBuilder.setSuccess(false).setReason("Order is canceled.").build();
@@ -229,7 +232,7 @@ public class OrderGrpcDelegate {
 
 		GetTopItemsResponse.Builder responseBuilder = GetTopItemsResponse.newBuilder();
 		for (Object[] row : results.getContent()) {
-			TopItem item = TopItem.newBuilder()
+			TopItemPto item = TopItemPto.newBuilder()
 					.setItemId(row[0].toString())
 					.setQuantity(((Number) row[1]).intValue())
 					.setRevenue(row[2].toString())

@@ -30,7 +30,7 @@ public class MenuGrpcDelegate {
 	private final DiscountService discountService;
 
 	@Transactional(readOnly = true)
-	public PriceResponse getPriceForOrder(PriceRequest request) {
+	public GetPriceForOrderResponse getPriceForOrder(GetPriceForOrderRequest request) {
 		UUID itemId = UUID.fromString(request.getMenuItemId());
 		BigDecimal totalPrice = menuItemRepository.findById(itemId)
 				.map(MenuItem::getPrice)
@@ -46,22 +46,22 @@ public class MenuGrpcDelegate {
 			totalPrice = totalPrice.add(modifiersTotal);
 		}
 
-		return PriceResponse.newBuilder()
+		return GetPriceForOrderResponse.newBuilder()
 				.setVerifiedTotalPrice(totalPrice.toString())
 				.build();
 	}
 
 	@Transactional(readOnly = true)
-	public MenuResponse getPreOrderMenu(MenuRequest request) {
+	public GetPreOrderMenuResponse getPreOrderMenu(GetPreOrderMenuRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		List<MenuCategory> categories = menuCategoryRepository.findAllByBranchIdOrderByPriorityAsc(branchId);
-		MenuResponse.Builder responseBuilder = MenuResponse.newBuilder();
+		GetPreOrderMenuResponse.Builder responseBuilder = GetPreOrderMenuResponse.newBuilder();
 
 		for (MenuCategory category : categories) {
 			for (MenuItem menuItem : category.getMenuItems()) {
 				if (!menuItem.getAvailable()) continue;
 
-				MenuItemDetailResponse.Builder itemBuilder = MenuItemDetailResponse.newBuilder()
+				MenuItemDetailPto.Builder itemBuilder = MenuItemDetailPto.newBuilder()
 						.setMenuItemId(menuItem.getId().toString())
 						.setName(menuItem.getName())
 						.setDescription(menuItem.getDescription() != null ? menuItem.getDescription() : "")
@@ -72,13 +72,13 @@ public class MenuGrpcDelegate {
 
 				if (menuItem.getModifierGroups() != null) {
 					menuItem.getModifierGroups().forEach(group -> {
-						ModifierGroupResponse.Builder groupBuilder = ModifierGroupResponse.newBuilder()
+						ModifierGroupPto.Builder groupBuilder = ModifierGroupPto.newBuilder()
 								.setGroupName(group.getName())
 								.setMinSelect(group.getMinSelect())
 								.setMaxSelect(group.getMaxSelect());
 
 						group.getModifiers().forEach(opt -> groupBuilder.addOptions(
-								ModifierOptionResponse.newBuilder()
+								ModifierOptionPto.newBuilder()
 										.setName(opt.getName())
 										.setExtraPrice(opt.getPriceAdjustment().toString())
 										.build()
@@ -94,12 +94,12 @@ public class MenuGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public MenuDetailsResponse getMenuDetails(MenuDetailsRequest request) {
+	public GetMenuDetailsResponse getMenuDetails(GetMenuDetailsRequest request) {
 		List<UUID> uuids = request.getMenuItemIdsList().stream()
 				.map(UUID::fromString)
 				.toList();
 		List<MenuItem> entities = menuItemRepository.findAllById(uuids);
-		MenuDetailsResponse.Builder responseBuilder = MenuDetailsResponse.newBuilder();
+		GetMenuDetailsResponse.Builder responseBuilder = GetMenuDetailsResponse.newBuilder();
 		for (MenuItem entity : entities) {
 			responseBuilder.addItems(mapToProto(entity));
 		}
@@ -107,15 +107,15 @@ public class MenuGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public ActiveOrderDiscountsResponse getActiveOrderDiscounts(ActiveOrderDiscountsRequest request) {
+	public GetActiveOrderDiscountsResponse getActiveOrderDiscounts(GetActiveOrderDiscountsRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		// Fetch active order discounts (appliesTo = ORDER, referenceId = null)
 		List<DiscountDto.DiscountResponse> discounts = discountService.getActiveDiscountsForReference(
 				branchId, AppliesTo.ORDER, null);
 
-		ActiveOrderDiscountsResponse.Builder responseBuilder = ActiveOrderDiscountsResponse.newBuilder();
+		GetActiveOrderDiscountsResponse.Builder responseBuilder = GetActiveOrderDiscountsResponse.newBuilder();
 		for (DiscountDto.DiscountResponse d : discounts) {
-			responseBuilder.addDiscounts(ActiveDiscount.newBuilder()
+			responseBuilder.addDiscounts(ActiveDiscountDto.newBuilder()
 					.setId(d.discountId().toString())
 					.setName(d.name())
 					.setDiscountType(d.discountType().name())
@@ -128,8 +128,8 @@ public class MenuGrpcDelegate {
 		return responseBuilder.build();
 	}
 
-	private MenuItemDetailResponse mapToProto(MenuItem entity) {
-		MenuItemDetailResponse.Builder builder = MenuItemDetailResponse.newBuilder()
+	private MenuItemDetailPto mapToProto(MenuItem entity) {
+		MenuItemDetailPto.Builder builder = MenuItemDetailPto.newBuilder()
 				.setMenuItemId(entity.getId().toString())
 				.setName(entity.getName())
 				.setDescription(entity.getDescription() != null ? entity.getDescription() : "")
@@ -140,7 +140,7 @@ public class MenuGrpcDelegate {
 
 		if (entity.getModifierGroups() != null) {
 			entity.getModifierGroups().forEach(group -> {
-				ModifierGroupResponse.Builder groupBuilder = ModifierGroupResponse.newBuilder()
+				ModifierGroupPto.Builder groupBuilder = ModifierGroupPto.newBuilder()
 						.setGroupId(group.getId().toString())
 						.setGroupName(group.getName())
 						.setMinSelect(group.getMinSelect())
@@ -148,7 +148,7 @@ public class MenuGrpcDelegate {
 
 				if (group.getModifiers() != null) {
 					group.getModifiers().forEach(modifier -> {
-						groupBuilder.addOptions(ModifierOptionResponse.newBuilder()
+						groupBuilder.addOptions(ModifierOptionPto.newBuilder()
 								.setOptionId(modifier.getId().toString())
 								.setName(modifier.getName())
 								.setExtraPrice(modifier.getPriceAdjustment().toString())

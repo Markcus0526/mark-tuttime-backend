@@ -47,7 +47,7 @@ public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {
 	}
 
 	@Override
-	public void getOrderDetail(OrderDetailRequest request, StreamObserver<OrderDetailResponse> responseObserver) {
+	public void getOrderDetail(GetOrderDetailRequest request, StreamObserver<GetOrderDetailResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getOrderDetail(request));
 			responseObserver.onCompleted();
@@ -62,7 +62,7 @@ public class OrderGrpcServer extends OrderServiceGrpc.OrderServiceImplBase {
 	}
 
 	@Override
-	public void cancelAndRefund(CancelOrderRequest request, StreamObserver<CancelOrderResponse> responseObserver) {
+	public void cancelAndRefund(CancelAndRefundRequest request, StreamObserver<CancelAndRefundResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.cancelAndRefund(request));
 			responseObserver.onCompleted();

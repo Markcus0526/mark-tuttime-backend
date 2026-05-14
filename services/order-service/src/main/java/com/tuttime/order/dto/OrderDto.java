@@ -47,6 +47,8 @@ public class OrderDto {
 
 			UUID bookingId,
 
+			OffsetDateTime bookingDatetime,
+
 			UUID userId,
 
 			OrderStatus status,
@@ -70,6 +72,8 @@ public class OrderDto {
 			UUID orderId,
 
 			UUID bookingId,
+
+			OffsetDateTime bookingDatetime,
 
 			OrderStatus status,
 

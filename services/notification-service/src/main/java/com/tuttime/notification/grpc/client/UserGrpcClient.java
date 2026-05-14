@@ -1,10 +1,7 @@
 package com.tuttime.notification.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.DeviceTokenDeleteRequest;
-import com.tuttime.common.event.proto.UserDetailRequest;
-import com.tuttime.common.event.proto.UserDetailResponse;
-import com.tuttime.common.event.proto.UserServiceGrpc;
+import com.tuttime.common.event.proto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -28,14 +25,14 @@ public class UserGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public UserDetailResponse getUserDetail(UserDetailRequest request) {
+	public GetUserDetailResponse getUserDetail(GetUserDetailRequest request) {
 		return grpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
 				userServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.getUserDetail(request));
 	}
 
-	public void deleteDeviceToken(DeviceTokenDeleteRequest request) {
+	public void deleteDeviceToken(DeleteDeviceTokenRequest request) {
 		grpcExecutor.execute(USER_SERVICE, "deleteDeviceToken", () ->
 				userServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

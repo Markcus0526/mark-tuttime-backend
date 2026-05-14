@@ -281,8 +281,6 @@ public class OrderServiceImpl implements OrderService {
 		eventProducer.sendOrderStatusUpdatedEvent(event);
 	}
 
-	// ---------- Enrichment (with timeout) ----------
-	// ---------- Enrichment (with timeout) ----------
 	private List<OrderDto.OrderDetailResponse> getEnrichedOrders(List<Order> orders) {
 		Set<String> userIds = orders.stream().map(o -> o.getUserId().toString()).collect(Collectors.toSet());
 		// ✅ Collect all table IDs from all orders (flatten the list)
@@ -299,10 +297,10 @@ public class OrderServiceImpl implements OrderService {
 		var menusFuture = CompletableFuture.supplyAsync(() -> {
 			try {
 				return menuGrpcClient.getMenuDetails(menuItemIds).stream()
-						.collect(Collectors.toMap(MenuItemDetailResponse::getMenuItemId, m -> m, (a, b) -> a));
+						.collect(Collectors.toMap(MenuItemDetailPto::getMenuItemId, m -> m, (a, b) -> a));
 			} catch (Exception e) {
 				log.warn("Menu service failed, proceeding with empty menu data");
-				return Collections.<String, MenuItemDetailResponse>emptyMap();
+				return Collections.<String, MenuItemDetailPto>emptyMap();
 			}
 		});
 
@@ -320,11 +318,11 @@ public class OrderServiceImpl implements OrderService {
 
 		return orders.stream().map(order -> {
 			var user = userMap.getOrDefault(order.getUserId().toString(),
-					UserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
+					GetUserDetailResponse.newBuilder().setUserId(NIL_UUID).setFullName("Deleted User").build());
 			// ✅ Build list of TableHierarchyResponse for this order's table IDs
-			List<TableHierarchyResponse> tables = order.getTableIds().stream()
+			List<GetTableHierarchyDetailResponse> tables = order.getTableIds().stream()
 					.map(tid -> tableMap.getOrDefault(tid.toString(),
-							TableHierarchyResponse.newBuilder().setTableId(tid.toString()).setTableLabel("N/A").build()))
+							GetTableHierarchyDetailResponse.newBuilder().setTableId(tid.toString()).setTableLabel("N/A").build()))
 					.toList();
 			var orderMenus = order.getItems().stream()
 					.map(i -> menuMap.get(i.getMenuItemId().toString()))
@@ -335,27 +333,27 @@ public class OrderServiceImpl implements OrderService {
 		}).toList();
 	}
 
-	private Map<String, UserDetailResponse> fetchUsersMap(Set<String> ids) {
+	private Map<String, GetUserDetailResponse> fetchUsersMap(Set<String> ids) {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
 					try {
-						return userGrpcClient.getUserDetail(UserDetailRequest.newBuilder().setUserId(id).build());
+						return userGrpcClient.getUserDetail(GetUserDetailRequest.newBuilder().setUserId(id).build());
 					} catch (Exception e) {
-						return UserDetailResponse.newBuilder().setUserId(NIL_UUID).build();
+						return GetUserDetailResponse.newBuilder().setUserId(NIL_UUID).build();
 					}
 				}
 		));
 	}
 
-	private Map<String, TableHierarchyResponse> fetchTablesMap(Set<String> ids) {
+	private Map<String, GetTableHierarchyDetailResponse> fetchTablesMap(Set<String> ids) {
 		return ids.parallelStream().collect(Collectors.toMap(
 				id -> id,
 				id -> {
 					try {
-						return restaurantGrpcClient.getTableHierarchyDetail(TableHierarchyRequest.newBuilder().setTableId(id).build());
+						return restaurantGrpcClient.getTableHierarchyDetail(GetTableHierarchyDetailRequest.newBuilder().setTableId(id).build());
 					} catch (Exception e) {
-						return TableHierarchyResponse.newBuilder()
+						return GetTableHierarchyDetailResponse.newBuilder()
 								.setTableId(NIL_UUID)
 								.setZoneId(NIL_UUID)
 								.setBranchId(NIL_UUID)

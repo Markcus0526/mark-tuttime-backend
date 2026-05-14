@@ -17,7 +17,8 @@ public class BookingSetupDto {
 				OffsetDateTime time,
 				boolean available,
 				int tablesLeft,        // Provides "scarcity" UI cues (e.g., "Only 2 left!")
-				List<String> zones     // e.g., ["Indoor", "Terrace"] - so user knows where they might sit
+				List<String> zones,     // e.g., ["Indoor", "Terrace"] - so user knows where they might sit
+				List<TableInfoDto> tables
 		) {
 		}
 

@@ -3,9 +3,7 @@ package com.tuttime.booking.mapper;
 import com.tuttime.booking.dto.BookingDto;
 import com.tuttime.booking.entity.Booking;
 import com.tuttime.booking.entity.BookingItem;
-import com.tuttime.common.event.proto.MenuItemDetailResponse;
-import com.tuttime.common.event.proto.TableHierarchyResponse;
-import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.util.UuidUtil;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -23,7 +21,7 @@ public abstract class BookingMapper {
 	@Mapping(target = "bookingId", source = "entity.id")
 	@Mapping(target = "status", source = "entity.status")
 	@Mapping(target = "user", source = "user")
-	public abstract BookingDto.BookingResponse toWithUserResponse(Booking entity, UserDetailResponse user);
+	public abstract BookingDto.BookingResponse toWithUserResponse(Booking entity, GetUserDetailResponse user);
 
 	// Updated: target is "tables" (list), source is "tables" (list) – MapStruct will map each element
 	@Mapping(target = "bookingId", source = "entity.id")
@@ -33,12 +31,12 @@ public abstract class BookingMapper {
 	@Mapping(target = "menuItems", expression = "java(mapItemsWithDetails(entity.getItems(), menuDetails))")
 	public abstract BookingDto.BookingDetailResponse toDetailResponse(
 			Booking entity,
-			UserDetailResponse user,
-			List<TableHierarchyResponse> tables,
-			List<MenuItemDetailResponse> menuDetails);
+			GetUserDetailResponse user,
+			List<GetTableHierarchyDetailResponse> tables,
+			List<MenuItemDetailPto> menuDetails);
 
-	// Helper method to convert TableHierarchyResponse to BookingDto.BookingDetailResponse.TableDetailResponse
-	protected BookingDto.BookingDetailResponse.TableDetailResponse toTableDetail(TableHierarchyResponse response) {
+	// Helper method to convert GetTableHierarchyDetailResponse to BookingDto.BookingDetailResponse.TableDetailResponse
+	protected BookingDto.BookingDetailResponse.TableDetailResponse toTableDetail(GetTableHierarchyDetailResponse response) {
 		if (response == null) return null;
 		return new BookingDto.BookingDetailResponse.TableDetailResponse(
 				UuidUtil.toUuid(response.getBranchId()),
@@ -54,7 +52,7 @@ public abstract class BookingMapper {
 		);
 	}
 
-	List<BookingDto.BookingDetailResponse.MenuItemResponse> mapItemsWithDetails(List<BookingItem> items, List<MenuItemDetailResponse> details) {
+	List<BookingDto.BookingDetailResponse.MenuItemResponse> mapItemsWithDetails(List<BookingItem> items, List<MenuItemDetailPto> details) {
 		if (items == null || details == null) return List.of();
 		return items.stream().map(item -> {
 			var detail = details.stream()

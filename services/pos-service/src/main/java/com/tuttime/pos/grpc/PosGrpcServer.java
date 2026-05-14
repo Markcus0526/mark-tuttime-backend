@@ -17,10 +17,10 @@ public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 	private final PosGrpcDelegate delegate;
 
 	@Override
-	public void pushToKitchen(KitchenOrderRequest request, StreamObserver<KitchenOrderResponse> responseObserver) {
+	public void pushToKitchen(PushToKitchenRequest request, StreamObserver<PushToKitchenResponse> responseObserver) {
 		try {
 			PosGrpcDelegate.PosSyncResult result = delegate.pushToKitchen(request);
-			responseObserver.onNext(KitchenOrderResponse.newBuilder()
+			responseObserver.onNext(PushToKitchenResponse.newBuilder()
 					.setSuccess(true)
 					.setPosTransactionId(result.posTransactionId())
 					.build());

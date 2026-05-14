@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.PaymentStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.PaymentEvent;
-import com.tuttime.common.event.proto.UserDetailRequest;
-import com.tuttime.common.event.proto.UserDetailResponse;
-import com.tuttime.common.event.proto.UserDetailsRequest;
-import com.tuttime.common.event.proto.UserDetailsResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.payment.dto.PaymentDto;
 import com.tuttime.payment.dto.PaymentMethodDto;
@@ -246,11 +243,11 @@ public class PaymentServiceImpl implements PaymentService {
 				.distinct()
 				.collect(Collectors.toList());
 
-		Map<UUID, UserDetailResponse> userDetailsMap = getUsersBatch(userIds);
+		Map<UUID, GetUserDetailResponse> userDetailsMap = getUsersBatch(userIds);
 
 		// 5. Map to AdminPaymentResponse DTO
 		return paymentPage.map(payment -> {
-			UserDetailResponse user = userDetailsMap.get(payment.getUserId());
+			GetUserDetailResponse user = userDetailsMap.get(payment.getUserId());
 			String displayName = "Unknown";
 			String userEmail = null;
 			String userPhone = null;
@@ -307,7 +304,7 @@ public class PaymentServiceImpl implements PaymentService {
 		BigDecimal net = payment.getAmount().subtract(commission);
 
 		// Fetch user details via gRPC
-		var user = userGrpcClient.getUserDetail(UserDetailRequest.newBuilder()
+		var user = userGrpcClient.getUserDetail(GetUserDetailRequest.newBuilder()
 				.setUserId(payment.getUserId().toString())
 				.build());
 
@@ -400,16 +397,16 @@ public class PaymentServiceImpl implements PaymentService {
 	// -----------------------------------------------------------------
 	// Helper to fetch user names via gRPC (batch)
 	// -----------------------------------------------------------------
-	public Map<UUID, UserDetailResponse> getUsersBatch(List<UUID> userIds) {
+	public Map<UUID, GetUserDetailResponse> getUsersBatch(List<UUID> userIds) {
 		if (userIds == null || userIds.isEmpty()) {
 			return Map.of();
 		}
 		// Build request with all userIds as strings
-		UserDetailsRequest request = UserDetailsRequest.newBuilder()
+		GetUserDetailsRequest request = GetUserDetailsRequest.newBuilder()
 				.addAllUserIds(userIds.stream().map(UUID::toString).collect(Collectors.toList()))
 				.build();
 		// Call batch RPC (note: method is still called getUserDetails)
-		UserDetailsResponse response = userGrpcClient.getUserDetails(request);
+		GetUserDetailsResponse response = userGrpcClient.getUserDetails(request);
 		// Map to UUID -> UserDetailResponse
 		return response.getProfilesList().stream()
 				.collect(Collectors.toMap(

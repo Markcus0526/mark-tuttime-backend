@@ -1,9 +1,7 @@
 package com.tuttime.pos.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.OrderDetailRequest;
-import com.tuttime.common.event.proto.OrderDetailResponse;
-import com.tuttime.common.event.proto.OrderServiceGrpc;
+import com.tuttime.common.event.proto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -28,8 +26,8 @@ public class OrderGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public OrderDetailResponse getOrderDetail(UUID orderId) {
-		OrderDetailRequest request = OrderDetailRequest.newBuilder()
+	public GetOrderDetailResponse getOrderDetail(UUID orderId) {
+		GetOrderDetailRequest request = GetOrderDetailRequest.newBuilder()
 				.setOrderId(orderId.toString())
 				.build();
 

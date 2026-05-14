@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS_UPDATED;
@@ -34,12 +35,18 @@ public class BookingEventConsumer {
 			BookingEvent.BookingStatusUpdatedEvent event =
 					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
-			UUID tableId = event.tableId();
+			List<UUID> tableIds;
+			if (event.tableIds() != null && !event.tableIds().isEmpty()) {
+				tableIds = event.tableIds();
+			} else {
+				log.warn("No table IDs in event: {}", event);
+				return;
+			}
 
 			switch (event.newStatus()) {
-				case PAID -> updateTableStatus(tableId, TableStatus.RESERVED);
-				case ARRIVED -> updateTableStatus(tableId, TableStatus.OCCUPIED);
-				case COMPLETED, CANCELED, NO_SHOW -> updateTableStatus(tableId, TableStatus.ACTIVE);
+				case PAID -> updateTableStatusBatch(tableIds, TableStatus.RESERVED);
+				case ARRIVED -> updateTableStatusBatch(tableIds, TableStatus.OCCUPIED);
+				case COMPLETED, CANCELED, NO_SHOW -> updateTableStatusBatch(tableIds, TableStatus.ACTIVE);
 				default -> log.debug("No table status update needed for {}", event.newStatus());
 			}
 
@@ -49,11 +56,8 @@ public class BookingEventConsumer {
 		}
 	}
 
-	private void updateTableStatus(UUID tableId, TableStatus status) {
-		tableRepository.findById(tableId).ifPresent(table -> {
-			table.setStatus(status);
-			tableRepository.save(table);
-			log.info("Table {} is now {}", tableId, status);
-		});
+	private void updateTableStatusBatch(List<UUID> tableIds, TableStatus status) {
+		if (tableIds == null || tableIds.isEmpty()) return;
+		tableRepository.updateStatusByTableIds(tableIds, status);
 	}
 }

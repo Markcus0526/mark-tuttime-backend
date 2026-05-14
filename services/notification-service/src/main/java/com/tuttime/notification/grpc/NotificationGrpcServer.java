@@ -4,8 +4,8 @@ import com.google.protobuf.Empty;
 import com.google.protobuf.Struct;
 import com.google.protobuf.util.JsonFormat;
 import com.tuttime.common.enums.NotificationTemplateKey;
-import com.tuttime.common.event.proto.NotificationRequest;
 import com.tuttime.common.event.proto.NotificationServiceGrpc;
+import com.tuttime.common.event.proto.SendNotificationRequest;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
@@ -21,7 +21,7 @@ public class NotificationGrpcServer extends NotificationServiceGrpc.Notification
 	private final NotificationOrchestrator orchestrator;
 
 	@Override
-	public void sendNotification(NotificationRequest request, StreamObserver<Empty> responseObserver) {
+	public void sendNotification(SendNotificationRequest request, StreamObserver<Empty> responseObserver) {
 		try {
 			// 1. Convert google.protobuf.Struct to Map<String, Object>
 			Map<String, Object> params = convertStructToMap(request.getParams());

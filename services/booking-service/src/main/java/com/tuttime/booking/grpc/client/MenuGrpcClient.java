@@ -1,10 +1,7 @@
 package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.MenuDetailsRequest;
-import com.tuttime.common.event.proto.MenuItemDetailResponse;
-import com.tuttime.common.event.proto.MenuRequest;
-import com.tuttime.common.event.proto.MenuServiceGrpc;
+import com.tuttime.common.event.proto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -30,8 +27,8 @@ public class MenuGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public List<MenuItemDetailResponse> getPreOrderMenu(UUID branchId) {
-		MenuRequest request = MenuRequest.newBuilder()
+	public List<MenuItemDetailPto> getPreOrderMenu(UUID branchId) {
+		GetPreOrderMenuRequest request = GetPreOrderMenuRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
 		return grpcExecutor.execute(MENU_SERVICE, "getPreOrderMenu", () ->
@@ -40,8 +37,8 @@ public class MenuGrpcClient {
 						.getPreOrderMenu(request).getItemsList());
 	}
 
-	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
-		MenuDetailsRequest request = MenuDetailsRequest.newBuilder()
+	public List<MenuItemDetailPto> getMenuDetails(List<String> menuItemIds) {
+		GetMenuDetailsRequest request = GetMenuDetailsRequest.newBuilder()
 				.addAllMenuItemIds(menuItemIds)
 				.build();
 

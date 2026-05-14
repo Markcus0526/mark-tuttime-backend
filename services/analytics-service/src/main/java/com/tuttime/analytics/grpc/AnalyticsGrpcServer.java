@@ -2,9 +2,7 @@ package com.tuttime.analytics.grpc;
 
 import com.tuttime.analytics.entity.UserReliabilityIndex;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.event.proto.AnalyticsServiceGrpc;
-import com.tuttime.common.event.proto.UserScoreRequest;
-import com.tuttime.common.event.proto.UserScoreResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -20,11 +18,11 @@ public class AnalyticsGrpcServer extends AnalyticsServiceGrpc.AnalyticsServiceIm
 	private final AnalyticsService analyticsService;
 
 	@Override
-	public void getUserScore(UserScoreRequest req, StreamObserver<UserScoreResponse> responseObserver) {
+	public void getUserScore(GetUserScoreRequest req, StreamObserver<GetUserScoreResponse> responseObserver) {
 		try {
 			UserReliabilityIndex stats = analyticsService.getUserReliability(UUID.fromString(req.getUserId()));
 
-			UserScoreResponse response = UserScoreResponse.newBuilder()
+			GetUserScoreResponse response = GetUserScoreResponse.newBuilder()
 					.setScore(stats != null ? stats.getReliabilityScore() : 50)
 					.setRiskLevel(stats != null ? stats.getRiskLevel() : "STANDARD")
 					.setRequiresFullPrepay(stats != null && stats.getReliabilityScore() < 25)

@@ -25,7 +25,7 @@ public class UserGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
+	public GetUserDetailsResponse getUserDetails(GetUserDetailsRequest request) {
 		return grpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
 				userServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

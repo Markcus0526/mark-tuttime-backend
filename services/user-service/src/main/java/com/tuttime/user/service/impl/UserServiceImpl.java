@@ -33,8 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -140,14 +138,18 @@ public class UserServiceImpl implements UserService {
 
 		if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
 			userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
-					.ifPresent(u -> { throw new ConflictException("Phone number already in use"); });
+					.ifPresent(u -> {
+						throw new ConflictException("Phone number already in use");
+					});
 			user.setPhoneNumber(request.phoneNumber());
 			changed = true;
 		}
 
 		if (request.email() != null && !request.email().equals(user.getEmail())) {
 			userRepository.findByEmailAndDeletedFalse(request.email())
-					.ifPresent(u -> { throw new ConflictException("Email already in use"); });
+					.ifPresent(u -> {
+						throw new ConflictException("Email already in use");
+					});
 			user.setEmail(request.email());
 			changed = true;
 		}
@@ -204,12 +206,16 @@ public class UserServiceImpl implements UserService {
 		if (request != null) {
 			if (request.phoneNumber() != null && !request.phoneNumber().equals(user.getPhoneNumber())) {
 				userRepository.findByPhoneNumberAndDeletedFalse(request.phoneNumber())
-						.ifPresent(u -> { throw new ConflictException("Phone number already in use"); });
+						.ifPresent(u -> {
+							throw new ConflictException("Phone number already in use");
+						});
 				user.setPhoneNumber(request.phoneNumber());
 			}
 			if (request.email() != null && !request.email().equals(user.getEmail())) {
 				userRepository.findByEmailAndDeletedFalse(request.email())
-						.ifPresent(u -> { throw new ConflictException("Email already in use"); });
+						.ifPresent(u -> {
+							throw new ConflictException("Email already in use");
+						});
 				user.setEmail(request.email());
 			}
 			if (request.fullName() != null) {

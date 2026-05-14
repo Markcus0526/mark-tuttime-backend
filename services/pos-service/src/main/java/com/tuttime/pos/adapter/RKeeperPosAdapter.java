@@ -1,7 +1,7 @@
 package com.tuttime.pos.adapter;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.tuttime.common.event.proto.OrderDetailResponse;
+import com.tuttime.common.event.proto.GetOrderDetailResponse;
 import com.tuttime.common.exception.PosSyncException;
 import com.tuttime.pos.dto.rkeeper.RK7MenuResponse;
 import com.tuttime.pos.dto.rkeeper.RK7Response;
@@ -78,7 +78,7 @@ public class RKeeperPosAdapter implements PosAdapter {
 	}
 
 	@Override
-	public void sendOrder(PosConfig config, OrderDetailResponse order) {
+	public void sendOrder(PosConfig config, GetOrderDetailResponse order) {
 		// 1. Build the XML Items (Dishes) with validation
 		StringBuilder itemsXml = new StringBuilder();
 

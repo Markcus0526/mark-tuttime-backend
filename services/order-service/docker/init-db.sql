@@ -34,26 +34,25 @@ END IF;
 END $$;
 
 -- 2. Orders Table
--- REMOVED: Physical FKs to bookings/users to support Microservice isolation.
--- ADDED: Logical indexing for high-performance lookups.
 CREATE TABLE orders
 (
-    id              UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
-    booking_id      UUID           NOT NULL, -- Logical reference to Booking Service
-    user_id         UUID           NOT NULL, -- Logical reference to User Service
-    branch_id       UUID           NOT NULL, -- Logical reference to Branch Service
-    status          order_status   NOT NULL DEFAULT 'CREATED',
-    total_amount    NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
-    guest_name      VARCHAR(100),
-    guest_phone     VARCHAR(20),
-    special_request TEXT,
-    version         BIGINT         NOT NULL DEFAULT 0,
-    deleted         BOOLEAN        NOT NULL DEFAULT FALSE,
-    deleted_at      TIMESTAMPTZ,
-    created_at      TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
-    created_by      UUID,
-    updated_by      UUID
+    id               UUID PRIMARY KEY        DEFAULT uuid_generate_v4(),
+    booking_id       UUID           NOT NULL, -- Logical reference to Booking Service
+    user_id          UUID           NOT NULL, -- Logical reference to User Service
+    branch_id        UUID           NOT NULL, -- Logical reference to Branch Service
+    booking_datetime TIMESTAMPTZ,
+    status           order_status   NOT NULL DEFAULT 'CREATED',
+    total_amount     NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (total_amount >= 0),
+    guest_name       VARCHAR(100),
+    guest_phone      VARCHAR(20),
+    special_request  TEXT,
+    version          BIGINT         NOT NULL DEFAULT 0,
+    deleted          BOOLEAN        NOT NULL DEFAULT FALSE,
+    deleted_at       TIMESTAMPTZ,
+    created_at       TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMPTZ             DEFAULT CURRENT_TIMESTAMP,
+    created_by       UUID,
+    updated_by       UUID
 );
 
 -- 3. Order Items Table

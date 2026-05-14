@@ -30,7 +30,7 @@ public class MenuGrpcClient {
 	private final GrpcExecutor grpcExecutor;
 
 	public BigDecimal getPriceForOrder(UUID menuItemId, List<UUID> modifierIds) {
-		PriceRequest request = PriceRequest.newBuilder()
+		GetPriceForOrderRequest request = GetPriceForOrderRequest.newBuilder()
 				.setMenuItemId(menuItemId.toString())
 				.addAllModifierIds(modifierIds.stream().map(UUID::toString).toList())
 				.build();
@@ -43,9 +43,9 @@ public class MenuGrpcClient {
 		return NumberUtil.stringToBigDecimal(priceString);
 	}
 
-	public List<MenuItemDetailResponse> getMenuDetails(List<String> menuItemIds) {
+	public List<MenuItemDetailPto> getMenuDetails(List<String> menuItemIds) {
 		// 1. Build the request with repeated IDs
-		MenuDetailsRequest request = MenuDetailsRequest.newBuilder()
+		GetMenuDetailsRequest request = GetMenuDetailsRequest.newBuilder()
 				.addAllMenuItemIds(menuItemIds)
 				.build();
 
@@ -55,8 +55,8 @@ public class MenuGrpcClient {
 						.getMenuDetails(request).getItemsList());
 	}
 
-	public List<ActiveDiscount> getActiveOrderDiscounts(UUID branchId) {
-		ActiveOrderDiscountsRequest request = ActiveOrderDiscountsRequest.newBuilder()
+	public List<ActiveDiscountDto> getActiveOrderDiscounts(UUID branchId) {
+		GetActiveOrderDiscountsRequest request = GetActiveOrderDiscountsRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
 		return grpcExecutor.execute(MENU_SERVICE, "getActiveOrderDiscounts", () ->

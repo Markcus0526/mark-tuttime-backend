@@ -13,9 +13,9 @@ service OrderService {
 
   rpc UpdateOrder(UpdateOrderRequest) returns (UpdateOrderResponse);
 
-  rpc GetOrderDetail (OrderDetailRequest) returns (OrderDetailResponse);
+  rpc GetOrderDetail(GetOrderDetailRequest) returns (GetOrderDetailResponse);
 
-  rpc CancelAndRefund(CancelOrderRequest) returns (CancelOrderResponse);
+  rpc CancelAndRefund(CancelAndRefundRequest) returns (CancelAndRefundResponse);
 
   rpc GetTopItems(GetTopItemsRequest) returns (GetTopItemsResponse);
 
@@ -28,14 +28,15 @@ service OrderService {
 // rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
 message CreateOrderRequest {
   string booking_id = 1;
-  string user_id = 2;
-  string branch_id = 3;
-  repeated string table_ids = 4;
-  string guest_name = 5;
-  string guest_phone = 6;
-  string special_request = 7;
+  string booking_datetime = 2;
+  string user_id = 3;
+  string branch_id = 4;
+  repeated string table_ids = 5;
+  string guest_name = 6;
+  string guest_phone = 7;
+  string special_request = 8;
   // Use repeated to transfer a list of items
-  repeated OrderItemRequest items = 8;
+  repeated OrderItemRequest items = 9;
 }
 
 message OrderItemRequest {
@@ -72,21 +73,21 @@ message UpdateOrderResponse {
   string message = 2;
 }
 
-// rpc getOrderDetail (OrderRequest) returns (OrderDetailsResponse);
-message OrderDetailRequest {
+// rpc GetOrderDetail(GetOrderDetailRequest) returns (GetOrderDetailResponse);
+message GetOrderDetailRequest {
   string order_id = 1;
 }
 
-message OrderDetailResponse {
+message GetOrderDetailResponse {
   string order_id = 1 [json_name = "id"];
   string branch_id = 2; // REQUIRED: For POS Config lookup
   string table_id = 3;  // REQUIRED: For R-Keeper table layout
   string booking_id = 4;
   double total_amount = 5;
-  repeated OrderItemDetailResponse items = 6;
+  repeated OrderItemDetailPto items = 6;
 }
 
-message OrderItemDetailResponse {
+message OrderItemDetailPto {
   string menu_item_id = 1;   // For mapping lookup
   string pos_id = 2;         // External POS ID (if already known)
   string menu_item_name = 3;
@@ -95,15 +96,15 @@ message OrderItemDetailResponse {
   repeated string modifiers = 6;
 }
 
-// rpc CancelAndRefund(CancelOrderRequest) returns (CancelOrderResponse);
-message CancelOrderRequest {
+// rpc CancelAndRefund(CancelAndRefundRequest) returns (CancelAndRefundResponse);
+message CancelAndRefundRequest {
   string booking_id = 1;
   string order_id = 2;
   string payment_id = 3;
   string reason = 4;
 }
 
-message CancelOrderResponse {
+message CancelAndRefundResponse {
   bool success = 1;
   string refund_transaction_id = 2;
   string amount_refunded = 3;
@@ -119,10 +120,10 @@ message GetTopItemsRequest {
 }
 
 message GetTopItemsResponse {
-  repeated TopItem items = 1;
+  repeated TopItemPto items = 1;
 }
 
-message TopItem {
+message TopItemPto {
   string item_id = 1;
   int32 quantity = 2;
   string revenue = 3;

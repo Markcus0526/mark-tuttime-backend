@@ -3,9 +3,8 @@ package com.tuttime.notification.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.event.kafka.event.BookingEvent;
-import com.tuttime.common.event.kafka.event.RestaurantEvent;
-import com.tuttime.common.event.proto.BranchManagersRequest;
-import com.tuttime.common.event.proto.BranchManagersResponse;
+import com.tuttime.common.event.proto.GetBranchManagersRequest;
+import com.tuttime.common.event.proto.GetBranchManagersResponse;
 import com.tuttime.notification.grpc.client.RestaurantGrpcClient;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
@@ -43,8 +42,8 @@ public class RestaurantEventConsumer {
 			// Reuse the Virtual Thread fan-out pattern
 			Thread.ofVirtual().start(() -> {
 				try {
-					BranchManagersResponse response = restaurantGrpcClient.getBranchManagers(
-							BranchManagersRequest.newBuilder()
+					GetBranchManagersResponse response = restaurantGrpcClient.getBranchManagers(
+							GetBranchManagersRequest.newBuilder()
 									.setBranchId(event.branchId())
 									.build());
 

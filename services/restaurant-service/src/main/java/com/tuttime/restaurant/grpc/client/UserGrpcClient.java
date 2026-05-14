@@ -25,14 +25,14 @@ public class UserGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public UserValidResponse validateUser(UserValidRequest request) {
+	public ValidateUserResponse validateUser(ValidateUserRequest request) {
 		return grpcExecutor.execute(USER_SERVICE, "validateUser", () ->
 				userServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
 						.validateUser(request));
 	}
 
-	public UserDetailsResponse getUserDetails(UserDetailsRequest request) {
+	public GetUserDetailsResponse getUserDetails(GetUserDetailsRequest request) {
 		return grpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
 				userServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
