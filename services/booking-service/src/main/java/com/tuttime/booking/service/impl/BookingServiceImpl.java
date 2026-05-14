@@ -106,7 +106,7 @@ public class BookingServiceImpl implements BookingService {
 			tableDetails.add(resp);
 		}
 
-		// 2. Acquire Redis locks for ALL tables
+		// Acquire Redis locks for ALL tables
 		List<RLock> locks = new ArrayList<>();
 		try {
 			for (UUID tid : tableIds) {
@@ -117,25 +117,24 @@ public class BookingServiceImpl implements BookingService {
 				locks.add(lock);
 			}
 
-			// 3. Check overlapping bookings for all tables
+			// Check overlapping bookings for all tables
 			OffsetDateTime startTime = request.bookingDatetime();
 			OffsetDateTime endTime = startTime.plus(Duration.ofMinutes(request.duration()));
 			if (bookingRepository.existsOverlappingBookingForTables(tableIds, startTime, endTime)) {
 				throw new ConflictException("One or more tables are already booked for this time range.");
 			}
 
-			// 4. Fetch menu details and calculate total amount
+			// Fetch menu details and calculate total amount
 			List<MenuItemDetailPto> menuDetails = menuGrpcClient.getMenuDetails(
 					request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
 			);
 			validateModifierSelections(request.preOrderItems(), menuDetails);
 			BigDecimal totalAmount = calculateFinalPrice(request.preOrderItems(), menuDetails);
 
-			// 5. Determine restaurantId and zoneId (take from first table, but multiple tables may have different zones – store null)
-			UUID restaurantId = UUID.fromString(tableDetails.get(0).getRestaurantId());
-			// ZoneId is removed from Booking – we will not store it
+			// Determine restaurantId and zoneId (take from first table, but multiple tables may have different zones – store null)
+			UUID restaurantId = UUID.fromString(tableDetails.getFirst().getRestaurantId());
 
-			// 6. Build and save booking (without zoneId, with tableIds collection)
+			// Build and save booking (without zoneId, with tableIds collection)
 			Booking booking = Booking.builder()
 					.userId(request.userId())
 					.restaurantId(restaurantId)
@@ -155,21 +154,21 @@ public class BookingServiceImpl implements BookingService {
 			booking.setTableIds(tableIds);
 			Booking savedBooking = bookingRepository.save(booking);
 
-			// 7. Update branch occupancy counter (using Redis atomic) – count each booking as 1, regardless of tables
+			// Update branch occupancy counter (using Redis atomic) – count each booking as 1, regardless of tables
 			String occupancyKey = "branch:occupancy:" + savedBooking.getBranchId();
 			RAtomicLong activeBookingsCounter = redissonClient.getAtomicLong(occupancyKey);
 			long currentCount = activeBookingsCounter.incrementAndGet();
 
-			// 8. Check high occupancy (optional)
+			// Check high occupancy (optional)
 			checkAndNotifyLowAvailability(booking, currentCount);
 
-			// 9. Save pre-order items
+			// Save pre-order items
 			saveBookingItems(savedBooking, request.preOrderItems(), menuDetails);
 
-			// 10. Status history
+			// Status history
 			historyRepository.save(BookingStatusHistory.of(savedBooking, null, request.userId(), "Initial creation"));
 
-			// 11. Publish Kafka event
+			// Publish Kafka event
 			BookingEvent.BookingStatusUpdatedEvent event = BookingEvent.BookingStatusUpdatedEvent.builder()
 					.bookingId(savedBooking.getId())
 					.tableIds(tableIds)   // adapt event to include list
@@ -183,21 +182,46 @@ public class BookingServiceImpl implements BookingService {
 					.build();
 			eventProducer.sendBookingStatusUpdatedEvent(event);
 
-			// 12. Create order via Order Service
+			// Create order via Order Service
 			CreateOrderRequest.Builder orderRequestBuilder = CreateOrderRequest.newBuilder()
 					.setBookingId(savedBooking.getId().toString())
 					.setUserId(savedBooking.getUserId().toString())
 					.setBranchId(savedBooking.getBranchId().toString())
+					.setBookingDatetime(savedBooking.getBookingDatetime().toString())
 					.setGuestName(savedBooking.getGuestName())
 					.setGuestPhone(savedBooking.getGuestPhone())
 					.setSpecialRequest(savedBooking.getSpecialRequest());
-			// Add table IDs to order request (if supported)
+
 			orderRequestBuilder.addAllTableIds(tableIds.stream().map(UUID::toString).toList());
 
-			// ... (build order items as before) ...
-			request.preOrderItems().forEach(itemDto -> {
-				// ... same as original ...
-			});
+			for (BookingDto.BookingRequest.PreOrderItemRequest itemDto : request.preOrderItems()) {
+				MenuItemDetailPto menu = menuDetails.stream()
+						.filter(m -> m.getMenuItemId().equals(itemDto.menuItemId().toString()))
+						.findFirst()
+						.orElseThrow(() -> new BusinessException("Menu item not found: " + itemDto.menuItemId()));
+
+				OrderItemRequest.Builder itemBuilder = OrderItemRequest.newBuilder()
+						.setMenuItemId(itemDto.menuItemId().toString())
+						.setQuantity(itemDto.quantity())
+						.setPrice(menu.getBasePrice());
+
+				if (itemDto.modifierIds() != null && !itemDto.modifierIds().isEmpty()) {
+					for (UUID modId : itemDto.modifierIds()) {
+						String extra = menu.getModifierGroupsList().stream()
+								.flatMap(group -> group.getOptionsList().stream())
+								.filter(opt -> opt.getOptionId().equals(modId.toString()))
+								.map(ModifierOptionPto::getExtraPrice)
+								.findFirst()
+								.orElse("0.0");
+						itemBuilder.addModifiers(ModifierRequest.newBuilder()
+								.setModifierId(modId.toString())
+								.setPriceAdjustment(extra.toString())
+								.build());
+					}
+				}
+				orderRequestBuilder.addItems(itemBuilder.build());
+			}
+
 			CreateOrderResponse orderResponse = orderGrpcClient.createOrder(orderRequestBuilder.build());
 			savedBooking.setOrderId(UuidUtil.toUuid(orderResponse.getOrderId()));
 			bookingRepository.save(savedBooking);
