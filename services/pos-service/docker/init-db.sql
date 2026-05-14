@@ -67,6 +67,7 @@ CREATE TABLE pos_sync_queues
     branch_id     UUID NOT NULL,
     booking_id    UUID,
     order_id      UUID,
+    table_ids TEXT, -- store as comma-separated or JSON
     action        TEXT NOT NULL,
     payload       JSONB,                           -- Original event snapshot
     status        TEXT NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'COMPLETED', 'FAILED_PERMANENTLY'
