@@ -25,7 +25,7 @@ public class RestaurantGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public BranchManagersResponse getBranchManagers(BranchManagersRequest request) {
+	public GetBranchManagersResponse getBranchManagers(GetBranchManagersRequest request) {
 		return grpcExecutor.execute(USER_SERVICE, "getBranchManagers", () ->
 				restaurantServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

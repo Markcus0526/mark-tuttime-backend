@@ -12,12 +12,12 @@ option java_outer_classname = "NotificationServiceProto";
 // Notification Service gRPC
 service NotificationService {
 
-  rpc SendNotification(NotificationRequest) returns (google.protobuf.Empty);
+  rpc SendNotification(SendNotificationRequest) returns (google.protobuf.Empty);
 
 }
 
-// rpc SendNotification(NotificationRequest) returns (google.protobuf.Empty);
-message NotificationRequest {
+// rpc SendNotification(SendNotificationRequest) returns (google.protobuf.Empty);
+message SendNotificationRequest {
   string user_id = 1;
   string template_key = 2; // e.g., "BOOKING_REMINDER"
   google.protobuf.Struct params = 3; // Equivalent to Map<String, Object>

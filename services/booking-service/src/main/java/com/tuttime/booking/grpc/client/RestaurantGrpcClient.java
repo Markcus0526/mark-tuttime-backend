@@ -30,7 +30,7 @@ public class RestaurantGrpcClient {
 	private final GrpcExecutor grpcExecutor;
 
 	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
-		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
+		ValidateBranchPermissionRequest request = ValidateBranchPermissionRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.setUserId(userId.toString())
 				.setUserRoles(userRoles)
@@ -46,8 +46,8 @@ public class RestaurantGrpcClient {
 		}
 	}
 
-	public TableDetailResponse getTableDetail(UUID tableId) {
-		TableDetailRequest request = TableDetailRequest.newBuilder()
+	public GetTableDetailResponse getTableDetail(UUID tableId) {
+		GetTableDetailRequest request = GetTableDetailRequest.newBuilder()
 				.setTableId(tableId.toString())
 				.build();
 
@@ -57,8 +57,8 @@ public class RestaurantGrpcClient {
 						.getTableDetail(request));
 	}
 
-	public List<TableSlotResponse> getBranchSlots(UUID branchId, int partySize) {
-		BranchSlotsRequest request = BranchSlotsRequest.newBuilder()
+	public List<TableSlotPto> getBranchSlots(UUID branchId, int partySize) {
+		GetBranchSlotsRequest request = GetBranchSlotsRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.setPartySize(partySize)
 				.build();
@@ -69,8 +69,8 @@ public class RestaurantGrpcClient {
 						.getBranchSlots(request).getTablesList());
 	}
 
-	public ScheduleResponse getBranchSchedule(UUID branchId, int dayOfWeek) {
-		ScheduleRequest request = ScheduleRequest.newBuilder()
+	public GetBranchScheduleResponse getBranchSchedule(UUID branchId, int dayOfWeek) {
+		GetBranchScheduleRequest request = GetBranchScheduleRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.setDayOfWeek(dayOfWeek)
 				.build();
@@ -81,8 +81,8 @@ public class RestaurantGrpcClient {
 						.getBranchSchedule(request));
 	}
 
-	public BranchDetailResponse getBranchDetail(UUID branchId) {
-		BranchDetailRequest request = BranchDetailRequest.newBuilder()
+	public GetBranchDetailResponse getBranchDetail(UUID branchId) {
+		GetBranchDetailRequest request = GetBranchDetailRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.build();
 
@@ -92,7 +92,7 @@ public class RestaurantGrpcClient {
 						.getBranchDetail(request));
 	}
 
-	public TableHierarchyResponse getTableHierarchyDetail(TableHierarchyRequest request) {
+	public GetTableHierarchyDetailResponse getTableHierarchyDetail(GetTableHierarchyDetailRequest request) {
 		return grpcExecutor.execute(RESTAURANT_SERVICE, "getTableHierarchyDetail", () ->
 				restaurantServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

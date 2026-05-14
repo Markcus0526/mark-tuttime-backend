@@ -1,10 +1,7 @@
 package com.tuttime.order.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.BranchPermissionRequest;
-import com.tuttime.common.event.proto.RestaurantServiceGrpc;
-import com.tuttime.common.event.proto.TableHierarchyRequest;
-import com.tuttime.common.event.proto.TableHierarchyResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +27,7 @@ public class RestaurantGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public TableHierarchyResponse getTableHierarchyDetail(TableHierarchyRequest request) {
+	public GetTableHierarchyDetailResponse getTableHierarchyDetail(GetTableHierarchyDetailRequest request) {
 		return grpcExecutor.execute(RESTAURANT_SERVICE, "getTableHierarchyDetail", () ->
 				restaurantServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
@@ -38,7 +35,7 @@ public class RestaurantGrpcClient {
 	}
 
 	public void validateBranchPermission(UUID branchId, UUID userId, String userRoles) {
-		BranchPermissionRequest request = BranchPermissionRequest.newBuilder()
+		ValidateBranchPermissionRequest request = ValidateBranchPermissionRequest.newBuilder()
 				.setBranchId(branchId.toString())
 				.setUserId(userId.toString())
 				.setUserRoles(userRoles)

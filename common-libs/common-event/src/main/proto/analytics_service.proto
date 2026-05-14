@@ -9,17 +9,17 @@ option java_outer_classname = "AnalyticsServiceProto";
 // Analytics Service gRPC
 service AnalyticsService {
 
-  rpc GetUserScore (UserScoreRequest) returns (UserScoreResponse);
+  rpc GetUserScore(GetUserScoreRequest) returns (GetUserScoreResponse);
 
 }
 
-// rpc GetUserScore (UserScoreRequest) returns (UserScoreResponse);
-message UserScoreRequest {
+// rpc GetUserScore (GetUserScoreRequest) returns (GetUserScoreResponse);
+message GetUserScoreRequest {
   string user_id = 1;      // UUID as string
 }
 
 // The Response containing the "Brain" logic for the Booking Service
-message UserScoreResponse {
+message GetUserScoreResponse {
   string user_id = 1;
   int32 score = 2;              // 0 to 100
   string risk_level = 3;        // e.g., "STANDARD", "CRITICAL"

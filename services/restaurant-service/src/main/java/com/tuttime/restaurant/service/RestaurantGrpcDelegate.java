@@ -37,7 +37,7 @@ public class RestaurantGrpcDelegate {
 	private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
 	@Transactional(readOnly = true)
-	public BranchPermissionResponse validateBranchPermission(BranchPermissionRequest request) {
+	public ValidateBranchPermissionResponse validateBranchPermission(ValidateBranchPermissionRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		UUID currentUserId = UUID.fromString(request.getUserId());
 		String userRoles = request.getUserRoles();
@@ -45,8 +45,8 @@ public class RestaurantGrpcDelegate {
 		boolean valid = false;
 
 		// Validate user identity
-		UserValidResponse userResponse = userGrpClient.validateUser(
-				UserValidRequest.newBuilder().setUserId(currentUserId.toString()).build());
+		ValidateUserResponse userResponse = userGrpClient.validateUser(
+				ValidateUserRequest.newBuilder().setUserId(currentUserId.toString()).build());
 
 		if (userResponse.getValid()) {
 			// Parse roles (comma-separated)
@@ -68,16 +68,16 @@ public class RestaurantGrpcDelegate {
 			}
 		}
 
-		return BranchPermissionResponse.newBuilder().setValid(valid).build();
+		return ValidateBranchPermissionResponse.newBuilder().setValid(valid).build();
 	}
 
 	@Transactional(readOnly = true)
-	public TableDetailResponse getTableDetail(TableDetailRequest request) {
+	public GetTableDetailResponse getTableDetail(GetTableDetailRequest request) {
 		UUID tableId = UUID.fromString(request.getTableId());
 		TableHierarchyProjection record = tableRepository.findTableHierarchy(tableId)
 				.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
-		return TableDetailResponse.newBuilder()
+		return GetTableDetailResponse.newBuilder()
 				.setRestaurantId(record.getRestaurantId().toString())
 				.setBranchId(record.getBranchId().toString())
 				.setZoneId(record.getZoneId().toString())
@@ -90,15 +90,15 @@ public class RestaurantGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public BranchSlotsResponse getBranchSlots(BranchSlotsRequest request) {
+	public GetBranchSlotsResponse getBranchSlots(GetBranchSlotsRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		int partySize = request.getPartySize();
 		List<TableDetailProjection> tables = tableRepository.findTablesByBranchIdAndPartySize(
 				branchId, partySize, TableStatus.ACTIVE);
 
-		BranchSlotsResponse.Builder responseBuilder = BranchSlotsResponse.newBuilder();
+		GetBranchSlotsResponse.Builder responseBuilder = GetBranchSlotsResponse.newBuilder();
 		for (TableDetailProjection table : tables) {
-			responseBuilder.addTables(TableSlotResponse.newBuilder()
+			responseBuilder.addTables(TableSlotPto.newBuilder()
 					.setTableId(table.getTableId().toString())
 					.setZoneId(table.getZoneId().toString())
 					.setTableLabel(table.getTableLabel() != null ? table.getTableLabel() : "Standard")
@@ -110,13 +110,13 @@ public class RestaurantGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public ScheduleResponse getBranchSchedule(ScheduleRequest request) {
+	public GetBranchScheduleResponse getBranchSchedule(GetBranchScheduleRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		int dayOfWeek = request.getDayOfWeek();
 		Optional<ScheduleProjection> scheduleOpt = scheduleRepository.findActiveSchedule(branchId, dayOfWeek);
 
 		if (scheduleOpt.isEmpty()) {
-			return ScheduleResponse.newBuilder()
+			return GetBranchScheduleResponse.newBuilder()
 					.setClosed(true)
 					.setOpenTime("00:00")
 					.setCloseTime("00:00")
@@ -124,7 +124,7 @@ public class RestaurantGrpcDelegate {
 		}
 
 		ScheduleProjection schedule = scheduleOpt.get();
-		return ScheduleResponse.newBuilder()
+		return GetBranchScheduleResponse.newBuilder()
 				.setOpenTime(schedule.getOpenTime().format(TIME_FORMATTER))
 				.setCloseTime(schedule.getCloseTime().format(TIME_FORMATTER))
 				.setClosed(schedule.getClosed())
@@ -132,9 +132,9 @@ public class RestaurantGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public StaffUserResponse getStaffForUser(StaffUserRequest request) {
+	public GetStaffForUserResponse getStaffForUser(GetStaffForUserRequest request) {
 		UUID userId = UUID.fromString(request.getUserId());
-		StaffUserResponse.Builder responseBuilder = StaffUserResponse.newBuilder();
+		GetStaffForUserResponse.Builder responseBuilder = GetStaffForUserResponse.newBuilder();
 
 		staffRepository.findByUserId(userId).ifPresent(staff -> {
 			responseBuilder.setRestaurantId(staff.getRestaurant().getId().toString());
@@ -154,12 +154,12 @@ public class RestaurantGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public BranchDetailResponse getBranchDetail(BranchDetailRequest request) {
+	public GetBranchDetailResponse getBranchDetail(GetBranchDetailRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		BranchDetailProjection details = branchRepository.findBranchDetailById(branchId)
 				.orElseThrow(() -> new InvalidRequestException("Branch not found"));
 
-		return BranchDetailResponse.newBuilder()
+		return GetBranchDetailResponse.newBuilder()
 				.setBranchId(details.getBranchId().toString())
 				.setRestaurantId(details.getRestaurantId().toString())
 				.setBranchName(details.getBranchName())
@@ -170,12 +170,12 @@ public class RestaurantGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public TableHierarchyResponse getTableHierarchyDetail(TableHierarchyRequest request) {
+	public GetTableHierarchyDetailResponse getTableHierarchyDetail(GetTableHierarchyDetailRequest request) {
 		UUID tableId = UUID.fromString(request.getTableId());
 		TableHierarchyProjection record = tableRepository.findTableHierarchy(tableId)
 				.orElseThrow(() -> new InvalidRequestException("Table not found"));
 
-		return TableHierarchyResponse.newBuilder()
+		return GetTableHierarchyDetailResponse.newBuilder()
 				.setTableId(record.getTableId().toString())
 				.setZoneId(record.getZoneId().toString())
 				.setBranchId(record.getBranchId().toString())
@@ -190,28 +190,28 @@ public class RestaurantGrpcDelegate {
 	}
 
 	@Transactional(readOnly = true)
-	public BranchValidResponse validateBranch(BranchValidRequest request) {
+	public ValidateBranchResponse validateBranch(ValidateBranchRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		Optional<com.tuttime.restaurant.entity.Branch> branchOpt = branchRepository.findById(branchId);
 		if (branchOpt.isPresent()) {
 			var branch = branchOpt.get();
-			return BranchValidResponse.newBuilder()
+			return ValidateBranchResponse.newBuilder()
 					.setExists(true)
 					.setName(branch.getName())
 					.setActive(!branch.isDeleted())
 					.build();
 		}
-		return BranchValidResponse.newBuilder().setExists(false).build();
+		return ValidateBranchResponse.newBuilder().setExists(false).build();
 	}
 
 	@Transactional(readOnly = true)
-	public BranchManagersResponse getBranchManagers(BranchManagersRequest request) {
+	public GetBranchManagersResponse getBranchManagers(GetBranchManagersRequest request) {
 		UUID branchId = UUID.fromString(request.getBranchId());
 		List<String> managerIds = staffRepository.findManagerUserIdsByBranchId(branchId)
 				.stream()
 				.map(UUID::toString)
 				.toList();
-		return BranchManagersResponse.newBuilder()
+		return GetBranchManagersResponse.newBuilder()
 				.addAllManagerIds(managerIds)
 				.build();
 	}

@@ -1,8 +1,8 @@
 package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.NotificationRequest;
 import com.tuttime.common.event.proto.NotificationServiceGrpc;
+import com.tuttime.common.event.proto.SendNotificationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -26,7 +26,7 @@ public class NotificationGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public void sendNotification(NotificationRequest request) {
+	public void sendNotification(SendNotificationRequest request) {
 		grpcExecutor.execute(NOTIFICATION_SERVICE, "sendNotification", () ->
 				notificationServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

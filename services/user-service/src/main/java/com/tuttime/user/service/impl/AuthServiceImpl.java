@@ -8,8 +8,8 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.tuttime.common.enums.*;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.UserEvent;
-import com.tuttime.common.event.proto.StaffUserRequest;
-import com.tuttime.common.event.proto.StaffUserResponse;
+import com.tuttime.common.event.proto.GetStaffForUserRequest;
+import com.tuttime.common.event.proto.GetStaffForUserResponse;
 import com.tuttime.common.exception.ForbiddenException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.user.dto.AuthDto;
@@ -339,8 +339,8 @@ public class AuthServiceImpl implements AuthService {
 
 		if (roleNames.stream().anyMatch(role -> List.of("OWNER", "MANAGER", "HOSTESS").contains(role))) {
 			try {
-				StaffUserResponse grpcResponse = restaurantGrpcClient.getStaffForUser(
-						StaffUserRequest.newBuilder().setUserId(user.getId().toString()).build()
+				GetStaffForUserResponse grpcResponse = restaurantGrpcClient.getStaffForUser(
+						GetStaffForUserRequest.newBuilder().setUserId(user.getId().toString()).build()
 				);
 				if (!grpcResponse.getRestaurantId().isEmpty()) {
 					staffContext = new AuthDto.AuthResponse.RestaurantStaffDto(

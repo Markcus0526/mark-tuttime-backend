@@ -3,9 +3,7 @@ package com.tuttime.review.service.impl;
 import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.ReviewEvent;
-import com.tuttime.common.event.proto.UserDetailResponse;
-import com.tuttime.common.event.proto.UserDetailsRequest;
-import com.tuttime.common.event.proto.UserDetailsResponse;
+import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.review.dto.RatingDto;
@@ -85,18 +83,18 @@ public class ReviewServiceImpl implements ReviewService {
 				.distinct()
 				.toList();
 		// Call User Service (Assuming a Batch RPC exists)
-		UserDetailsResponse usersResponse = userGrpcClient.getUserDetails(UserDetailsRequest.newBuilder()
+		GetUserDetailsResponse usersResponse = userGrpcClient.getUserDetails(GetUserDetailsRequest.newBuilder()
 				.addAllUserIds(userIds)
 				.build());
 
-		Map<String, UserDetailResponse> userMap = usersResponse.getProfilesList().stream()
-				.collect(Collectors.toMap(UserDetailResponse::getUserId, user -> user));
+		Map<String, GetUserDetailResponse> userMap = usersResponse.getProfilesList().stream()
+				.collect(Collectors.toMap(GetUserDetailResponse::getUserId, user -> user));
 
 		// 3. Map to DTOs and enrich with User info
 		return reviewPage.map(review -> {
-			UserDetailResponse user = userMap.getOrDefault(
+			GetUserDetailResponse user = userMap.getOrDefault(
 					review.getUserId().toString(),
-					UserDetailResponse.newBuilder().setFullName("Unknown User").build()
+					GetUserDetailResponse.newBuilder().setFullName("Unknown User").build()
 			);
 			return reviewMapper.toReviewDetailResponse(review, user);
 		});

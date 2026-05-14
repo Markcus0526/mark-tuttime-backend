@@ -111,11 +111,11 @@ public class StaffServiceImpl implements StaffService {
 				.toList();
 
 		// This calls the gRPC method we discussed to get user details
-		Map<String, UserDetailResponse> profileMap = fetchUserProfiles(userIds);
+		Map<String, GetUserDetailResponse> profileMap = fetchUserProfiles(userIds);
 
 		// 4. Construct the Records
 		return staffs.stream().map(staff -> {
-			UserDetailResponse profile = profileMap.get(staff.getUserId().toString());
+			GetUserDetailResponse profile = profileMap.get(staff.getUserId().toString());
 
 			UUID branchId = (staff.getBranch() != null) ? staff.getBranch().getId() : null;
 
@@ -225,11 +225,11 @@ public class StaffServiceImpl implements StaffService {
 		if (currentUserId == null)
 			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 
-		UserValidRequest request = UserValidRequest.newBuilder()
+		ValidateUserRequest request = ValidateUserRequest.newBuilder()
 				.setUserId(currentUserId.toString())
 				.build();
 
-		UserValidResponse response = userGrpClient.validateUser(request);
+		ValidateUserResponse response = userGrpClient.validateUser(request);
 		if (!response.getValid()) {
 			throw new InvalidRequestException("Current User not found: " + currentUserId);
 		}
@@ -244,11 +244,11 @@ public class StaffServiceImpl implements StaffService {
 		if (currentUserId == null)
 			throw new ForbiddenException("You do not have permission to manage this restaurant.");
 
-		UserValidRequest request = UserValidRequest.newBuilder()
+		ValidateUserRequest request = ValidateUserRequest.newBuilder()
 				.setUserId(currentUserId.toString())
 				.build();
 
-		UserValidResponse response = userGrpClient.validateUser(request);
+		ValidateUserResponse response = userGrpClient.validateUser(request);
 		if (!response.getValid()) {
 			throw new InvalidRequestException("Current User not found: " + currentUserId);
 		}
@@ -323,10 +323,10 @@ public class StaffServiceImpl implements StaffService {
 	private boolean validateRestaurantOwner(UUID restaurantId, UUID currentUserId) {
 		if (restaurantId == null || currentUserId == null) return false;
 
-		UserValidRequest request = UserValidRequest.newBuilder()
+		ValidateUserRequest request = ValidateUserRequest.newBuilder()
 				.setUserId(currentUserId.toString())
 				.build();
-		UserValidResponse response = userGrpClient.validateUser(request);
+		ValidateUserResponse response = userGrpClient.validateUser(request);
 		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.OWNER.name()))
 			return false;
 
@@ -337,10 +337,10 @@ public class StaffServiceImpl implements StaffService {
 	private boolean validateBranchManager(UUID branchId, UUID currentUserId) {
 		if (branchId == null || currentUserId == null) return false;
 
-		UserValidRequest request = UserValidRequest.newBuilder()
+		ValidateUserRequest request = ValidateUserRequest.newBuilder()
 				.setUserId(currentUserId.toString())
 				.build();
-		UserValidResponse response = userGrpClient.validateUser(request);
+		ValidateUserResponse response = userGrpClient.validateUser(request);
 		if (!response.getValid() || !response.getRoles().contains(UserRoleKind.MANAGER.name()))
 			return false;
 
@@ -348,13 +348,13 @@ public class StaffServiceImpl implements StaffService {
 				branchId, currentUserId, UserRoleKind.MANAGER.name());
 	}
 
-	private Map<String, UserDetailResponse> fetchUserProfiles(List<String> userIds) {
+	private Map<String, GetUserDetailResponse> fetchUserProfiles(List<String> userIds) {
 		try {
-			UserDetailsRequest request = UserDetailsRequest.newBuilder().addAllUserIds(userIds).build();
-			UserDetailsResponse response = userGrpClient.getUserDetails(request);
+			GetUserDetailsRequest request = GetUserDetailsRequest.newBuilder().addAllUserIds(userIds).build();
+			GetUserDetailsResponse response = userGrpClient.getUserDetails(request);
 
 			return response.getProfilesList().stream()
-					.collect(Collectors.toMap(UserDetailResponse::getUserId, p -> p));
+					.collect(Collectors.toMap(GetUserDetailResponse::getUserId, p -> p));
 		} catch (Exception e) {
 			log.error("Failed to fetch user profiles via gRPC", e);
 			return Collections.emptyMap();

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.enums.NotificationTemplateKey;
 import com.tuttime.common.event.kafka.event.BookingEvent;
-import com.tuttime.common.event.proto.BranchManagersRequest;
-import com.tuttime.common.event.proto.BranchManagersResponse;
+import com.tuttime.common.event.proto.GetBranchManagersRequest;
+import com.tuttime.common.event.proto.GetBranchManagersResponse;
 import com.tuttime.notification.grpc.client.RestaurantGrpcClient;
 import com.tuttime.notification.service.NotificationOrchestrator;
 import lombok.RequiredArgsConstructor;
@@ -75,8 +75,8 @@ public class BookingEventConsumer {
 				Thread.ofVirtual().start(() -> {
 					try {
 						// FIX: Pass event.branchId(), not bookingTime
-						BranchManagersResponse response = restaurantGrpcClient.getBranchManagers(
-								BranchManagersRequest.newBuilder()
+						GetBranchManagersResponse response = restaurantGrpcClient.getBranchManagers(
+								GetBranchManagersRequest.newBuilder()
 										.setBranchId(event.branchId().toString())
 										.build());
 

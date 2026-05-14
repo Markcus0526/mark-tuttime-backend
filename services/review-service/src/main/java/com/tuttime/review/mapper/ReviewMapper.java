@@ -1,6 +1,6 @@
 package com.tuttime.review.mapper;
 
-import com.tuttime.common.event.proto.UserDetailResponse;
+import com.tuttime.common.event.proto.GetUserDetailResponse;
 import com.tuttime.review.dto.RatingDto.RatingAggregateResponse;
 import com.tuttime.review.dto.ReviewDto.ReviewResponse;
 import com.tuttime.review.entity.RatingAggregate;
@@ -25,7 +25,7 @@ public interface ReviewMapper {
 	@Mapping(target = "user.profilePicture", source = "user.profilePicture")
 	@Mapping(target = "user.email", source = "user.email")
 	@Mapping(target = "user.phoneNumber", source = "user.phoneNumber")
-	ReviewResponse toReviewDetailResponse(Review entity, UserDetailResponse user);
+	ReviewResponse toReviewDetailResponse(Review entity, GetUserDetailResponse user);
 
 	// Maps RatingAggregate entity to Response Record
 	RatingAggregateResponse toRatingResponse(RatingAggregate aggregate);

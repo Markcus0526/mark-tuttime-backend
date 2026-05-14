@@ -75,7 +75,7 @@ public class BookingGrpcDelegate {
 
 		GetTopCustomersResponse.Builder responseBuilder = GetTopCustomersResponse.newBuilder();
 		for (Object[] row : results.getContent()) {
-			TopCustomer customer = TopCustomer.newBuilder()
+			TopCustomerPto customer = TopCustomerPto.newBuilder()
 					.setUserId(row[0].toString())
 					.setTotalSpent(((BigDecimal) row[1]).doubleValue())
 					.setBookingCount(((Number) row[2]).intValue())

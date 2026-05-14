@@ -1,5 +1,6 @@
 package com.tuttime.pos.adapter;
 
+import com.tuttime.common.event.proto.GetOrderDetailResponse;
 import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.enums.PosProvider;
@@ -32,7 +33,7 @@ public interface PosAdapter {
 	 * Sends the full ticket (items, quantity, price) to the POS kitchen/terminal.
 	 * Uses the gRPC OrderDetailResponse for rich data.
 	 */
-	void sendOrder(PosConfig config, OrderDetailResponse order);
+	void sendOrder(PosConfig config, GetOrderDetailResponse order);
 
 	void cancelOrder(PosConfig config, UUID orderId, String reason);
 

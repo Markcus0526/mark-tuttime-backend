@@ -1,6 +1,6 @@
 package com.tuttime.order.service;
 
-import com.tuttime.common.event.proto.ActiveDiscount;
+import com.tuttime.common.event.proto.ActiveDiscountDto;
 import com.tuttime.order.entity.OrderItem;
 import com.tuttime.order.grpc.client.MenuGrpcClient;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +28,10 @@ public class OrderDiscountCalculator {
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		// Fetch active order discounts (if any)
-		List<ActiveDiscount> discounts = menuGrpcClient.getActiveOrderDiscounts(branchId);
+		List<ActiveDiscountDto> discounts = menuGrpcClient.getActiveOrderDiscounts(branchId);
 		BigDecimal finalTotal = subtotal;
 
-		for (ActiveDiscount discount : discounts) {
+		for (ActiveDiscountDto discount : discounts) {
 			if ("PERCENTAGE".equalsIgnoreCase(discount.getDiscountType())) {
 				BigDecimal discountAmount = subtotal.multiply(BigDecimal.valueOf(discount.getAmount() / 100.0));
 				finalTotal = finalTotal.subtract(discountAmount);

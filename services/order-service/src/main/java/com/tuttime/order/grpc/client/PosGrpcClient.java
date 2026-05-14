@@ -40,21 +40,21 @@ public class PosGrpcClient {
 				.toList();
 
 		// 2. BULK FETCH: One network call to get all names/descriptions
-		List<MenuItemDetailResponse> menuDetailsResponse = menuGrpcClient.getMenuDetails(menuItemIds);
+		List<MenuItemDetailPto> menuDetailsResponse = menuGrpcClient.getMenuDetails(menuItemIds);
 
 		// Convert to a Map for O(1) lookup speed during the loop
-		Map<String, MenuItemDetailResponse> detailMap = menuDetailsResponse.stream()
-				.collect(Collectors.toMap(MenuItemDetailResponse::getMenuItemId, d -> d));
+		Map<String, MenuItemDetailPto> detailMap = menuDetailsResponse.stream()
+				.collect(Collectors.toMap(MenuItemDetailPto::getMenuItemId, d -> d));
 
 		// 3. Build the Kitchen Request
-		KitchenOrderRequest.Builder requestBuilder = KitchenOrderRequest.newBuilder()
+		PushToKitchenRequest.Builder requestBuilder = PushToKitchenRequest.newBuilder()
 				.setOrderId(order.getId().toString())
 				.setBranchId(order.getBranchId().toString());
 
 		order.getItems().forEach(item -> {
-			MenuItemDetailResponse detail = detailMap.get(item.getMenuItemId().toString());
+			MenuItemDetailPto detail = detailMap.get(item.getMenuItemId().toString());
 
-			KitchenOrderItemRequest.Builder itemEntry = KitchenOrderItemRequest.newBuilder()
+			KitchenOrderItemDto.Builder itemEntry = KitchenOrderItemDto.newBuilder()
 					.setMenuItemId(item.getMenuItemId().toString())
 					.setName(detail != null ? detail.getName() : "Unknown Item") // HYDRATED NAME
 					.setQuantity(item.getQuantity())
@@ -69,7 +69,7 @@ public class PosGrpcClient {
 							.flatMap(g -> g.getOptionsList().stream())
 							.filter(opt -> opt.getOptionId().equals(mod.getModifierId().toString()))
 							.findFirst()
-							.map(ModifierOptionResponse::getName)
+							.map(ModifierOptionPto::getName)
 							.orElse("Extra Option");
 				}
 				itemEntry.addModifiers(modName); // HYDRATED MODIFIER NAME

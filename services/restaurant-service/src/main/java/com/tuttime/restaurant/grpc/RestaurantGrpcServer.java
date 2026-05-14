@@ -17,7 +17,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	private final RestaurantGrpcDelegate delegate;
 
 	@Override
-	public void validateBranchPermission(BranchPermissionRequest request, StreamObserver<BranchPermissionResponse> responseObserver) {
+	public void validateBranchPermission(ValidateBranchPermissionRequest request, StreamObserver<ValidateBranchPermissionResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.validateBranchPermission(request));
 			responseObserver.onCompleted();
@@ -32,7 +32,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getTableDetail(TableDetailRequest request, StreamObserver<TableDetailResponse> responseObserver) {
+	public void getTableDetail(GetTableDetailRequest request, StreamObserver<GetTableDetailResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getTableDetail(request));
 			responseObserver.onCompleted();
@@ -47,7 +47,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getBranchSlots(BranchSlotsRequest request, StreamObserver<BranchSlotsResponse> responseObserver) {
+	public void getBranchSlots(GetBranchSlotsRequest request, StreamObserver<GetBranchSlotsResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getBranchSlots(request));
 			responseObserver.onCompleted();
@@ -62,7 +62,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getBranchSchedule(ScheduleRequest request, StreamObserver<ScheduleResponse> responseObserver) {
+	public void getBranchSchedule(GetBranchScheduleRequest request, StreamObserver<GetBranchScheduleResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getBranchSchedule(request));
 			responseObserver.onCompleted();
@@ -77,7 +77,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getStaffForUser(StaffUserRequest request, StreamObserver<StaffUserResponse> responseObserver) {
+	public void getStaffForUser(GetStaffForUserRequest request, StreamObserver<GetStaffForUserResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getStaffForUser(request));
 			responseObserver.onCompleted();
@@ -90,7 +90,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getBranchDetail(BranchDetailRequest request, StreamObserver<BranchDetailResponse> responseObserver) {
+	public void getBranchDetail(GetBranchDetailRequest request, StreamObserver<GetBranchDetailResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getBranchDetail(request));
 			responseObserver.onCompleted();
@@ -105,7 +105,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getTableHierarchyDetail(TableHierarchyRequest request, StreamObserver<TableHierarchyResponse> responseObserver) {
+	public void getTableHierarchyDetail(GetTableHierarchyDetailRequest request, StreamObserver<GetTableHierarchyDetailResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getTableHierarchyDetail(request));
 			responseObserver.onCompleted();
@@ -120,7 +120,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void validateBranch(BranchValidRequest request, StreamObserver<BranchValidResponse> responseObserver) {
+	public void validateBranch(ValidateBranchRequest request, StreamObserver<ValidateBranchResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.validateBranch(request));
 			responseObserver.onCompleted();
@@ -133,7 +133,7 @@ public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServic
 	}
 
 	@Override
-	public void getBranchManagers(BranchManagersRequest request, StreamObserver<BranchManagersResponse> responseObserver) {
+	public void getBranchManagers(GetBranchManagersRequest request, StreamObserver<GetBranchManagersResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getBranchManagers(request));
 			responseObserver.onCompleted();

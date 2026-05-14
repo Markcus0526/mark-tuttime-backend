@@ -17,7 +17,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	private final MenuGrpcDelegate delegate;
 
 	@Override
-	public void getPriceForOrder(PriceRequest request, StreamObserver<PriceResponse> responseObserver) {
+	public void getPriceForOrder(GetPriceForOrderRequest request, StreamObserver<GetPriceForOrderResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getPriceForOrder(request));
 			responseObserver.onCompleted();
@@ -32,7 +32,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	}
 
 	@Override
-	public void getPreOrderMenu(MenuRequest request, StreamObserver<MenuResponse> responseObserver) {
+	public void getPreOrderMenu(GetPreOrderMenuRequest request, StreamObserver<GetPreOrderMenuResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getPreOrderMenu(request));
 			responseObserver.onCompleted();
@@ -47,7 +47,7 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	}
 
 	@Override
-	public void getMenuDetails(MenuDetailsRequest request, StreamObserver<MenuDetailsResponse> responseObserver) {
+	public void getMenuDetails(GetMenuDetailsRequest request, StreamObserver<GetMenuDetailsResponse> responseObserver) {
 		try {
 			responseObserver.onNext(delegate.getMenuDetails(request));
 			responseObserver.onCompleted();
@@ -62,10 +62,10 @@ public class MenuGrpcServer extends MenuServiceGrpc.MenuServiceImplBase {
 	}
 
 	@Override
-	public void getActiveOrderDiscounts(ActiveOrderDiscountsRequest request,
-	                                    StreamObserver<ActiveOrderDiscountsResponse> responseObserver) {
+	public void getActiveOrderDiscounts(GetActiveOrderDiscountsRequest request,
+	                                    StreamObserver<GetActiveOrderDiscountsResponse> responseObserver) {
 		try {
-			ActiveOrderDiscountsResponse response = delegate.getActiveOrderDiscounts(request);
+			GetActiveOrderDiscountsResponse response = delegate.getActiveOrderDiscounts(request);
 			responseObserver.onNext(response);
 			responseObserver.onCompleted();
 		} catch (IllegalArgumentException e) {

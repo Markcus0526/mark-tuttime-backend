@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package com.tuttime.common.event.proto;
 
-import "google/protobuf/timestamp.proto";
-
 option java_multiple_files = true;
 option java_package = "com.tuttime.common.event.proto";
 option java_outer_classname = "RestaurantServiceProto";
@@ -11,35 +9,35 @@ option java_outer_classname = "RestaurantServiceProto";
 // Restaurant Service gRPC
 service RestaurantService {
 
-  rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
+  rpc GetStaffForUser(GetStaffForUserRequest) returns (GetStaffForUserResponse);
 
-  rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
+  rpc ValidateBranchPermission(ValidateBranchPermissionRequest) returns (ValidateBranchPermissionResponse);
 
-  rpc GetTableDetail (TableDetailRequest) returns (TableDetailResponse);
+  rpc GetTableDetail(GetTableDetailRequest) returns (GetTableDetailResponse);
 
-  rpc GetBranchSlots (BranchSlotsRequest) returns (BranchSlotsResponse);
+  rpc GetBranchSlots(GetBranchSlotsRequest) returns (GetBranchSlotsResponse);
 
-  rpc GetBranchSchedule (ScheduleRequest) returns (ScheduleResponse);
+  rpc GetBranchSchedule(GetBranchScheduleRequest) returns (GetBranchScheduleResponse);
 
-  rpc GetBranchDetail (BranchDetailRequest) returns (BranchDetailResponse);
+  rpc GetBranchDetail(GetBranchDetailRequest) returns (GetBranchDetailResponse);
 
-  rpc GetTableHierarchyDetail (TableHierarchyRequest) returns (TableHierarchyResponse);
+  rpc GetTableHierarchyDetail(GetTableHierarchyDetailRequest) returns (GetTableHierarchyDetailResponse);
 
-  rpc ValidateBranch (BranchValidRequest) returns (BranchValidResponse);
+  rpc ValidateBranch(ValidateBranchRequest) returns (ValidateBranchResponse);
 
-  rpc GetBranchManagers(BranchManagersRequest) returns (BranchManagersResponse);
+  rpc GetBranchManagers(GetBranchManagersRequest) returns (GetBranchManagersResponse);
 
   rpc FindAvailableTable(FindAvailableTableRequest) returns (FindAvailableTableResponse);
 
   rpc GetBranchTotalTables(GetBranchTotalTablesRequest) returns (GetBranchTotalTablesResponse);
 }
 
-// rpc GetStaffForUser (StaffUserRequest) returns (StaffUserResponse);
-message StaffUserRequest {
+// rpc GetStaffForUser(GetStaffForUserRequest) returns (GetStaffForUserResponse);
+message GetStaffForUserRequest {
   string user_id = 1;
 }
 
-message StaffUserResponse {
+message GetStaffForUserResponse {
   string restaurant_id = 1;
   string branch_id = 2; // Optional, can be empty string
   string entity_name = 3;
@@ -47,23 +45,23 @@ message StaffUserResponse {
   bool active = 5;
 }
 
-// rpc ValidateBranchPermission (BranchPermissionRequest) returns (BranchPermissionResponse);
-message BranchPermissionRequest {
+// rpc ValidateBranchPermission(ValidateBranchPermissionRequest) returns (ValidateBranchPermissionResponse);
+message ValidateBranchPermissionRequest {
   string branch_id = 1; // Branch or Restaurant UUID
   string user_id = 2; // User UUID
   string user_roles = 3;
 }
 
-message BranchPermissionResponse {
+message ValidateBranchPermissionResponse {
   bool valid = 1;
 }
 
-// rpc GetTableDetail (TableDetailRequest) returns (TableDetailResponse);
-message TableDetailRequest {
+// rpc GetTableDetail(GetTableDetailRequest) returns (GetTableDetailResponse);
+message GetTableDetailRequest {
   string table_id = 1;
 }
 
-message TableDetailResponse {
+message GetTableDetailResponse {
   string restaurant_id = 1;
   string branch_id = 2;
   string zone_id = 3;
@@ -74,24 +72,24 @@ message TableDetailResponse {
   bool available = 8;
 }
 
-// rpc GetBranchSlots (BranchSlotsRequest) returns (BranchSlotsResponse);
-message BranchSlotsRequest {
+// rpc GetBranchSlots(GetBranchSlotsRequest) returns (GetBranchSlotsResponse);
+message GetBranchSlotsRequest {
   string restaurant_id = 1;
   string branch_id = 2;
-  google.protobuf.Timestamp target_date = 3;
+  string target_date = 3;
   int32 party_size = 4; // Crucial filter: only return tables that can fit this many people
   optional string zone_id = 5; // Optional: filter for specific areas like 'Terrace' or 'VIP'
 }
 
-message BranchSlotsResponse {
+message GetBranchSlotsResponse {
   string branch_id = 1;
   string restaurant_id = 2;
   string branch_name = 3;
   string restaurant_name = 4;
-  repeated TableSlotResponse tables = 5;
+  repeated TableSlotPto tables = 5;
 }
 
-message TableSlotResponse {
+message TableSlotPto {
   string table_id = 1;
   string zone_id = 2;
   string zone_name = 3;
@@ -100,24 +98,24 @@ message TableSlotResponse {
   int32 max_capacity = 6;
 }
 
-// rpc GetBranchSchedule (ScheduleRequest) returns (ScheduleResponse);
-message ScheduleRequest {
+// rpc GetBranchSchedule(GetBranchScheduleRequest) returns (GetBranchScheduleResponse);
+message GetBranchScheduleRequest {
   string branch_id = 1;
   int32 day_of_week = 2; // 0-6 (Sunday to Saturday)
 }
 
-message ScheduleResponse {
+message GetBranchScheduleResponse {
   string open_time = 1;  // "HH:mm" format
   string close_time = 2; // "HH:mm" format
   bool closed = 3;
 }
 
-// rpc GetBranchDetail (BranchDetailRequest) returns (BranchDetailResponse);
-message BranchDetailRequest {
+// rpc GetBranchDetail(GetBranchDetailRequest) returns (GetBranchDetailResponse);
+message GetBranchDetailRequest {
   string branch_id = 1;
 }
 
-message BranchDetailResponse {
+message GetBranchDetailResponse {
   string branch_id = 1;
   string restaurant_id = 2;
   string branch_name = 3;
@@ -126,12 +124,12 @@ message BranchDetailResponse {
   string restaurant_name = 6;
 }
 
-// rpc GetTableHierarchyDetail (TableHierarchyRequest) returns (TableHierarchyResponse);
-message TableHierarchyRequest {
+// rpc GetTableHierarchyDetail(GetTableHierarchyDetailRequest) returns (GetTableHierarchyDetailResponse);
+message GetTableHierarchyDetailRequest {
   string table_id = 1;
 }
 
-message TableHierarchyResponse {
+message GetTableHierarchyDetailResponse {
   string table_id = 1;
   string zone_id = 2;
   string branch_id = 3;
@@ -144,23 +142,23 @@ message TableHierarchyResponse {
   string restaurant_name = 10;
 }
 
-// rpc ValidateBranch (BranchValidRequest) returns (BranchValidResponse);
-message BranchValidRequest {
+// rpc ValidateBranch(ValidateBranchRequest) returns (ValidateBranchResponse);
+message ValidateBranchRequest {
   string branch_id = 1;
 }
 
-message BranchValidResponse {
+message ValidateBranchResponse {
   bool exists = 1;
   string name = 2;
   bool active = 3;
 }
 
-// rpc GetBranchManagers(BranchManagersRequest) returns (BranchManagersResponse);
-message BranchManagersRequest {
+// rpc GetBranchManagers(GetBranchManagersRequest) returns (GetBranchManagersResponse);
+message GetBranchManagersRequest {
   string branch_id = 1;
 }
 
-message BranchManagersResponse {
+message GetBranchManagersResponse {
   repeated string manager_ids = 1;
 }
 

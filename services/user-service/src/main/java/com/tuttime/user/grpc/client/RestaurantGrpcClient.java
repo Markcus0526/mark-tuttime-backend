@@ -1,9 +1,9 @@
 package com.tuttime.user.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
+import com.tuttime.common.event.proto.GetStaffForUserRequest;
+import com.tuttime.common.event.proto.GetStaffForUserResponse;
 import com.tuttime.common.event.proto.RestaurantServiceGrpc;
-import com.tuttime.common.event.proto.StaffUserRequest;
-import com.tuttime.common.event.proto.StaffUserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -27,7 +27,7 @@ public class RestaurantGrpcClient {
 
 	private final GrpcExecutor grpcExecutor;
 
-	public StaffUserResponse getStaffForUser(StaffUserRequest request) {
+	public GetStaffForUserResponse getStaffForUser(GetStaffForUserRequest request) {
 		return grpcExecutor.execute(RESTAURANT_SERVICE, "getStaffForUser", () ->
 				restaurantServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

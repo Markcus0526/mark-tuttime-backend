@@ -86,4 +86,8 @@ public interface TableRepository extends JpaRepository<DishTable, UUID> {
 
 	@Query("SELECT COUNT(t) FROM DishTable t WHERE t.zone.branch.id = :branchId AND t.deleted = false AND t.closed = false")
 	int countByBranchId(@Param("branchId") UUID branchId);
+
+	@Modifying
+	@Query("UPDATE DishTable t SET t.status = :status WHERE t.id IN :tableIds")
+	void updateStatusByTableIds(@Param("tableIds") List<UUID> tableIds, @Param("status") TableStatus status);
 }

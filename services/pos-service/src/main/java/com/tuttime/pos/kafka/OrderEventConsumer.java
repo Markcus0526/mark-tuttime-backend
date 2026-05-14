@@ -3,6 +3,7 @@ package com.tuttime.pos.kafka;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.enums.OrderStatus;
 import com.tuttime.common.event.kafka.event.OrderEvent;
+import com.tuttime.common.event.proto.GetOrderDetailResponse;
 import com.tuttime.common.event.proto.OrderDetailResponse;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
@@ -71,7 +72,7 @@ public class OrderEventConsumer {
 			if (event.newStatus() == OrderStatus.CREATED) {
 
 				// 1. Fetch rich data via gRPC
-				OrderDetailResponse details = orderGrpcClient.getOrderDetail(event.orderId());
+				GetOrderDetailResponse details = orderGrpcClient.getOrderDetail(event.orderId());
 
 				// 2. Fetch POS Config
 				var config = posConfigRepository.findByBranchIdAndEnabledTrue(event.branchId())

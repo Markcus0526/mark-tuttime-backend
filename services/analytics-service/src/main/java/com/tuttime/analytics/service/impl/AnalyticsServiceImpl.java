@@ -111,11 +111,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
 		GetTopItemsResponse response = orderGrpcClient.getTopItems(branchId, from, to, limit);
 		// Collect item IDs
-		List<String> itemIds = response.getItemsList().stream().map(TopItem::getItemId).toList();
+		List<String> itemIds = response.getItemsList().stream().map(TopItemPto::getItemId).toList();
 		// Batch fetch menu details from menu service
-		MenuDetailsResponse menuDetails = menuGrpcClient.getMenuDetails(itemIds);
+		GetMenuDetailsResponse menuDetails = menuGrpcClient.getMenuDetails(itemIds);
 		Map<String, String> nameMap = menuDetails.getItemsList().stream()
-				.collect(Collectors.toMap(MenuItemDetailResponse::getMenuItemId, MenuItemDetailResponse::getName));
+				.collect(Collectors.toMap(MenuItemDetailPto::getMenuItemId, MenuItemDetailPto::getName));
 		return response.getItemsList().stream()
 				.map(item -> new RestaurantDto.TopItemResponse(
 						UUID.fromString(item.getItemId()),
@@ -235,13 +235,13 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
 		// 2. Batch fetch user names from user service
 		List<String> userIds = response.getCustomersList().stream()
-				.map(TopCustomer::getUserId)
+				.map(TopCustomerPto::getUserId)
 				.toList();
-		UserDetailsResponse users = userGrpcClient.getUserDetails(UserDetailsRequest.newBuilder()
+		GetUserDetailsResponse users = userGrpcClient.getUserDetails(GetUserDetailsRequest.newBuilder()
 				.addAllUserIds(userIds)
 				.build());
 		Map<String, String> nameMap = users.getProfilesList().stream()
-				.collect(Collectors.toMap(UserDetailResponse::getUserId, UserDetailResponse::getFullName));
+				.collect(Collectors.toMap(GetUserDetailResponse::getUserId, GetUserDetailResponse::getFullName));
 
 		// 3. Build response
 		return response.getCustomersList().stream()
@@ -269,15 +269,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
 		// 2. Batch fetch item details (name, category) from menu service
 		List<String> itemIds = itemPoints.stream().map(MenuPerformancePoint::getId).toList();
-		MenuDetailsResponse menuDetails = menuGrpcClient.getMenuDetails(itemIds);
-		Map<String, MenuItemDetailResponse> itemMap = menuDetails.getItemsList().stream()
-				.collect(Collectors.toMap(MenuItemDetailResponse::getMenuItemId, i -> i));
+		GetMenuDetailsResponse menuDetails = menuGrpcClient.getMenuDetails(itemIds);
+		Map<String, MenuItemDetailPto> itemMap = menuDetails.getItemsList().stream()
+				.collect(Collectors.toMap(MenuItemDetailPto::getMenuItemId, i -> i));
 
 		if ("ITEM".equalsIgnoreCase(groupBy)) {
 			// Build response directly with names
 			List<RestaurantDto.MenuPerformanceResponse.MenuPerformancePoint> points = itemPoints.stream()
 					.map(p -> {
-						MenuItemDetailResponse item = itemMap.get(p.getId());
+						MenuItemDetailPto item = itemMap.get(p.getId());
 						if (item == null) return null;
 						return new RestaurantDto.MenuPerformanceResponse.MenuPerformancePoint(
 								UUID.fromString(p.getId()),
@@ -293,7 +293,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 			// Group by category
 			Map<String, CategoryAggregate> categoryMap = new LinkedHashMap<>();
 			for (MenuPerformancePoint p : itemPoints) {
-				MenuItemDetailResponse item = itemMap.get(p.getId());
+				MenuItemDetailPto item = itemMap.get(p.getId());
 				if (item == null) continue;
 				String catId = item.getCategoryId();
 				String catName = item.getCategoryName();

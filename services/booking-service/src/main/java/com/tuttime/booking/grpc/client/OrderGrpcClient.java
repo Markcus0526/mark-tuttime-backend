@@ -39,7 +39,7 @@ public class OrderGrpcClient {
 						.updateOrder(request));
 	}
 
-	public CancelOrderResponse cancelAndRefund(CancelOrderRequest request) {
+	public CancelAndRefundResponse cancelAndRefund(CancelAndRefundRequest request) {
 		return grpcExecutor.execute(ORDER_SERVICE, "cancelAndRefund", () ->
 				orderServiceBlockingStub
 						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)

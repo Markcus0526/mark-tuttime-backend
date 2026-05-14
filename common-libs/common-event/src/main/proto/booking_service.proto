@@ -66,10 +66,10 @@ message GetTopCustomersRequest {
 }
 
 message GetTopCustomersResponse {
-  repeated TopCustomer customers = 1;
+  repeated TopCustomerPto customers = 1;
 }
 
-message TopCustomer {
+message TopCustomerPto {
   string user_id = 1;
   double total_spent = 2;   // use double for simplicity, or string for precision
   int32 booking_count = 3;
