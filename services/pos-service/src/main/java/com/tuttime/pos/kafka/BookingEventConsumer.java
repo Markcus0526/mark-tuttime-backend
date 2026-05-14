@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.common.event.kafka.event.BookingEvent;
 import com.tuttime.pos.adapter.PosAdapter;
 import com.tuttime.pos.adapter.PosAdapterFactory;
+import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.PosSyncQueue;
 import com.tuttime.pos.repository.PosConfigRepository;
 import com.tuttime.pos.repository.PosSyncQueueRepository;
@@ -15,6 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS_UPDATED;
 
@@ -39,6 +44,12 @@ public class BookingEventConsumer {
 			BookingEvent.BookingStatusUpdatedEvent event =
 					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
+			List<UUID> tableIds = extractTableIds(event);
+			if (tableIds.isEmpty()) {
+				log.warn("No table IDs in event for booking {}", event.bookingId());
+				return;
+			}
+
 			// 1. Look up the POS configuration for this specific branch
 			var config = posConfigRepository.findByBranchIdAndEnabledTrue(event.branchId())
 					.orElseGet(() -> {
@@ -53,13 +64,9 @@ public class BookingEventConsumer {
 			// 3. Execute the corresponding POS action
 			try {
 				switch (event.newStatus()) {
-					case PAID -> adapter.reserveTable(config, event.tableId(), event.bookingId());
-
-					case ARRIVED -> adapter.occupyTable(config, event.tableId(), event.bookingId());
-
-					case COMPLETED, CANCELED, NO_SHOW ->
-							adapter.releaseTable(config, event.tableId(), event.bookingId());
-
+					case PAID -> reserveTables(adapter, config, tableIds, event.bookingId());
+					case ARRIVED -> occupyTables(adapter, config, tableIds, event.bookingId());
+					case COMPLETED, CANCELED, NO_SHOW -> releaseTables(adapter, config, tableIds, event.bookingId());
 					default -> log.debug("No POS action mapped for status {}", event.newStatus());
 				}
 			} catch (Exception e) {
@@ -68,7 +75,7 @@ public class BookingEventConsumer {
 						event.bookingId(), config.getPosProvider(), e);
 
 				// Optional: Re-throw to trigger Kafka Retry DLT or move to your pos_sync_queues
-				handleSyncFailure(event, e);
+				handleSyncFailure(event, tableIds, e);
 			}
 		} catch (Exception e) {
 			// 5. Final safety net to prevent infinite retries of bad messages
@@ -77,27 +84,59 @@ public class BookingEventConsumer {
 		}
 	}
 
-	private void handleSyncFailure(BookingEvent.BookingStatusUpdatedEvent event, Exception e) {
-		log.info("Queuing failed sync for booking {} to retry later", event.bookingId());
+	// Helper: extract list of table IDs from event
+	private List<UUID> extractTableIds(BookingEvent.BookingStatusUpdatedEvent event) {
+		if (event.tableIds() != null && !event.tableIds().isEmpty()) {
+			return event.tableIds();
+		}
+		return Collections.emptyList();
+	}
+
+	// Batch reserve
+	private void reserveTables(PosAdapter adapter, PosConfig config, List<UUID> tableIds, UUID bookingId) {
+		for (UUID tableId : tableIds) {
+			adapter.reserveTable(config, tableId, bookingId);
+		}
+	}
+
+	// Batch occupy
+	private void occupyTables(PosAdapter adapter, PosConfig config, List<UUID> tableIds, UUID bookingId) {
+		for (UUID tableId : tableIds) {
+			adapter.occupyTable(config, tableId, bookingId);
+		}
+	}
+
+	// Batch release
+	private void releaseTables(PosAdapter adapter, PosConfig config, List<UUID> tableIds, UUID bookingId) {
+		for (UUID tableId : tableIds) {
+			adapter.releaseTable(config, tableId, bookingId);
+		}
+	}
+
+	// Queue the whole booking (all tables) for retry
+	private void handleSyncFailure(BookingEvent.BookingStatusUpdatedEvent event, List<UUID> tableIds, Exception e) {
+		log.info("Queuing failed sync for booking {} (tables: {}) to retry later", event.bookingId(), tableIds);
 
 		PosSyncQueue queueItem = new PosSyncQueue();
 		queueItem.setBranchId(event.branchId());
 		queueItem.setBookingId(event.bookingId());
 
-		// Map the status to the action name for the retry task
+		// Store table IDs as comma-separated string (or JSON)
+		String tableIdsStr = tableIds.stream()
+				.map(UUID::toString)
+				.collect(Collectors.joining(","));
+		queueItem.setTableIds(tableIdsStr);
+
+		// Determine action name
 		String action = switch (event.newStatus()) {
 			case PAID -> "RESERVE_TABLE";
 			case ARRIVED -> "OCCUPY_TABLE";
 			default -> "RELEASE_TABLE";
 		};
-
 		queueItem.setAction(action);
 		queueItem.setLastError(e.getMessage());
-
-		// Exponential Backoff: Try again in 1 minute for the first retry
 		queueItem.setNextRetryAt(OffsetDateTime.now().plusMinutes(1));
 		queueItem.setRetryCount(1);
-
 		posSyncQueueRepository.save(queueItem);
 	}
 }

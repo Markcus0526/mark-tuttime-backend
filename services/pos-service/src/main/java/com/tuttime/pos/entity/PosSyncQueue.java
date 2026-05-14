@@ -33,6 +33,9 @@ public class PosSyncQueue extends BaseSerialEntity {
 	@Column(name = "order_id")
 	private UUID orderId;
 
+	@Column(name = "table_ids")
+	private String tableIds;   // e.g., "uuid1,uuid2,uuid3"
+
 	@Column(nullable = false)
 	private String action;
 
