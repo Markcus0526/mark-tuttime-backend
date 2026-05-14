@@ -21,7 +21,7 @@ spec:
       containers:
         - name: notification-service
           image: tuttime/notification-service:v1
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   # or Never
           ports:
             - containerPort: 28010
               name: http
@@ -64,16 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: notification-service-uploads-pvc
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: notification-service-uploads-pvc
-  namespace: tuttime
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
+            claimName: notification-service-uploads-pvc.yaml

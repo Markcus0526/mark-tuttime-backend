@@ -21,7 +21,7 @@ spec:
       containers:
         - name: user-service
           image: tuttime/user-service:v1
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   # or Never
           ports:
             - containerPort: 28001
               name: http
@@ -64,16 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: user-service-uploads-pvc
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: user-service-uploads-pvc
-  namespace: tuttime
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+            claimName: user-service-uploads-pvc.yaml

@@ -21,7 +21,7 @@ spec:
       containers:
         - name: review-service
           image: tuttime/review-service:v1
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   # or Never
           ports:
             - containerPort: 28008
               name: http
@@ -64,16 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: review-service-uploads-pvc
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: review-service-uploads-pvc
-  namespace: tuttime
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
+            claimName: review-service-uploads-pvc.yaml

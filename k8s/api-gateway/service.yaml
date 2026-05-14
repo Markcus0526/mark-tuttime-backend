@@ -10,7 +10,8 @@ spec:
     - name: http
       port: 8080
       targetPort: 8080
+      nodePort: 30080   # optional, Kubernetes will assign if omitted
     - name: debug
       port: 5000
       targetPort: 5000
-  type: ClusterIP
+  type: NodePort

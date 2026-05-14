@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: graylog
   namespace: tuttime
+  labels:
+    app.kubernetes.io/name: graylog
 spec:
   selector:
     app: graylog

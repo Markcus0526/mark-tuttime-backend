@@ -21,7 +21,7 @@ spec:
       containers:
         - name: booking-service
           image: tuttime/booking-service:v1
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   # or Never
           ports:
             - containerPort: 28004
               name: http
@@ -64,16 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: booking-service-uploads-pvc
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: booking-service-uploads-pvc
-  namespace: tuttime
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+            claimName: booking-service-uploads-pvc.yaml
