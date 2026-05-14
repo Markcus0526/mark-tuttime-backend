@@ -13,9 +13,11 @@ spec:
       labels:
         app: zipkin
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: zipkin
-          image: openzipkin/zipkin:latest
+          image: openzipkin/zipkin:2.24.3
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9411
           env:
@@ -25,24 +27,19 @@ spec:
             httpGet:
               path: /health
               port: 9411
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9411
             initialDelaySeconds: 30
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "100m"
-            limits:
               memory: "512Mi"
               cpu: "200m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: zipkin
-  namespace: tuttime
-spec:
-  selector:
-    app: zipkin
-  ports:
-    - port: 9411
-      targetPort: 9411
-  type: ClusterIP
+            limits:
+              memory: "1Gi"
+              cpu: "500m"

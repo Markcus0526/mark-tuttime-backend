@@ -22,7 +22,7 @@ spec:
       containers:
         - name: api-gateway
           image: tuttime/api-gateway:v1   # change to your registry/image
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   # or Never
           ports:
             - containerPort: 8080
               name: http

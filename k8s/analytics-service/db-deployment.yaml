@@ -1,15 +1,3 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: analytics-service-db-pvc
-  namespace: tuttime
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,6 +13,7 @@ spec:
       labels:
         app: analytics-service-db
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: postgres
           image: postgres:15-alpine
@@ -64,20 +53,7 @@ spec:
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: analytics-service-db-pvc
+            claimName: db-pvc.yaml
         - name: init-script
           configMap:
             name: analytics-service-db-init
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: analytics-service-db
-  namespace: tuttime
-spec:
-  selector:
-    app: analytics-service-db
-  ports:
-    - port: 5432
-      targetPort: 5432
-  type: ClusterIP

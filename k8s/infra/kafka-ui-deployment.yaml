@@ -13,9 +13,11 @@ spec:
       labels:
         app: kafka-ui
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: kafka-ui
-          image: provectuslabs/kafka-ui:latest
+          image: provectuslabs/kafka-ui:v0.7.2
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
@@ -30,16 +32,3 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "200m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka-ui
-  namespace: tuttime
-spec:
-  selector:
-    app: kafka-ui
-  ports:
-    - port: 8080
-      targetPort: 8080
-  type: ClusterIP
