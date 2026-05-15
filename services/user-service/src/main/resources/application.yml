@@ -132,6 +132,10 @@ grpc:
     restaurant-service:
       address: static://${RESTAURANT_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s          # ping interval
+      keep-alive-timeout: 5s        # wait for ping ack
+      keep-alive-without-calls: true # send pings even when no active RPCs
     menu-service:
       address: static://${MENU_GRPC_SERVICE}
       negotiation-type: plaintext

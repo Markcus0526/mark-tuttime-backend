@@ -34,8 +34,8 @@ services:
     image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
     container_name: tuttime-kafka
     ports:
-      - "29092:9092"  # Host access (localhost:29092)
-      - "9093:9093"   # Container access (tuttime-kafka:9093)
+      - "29092:9092"
+      - "9093:9093"
     environment:
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_NODE_ID: 1
@@ -62,7 +62,7 @@ services:
     networks:
       - tuttime-network
 
-  # Kafka UI
+  # Kafka UI (optional, no health check needed)
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: tuttime-kafka-ui
@@ -102,6 +102,12 @@ services:
     container_name: tuttime-mongodb
     volumes:
       - mongodb_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - tuttime-network
 
@@ -120,6 +126,12 @@ services:
         hard: -1
     volumes:
       - os_data:/usr/share/opensearch/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9200/_cluster/health?local=true" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     networks:
       - tuttime-network
 
@@ -127,8 +139,10 @@ services:
     image: graylog/graylog:5.2
     container_name: tuttime-graylog
     depends_on:
-      - mongodb
-      - opensearch
+      mongodb:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
     ports:
       - "9002:9002/tcp"
       - "12201:12201/udp"
@@ -139,6 +153,12 @@ services:
       GRAYLOG_HTTP_EXTERNAL_URI: http://localhost:9002/
       GRAYLOG_MONGODB_URI: mongodb://mongodb:27017/graylog
       GRAYLOG_ELASTICSEARCH_HOSTS: http://opensearch:9200
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9002/api/system/lbstatus" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
     networks:
       - tuttime-network
 

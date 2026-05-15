@@ -1,5 +1,6 @@
 package com.tuttime.restaurant.grpc;
 
+import com.google.protobuf.Empty;
 import com.tuttime.common.event.proto.*;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.restaurant.service.RestaurantGrpcDelegate;
@@ -15,6 +16,13 @@ import net.devh.boot.grpc.server.service.GrpcService;
 public class RestaurantGrpcServer extends RestaurantServiceGrpc.RestaurantServiceImplBase {
 
 	private final RestaurantGrpcDelegate delegate;
+
+	@Override
+	public void ping(Empty request, StreamObserver<Empty> responseObserver) {
+		// No operation – just return empty
+		responseObserver.onNext(Empty.getDefaultInstance());
+		responseObserver.onCompleted();
+	}
 
 	@Override
 	public void validateBranchPermission(ValidateBranchPermissionRequest request, StreamObserver<ValidateBranchPermissionResponse> responseObserver) {

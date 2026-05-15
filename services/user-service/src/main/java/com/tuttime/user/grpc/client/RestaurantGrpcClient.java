@@ -1,5 +1,6 @@
 package com.tuttime.user.grpc.client;
 
+import com.google.protobuf.Empty;
 import com.tuttime.common.event.grpc.GrpcExecutor;
 import com.tuttime.common.event.proto.GetStaffForUserRequest;
 import com.tuttime.common.event.proto.GetStaffForUserResponse;
@@ -26,6 +27,13 @@ public class RestaurantGrpcClient {
 	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
 	private final GrpcExecutor grpcExecutor;
+
+	public void ping() {
+		grpcExecutor.execute(RESTAURANT_SERVICE, "ping", () ->
+				restaurantServiceBlockingStub
+						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+						.ping(Empty.getDefaultInstance()));
+	}
 
 	public GetStaffForUserResponse getStaffForUser(GetStaffForUserRequest request) {
 		return grpcExecutor.execute(RESTAURANT_SERVICE, "getStaffForUser", () ->
