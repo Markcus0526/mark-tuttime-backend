@@ -92,24 +92,25 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/register", List.of("POST")));
 
 		// Public read-only endpoints (direct)
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/near", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/restaurants/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/tags", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/branches/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/zones/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-schedules/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-medias/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/branches/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/categories/", List.of("GET")));
-		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/tags", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/near", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/restaurants/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/tags", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/branches/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/zones/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-schedules/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-medias/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/branches/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/categories/", List.of("GET")));
+//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/tags", List.of("GET")));
+		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/payments/webhook", List.of("POST")));
 
 		// -----------------------------------------------------------------
 		// 2. Regex rules (for SwaggerUI prefixed paths)

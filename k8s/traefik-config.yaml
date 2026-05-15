@@ -1,0 +1,18 @@
+  # 创建配置文件：在 K3s 服务器上，执行以下命令创建一个 HelmChartConfig 资源文件：
+  sudo mkdir -p /var/lib/rancher/k3s/server/manifests
+    sudo tee /var/lib/rancher/k3s/server/manifests/traefik-config.yaml << EOF
+  apiVersion: helm.cattle.io/v1
+  kind: HelmChartConfig
+  metadata:
+    name: traefik
+    namespace: kube-system
+  spec:
+    valuesContent: |-
+      ports:
+        web:
+          port: 8080        # 修改为期望的 HTTP 端口
+          exposedPort: 8080  # 也修改为相同的端口
+        websecure:
+          port: 8443        # 修改为期望的 HTTPS 端口
+          exposedPort: 8443  # 也修改为相同的端口
+    EOF
