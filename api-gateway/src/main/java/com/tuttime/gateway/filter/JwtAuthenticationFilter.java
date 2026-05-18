@@ -120,23 +120,23 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
 		// OpenAPI spec documents (public)
 		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/v3/api-docs$"),
+				Pattern.compile("^/(user|payment)-docs/v3/api-docs$"),
 				List.of("GET")));
 
 		// Auth endpoints (POST) – allow any service prefix
 		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/api/v1/auth/.*"),
+				Pattern.compile("^/(user|payment)-docs/api/v1/auth/.*"),
 				List.of("POST")));
 
 		// Public GET endpoints under /api/v1/ (restaurants, branches, menus, etc.) – allow any service prefix
 		// This covers direct API paths like /user-docs/api/v1/restaurants, /restaurant-docs/api/v1/restaurant-branches, etc.
-		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/api/v1/(restaurants|restaurant-branches|restaurant-zones|restaurant-tables|restaurant-schedules|restaurant-medias|menus|menu-items|health).*"),
-				List.of("GET")));
+		// PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
+		// 		Pattern.compile("^/(user|payment)-docs/api/v1/(restaurants|restaurant-branches|restaurant-zones|restaurant-tables|restaurant-schedules|restaurant-medias|menus|menu-items|health).*"),
+		//		List.of("GET")));
 
 		// Swagger UI assets (prefixed paths)
 		PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-				Pattern.compile("^/(user|restaurant|menu|booking|order|payment|pos|review|analytics|notification)-docs/(swagger-ui|webjars|v3/api-docs).*"),
+				Pattern.compile("^/(user|payment)-docs/(swagger-ui|webjars|v3/api-docs).*"),
 				List.of("GET")));
 	}
 

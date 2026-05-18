@@ -43,634 +43,201 @@ spring:
         pool:
           max-connections: ${GATEWAY_POOL_MAX_CONNECTIONS:5000}
 
+      # ----------------------------------------------
+      # Global default filters (applied to all routes)
+      # ----------------------------------------------
       default-filters:
+        - JwtAuthentication
+        - name: RequestRateLimiter
+          args:
+            key-resolver: "#{@userKeyResolver}"
+            redis-rate-limiter.replenishRate: 10
+            redis-rate-limiter.burstCapacity: 20
+        - name: Retry
+          args:
+            retries: 3
+            statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+            methods: GET
+            exceptions:
+              - java.net.ConnectException
+              - java.net.SocketTimeoutException
+              - java.net.UnknownHostException
         - AddResponseHeader=X-Content-Type-Options, nosniff
         - AddResponseHeader=X-Frame-Options, DENY
         - AddResponseHeader=X-XSS-Protection, 1; mode=block
         - AddResponseHeader=Referrer-Policy, no-referrer
 
-      #grpc:
-      #  enabled: false
-
+      # ----------------------------------------------
+      # Route definitions
+      # ----------------------------------------------
       routes:
-        ################# User Service Routes #######################
-        # Auth Service Routes (consolidated route with filters)
+        # ---------- User Service ----------
         - id: user-service-auth
-          order: 11
           uri: http://${USER_SERVICE}
           predicates:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTIONS
           filters:
-            - name: BruteForceProtection
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
+            - name: BruteForceProtection           # only on auth (before rate limit)
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
-        # User Service Routes (GENERAL - comes after specific routes)
         - id: user-service-user
-          order: 12
           uri: http://${USER_SERVICE}
           predicates:
             - Path=/api/v1/users/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
         - id: user-service-media-direct
-          order: 13
           uri: http://${USER_SERVICE}
           predicates:
             - Path=/user-medias/**
+          filters:
+            - name: JwtAuthentication               # optional: media may be public
+            - name: Retry                           # keep retry for static assets
+              args:
+                retries: 2
+                statuses: SERVICE_UNAVAILABLE
+                methods: GET
 
-        ################# Restaurant Service Routes #######################
-        - id: restaurant-service-restaurant
-          order: 21
+        # ---------- Restaurant Service ----------
+        - id: restaurant-service
           uri: http://${RESTAURANT_SERVICE}
           predicates:
-            - Path=/api/v1/restaurants/**
+            - Path=/api/v1/restaurants/**,/api/v1/restaurant-branches/**,/api/v1/restaurant-zones/**,/api/v1/restaurant-tables/**,/api/v1/restaurant-schedules/**,/api/v1/restaurant-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        - id: restaurant-service-branch
-          order: 22
-          uri: http://${RESTAURANT_SERVICE}
-          predicates:
-            - Path=/api/v1/restaurant-branches/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        - id: restaurant-service-zone
-          order: 23
-          uri: http://${RESTAURANT_SERVICE}
-          predicates:
-            - Path=/api/v1/restaurant-zones/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        - id: restaurant-service-table
-          order: 24
-          uri: http://${RESTAURANT_SERVICE}
-          predicates:
-            - Path=/api/v1/restaurant-tables/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        - id: restaurant-service-schedule
-          order: 25
-          uri: http://${RESTAURANT_SERVICE}
-          predicates:
-            - Path=/api/v1/restaurant-schedules/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: restaurantServiceCircuitBreaker
-                fallbackUri: forward:/fallback/restaurant-service
-
-        - id: restaurant-service-media
-          order: 26
-          uri: http://${RESTAURANT_SERVICE}
-          predicates:
-            - Path=/api/v1/restaurant-medias/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
         - id: restaurant-service-media-direct
-          order: 27
           uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/restaurant-medias/**
+          filters:
+            - name: JwtAuthentication               # optional
 
-        ################# Menu Service Routes #######################
-
-        - id: menu-service-menu
-          order: 31
+        # ---------- Menu Service ----------
+        - id: menu-service
           uri: http://${MENU_SERVICE}
           predicates:
-            - Path=/api/v1/menus/**
+            - Path=/api/v1/menus/**,/api/v1/menu-items/**,/api/v1/menu-modifiers/**,/api/v1/menu-discounts/**,/api/v1/menu-stoplists/**,/api/v1/menu-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
-
-        - id: menu-service-item
-          order: 32
-          uri: http://${MENU_SERVICE}
-          predicates:
-            - Path=/api/v1/menu-items/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
-
-        - id: menu-service-modifier
-          order: 33
-          uri: http://${MENU_SERVICE}
-          predicates:
-            - Path=/api/v1/menu-modifiers/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
-
-        - id: menu-service-discount
-          order: 34
-          uri: http://${MENU_SERVICE}
-          predicates:
-            - Path=/api/v1/menu-discounts/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
-
-        - id: menu-service-stoplist
-          order: 35
-          uri: http://${MENU_SERVICE}
-          predicates:
-            - Path=/api/v1/menu-stoplists/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
-            - name: CircuitBreaker
-              args:
-                name: menuServiceCircuitBreaker
-                fallbackUri: forward:/fallback/menu-service
-
-        - id: menu-service-media
-          order: 36
-          uri: http://${MENU_SERVICE}
-          predicates:
-            - Path=/api/v1/menu-medias/**
-            - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
-          filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
 
         - id: menu-service-media-direct
-          order: 37
           uri: http://${MENU_SERVICE}
           predicates:
             - Path=/menu-medias/**
 
-        ################# Booking Service Routes #######################
-
-        - id: booking-service-booking
-          order: 41
+        # ---------- Booking Service ----------
+        - id: booking-service
           uri: http://${BOOKING_SERVICE}
           predicates:
             - Path=/api/v1/bookings/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: bookingServiceCircuitBreaker
                 fallbackUri: forward:/fallback/booking-service
 
-        ################# Order Service Routes #######################
-
-        - id: order-service-order
-          order: 51
+        # ---------- Order Service ----------
+        - id: order-service
           uri: http://${ORDER_SERVICE}
           predicates:
             - Path=/api/v1/orders/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: orderServiceCircuitBreaker
                 fallbackUri: forward:/fallback/order-service
 
-        ################# Payment Service Routes #######################
-
-        - id: payment-service-payment
-          order: 61
+        # ---------- Payment Service ----------
+        - id: payment-service
           uri: http://${PAYMENT_SERVICE}
           predicates:
             - Path=/api/v1/payments/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: paymentServiceCircuitBreaker
                 fallbackUri: forward:/fallback/payment-service
 
-        ################# Pos Service Routes #######################
-
-        - id: pos-service-pos
-          order: 71
+        # ---------- POS Service ----------
+        - id: pos-service
           uri: http://${POS_SERVICE}
           predicates:
             - Path=/api/v1/poses/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: posServiceCircuitBreaker
                 fallbackUri: forward:/fallback/pos-service
 
-        ################# Review Service Routes #######################
-
-        - id: review-service-review
-          order: 81
+        # ---------- Review Service ----------
+        - id: review-service
           uri: http://${REVIEW_SERVICE}
           predicates:
             - Path=/api/v1/reviews/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: reviewServiceCircuitBreaker
                 fallbackUri: forward:/fallback/review-service
 
-        ################# Analytics Service Routes #######################
-
-        - id: analytics-service-analytics
-          order: 91
+        # ---------- Analytics Service ----------
+        - id: analytics-service
           uri: http://${ANALYTICS_SERVICE}
           predicates:
             - Path=/api/v1/analytics/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: analyticsServiceCircuitBreaker
                 fallbackUri: forward:/fallback/analytics-service
 
-        ################# Notification Service Routes #######################
-
-        - id: notification-service-notification
-          order: 101
+        # ---------- Notification Service ----------
+        - id: notification-service
           uri: http://${NOTIFICATION_SERVICE}
           predicates:
             - Path=/api/v1/notifications/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
-            - name: JwtAuthentication
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@userKeyResolver}"
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
-                methods: GET,POST
-                exceptions:
-                  - java.net.ConnectException
-                  - java.net.SocketTimeoutException
-                  - java.net.UnknownHostException
             - name: CircuitBreaker
               args:
                 name: notificationServiceCircuitBreaker
                 fallbackUri: forward:/fallback/notification-service
 
         - id: notification-service-websocket
-          order: 102
           uri: ws://${NOTIFICATION_SERVICE}
           predicates:
             - Path=/ws-notifications/**
 
-        ################# OpenAPI(Swagger UI) Routes #######################
+        # ---------- OpenAPI (Swagger) – no JWT authentication ----------
         - id: user-openapi
           uri: http://${USER_SERVICE}
           predicates:
             - Path=/user-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/user-docs/(?<segment>.*), /${segment}
 
         - id: restaurant-openapi
@@ -678,7 +245,6 @@ spring:
           predicates:
             - Path=/restaurant-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/restaurant-docs/(?<segment>.*), /${segment}
 
         - id: menu-openapi
@@ -686,7 +252,6 @@ spring:
           predicates:
             - Path=/menu-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/menu-docs/(?<segment>.*), /${segment}
 
         - id: booking-openapi
@@ -694,7 +259,6 @@ spring:
           predicates:
             - Path=/booking-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/booking-docs/(?<segment>.*), /${segment}
 
         - id: order-openapi
@@ -702,7 +266,6 @@ spring:
           predicates:
             - Path=/order-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/order-docs/(?<segment>.*), /${segment}
 
         - id: payment-openapi
@@ -710,7 +273,6 @@ spring:
           predicates:
             - Path=/payment-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/payment-docs/(?<segment>.*), /${segment}
 
         - id: pos-openapi
@@ -718,7 +280,6 @@ spring:
           predicates:
             - Path=/pos-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/pos-docs/(?<segment>.*), /${segment}
 
         - id: review-openapi
@@ -726,7 +287,6 @@ spring:
           predicates:
             - Path=/review-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/review-docs/(?<segment>.*), /${segment}
 
         - id: analytics-openapi
@@ -734,7 +294,6 @@ spring:
           predicates:
             - Path=/analytics-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/analytics-docs/(?<segment>.*), /${segment}
 
         - id: notification-openapi
@@ -742,15 +301,17 @@ spring:
           predicates:
             - Path=/notification-docs/**
           filters:
-            - name: JwtAuthentication
             - RewritePath=/notification-docs/(?<segment>.*), /${segment}
 
-        ################# 404 Routes #######################
-        - id: root
-          order: 999
-          uri: forward:/actuator/health
+        # ---------- Fallback for unmatched routes ----------
+        - id: not-found
+          uri: ${GATEWAY_FALLBACK_URI:https://example.com}
           predicates:
-            - Path=/
+            - Path=/**
+          filters:
+            - name: SetStatus
+              args:
+                status: 404
 
     loadbalancer:
       enabled: false
@@ -806,8 +367,6 @@ resilience4j:
           - java.io.IOException
           - java.net.ConnectException
     instances:
-      #grpc:
-      #  baseConfig: default
       userServiceCircuitBreaker:
         baseConfig: default
       restaurantServiceCircuitBreaker:
@@ -831,10 +390,6 @@ resilience4j:
 
   timelimiter:
     instances:
-      #grpc:
-      #  timeoutDuration: ${CIRCUIT_BREAKER_TIMEOUT:305s}
-      #  cancelRunningFuture: true
-      # Add these for HTTP circuit breakers
       userServiceCircuitBreaker:
         timeoutDuration: 60s
         cancelRunningFuture: true
