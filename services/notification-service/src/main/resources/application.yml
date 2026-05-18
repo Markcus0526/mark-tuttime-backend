@@ -22,6 +22,7 @@ spring:
       idle-timeout: 600000
       max-lifetime: 1800000
       leak-detection-threshold: 60000
+      initialization-fail-timeout: -1
       connection-init-sql: SET search_path TO notification_service, public; SET timezone = 'UTC';
     replica:
       url: ${DATABASE_URL}
@@ -138,34 +139,71 @@ server:
 grpc:
   server:
     port: ${GRPC_PORT}
+    permit-keep-alive-without-calls: true
   client:
     user-service:
-      address: static://${USER_GRPC_SERVICE}
+      address: dns:///${USER_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     restaurant-service:
-      address: static://${RESTAURANT_GRPC_SERVICE}
+      address: dns:///${RESTAURANT_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     menu-service:
-      address: static://${MENU_GRPC_SERVICE}
+      address: dns:///${MENU_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     booking-service:
-      address: static://${BOOKING_GRPC_SERVICE}
+      address: dns:///${BOOKING_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     order-service:
-      address: static://${ORDER_GRPC_SERVICE}
+      address: dns:///${ORDER_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     payment-service:
-      address: static://${PAYMENT_GRPC_SERVICE}
+      address: dns:///${PAYMENT_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     pos-service:
-      address: static://${POS_GRPC_SERVICE}
+      address: dns:///${POS_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     review-service:
-      address: static://${REVIEW_GRPC_SERVICE}
+      address: dns:///${REVIEW_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
     analytics-service:
-      address: static://${ANALYTICS_GRPC_SERVICE}
+      address: dns:///${ANALYTICS_GRPC_SERVICE}
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 5s
+      keep-alive-without-calls: true
   security:
     enabled: false
   client-deadline-seconds: ${GRPC_CLIENT_DEADLINE_SECONDS}
@@ -268,11 +306,13 @@ resilience4j:
   retry:
     instances:
       grpc:
-        maxAttempts: 5
-        waitDuration: 1s
+        maxAttempts: 10
+        waitDuration: 500ms
         retryExceptions:
           - io.grpc.StatusRuntimeException
           - java.util.concurrent.TimeoutException
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
 
 logging:
   level:
