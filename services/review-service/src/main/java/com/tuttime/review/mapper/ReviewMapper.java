@@ -12,21 +12,21 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ReviewMapper {
 
-	// Maps Review entity to ReviewResponse Record
-	@Mapping(target = "reviewId", source = "id")
-	ReviewResponse toReviewResponse(Review entity);
+    // Maps Review entity to ReviewResponse Record
+    @Mapping(target = "reviewId", source = "id")
+    ReviewResponse toReviewResponse(Review entity);
 
-	// Maps Review entity to ReviewResponse Record
-	@Mapping(target = "reviewId", source = "entity.id")
-	@Mapping(target = "status", source = "entity.status")
-	@Mapping(target = "createdAt", source = "entity.createdAt")
-	@Mapping(target = "user.userId", source = "user.userId")
-	@Mapping(target = "user.fullName", source = "user.fullName")
-	@Mapping(target = "user.profilePicture", source = "user.profilePicture")
-	@Mapping(target = "user.email", source = "user.email")
-	@Mapping(target = "user.phoneNumber", source = "user.phoneNumber")
-	ReviewResponse toReviewDetailResponse(Review entity, GetUserDetailResponse user);
+    // Maps Review entity to ReviewResponse Record
+    @Mapping(target = "reviewId", source = "entity.id")
+    @Mapping(target = "status", source = "entity.status")
+    @Mapping(target = "createdAt", source = "entity.createdAt")
+    @Mapping(target = "user.userId", source = "user.userId")
+    @Mapping(target = "user.fullName", source = "user.fullName")
+    @Mapping(target = "user.profilePicture", source = "user.profilePicture")
+    @Mapping(target = "user.email", source = "user.email")
+    @Mapping(target = "user.phoneNumber", source = "user.phoneNumber")
+    ReviewResponse toReviewDetailResponse(Review entity, GetUserDetailResponse user);
 
-	// Maps RatingAggregate entity to Response Record
-	RatingAggregateResponse toRatingResponse(RatingAggregate aggregate);
+    // Maps RatingAggregate entity to Response Record
+    RatingAggregateResponse toRatingResponse(RatingAggregate aggregate);
 }

@@ -4,7 +4,7 @@ metadata:
   name: notification-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: notification-service
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: notification-service-uploads-pvc.yaml
+            claimName: notification-service-uploads-pvc

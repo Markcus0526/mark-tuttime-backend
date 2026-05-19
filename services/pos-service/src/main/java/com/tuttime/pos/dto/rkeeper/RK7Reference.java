@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 class RK7Reference {
-	@JacksonXmlElementWrapper(useWrapping = false)
-	@JacksonXmlProperty(localName = "Item")
-	private List<RK7MenuItem> items;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    @JacksonXmlProperty(localName = "Item")
+    private List<RK7MenuItem> items;
 }

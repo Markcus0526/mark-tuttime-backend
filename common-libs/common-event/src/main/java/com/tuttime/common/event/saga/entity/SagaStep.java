@@ -45,49 +45,49 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
 public abstract class SagaStep {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "step_id")
-	private Long stepId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "step_id")
+    private Long stepId;
 
-	@Column(name = "saga_id", columnDefinition = "UUID", nullable = false)
-	private UUID sagaId;
+    @Column(name = "saga_id", columnDefinition = "UUID", nullable = false)
+    private UUID sagaId;
 
-	@Column(name = "step_name", nullable = false, length = 100)
-	private String stepName;
+    @Column(name = "step_name", nullable = false, length = 100)
+    private String stepName;
 
-	@Column(name = "step_order", nullable = false)
-	private Integer stepOrder;
+    @Column(name = "step_order", nullable = false)
+    private Integer stepOrder;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false)
-	private SagaInstance.SagaStatus status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private SagaInstance.SagaStatus status;
 
-	@Column(name = "input_data", columnDefinition = "JSONB")
-	private String inputData; // JSON string
+    @Column(name = "input_data", columnDefinition = "JSONB")
+    private String inputData; // JSON string
 
-	@Column(name = "output_data", columnDefinition = "JSONB")
-	private String outputData; // JSON string
+    @Column(name = "output_data", columnDefinition = "JSONB")
+    private String outputData; // JSON string
 
-	@Column(name = "error_message", columnDefinition = "TEXT")
-	private String errorMessage;
+    @Column(name = "error_message", columnDefinition = "TEXT")
+    private String errorMessage;
 
-	@Column(name = "executed_at")
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-	private OffsetDateTime executedAt;
+    @Column(name = "executed_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+    private OffsetDateTime executedAt;
 
-	@Column(name = "compensated_at")
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-	private OffsetDateTime compensatedAt;
+    @Column(name = "compensated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+    private OffsetDateTime compensatedAt;
 
-	@Column(name = "created_at", nullable = false, updatable = false)
-	@CreatedDate
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-	private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreatedDate
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+    private OffsetDateTime createdAt;
 
-	@Column(name = "updated_at", nullable = false)
-	@LastModifiedDate
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-	private OffsetDateTime updatedAt;
+    @Column(name = "updated_at", nullable = false)
+    @LastModifiedDate
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+    private OffsetDateTime updatedAt;
 }
 

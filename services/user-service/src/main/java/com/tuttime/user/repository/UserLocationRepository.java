@@ -9,5 +9,5 @@ import java.util.UUID;
 @Repository
 public interface UserLocationRepository extends JpaRepository<UserLocation, UUID> {
 
-	// Add custom queries if needed, e.g., find all locations for user
+    // Add custom queries if needed, e.g., find all locations for user
 }

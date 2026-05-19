@@ -8,9 +8,9 @@ import java.util.UUID;
 
 public interface PosMappingService {
 
-	void updateIikoMappings(UUID branchId, List<IikoProduct> products);
+    void updateIikoMappings(UUID branchId, List<IikoProduct> products);
 
-	void updateRKeeperMappings(UUID branchId, List<RK7MenuItem> rkItems);
+    void updateRKeeperMappings(UUID branchId, List<RK7MenuItem> rkItems);
 
-	String getExternalId(UUID branchId, String menuItemId);
+    String getExternalId(UUID branchId, String menuItemId);
 }

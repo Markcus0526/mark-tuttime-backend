@@ -13,27 +13,27 @@ import java.util.UUID;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
-	// Spring generates the SQL:
-	// SELECT * FROM reviews WHERE restaurant_id = ? AND status = ?
-	Page<Review> findByBranchIdAndStatus(UUID restaurantId, ReviewStatus status, Pageable pageable);
+    // Spring generates the SQL:
+    // SELECT * FROM reviews WHERE restaurant_id = ? AND status = ?
+    Page<Review> findByBranchIdAndStatus(UUID restaurantId, ReviewStatus status, Pageable pageable);
 
-	/**
-	 * Fetches approved reviews for a restaurant with Pagination.
-	 * Perfect for infinite scroll on the Mobile App.
-	 */
-	Page<Review> findByBranchIdAndStatusOrderByCreatedAtDesc(
-			UUID branchId,
-			ReviewStatus status,
-			Pageable pageable
-	);
+    /**
+     * Fetches approved reviews for a restaurant with Pagination.
+     * Perfect for infinite scroll on the Mobile App.
+     */
+    Page<Review> findByBranchIdAndStatusOrderByCreatedAtDesc(
+            UUID branchId,
+            ReviewStatus status,
+            Pageable pageable
+    );
 
-	/**
-	 * Used by the Admin Panel to find reviews requiring moderation.
-	 */
-	List<Review> findByStatus(ReviewStatus status);
+    /**
+     * Used by the Admin Panel to find reviews requiring moderation.
+     */
+    List<Review> findByStatus(ReviewStatus status);
 
-	/**
-	 * Prevents a user from spamming multiple reviews for the same restaurant.
-	 */
-	boolean existsByUserIdAndBranchId(UUID userId, UUID branchId);
+    /**
+     * Prevents a user from spamming multiple reviews for the same restaurant.
+     */
+    boolean existsByUserIdAndBranchId(UUID userId, UUID branchId);
 }

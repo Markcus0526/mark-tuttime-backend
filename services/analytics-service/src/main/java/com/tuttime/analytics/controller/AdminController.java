@@ -23,54 +23,54 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AdminController {
 
-	private final AnalyticsService analyticsService;
+    private final AnalyticsService analyticsService;
 
-	@GetMapping("/platform-summary")
-	@Operation(summary = "Get global GMV and TutTime commission totals")
-	public ResponseEntity<ApiRes<AdminDto.GlobalMetricsResponse>> getPlatformSummary() {
+    @GetMapping("/platform-summary")
+    @Operation(summary = "Get global GMV and TutTime commission totals")
+    public ResponseEntity<ApiRes<AdminDto.GlobalMetricsResponse>> getPlatformSummary() {
 
-		validateAdmin();
+        validateAdmin();
 
-		AdminDto.GlobalMetricsResponse metrics = analyticsService.getPlatformSummary();
-		return ResponseEntity.ok(ApiRes.success(metrics));
-	}
+        AdminDto.GlobalMetricsResponse metrics = analyticsService.getPlatformSummary();
+        return ResponseEntity.ok(ApiRes.success(metrics));
+    }
 
-	@GetMapping("/users/{userId}/risk-profile")
-	@Operation(summary = "Check user reliability score and no-show history")
-	public ResponseEntity<ApiRes<AdminDto.UserReliabilityResponse>> getUserRiskProfile(@PathVariable UUID userId) {
+    @GetMapping("/users/{userId}/risk-profile")
+    @Operation(summary = "Check user reliability score and no-show history")
+    public ResponseEntity<ApiRes<AdminDto.UserReliabilityResponse>> getUserRiskProfile(@PathVariable UUID userId) {
 
-		validateAdmin();
+        validateAdmin();
 
-		AdminDto.UserReliabilityResponse profile = analyticsService.getUserRiskProfile(userId);
-		return ResponseEntity.ok(ApiRes.success(profile));
-	}
+        AdminDto.UserReliabilityResponse profile = analyticsService.getUserRiskProfile(userId);
+        return ResponseEntity.ok(ApiRes.success(profile));
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

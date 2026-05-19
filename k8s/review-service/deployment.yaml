@@ -4,7 +4,7 @@ metadata:
   name: review-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: review-service
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: review-service-uploads-pvc.yaml
+            claimName: review-service-uploads-pvc

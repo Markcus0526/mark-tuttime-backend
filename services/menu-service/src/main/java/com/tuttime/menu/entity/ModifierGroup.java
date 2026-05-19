@@ -19,24 +19,24 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class ModifierGroup extends BaseUuidAnDeleteEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "name", nullable = false)
-	private String name;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-	@Column(name = "description")
-	private String description;
+    @Column(name = "description")
+    private String description;
 
-	@Column(name = "min_select", nullable = false)
-	@Builder.Default
-	private Integer minSelect = 0;
+    @Column(name = "min_select", nullable = false)
+    @Builder.Default
+    private Integer minSelect = 0;
 
-	@Column(name = "max_select", nullable = false)
-	@Builder.Default
-	private Integer maxSelect = 1;
+    @Column(name = "max_select", nullable = false)
+    @Builder.Default
+    private Integer maxSelect = 1;
 
-	@OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true)
-	@Builder.Default
-	private Set<Modifier> modifiers = new LinkedHashSet<>();
+    @OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<Modifier> modifiers = new LinkedHashSet<>();
 }

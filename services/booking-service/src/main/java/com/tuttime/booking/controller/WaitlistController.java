@@ -26,90 +26,90 @@ import java.util.UUID;
 @Tag(name = "Waitlist Management", description = "Endpoints for managing the virtual queue when tables are full")
 public class WaitlistController {
 
-	private final BookingService bookingService;
+    private final BookingService bookingService;
 
-	@PostMapping
-	@Operation(summary = "Join the waitlist", description = "Adds a user to the virtual queue for a specific branch.")
-	public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> joinWaitlist(
-			@Valid @RequestBody WaitlistDto.WaitlistRequest request) {
+    @PostMapping
+    @Operation(summary = "Join the waitlist", description = "Adds a user to the virtual queue for a specific branch.")
+    public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> joinWaitlist(
+            @Valid @RequestBody WaitlistDto.WaitlistRequest request) {
 
-		validateLogin();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateLogin();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		WaitlistDto.WaitlistResponse data = bookingService.addToWaitlist(request, currentUserId, userRoles);
+        WaitlistDto.WaitlistResponse data = bookingService.addToWaitlist(request, currentUserId, userRoles);
 
-		URI location = ServletUriComponentsBuilder
-				.fromCurrentRequest()
-				.path("/{id}")
-				.buildAndExpand(data.id())
-				.toUri();
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(data.id())
+                .toUri();
 
-		return ResponseEntity.created(location).body(ApiRes.success(data));
-	}
+        return ResponseEntity.created(location).body(ApiRes.success(data));
+    }
 
-	@GetMapping("/{id}")
-	@Operation(summary = "Get waitlist status", description = "Check current position and estimated wait time.")
-	public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> getWaitlistStatus(@PathVariable UUID id) {
-		validateLogin();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+    @GetMapping("/{id}")
+    @Operation(summary = "Get waitlist status", description = "Check current position and estimated wait time.")
+    public ResponseEntity<ApiRes<WaitlistDto.WaitlistResponse>> getWaitlistStatus(@PathVariable UUID id) {
+        validateLogin();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		WaitlistDto.WaitlistResponse data = bookingService.getWaitlistEntry(id, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
+        WaitlistDto.WaitlistResponse data = bookingService.getWaitlistEntry(id, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(data));
+    }
 
-	@DeleteMapping("/{id}")
-	@Operation(summary = "Leave the waitlist", description = "Cancels the waitlist entry (soft delete/status update).")
-	public ResponseEntity<ApiRes<Void>> leaveWaitlist(@PathVariable UUID id) {
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Leave the waitlist", description = "Cancels the waitlist entry (soft delete/status update).")
+    public ResponseEntity<ApiRes<Void>> leaveWaitlist(@PathVariable UUID id) {
 
-		validateLogin();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateLogin();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		bookingService.leaveWaitlist(id, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        bookingService.leaveWaitlist(id, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	@PostMapping("/{id}/claim")
-	@Operation(summary = "Claim a notified waitlist entry and create a booking")
-	public ResponseEntity<ApiRes<BookingDto.BookingResponse>> claimWaitlist(
-			@PathVariable UUID id,
-			@Valid @RequestBody BookingDto.BookingRequest bookingRequest) {
+    @PostMapping("/{id}/claim")
+    @Operation(summary = "Claim a notified waitlist entry and create a booking")
+    public ResponseEntity<ApiRes<BookingDto.BookingResponse>> claimWaitlist(
+            @PathVariable UUID id,
+            @Valid @RequestBody BookingDto.BookingRequest bookingRequest) {
 
-		validateLogin();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateLogin();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		BookingDto.BookingResponse booking =
-				bookingService.claimWaitlistEntry(id, bookingRequest, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(booking));
-	}
+        BookingDto.BookingResponse booking =
+                bookingService.claimWaitlistEntry(id, bookingRequest, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(booking));
+    }
 
-	// -------------------- Helper methods --------------------
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    // -------------------- Helper methods --------------------
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

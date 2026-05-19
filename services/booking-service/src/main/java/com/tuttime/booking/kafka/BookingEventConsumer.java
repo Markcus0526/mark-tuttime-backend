@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tuttime.booking.service.BookingService;
 import com.tuttime.common.enums.BookingStatus;
 import com.tuttime.common.event.kafka.event.BookingEvent;
-import com.tuttime.common.event.kafka.event.PaymentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,27 +18,27 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_COMPLE
 @Slf4j
 public class BookingEventConsumer {
 
-	private final BookingService bookingService;
-	private final ObjectMapper objectMapper;
+    private final BookingService bookingService;
+    private final ObjectMapper objectMapper;
 
-	@KafkaListener(
-			topics = TOPIC_BOOKING_STATUS_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handleBookingStatusUpdate(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_BOOKING_STATUS_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handleBookingStatusUpdate(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event =
-					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+            BookingEvent.BookingStatusUpdatedEvent event =
+                    objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
-			if (event.newStatus() == BookingStatus.CANCELED || event.newStatus() == BookingStatus.NO_SHOW) {
-				log.info("Table freed at branch {} due to booking {} status {}",
-						event.branchId(), event.bookingId(), event.newStatus());
-				bookingService.notifyNextWaiting(event.branchId(), event.zoneId(), event.partySize());
-			}
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
-					TOPIC_PAYMENT_COMPLETED, e.getMessage());
-		}
-	}
+            if (event.newStatus() == BookingStatus.CANCELED || event.newStatus() == BookingStatus.NO_SHOW) {
+                log.info("Table freed at branch {} due to booking {} status {}",
+                        event.branchId(), event.bookingId(), event.newStatus());
+                bookingService.notifyNextWaiting(event.branchId(), event.zoneId(), event.partySize());
+            }
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
+                    TOPIC_PAYMENT_COMPLETED, e.getMessage());
+        }
+    }
 }

@@ -23,65 +23,65 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Order extends BaseUuidAnDeleteEntity {
 
-	@Column(name = "booking_id", nullable = false)
-	private UUID bookingId;
+    @Column(name = "booking_id", nullable = false)
+    private UUID bookingId;
 
-	@Column(name = "user_id", nullable = false)
-	private UUID userId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "booking_datetime", nullable = false)
-	private OffsetDateTime bookingDatetime;
+    @Column(name = "booking_datetime", nullable = false)
+    private OffsetDateTime bookingDatetime;
 
-	@Enumerated(EnumType.STRING)
-	@Builder.Default
-	@JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) // CRITICAL for PG Enum
-	@Column(name = "status", nullable = false)
-	private OrderStatus status = OrderStatus.CREATED;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM) // CRITICAL for PG Enum
+    @Column(name = "status", nullable = false)
+    private OrderStatus status = OrderStatus.CREATED;
 
-	@Builder.Default
-	@Column(name = "total_amount", nullable = false)
-	private BigDecimal totalAmount = BigDecimal.ZERO;
+    @Builder.Default
+    @Column(name = "total_amount", nullable = false)
+    private BigDecimal totalAmount = BigDecimal.ZERO;
 
-	@Column(name = "guest_name", nullable = false)
-	private String guestName;
+    @Column(name = "guest_name", nullable = false)
+    private String guestName;
 
-	@Column(name = "guest_phone", nullable = false)
-	private String guestPhone;
+    @Column(name = "guest_phone", nullable = false)
+    private String guestPhone;
 
-	@Column(name = "special_request")
-	private String specialRequest;
+    @Column(name = "special_request")
+    private String specialRequest;
 
-	@ElementCollection
-	@CollectionTable(name = "order_tables",
-			joinColumns = @JoinColumn(name = "order_id"))
-	@Column(name = "table_id")
-	private List<UUID> tableIds = new ArrayList<>();
+    @ElementCollection
+    @CollectionTable(name = "order_tables",
+            joinColumns = @JoinColumn(name = "order_id"))
+    @Column(name = "table_id")
+    private List<UUID> tableIds = new ArrayList<>();
 
-	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-	@Builder.Default
-	private List<OrderItem> items = new ArrayList<>();
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
 
-	@Version
-	private Long version;
+    @Version
+    private Long version;
 
-	/**
-	 * Helper to keep totalAmount in sync
-	 */
-	public void addItem(OrderItem item) {
-		items.add(item);
-		item.setOrder(this);
-		calculateTotal();
-	}
+    /**
+     * Helper to keep totalAmount in sync
+     */
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
+        calculateTotal();
+    }
 
-	public void calculateTotal() {
-		this.totalAmount = items.stream()
-				.map(item -> {
-					// Ensure subtotal is calculated in the item before summing
-					return item.calculateSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO;
-				})
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-	}
+    public void calculateTotal() {
+        this.totalAmount = items.stream()
+                .map(item -> {
+                    // Ensure subtotal is calculated in the item before summing
+                    return item.calculateSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }

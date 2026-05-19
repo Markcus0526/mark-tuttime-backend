@@ -10,13 +10,13 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 public class S3Config {
-	@Bean
-	public S3Client s3Client(@Value("${app.media.s3.region}") String region,
-	                         @Value("${app.media.s3.access-key}") String key,
-	                         @Value("${app.media.s3.secret-key}") String secret) {
-		return S3Client.builder()
-				.region(Region.of(region))
-				.credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(key, secret)))
-				.build();
-	}
+    @Bean
+    public S3Client s3Client(@Value("${app.media.s3.region}") String region,
+                             @Value("${app.media.s3.access-key}") String key,
+                             @Value("${app.media.s3.secret-key}") String secret) {
+        return S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(key, secret)))
+                .build();
+    }
 }

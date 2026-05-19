@@ -6,9 +6,9 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IikoErrorResponse {
-	private String message;
-	private String errorDescription;
-	private String error; // internal code like "INVALID_BODY_JSON_FORMAT"
+    private String message;
+    private String errorDescription;
+    private String error; // internal code like "INVALID_BODY_JSON_FORMAT"
 }
 
 //HTTP Code   Message/Error Key	              Logic Strategy

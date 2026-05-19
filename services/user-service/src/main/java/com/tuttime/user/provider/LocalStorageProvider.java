@@ -22,64 +22,64 @@ import java.util.UUID;
 @Slf4j
 public class LocalStorageProvider implements StorageProvider {
 
-	@Value("${app.media.local.upload-dir}")
-	private String uploadDir;
-	@Value("${app.media.local.upload-url}")
-	private String uploadUrl;
-	@Value("${app.media.max-dimension}")
-	private int maxDim;
-	@Value("${app.media.quality}")
-	private float quality;
+    @Value("${app.media.local.upload-dir}")
+    private String uploadDir;
+    @Value("${app.media.local.upload-url}")
+    private String uploadUrl;
+    @Value("${app.media.max-dimension}")
+    private int maxDim;
+    @Value("${app.media.quality}")
+    private float quality;
 
-	@Override
-	public String store(MultipartFile file) {
-		String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
-		String fileName = UUID.randomUUID() + (extension != null ? "." + extension : "");
-		Path target = Paths.get(uploadDir).resolve(fileName);
+    @Override
+    public String store(MultipartFile file) {
+        String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+        String fileName = UUID.randomUUID() + (extension != null ? "." + extension : "");
+        Path target = Paths.get(uploadDir).resolve(fileName);
 
-		try {
-			Files.createDirectories(target.getParent());
-			if (isImage(file.getContentType())) {
-				Thumbnails.of(file.getInputStream())
-						.size(maxDim, maxDim)
-						.outputQuality(quality)
-						.toFile(target.toFile());
-			} else {
-				Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-			}
-			return getUrl(fileName);
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to store local file", e);
-		}
-	}
+        try {
+            Files.createDirectories(target.getParent());
+            if (isImage(file.getContentType())) {
+                Thumbnails.of(file.getInputStream())
+                        .size(maxDim, maxDim)
+                        .outputQuality(quality)
+                        .toFile(target.toFile());
+            } else {
+                Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            }
+            return getUrl(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store local file", e);
+        }
+    }
 
-	@Override
-	public String getUrl(String key) {
-		return uploadUrl + key;
-	}
+    @Override
+    public String getUrl(String key) {
+        return uploadUrl + key;
+    }
 
-	@Override
-	public void delete(String url) {
-		try {
-			// Extract the filename from the end of the URL
-			String key = url.substring(url.lastIndexOf("/") + 1);
+    @Override
+    public void delete(String url) {
+        try {
+            // Extract the filename from the end of the URL
+            String key = url.substring(url.lastIndexOf("/") + 1);
 
-			Path filePath = Paths.get(uploadDir).resolve(key).normalize();
+            Path filePath = Paths.get(uploadDir).resolve(key).normalize();
 
-			// Security check: Ensure the file is actually inside the upload directory
-			if (!filePath.startsWith(Paths.get(uploadDir))) {
-				log.warn("Attempted unauthorized file deletion: {}", url);
-				return;
-			}
+            // Security check: Ensure the file is actually inside the upload directory
+            if (!filePath.startsWith(Paths.get(uploadDir))) {
+                log.warn("Attempted unauthorized file deletion: {}", url);
+                return;
+            }
 
-			Files.deleteIfExists(filePath);
-		} catch (Exception e) {
-			log.error("Could not delete file: {}", url, e);
-		}
-	}
+            Files.deleteIfExists(filePath);
+        } catch (Exception e) {
+            log.error("Could not delete file: {}", url, e);
+        }
+    }
 
-	private boolean isImage(String type) {
-		return type != null && type.startsWith("image/");
-	}
+    private boolean isImage(String type) {
+        return type != null && type.startsWith("image/");
+    }
 }
 

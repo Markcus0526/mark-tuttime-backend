@@ -7,12 +7,12 @@ import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring",
-		unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface MediaMapper {
 
-	@Mapping(target = "mediaId", source = "id")
-	MediaDto.MediaResponse toResponse(Media media);
+    @Mapping(target = "mediaId", source = "id")
+    MediaDto.MediaResponse toResponse(Media media);
 
-	@Mapping(target = "url", ignore = true)
-	Media toEntity(MediaDto.MediaRequest request);
+    @Mapping(target = "url", ignore = true)
+    Media toEntity(MediaDto.MediaRequest request);
 }

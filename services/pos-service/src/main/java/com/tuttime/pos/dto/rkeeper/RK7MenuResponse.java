@@ -9,10 +9,10 @@ import java.util.List;
 @Data
 @JacksonXmlRootElement(localName = "RK7QueryResult")
 public class RK7MenuResponse {
-	@JacksonXmlProperty(localName = "RK7Reference")
-	private RK7Reference reference;
+    @JacksonXmlProperty(localName = "RK7Reference")
+    private RK7Reference reference;
 
-	public List<RK7MenuItem> getItems() {
-		return reference != null ? reference.getItems() : null;
-	}
+    public List<RK7MenuItem> getItems() {
+        return reference != null ? reference.getItems() : null;
+    }
 }

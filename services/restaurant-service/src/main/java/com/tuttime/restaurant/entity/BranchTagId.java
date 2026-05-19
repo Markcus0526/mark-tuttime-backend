@@ -15,9 +15,9 @@ import java.util.UUID;
 @EqualsAndHashCode // Essential for composite keys
 public class BranchTagId implements Serializable {
 
-	@Column(name = "branch_id")
-	private UUID branchId;
+    @Column(name = "branch_id")
+    private UUID branchId;
 
-	@Column(name = "tag_id")
-	private UUID tagId;
+    @Column(name = "tag_id")
+    private UUID tagId;
 }

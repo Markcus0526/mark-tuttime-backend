@@ -9,12 +9,12 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface ReviewService {
-	ReviewDto.ReviewResponse createReview(UUID userId, ReviewDto.ReviewRequest request);
+    ReviewDto.ReviewResponse createReview(UUID userId, ReviewDto.ReviewRequest request);
 
-	Page<ReviewDto.ReviewResponse> getReviewsByStatus(UUID branchId, ReviewStatus status, Pageable pageable);
+    Page<ReviewDto.ReviewResponse> getReviewsByStatus(UUID branchId, ReviewStatus status, Pageable pageable);
 
-	ReviewDto.ReviewResponse moderateReview(UUID reviewId, ReviewDto.ReviewModerationRequest request,
-	                                        UUID moderatorId, String userRoles);
+    ReviewDto.ReviewResponse moderateReview(UUID reviewId, ReviewDto.ReviewModerationRequest request,
+                                            UUID moderatorId, String userRoles);
 
-	RatingDto.RatingAggregateResponse getAggregateStats(UUID branchId);
+    RatingDto.RatingAggregateResponse getAggregateStats(UUID branchId);
 }

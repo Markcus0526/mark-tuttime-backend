@@ -17,21 +17,21 @@ import java.util.UUID;
 @Setter
 public class PosMenuMapping extends BaseSerialEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "menu_item_id", nullable = false)
-	private UUID menuItemId;
+    @Column(name = "menu_item_id", nullable = false)
+    private UUID menuItemId;
 
-	@Column(name = "external_pos_id", nullable = false)
-	private String externalPosId;
+    @Column(name = "external_pos_id", nullable = false)
+    private String externalPosId;
 
-	@Column(name = "external_name")
-	private String externalName;
+    @Column(name = "external_name")
+    private String externalName;
 
-	@Column(name = "external_price")
-	private BigDecimal externalPrice;
+    @Column(name = "external_price")
+    private BigDecimal externalPrice;
 
-	@Column(name = "last_synced_at")
-	private OffsetDateTime lastSyncedAt = OffsetDateTime.now();
+    @Column(name = "last_synced_at")
+    private OffsetDateTime lastSyncedAt = OffsetDateTime.now();
 }

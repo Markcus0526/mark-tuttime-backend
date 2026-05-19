@@ -22,30 +22,30 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class MenuCategory extends BaseUuidAnDeleteEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId; // Connected to external Branch Service
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId; // Connected to external Branch Service
 
-	@Column(name = "name", nullable = false)
-	private String name;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-	@Column(name = "description")
-	private String description;
+    @Column(name = "description")
+    private String description;
 
-	@OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
-	@Fetch(FetchMode.SUBSELECT) // Optimizes N+1 for collections
-	@Builder.Default
-	private Set<MenuItem> menuItems = new LinkedHashSet<>();
+    @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT) // Optimizes N+1 for collections
+    @Builder.Default
+    private Set<MenuItem> menuItems = new LinkedHashSet<>();
 
-	@Column(name = "priority")
-	@Builder.Default
-	private Integer priority = 0; // Default to 0, lower numbers show up first
+    @Column(name = "priority")
+    @Builder.Default
+    private Integer priority = 0; // Default to 0, lower numbers show up first
 
-	@ManyToMany
-	@JoinTable(
-			name = "menu_category_modifier_groups",
-			joinColumns = @JoinColumn(name = "menu_category_id"),
-			inverseJoinColumns = @JoinColumn(name = "modifier_group_id")
-	)
-	@Builder.Default
-	private Set<ModifierGroup> modifierGroups = new HashSet<>();
+    @ManyToMany
+    @JoinTable(
+            name = "menu_category_modifier_groups",
+            joinColumns = @JoinColumn(name = "menu_category_id"),
+            inverseJoinColumns = @JoinColumn(name = "modifier_group_id")
+    )
+    @Builder.Default
+    private Set<ModifierGroup> modifierGroups = new HashSet<>();
 }

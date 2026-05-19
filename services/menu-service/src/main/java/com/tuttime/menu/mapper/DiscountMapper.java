@@ -7,11 +7,11 @@ import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring",
-		unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DiscountMapper {
 
-	Discount toEntity(DiscountDto.DiscountRequest request);
+    Discount toEntity(DiscountDto.DiscountRequest request);
 
-	@Mapping(source = "id", target = "discountId")
-	DiscountDto.DiscountResponse toResponse(Discount entity);
+    @Mapping(source = "id", target = "discountId")
+    DiscountDto.DiscountResponse toResponse(Discount entity);
 }

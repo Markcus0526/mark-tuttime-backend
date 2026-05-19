@@ -11,9 +11,9 @@ import java.util.UUID;
 @Repository
 public interface ModifierRepository extends JpaRepository<Modifier, UUID> {
 
-	Optional<Modifier> findByIdAndDeletedFalse(UUID id);
+    Optional<Modifier> findByIdAndDeletedFalse(UUID id);
 
-	List<Modifier> findByModifierGroupId(UUID groupId);
+    List<Modifier> findByModifierGroupId(UUID groupId);
 
-	List<Modifier> findByModifierGroupIdAndDeletedFalse(UUID groupId);
+    List<Modifier> findByModifierGroupIdAndDeletedFalse(UUID groupId);
 }

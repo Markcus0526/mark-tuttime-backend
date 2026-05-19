@@ -9,19 +9,19 @@ import java.util.UUID;
 
 public interface TableService {
 
-	List<TableDto.TableResponse> getTablesByZoneId(UUID zoneId);
+    List<TableDto.TableResponse> getTablesByZoneId(UUID zoneId);
 
-	TableDto.TableDetailResponse getTableById(UUID tableId);
+    TableDto.TableDetailResponse getTableById(UUID tableId);
 
-	TableDto.TableResponse createTable(TableDto.TableRequest request, UUID currentUserId, String userRoles);
+    TableDto.TableResponse createTable(TableDto.TableRequest request, UUID currentUserId, String userRoles);
 
-	TableDto.TableResponse updateTable(UUID tableId, TableDto.TableRequest request, UUID currentUserId, String userRoles);
+    TableDto.TableResponse updateTable(UUID tableId, TableDto.TableRequest request, UUID currentUserId, String userRoles);
 
-	void deleteTable(UUID tableId, UUID currentUserId, String userRoles);
+    void deleteTable(UUID tableId, UUID currentUserId, String userRoles);
 
-	List<TableDto.TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to);
+    List<TableDto.TableResponse> findAvailableTables(UUID zoneId, OffsetDateTime from, OffsetDateTime to);
 
-	TableStatus getTableCurrentStatus(UUID tableId);
+    TableStatus getTableCurrentStatus(UUID tableId);
 
-	boolean deleteAllByZoneId(UUID zoneId);
+    boolean deleteAllByZoneId(UUID zoneId);
 }

@@ -4,7 +4,7 @@ metadata:
   name: booking-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: booking-service
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: booking-service-uploads-pvc.yaml
+            claimName: booking-service-uploads-pvc

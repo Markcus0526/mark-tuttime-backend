@@ -18,82 +18,82 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentGrpcServer extends PaymentServiceGrpc.PaymentServiceImplBase {
 
-	private final PaymentService paymentService;
-	private final PaymentGrpcDelegate delegate;
+    private final PaymentService paymentService;
+    private final PaymentGrpcDelegate delegate;
 
-	@Override
-	public void createCheckoutSession(CreateCheckoutSessionRequest request,
-	                                  StreamObserver<CreateCheckoutSessionResponse> responseObserver) {
-		try {
-			// 1. Business Logic call (uses Stripe)
-			// We use the service we wrote earlier to handle the Stripe API call
-			String checkoutUrl = paymentService.initiatePaymentLifecycle(
-					UUID.fromString(request.getBookingId()),
-					UUID.fromString(request.getUserId()),
-					UUID.fromString(request.getBranchId()),
-					NumberUtil.stringToBigDecimal(request.getAmount())
-			);
+    @Override
+    public void createCheckoutSession(CreateCheckoutSessionRequest request,
+                                      StreamObserver<CreateCheckoutSessionResponse> responseObserver) {
+        try {
+            // 1. Business Logic call (uses Stripe)
+            // We use the service we wrote earlier to handle the Stripe API call
+            String checkoutUrl = paymentService.initiatePaymentLifecycle(
+                    UUID.fromString(request.getBookingId()),
+                    UUID.fromString(request.getUserId()),
+                    UUID.fromString(request.getBranchId()),
+                    NumberUtil.stringToBigDecimal(request.getAmount())
+            );
 
-			// 2. Build Response
-			CreateCheckoutSessionResponse response = CreateCheckoutSessionResponse.newBuilder()
-					.setCheckoutUrl(checkoutUrl)
-					.setStatus("PENDING")
-					.build();
+            // 2. Build Response
+            CreateCheckoutSessionResponse response = CreateCheckoutSessionResponse.newBuilder()
+                    .setCheckoutUrl(checkoutUrl)
+                    .setStatus("PENDING")
+                    .build();
 
-			// 3. Complete gRPC Stream
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
+            // 3. Complete gRPC Stream
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
 
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
-		} catch (InvalidRequestException e) {
-			// Map your custom business exception to NOT_FOUND instead of INTERNAL
-			responseObserver.onError(Status.NOT_FOUND
-					.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
-		} catch (Exception e) {
-			// Keep this for actual system failures (DB down, etc.)
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
-		}
-	}
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+        } catch (InvalidRequestException e) {
+            // Map your custom business exception to NOT_FOUND instead of INTERNAL
+            responseObserver.onError(Status.NOT_FOUND
+                    .withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            // Keep this for actual system failures (DB down, etc.)
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+        }
+    }
 
-	@Override
-	public void processRefund(ProcessRefundRequest request, StreamObserver<ProcessRefundResponse> responseObserver) {
-		try {
-			boolean status = paymentService.processAdministrativeRefund(
-					UUID.fromString(request.getPaymentId()),
-					NumberUtil.stringToBigDecimal(request.getAmount()),
-					request.getReason());
+    @Override
+    public void processRefund(ProcessRefundRequest request, StreamObserver<ProcessRefundResponse> responseObserver) {
+        try {
+            boolean status = paymentService.processAdministrativeRefund(
+                    UUID.fromString(request.getPaymentId()),
+                    NumberUtil.stringToBigDecimal(request.getAmount()),
+                    request.getReason());
 
-			responseObserver.onNext(ProcessRefundResponse.newBuilder()
-					.setStatus(status)
-					.build());
-			responseObserver.onCompleted();
+            responseObserver.onNext(ProcessRefundResponse.newBuilder()
+                    .setStatus(status)
+                    .build());
+            responseObserver.onCompleted();
 
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
-		} catch (InvalidRequestException e) {
-			// Map your custom business exception to NOT_FOUND instead of INTERNAL
-			responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
-		} catch (Exception e) {
-			// Keep this for actual system failures (DB down, etc.)
-			responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
-		}
-	}
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+        } catch (InvalidRequestException e) {
+            // Map your custom business exception to NOT_FOUND instead of INTERNAL
+            responseObserver.onError(Status.NOT_FOUND.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            // Keep this for actual system failures (DB down, etc.)
+            responseObserver.onError(Status.INTERNAL.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+        }
+    }
 
-	@Override
-	public void getPaymentCounts(GetPaymentCountsRequest request, StreamObserver<GetPaymentCountsResponse> responseObserver) {
-		try {
-			responseObserver.onNext(delegate.getPaymentCounts(request));
-			responseObserver.onCompleted();
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
-		} catch (InvalidRequestException e) {
-			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
-		} catch (Exception e) {
-			log.error("Unexpected error in getCustomerRetention", e);
-			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
-		}
-	}
+    @Override
+    public void getPaymentCounts(GetPaymentCountsRequest request, StreamObserver<GetPaymentCountsResponse> responseObserver) {
+        try {
+            responseObserver.onNext(delegate.getPaymentCounts(request));
+            responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (InvalidRequestException e) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            log.error("Unexpected error in getCustomerRetention", e);
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
+    }
 }

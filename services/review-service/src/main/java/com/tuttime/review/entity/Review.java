@@ -20,32 +20,32 @@ import java.util.UUID;
 @Schema(description = "Review Entity representing user feedback for a branch")
 public class Review extends BaseUuidEntity {
 
-	@Column(name = "user_id", nullable = false)
-	@Schema(description = "ID of the user who wrote the review", requiredMode = Schema.RequiredMode.REQUIRED)
-	private UUID userId;
+    @Column(name = "user_id", nullable = false)
+    @Schema(description = "ID of the user who wrote the review", requiredMode = Schema.RequiredMode.REQUIRED)
+    private UUID userId;
 
-	@Column(name = "branch_id", nullable = false)
-	@Schema(description = "ID of the branch being reviewed")
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    @Schema(description = "ID of the branch being reviewed")
+    private UUID branchId;
 
-	@Min(1)
-	@Max(5)
-	@Column(nullable = false)
-	@Schema(description = "Rating from 1 to 5", example = "5")
-	private Integer rating;
+    @Min(1)
+    @Max(5)
+    @Column(nullable = false)
+    @Schema(description = "Rating from 1 to 5", example = "5")
+    private Integer rating;
 
-	@Column(columnDefinition = "TEXT")
-	@Schema(description = "User's textual comment", example = "Great food and atmosphere!")
-	private String comment;
+    @Column(columnDefinition = "TEXT")
+    @Schema(description = "User's textual comment", example = "Great food and atmosphere!")
+    private String comment;
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 20)
-	@Builder.Default
-	@Schema(description = "Moderation status", allowableValues = {"PENDING", "APPROVED", "REJECTED", "DELETED"})
-	private ReviewStatus status = ReviewStatus.PENDING;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    @Schema(description = "Moderation status", allowableValues = {"PENDING", "APPROVED", "REJECTED", "DELETED"})
+    private ReviewStatus status = ReviewStatus.PENDING;
 
-	@Version
-	@Schema(description = "Optimistic locking version")
-	private Long version;
+    @Version
+    @Schema(description = "Optimistic locking version")
+    private Long version;
 }
 

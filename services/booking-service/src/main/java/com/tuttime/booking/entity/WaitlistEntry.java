@@ -21,30 +21,30 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class WaitlistEntry extends BaseUuidEntity {
 
-	@Column(name = "user_id", nullable = false)
-	private UUID userId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "zone_id")
-	private UUID zoneId;
+    @Column(name = "zone_id")
+    private UUID zoneId;
 
-	@Column(name = "party_size", nullable = false)
-	private Integer partySize;
+    @Column(name = "party_size", nullable = false)
+    private Integer partySize;
 
-	@Column(name = "joined_at", nullable = false)
-	private OffsetDateTime joinedAt;
+    @Column(name = "joined_at", nullable = false)
+    private OffsetDateTime joinedAt;
 
-	@Column(name = "notified_at")
-	private OffsetDateTime notifiedAt;
+    @Column(name = "notified_at")
+    private OffsetDateTime notifiedAt;
 
-	@Enumerated(EnumType.STRING)
-	@JdbcType(PostgreSQLEnumJdbcType.class)
-	@Column(name = "status", nullable = false, length = 30)
-	@Builder.Default
-	private WaitlistStatus status = WaitlistStatus.WAITING;
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "status", nullable = false, length = 30)
+    @Builder.Default
+    private WaitlistStatus status = WaitlistStatus.WAITING;
 
-	@Version
-	private Long version;
+    @Version
+    private Long version;
 }

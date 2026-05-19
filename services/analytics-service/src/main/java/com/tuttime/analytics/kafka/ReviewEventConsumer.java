@@ -19,39 +19,39 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_UPDATED
 @RequiredArgsConstructor
 public class ReviewEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final AnalyticsService analyticsService;
+    private final ObjectMapper objectMapper;
+    private final AnalyticsService analyticsService;
 
-	/**
-	 * Perfect Consumer for Spring Boot 3.3.13
-	 * Tracks 'REVIEW_APPROVED' events for restaurant performance history.
-	 */
-	@KafkaListener(
-			topics = TOPIC_REVIEW_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handleReviewApproved(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    /**
+     * Perfect Consumer for Spring Boot 3.3.13
+     * Tracks 'REVIEW_APPROVED' events for restaurant performance history.
+     */
+    @KafkaListener(
+            topics = TOPIC_REVIEW_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handleReviewApproved(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			ReviewEvent.ReviewUpdatedEvent event =
-					objectMapper.readValue(eventString, ReviewEvent.ReviewUpdatedEvent.class);
+            ReviewEvent.ReviewUpdatedEvent event =
+                    objectMapper.readValue(eventString, ReviewEvent.ReviewUpdatedEvent.class);
 
-			log.info("Analytics received Review Approved: {} for Restaurant: {}",
-					event.reviewId(), event.branchId());
+            log.info("Analytics received Review Approved: {} for Restaurant: {}",
+                    event.reviewId(), event.branchId());
 
-			// Mapping to generic Analytics log
-			if (event.status() == ReviewStatus.APPROVED) {
-				analyticsService.processEvent(
-						SOURCE_REVIEW_SERVICE,    // Source service
-						EVENT_REVIEW_APPROVED,   // Event type (for filtering in reports)
-						event.branchId(),// Linked entity ID
-						event                // JSONB Payload (Rating, Comment, etc.)
-				);
-			}
+            // Mapping to generic Analytics log
+            if (event.status() == ReviewStatus.APPROVED) {
+                analyticsService.processEvent(
+                        SOURCE_REVIEW_SERVICE,    // Source service
+                        EVENT_REVIEW_APPROVED,   // Event type (for filtering in reports)
+                        event.branchId(),// Linked entity ID
+                        event                // JSONB Payload (Rating, Comment, etc.)
+                );
+            }
 
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
-					TOPIC_REVIEW_UPDATED, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+                    TOPIC_REVIEW_UPDATED, e.getMessage());
+        }
+    }
 }

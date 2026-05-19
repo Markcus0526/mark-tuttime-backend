@@ -15,29 +15,29 @@ import java.util.UUID;
 @Repository
 public interface UserDeviceRepository extends JpaRepository<UserDevice, UUID> {
 
-	// Find all tokens for a user to send multi-device push notifications
-	List<UserDevice> findByUserId(UUID userId);
+    // Find all tokens for a user to send multi-device push notifications
+    List<UserDevice> findByUserId(UUID userId);
 
-	@Transactional
-	@Modifying
-	@Query(value = """
-			INSERT INTO user_service.user_devices (user_id, fcm_token, platform, device_name)
-			VALUES (:userId, :token, CAST(:platform AS user_service.device_platform), :name)
-			ON CONFLICT (fcm_token) 
-			DO UPDATE SET 
-			    last_active_at = CURRENT_TIMESTAMP,
-			    user_id = EXCLUDED.user_id,
-			    device_name = EXCLUDED.device_name
-			""", nativeQuery = true)
-	void upsertToken(
-			@Param("userId") UUID userId,
-			@Param("token") String token,
-			@Param("platform") String platform,
-			@Param("name") String name
-	);
+    @Transactional
+    @Modifying
+    @Query(value = """
+            INSERT INTO user_service.user_devices (user_id, fcm_token, platform, device_name)
+            VALUES (:userId, :token, CAST(:platform AS user_service.device_platform), :name)
+            ON CONFLICT (fcm_token) 
+            DO UPDATE SET 
+                last_active_at = CURRENT_TIMESTAMP,
+                user_id = EXCLUDED.user_id,
+                device_name = EXCLUDED.device_name
+            """, nativeQuery = true)
+    void upsertToken(
+            @Param("userId") UUID userId,
+            @Param("token") String token,
+            @Param("platform") String platform,
+            @Param("name") String name
+    );
 
-	@Transactional
-	void deleteByFcmToken(String fcmToken);
+    @Transactional
+    void deleteByFcmToken(String fcmToken);
 
-	List<UserDevice> findAllByUserIdIn(Collection<UUID> userIds);
+    List<UserDevice> findAllByUserIdIn(Collection<UUID> userIds);
 }

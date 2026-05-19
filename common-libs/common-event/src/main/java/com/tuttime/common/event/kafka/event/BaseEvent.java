@@ -4,29 +4,28 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public sealed interface BaseEvent permits
-		UserEvent.VerificationEvent,
-		UserEvent.ProfileUpdatedEvent,
-		UserEvent.SecurityEvent,
+        UserEvent.VerificationEvent,
+        UserEvent.ProfileUpdatedEvent,
+        UserEvent.SecurityEvent,
 
-		RestaurantEvent.StaffUpdatedEvent,
+        RestaurantEvent.StaffUpdatedEvent,
 
-		BookingEvent.BookingStatusUpdatedEvent,
-		BookingEvent.BranchAvailabilityEvent,
+        BookingEvent.BookingStatusUpdatedEvent,
+        BookingEvent.BranchAvailabilityEvent,
 
-		OrderEvent.OrderCreatedEvent,
-		OrderEvent.OrderStatusEvent,
+        OrderEvent.OrderCreatedEvent,
+        OrderEvent.OrderStatusEvent,
 
-		PaymentEvent.PaymentCompletedEvent,
-		PaymentEvent.PaymentRefundedEvent,
+        PaymentEvent.PaymentCompletedEvent,
+        PaymentEvent.PaymentRefundedEvent,
 
-		PosEvent.PosMenuUpdatedEvent,
-		PosEvent.PosPriceUpdatedEvent,
+        PosEvent.PosMenuUpdatedEvent,
+        PosEvent.PosPriceUpdatedEvent,
 
-		ReviewEvent.ReviewUpdatedEvent
-{
-	// Unique ID for idempotency (Critical for NotificationLog)
-	UUID eventId();
+        ReviewEvent.ReviewUpdatedEvent {
+    // Unique ID for idempotency (Critical for NotificationLog)
+    UUID eventId();
 
-	OffsetDateTime occurredAt();
+    OffsetDateTime occurredAt();
 }
 

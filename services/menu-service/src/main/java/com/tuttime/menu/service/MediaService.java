@@ -9,11 +9,11 @@ import java.util.UUID;
 
 public interface MediaService {
 
-	List<MediaDto.MediaResponse> getMediaByEntity(UUID entityId, MediaType mediaType);
+    List<MediaDto.MediaResponse> getMediaByEntity(UUID entityId, MediaType mediaType);
 
-	MediaDto.MediaResponse createMedia(MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles);
+    MediaDto.MediaResponse createMedia(MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles);
 
-	MediaDto.MediaResponse updateMedia(UUID mediaId, MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles);
+    MediaDto.MediaResponse updateMedia(UUID mediaId, MediaDto.MediaRequest request, MultipartFile file, UUID currentUserId, String userRoles);
 
-	void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles);
+    void deleteMedia(UUID mediaId, UUID currentUserId, String userRoles);
 }

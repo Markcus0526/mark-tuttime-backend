@@ -8,6 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public abstract class BookingHistoryMapper {
 
-	@Mapping(target = "historyId", source = "id")
-	public abstract BookingHistoryDto.BookingHistoryResponse toResponse(BookingStatusHistory history);
+    @Mapping(target = "historyId", source = "id")
+    public abstract BookingHistoryDto.BookingHistoryResponse toResponse(BookingStatusHistory history);
 }

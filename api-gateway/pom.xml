@@ -8,23 +8,24 @@
         <groupId>com.tuttime</groupId>
         <artifactId>tuttime-backend</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>api-gateway</artifactId>
-    <name>Api Gateway</name>
+    <name>API Gateway</name>
     <packaging>jar</packaging>
-    <description>TutTime API Gateway (gRPC‑free, production ready)</description>
+    <description>TutTime API Gateway (reactive, WebFlux)</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
+        <!-- Versions that are not managed in root (safe to keep explicit) -->
         <jjwt.version>0.12.6</jjwt.version>
-        <springdoc-openapi.version>2.5.0</springdoc-openapi.version>
+        <springdoc-openapi.version>2.6.0</springdoc-openapi.version>
         <logback-gelf.version>5.0.0</logback-gelf.version>
     </properties>
 
     <dependencies>
-        <!-- ========== Spring Cloud Gateway ========== -->
+        <!-- Spring Cloud Gateway (reactive) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
@@ -36,7 +37,13 @@
             </exclusions>
         </dependency>
 
-        <!-- ========== Internal Common Modules (with full gRPC exclusions) ========== -->
+        <!-- Spring Security Reactive -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Internal Common Modules (exclude gRPC, servlet, JPA) -->
         <dependency>
             <groupId>com.tuttime</groupId>
             <artifactId>common</artifactId>
@@ -47,10 +54,9 @@
                     <artifactId>spring-boot-starter-web</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
+                    <groupId>jakarta.servlet</groupId>
+                    <artifactId>jakarta.servlet-api</artifactId>
                 </exclusion>
-                <!-- Exclude ALL gRPC related artifacts -->
                 <exclusion>
                     <groupId>net.devh</groupId>
                     <artifactId>*</artifactId>
@@ -74,6 +80,10 @@
                     <groupId>io.grpc</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>jakarta.servlet</groupId>
+                    <artifactId>jakarta.servlet-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -89,16 +99,20 @@
                     <groupId>io.grpc</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>jakarta.servlet</groupId>
+                    <artifactId>jakarta.servlet-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
-        <!-- ========== Actuator & Metrics ========== -->
+        <!-- Actuator & Metrics -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- ========== JWT ========== -->
+        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -117,13 +131,13 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ========== Redis (Reactive) ========== -->
+        <!-- Reactive Redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
         </dependency>
 
-        <!-- ========== Resilience & Circuit Breaker ========== -->
+        <!-- Resilience4j & Circuit Breaker -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
@@ -137,7 +151,7 @@
             <artifactId>resilience4j-reactor</artifactId>
         </dependency>
 
-        <!-- ========== Distributed Tracing ========== -->
+        <!-- Distributed Tracing -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-brave</artifactId>
@@ -147,38 +161,38 @@
             <artifactId>zipkin-reporter-brave</artifactId>
         </dependency>
 
-        <!-- ========== OpenAPI / Swagger (WebFlux only) ========== -->
+        <!-- OpenAPI / Swagger UI (WebFlux) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
             <version>${springdoc-openapi.version}</version>
         </dependency>
+
+        <!-- WebFlux (explicit) -->
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webflux-api</artifactId>
-            <version>${springdoc-openapi.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
-        <!-- ========== Logging ========== -->
+        <!-- Logging (Graylog) -->
         <dependency>
             <groupId>de.siegmar</groupId>
             <artifactId>logback-gelf</artifactId>
             <version>${logback-gelf.version}</version>
         </dependency>
 
-        <!-- ========== Lombok ========== -->
+        <!-- Lombok & Janino -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+        </dependency>
 
-        <!-- ========== Testing ========== -->
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -187,26 +201,6 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -230,6 +224,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>21</release>
+                    <parameters>true</parameters>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -1,7 +1,9 @@
 package com.tuttime.pos.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.*;
+import com.tuttime.common.event.proto.GetOrderDetailRequest;
+import com.tuttime.common.event.proto.GetOrderDetailResponse;
+import com.tuttime.common.event.proto.OrderServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -18,23 +20,23 @@ import static com.tuttime.common.constants.ServiceNames.ORDER_SERVICE;
 @Slf4j
 public class OrderGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("order-service") // Configuration name in application.yml
-	private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
+    @GrpcClient("order-service") // Configuration name in application.yml
+    private OrderServiceGrpc.OrderServiceBlockingStub orderServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public GetOrderDetailResponse getOrderDetail(UUID orderId) {
-		GetOrderDetailRequest request = GetOrderDetailRequest.newBuilder()
-				.setOrderId(orderId.toString())
-				.build();
+    public GetOrderDetailResponse getOrderDetail(UUID orderId) {
+        GetOrderDetailRequest request = GetOrderDetailRequest.newBuilder()
+                .setOrderId(orderId.toString())
+                .build();
 
-		return grpcExecutor.execute(ORDER_SERVICE, "getOrderDetail", () ->
-				orderServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getOrderDetail(request));
-	}
+        return grpcExecutor.execute(ORDER_SERVICE, "getOrderDetail", () ->
+                orderServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getOrderDetail(request));
+    }
 }
 

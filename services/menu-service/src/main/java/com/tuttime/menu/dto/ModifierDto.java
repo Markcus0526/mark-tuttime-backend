@@ -11,54 +11,54 @@ import java.util.UUID;
 
 public class ModifierDto {
 
-	@Schema(description = "Modifier Group request details")
-	public record ModifierGroupRequest(
-			@NotNull
-			UUID branchId,
+    @Schema(description = "Modifier Group request details")
+    public record ModifierGroupRequest(
+            @NotNull
+            UUID branchId,
 
-			@NotBlank
-			String name,
+            @NotBlank
+            String name,
 
-			String description,
+            String description,
 
-			@Min(0)
-			Integer minSelect,
+            @Min(0)
+            Integer minSelect,
 
-			@Min(1)
-			Integer maxSelect
-	) {
-	}
+            @Min(1)
+            Integer maxSelect
+    ) {
+    }
 
-	@Schema(description = "Modifier Group response details")
-	public record ModifierGroupResponse(
-			UUID modifierGroupId,
-			UUID branchId,
-			String name,
-			String description,
-			Integer minSelect,
-			Integer maxSelect,
-			List<ModifierResponse> modifiers
-	) {
-	}
+    @Schema(description = "Modifier Group response details")
+    public record ModifierGroupResponse(
+            UUID modifierGroupId,
+            UUID branchId,
+            String name,
+            String description,
+            Integer minSelect,
+            Integer maxSelect,
+            List<ModifierResponse> modifiers
+    ) {
+    }
 
-	@Schema(description = "Modifier request details")
-	public record ModifierRequest(
+    @Schema(description = "Modifier request details")
+    public record ModifierRequest(
 
-			@NotBlank
-			String name,
+            @NotBlank
+            String name,
 
-			String description,
+            String description,
 
-			BigDecimal priceAdjustment
-	) {
-	}
+            BigDecimal priceAdjustment
+    ) {
+    }
 
-	@Schema(description = "Modifier response details")
-	public record ModifierResponse(
-			UUID modifierId,
-			String name,
-			String description,
-			BigDecimal priceAdjustment
-	) {
-	}
+    @Schema(description = "Modifier response details")
+    public record ModifierResponse(
+            UUID modifierId,
+            String name,
+            String description,
+            BigDecimal priceAdjustment
+    ) {
+    }
 }

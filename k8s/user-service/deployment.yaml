@@ -4,7 +4,7 @@ metadata:
   name: user-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: user-service
@@ -43,7 +43,7 @@ spec:
           resources:
             requests:
               memory: "1024Mi"
-              cpu: "250m"
+              cpu: "500m"
             limits:
               memory: "1800Mi"
               cpu: "1000m"
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: user-service-uploads-pvc.yaml
+            claimName: user-service-uploads-pvc

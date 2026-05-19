@@ -17,20 +17,20 @@ import java.util.UUID;
 @Builder
 public class UserDevice extends BaseUuidEntity {
 
-	@Column(name = "user_id", nullable = false)
-	private UUID userId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-	@Column(name = "fcm_token", nullable = false, unique = true)
-	private String fcmToken;
+    @Column(name = "fcm_token", nullable = false, unique = true)
+    private String fcmToken;
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private DevicePlatform platform;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DevicePlatform platform;
 
-	@Column(name = "device_name")
-	private String deviceName;
+    @Column(name = "device_name")
+    private String deviceName;
 
-	@Column(name = "last_active_at")
-	private OffsetDateTime lastActiveAt;
+    @Column(name = "last_active_at")
+    private OffsetDateTime lastActiveAt;
 }
 

@@ -15,41 +15,46 @@ import java.util.UUID;
 @Repository
 public interface OrderTableRepository extends JpaRepository<OrderTable, OrderTableId> {
 
-	/**
-	 * Find all table assignments for a specific booking.
-	 * @param orderId the booking ID
-	 * @return list of OrderTable entities
-	 */
-	List<OrderTable> findById_OrderId(UUID orderId);
+    /**
+     * Find all table assignments for a specific booking.
+     *
+     * @param orderId the booking ID
+     * @return list of OrderTable entities
+     */
+    List<OrderTable> findById_OrderId(UUID orderId);
 
-	/**
-	 * Check if a particular table is already assigned to a booking.
-	 * @param orderId booking ID
-	 * @param tableId table ID
-	 * @return true if exists
-	 */
-	boolean existsById_OrderIdAndId_TableId(UUID orderId, UUID tableId);
+    /**
+     * Check if a particular table is already assigned to a booking.
+     *
+     * @param orderId booking ID
+     * @param tableId table ID
+     * @return true if exists
+     */
+    boolean existsById_OrderIdAndId_TableId(UUID orderId, UUID tableId);
 
-	/**
-	 * Delete all table assignments for a given booking.
-	 * @param orderId the booking ID
-	 */
-	@Modifying
-	@Transactional
-	@Query("DELETE FROM OrderTable ot WHERE ot.id.orderId = :orderId")
-	void deleteByOrderId(@Param("orderId") UUID orderId);
+    /**
+     * Delete all table assignments for a given booking.
+     *
+     * @param orderId the booking ID
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM OrderTable ot WHERE ot.id.orderId = :orderId")
+    void deleteByOrderId(@Param("orderId") UUID orderId);
 
-	/**
-	 * Find all bookings that include a specific table (for availability checks).
-	 * @param tableId the table ID
-	 * @return list of OrderTable entries
-	 */
-	List<OrderTable> findById_TableId(UUID tableId);
+    /**
+     * Find all bookings that include a specific table (for availability checks).
+     *
+     * @param tableId the table ID
+     * @return list of OrderTable entries
+     */
+    List<OrderTable> findById_TableId(UUID tableId);
 
-	/**
-	 * Count how many tables are assigned to a booking.
-	 * @param orderId the booking ID
-	 * @return count of tables
-	 */
-	long countById_OrderId(UUID orderId);
+    /**
+     * Count how many tables are assigned to a booking.
+     *
+     * @param orderId the booking ID
+     * @return count of tables
+     */
+    long countById_OrderId(UUID orderId);
 }

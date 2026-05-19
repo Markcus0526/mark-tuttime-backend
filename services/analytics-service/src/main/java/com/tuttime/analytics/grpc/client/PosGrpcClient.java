@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.tuttime.common.constants.ServiceNames.ORDER_SERVICE;
 import static com.tuttime.common.constants.ServiceNames.POS_SERVICE;
 
 @Component
@@ -21,22 +20,22 @@ import static com.tuttime.common.constants.ServiceNames.POS_SERVICE;
 @Slf4j
 public class PosGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("pos-service")
-	private PosServiceGrpc.PosServiceBlockingStub posServiceBlockingStub;
+    @GrpcClient("pos-service")
+    private PosServiceGrpc.PosServiceBlockingStub posServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public GetPosHealthResponse getPosHealth(UUID branchId) {
-		GetPosHealthRequest request = GetPosHealthRequest.newBuilder()
-				.setBranchId(branchId.toString())
-				.build();
+    public GetPosHealthResponse getPosHealth(UUID branchId) {
+        GetPosHealthRequest request = GetPosHealthRequest.newBuilder()
+                .setBranchId(branchId.toString())
+                .build();
 
-		return grpcExecutor.execute(POS_SERVICE, "getPosHealth", () ->
-				posServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getPosHealth(request));
-	}
+        return grpcExecutor.execute(POS_SERVICE, "getPosHealth", () ->
+                posServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getPosHealth(request));
+    }
 }

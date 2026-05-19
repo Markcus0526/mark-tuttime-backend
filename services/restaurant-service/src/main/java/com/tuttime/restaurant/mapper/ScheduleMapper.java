@@ -8,14 +8,14 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring",
-		unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ScheduleMapper {
 
-	@Mapping(source = "id", target = "scheduleId")
-	ScheduleDto.ScheduleResponse toResponse(Schedule entity);
+    @Mapping(source = "id", target = "scheduleId")
+    ScheduleDto.ScheduleResponse toResponse(Schedule entity);
 
-	Schedule toEntity(ScheduleDto.ScheduleRequest request);
+    Schedule toEntity(ScheduleDto.ScheduleRequest request);
 
-	void updateEntityFromRequest(ScheduleDto.ScheduleRequest request, @MappingTarget Schedule entity);
+    void updateEntityFromRequest(ScheduleDto.ScheduleRequest request, @MappingTarget Schedule entity);
 
 }

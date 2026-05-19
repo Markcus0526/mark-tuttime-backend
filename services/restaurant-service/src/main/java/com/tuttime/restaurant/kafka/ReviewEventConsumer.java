@@ -26,56 +26,56 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_REVIEW_UPDATED
 @Slf4j
 public class ReviewEventConsumer {
 
-	private final BranchRepository branchRepository;
-	private final RestaurantRepository restaurantRepository;
-	private final ObjectMapper objectMapper;
+    private final BranchRepository branchRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final ObjectMapper objectMapper;
 
-	@KafkaListener(
-			topics = TOPIC_REVIEW_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	@Transactional
-	public void handleRatingUpdate(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_REVIEW_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    @Transactional
+    public void handleRatingUpdate(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			ReviewEvent.ReviewUpdatedEvent event =
-					objectMapper.readValue(eventString, ReviewEvent.ReviewUpdatedEvent.class);
-			if (event.eventId() == null || event.branchId() == null) {
-				log.debug("Received empty Review update for branch {}", event.branchId());
-				return;
-			}
+            ReviewEvent.ReviewUpdatedEvent event =
+                    objectMapper.readValue(eventString, ReviewEvent.ReviewUpdatedEvent.class);
+            if (event.eventId() == null || event.branchId() == null) {
+                log.debug("Received empty Review update for branch {}", event.branchId());
+                return;
+            }
 
-			if (event.status() == ReviewStatus.APPROVED) {
-				// 1. Update Branch Rating
-				Branch branch = branchRepository.findById(event.branchId())
-						.orElseThrow(() -> new InvalidRequestException("Branch not found"));
+            if (event.status() == ReviewStatus.APPROVED) {
+                // 1. Update Branch Rating
+                Branch branch = branchRepository.findById(event.branchId())
+                        .orElseThrow(() -> new InvalidRequestException("Branch not found"));
 
-				// Note: In a real production app, the event should carry the
-				// NEW calculated average from the Review Service to ensure 100% sync.
-				branch.setRating(BigDecimal.valueOf(event.rating() != null ? event.rating() : 0.0));
-				branchRepository.save(branch);
+                // Note: In a real production app, the event should carry the
+                // NEW calculated average from the Review Service to ensure 100% sync.
+                branch.setRating(BigDecimal.valueOf(event.rating() != null ? event.rating() : 0.0));
+                branchRepository.save(branch);
 
-				// 2. Update Parent Restaurant Rating (Average of all its branches)
-				updateParentRestaurantRating(branch.getRestaurant().getId());
-			}
+                // 2. Update Parent Restaurant Rating (Average of all its branches)
+                updateParentRestaurantRating(branch.getRestaurant().getId());
+            }
 
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
-					TOPIC_REVIEW_UPDATED, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
+                    TOPIC_REVIEW_UPDATED, e.getMessage());
+        }
+    }
 
-	private void updateParentRestaurantRating(UUID restaurantId) {
-		Double restaurantAvg = branchRepository.getAverageRatingForRestaurant(restaurantId);
+    private void updateParentRestaurantRating(UUID restaurantId) {
+        Double restaurantAvg = branchRepository.getAverageRatingForRestaurant(restaurantId);
 
-		// 3. Update the Restaurant table
-		Restaurant restaurant = restaurantRepository.findById(restaurantId)
-				.orElseThrow(() -> new InvalidRequestException("Restaurant not found"));
+        // 3. Update the Restaurant table
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new InvalidRequestException("Restaurant not found"));
 
-		restaurant.setRating(BigDecimal.valueOf(restaurantAvg != null ? restaurantAvg : 0.0));
-		restaurantRepository.save(restaurant);
+        restaurant.setRating(BigDecimal.valueOf(restaurantAvg != null ? restaurantAvg : 0.0));
+        restaurantRepository.save(restaurant);
 
-		log.info("Synced ratings: Restaurant {} is now {}",
-				restaurantId, restaurant.getRating());
-	}
+        log.info("Synced ratings: Restaurant {} is now {}",
+                restaurantId, restaurant.getRating());
+    }
 }

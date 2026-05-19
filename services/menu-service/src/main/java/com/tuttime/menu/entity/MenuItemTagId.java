@@ -15,9 +15,9 @@ import java.util.UUID;
 @EqualsAndHashCode // Essential for composite keys
 public class MenuItemTagId implements Serializable {
 
-	@Column(name = "menu_item_id")
-	private UUID menuItemId;
+    @Column(name = "menu_item_id")
+    private UUID menuItemId;
 
-	@Column(name = "tag_id")
-	private UUID tagId;
+    @Column(name = "tag_id")
+    private UUID tagId;
 }

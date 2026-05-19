@@ -18,38 +18,38 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
-	private final UserHeaderInterceptor userHeaderInterceptor;
-	private final ObjectMapper objectMapper;
+    private final UserHeaderInterceptor userHeaderInterceptor;
+    private final ObjectMapper objectMapper;
 
-	@Value("${app.media.local.upload-dir}")
-	private String uploadDir;
+    @Value("${app.media.local.upload-dir}")
+    private String uploadDir;
 
-	@Value("${app.media.local.upload-url}")
-	private String uploadUrl;
+    @Value("${app.media.local.upload-url}")
+    private String uploadUrl;
 
-	@Override
-	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(userHeaderInterceptor)
-				.addPathPatterns("/api/**") // Apply only to your API routes
-				.excludePathPatterns("/actuator/**", "/swagger-ui/**"); // Skip system routes
-	}
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(userHeaderInterceptor)
+                .addPathPatterns("/api/**") // Apply only to your API routes
+                .excludePathPatterns("/actuator/**", "/swagger-ui/**"); // Skip system routes
+    }
 
-	@Override
-	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		Path path = Paths.get(uploadDir).toAbsolutePath();
-		String location = "file:" + path + "/";
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        Path path = Paths.get(uploadDir).toAbsolutePath();
+        String location = "file:" + path + "/";
 
-		registry.addResourceHandler(uploadUrl + "**")
-				.addResourceLocations(location);
-	}
+        registry.addResourceHandler(uploadUrl + "**")
+                .addResourceLocations(location);
+    }
 
-	@Override
-	public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-		// Create a converter that supports octet-stream for JSON mapping
-		AbstractJackson2HttpMessageConverter octetStreamConverter =
-				new AbstractJackson2HttpMessageConverter(objectMapper, org.springframework.http.MediaType.APPLICATION_OCTET_STREAM) {
-				};
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        // Create a converter that supports octet-stream for JSON mapping
+        AbstractJackson2HttpMessageConverter octetStreamConverter =
+                new AbstractJackson2HttpMessageConverter(objectMapper, org.springframework.http.MediaType.APPLICATION_OCTET_STREAM) {
+                };
 
-		converters.add(octetStreamConverter);
-	}
+        converters.add(octetStreamConverter);
+    }
 }

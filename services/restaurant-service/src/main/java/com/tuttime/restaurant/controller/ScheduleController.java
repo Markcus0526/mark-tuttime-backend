@@ -27,112 +27,112 @@ import java.util.UUID;
 @Tag(name = "5.Branch Schedules", description = "Operations related to schedule of restaurants, branches")
 public class ScheduleController {
 
-	private final ScheduleService scheduleService;
+    private final ScheduleService scheduleService;
 
-	// --- Restaurant Schedules ---
+    // --- Restaurant Schedules ---
 
-	@Operation(summary = "Get schedules for a restaurant or branch", description = "Retrieve all schedule entries for a restaurant")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Schedules retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Restaurant not found")
-	})
-	@GetMapping("/{entityId}")
-	public ResponseEntity<ApiRes<List<ScheduleDto.ScheduleResponse>>> getSchedules(
-			@Parameter(description = "UUID of the restaurant or branch", required = true)
-			@PathVariable UUID entityId) {
+    @Operation(summary = "Get schedules for a restaurant or branch", description = "Retrieve all schedule entries for a restaurant")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Schedules retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Restaurant not found")
+    })
+    @GetMapping("/{entityId}")
+    public ResponseEntity<ApiRes<List<ScheduleDto.ScheduleResponse>>> getSchedules(
+            @Parameter(description = "UUID of the restaurant or branch", required = true)
+            @PathVariable UUID entityId) {
 
-		List<ScheduleDto.ScheduleResponse> schedules = scheduleService.getSchedules(entityId);
-		return ResponseEntity.ok(ApiRes.success(schedules));
-	}
+        List<ScheduleDto.ScheduleResponse> schedules = scheduleService.getSchedules(entityId);
+        return ResponseEntity.ok(ApiRes.success(schedules));
+    }
 
-	@Operation(summary = "Add a schedule to a restaurant or branch", description = "Create a new schedule entry for a restaurant")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Schedule created successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Restaurant not found")
-	})
-	@PostMapping
-	public ResponseEntity<ApiRes<ScheduleDto.ScheduleResponse>> addSchedule(
-			@Parameter(description = "Schedule details to create", required = true)
-			@Valid @RequestBody ScheduleDto.ScheduleRequest request) {
+    @Operation(summary = "Add a schedule to a restaurant or branch", description = "Create a new schedule entry for a restaurant")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Schedule created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid schedule data"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Restaurant not found")
+    })
+    @PostMapping
+    public ResponseEntity<ApiRes<ScheduleDto.ScheduleResponse>> addSchedule(
+            @Parameter(description = "Schedule details to create", required = true)
+            @Valid @RequestBody ScheduleDto.ScheduleRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		ScheduleDto.ScheduleResponse created = scheduleService.createSchedule(request, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
-	}
+        ScheduleDto.ScheduleResponse created = scheduleService.createSchedule(request, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+    }
 
-	@Operation(summary = "Update a schedule", description = "Update a specific schedule entry for a restaurant or branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Schedule updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid schedule data"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
-	})
-	@PutMapping("/{scheduleId}")
-	public ResponseEntity<ApiRes<ScheduleDto.ScheduleResponse>> updateSchedule(
-			@Parameter(description = "UUID of the schedule to update", required = true)
-			@PathVariable UUID scheduleId,
-			@Parameter(description = "Updated schedule details", required = true)
-			@Valid @RequestBody ScheduleDto.ScheduleRequest request) {
+    @Operation(summary = "Update a schedule", description = "Update a specific schedule entry for a restaurant or branch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Schedule updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid schedule data"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
+    })
+    @PutMapping("/{scheduleId}")
+    public ResponseEntity<ApiRes<ScheduleDto.ScheduleResponse>> updateSchedule(
+            @Parameter(description = "UUID of the schedule to update", required = true)
+            @PathVariable UUID scheduleId,
+            @Parameter(description = "Updated schedule details", required = true)
+            @Valid @RequestBody ScheduleDto.ScheduleRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		ScheduleDto.ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, request, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(updated));
-	}
+        ScheduleDto.ScheduleResponse updated = scheduleService.updateSchedule(scheduleId, request, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(updated));
+    }
 
-	@Operation(summary = "Delete a schedule", description = "Delete a specific schedule entry from a restaurant or branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Schedule deleted successfully"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
-	})
-	@DeleteMapping("/{scheduleId}")
-	public ResponseEntity<ApiRes<Void>> deleteSchedule(
-			@Parameter(description = "UUID of the schedule to delete", required = true)
-			@PathVariable UUID scheduleId) {
+    @Operation(summary = "Delete a schedule", description = "Delete a specific schedule entry from a restaurant or branch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Schedule deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Schedule or restaurant not found")
+    })
+    @DeleteMapping("/{scheduleId}")
+    public ResponseEntity<ApiRes<Void>> deleteSchedule(
+            @Parameter(description = "UUID of the schedule to delete", required = true)
+            @PathVariable UUID scheduleId) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		scheduleService.deleteSchedule(scheduleId, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        scheduleService.deleteSchedule(scheduleId, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
 }

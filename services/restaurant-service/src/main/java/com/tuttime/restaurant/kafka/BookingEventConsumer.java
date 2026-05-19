@@ -21,43 +21,43 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS
 @Slf4j
 public class BookingEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final TableRepository tableRepository;
+    private final ObjectMapper objectMapper;
+    private final TableRepository tableRepository;
 
-	@KafkaListener(
-			topics = TOPIC_BOOKING_STATUS_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	@Transactional(readOnly = true)
-	public void handleBookingStatusUpdated(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_BOOKING_STATUS_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    @Transactional(readOnly = true)
+    public void handleBookingStatusUpdated(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event =
-					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+            BookingEvent.BookingStatusUpdatedEvent event =
+                    objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
-			List<UUID> tableIds;
-			if (event.tableIds() != null && !event.tableIds().isEmpty()) {
-				tableIds = event.tableIds();
-			} else {
-				log.warn("No table IDs in event: {}", event);
-				return;
-			}
+            List<UUID> tableIds;
+            if (event.tableIds() != null && !event.tableIds().isEmpty()) {
+                tableIds = event.tableIds();
+            } else {
+                log.warn("No table IDs in event: {}", event);
+                return;
+            }
 
-			switch (event.newStatus()) {
-				case PAID -> updateTableStatusBatch(tableIds, TableStatus.RESERVED);
-				case ARRIVED -> updateTableStatusBatch(tableIds, TableStatus.OCCUPIED);
-				case COMPLETED, CANCELED, NO_SHOW -> updateTableStatusBatch(tableIds, TableStatus.ACTIVE);
-				default -> log.debug("No table status update needed for {}", event.newStatus());
-			}
+            switch (event.newStatus()) {
+                case PAID -> updateTableStatusBatch(tableIds, TableStatus.RESERVED);
+                case ARRIVED -> updateTableStatusBatch(tableIds, TableStatus.OCCUPIED);
+                case COMPLETED, CANCELED, NO_SHOW -> updateTableStatusBatch(tableIds, TableStatus.ACTIVE);
+                default -> log.debug("No table status update needed for {}", event.newStatus());
+            }
 
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
-					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
+                    TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+        }
+    }
 
-	private void updateTableStatusBatch(List<UUID> tableIds, TableStatus status) {
-		if (tableIds == null || tableIds.isEmpty()) return;
-		tableRepository.updateStatusByTableIds(tableIds, status);
-	}
+    private void updateTableStatusBatch(List<UUID> tableIds, TableStatus status) {
+        if (tableIds == null || tableIds.isEmpty()) return;
+        tableRepository.updateStatusByTableIds(tableIds, status);
+    }
 }

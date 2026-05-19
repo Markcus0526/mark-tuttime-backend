@@ -9,11 +9,12 @@ import java.util.UUID;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@Getter @Setter
+@Getter
+@Setter
 public abstract class BaseUuidEntity extends BaseTimeStampEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID) // Spring Boot 3.3 / JPA 3.1 feature
-	@Column(name = "id", updatable = false, nullable = false)
-	private UUID id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID) // Spring Boot 3.3 / JPA 3.1 feature
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
 }

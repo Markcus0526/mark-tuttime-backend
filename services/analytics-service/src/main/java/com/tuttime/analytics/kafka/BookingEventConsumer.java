@@ -18,44 +18,44 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS
 @RequiredArgsConstructor
 public class BookingEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final AnalyticsService analyticsService;
+    private final ObjectMapper objectMapper;
+    private final AnalyticsService analyticsService;
 
-	/**
-	 * Perfect Consumer Implementation for Spring Boot 3.3.13
-	 * Processes 'BOOKING_CREATED' events for heatmaps and reporting.
-	 */
-	@KafkaListener(
-			topics = TOPIC_BOOKING_STATUS_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handleBookingStatusUpdated(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    /**
+     * Perfect Consumer Implementation for Spring Boot 3.3.13
+     * Processes 'BOOKING_CREATED' events for heatmaps and reporting.
+     */
+    @KafkaListener(
+            topics = TOPIC_BOOKING_STATUS_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handleBookingStatusUpdated(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event =
-					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+            BookingEvent.BookingStatusUpdatedEvent event =
+                    objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
-			log.info("Analytics received Booking Event: {} for Restaurant: {}",
-					event.bookingId(), event.bookingId());
+            log.info("Analytics received Booking Event: {} for Restaurant: {}",
+                    event.bookingId(), event.bookingId());
 
-			String eventName = "";
-			switch (event.newStatus()) {
-				case BookingStatus.CREATED -> eventName = EVENT_BOOKING_CREATED;
-				case BookingStatus.CANCELED -> eventName = EVENT_BOOKING_CANCELED;
-				case BookingStatus.NO_SHOW -> eventName = EVENT_BOOKING_NO_SHOW;
-				case BookingStatus.COMPLETED -> eventName = EVENT_BOOKING_COMPLETED;
-			}
-			// Mapping the specific event to the generic Analytics log
-			if (StringUtils.hasText(eventName)) {
-				analyticsService.processEvent(
-						SOURCE_BOOKING_SERVICE,
-						eventName,
-						event.branchId(), // Important: Pass the branchId for physical tracking
-						event);
-			}
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
-					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
-		}
-	}
+            String eventName = "";
+            switch (event.newStatus()) {
+                case BookingStatus.CREATED -> eventName = EVENT_BOOKING_CREATED;
+                case BookingStatus.CANCELED -> eventName = EVENT_BOOKING_CANCELED;
+                case BookingStatus.NO_SHOW -> eventName = EVENT_BOOKING_NO_SHOW;
+                case BookingStatus.COMPLETED -> eventName = EVENT_BOOKING_COMPLETED;
+            }
+            // Mapping the specific event to the generic Analytics log
+            if (StringUtils.hasText(eventName)) {
+                analyticsService.processEvent(
+                        SOURCE_BOOKING_SERVICE,
+                        eventName,
+                        event.branchId(), // Important: Pass the branchId for physical tracking
+                        event);
+            }
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+                    TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+        }
+    }
 }

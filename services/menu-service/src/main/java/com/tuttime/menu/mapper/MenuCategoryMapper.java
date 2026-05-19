@@ -12,23 +12,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Mapper(componentModel = "spring", uses = {MenuItemMapper.class})
 public abstract class MenuCategoryMapper {
 
-	@Autowired
-	protected MediaRepository mediaRepository;
+    @Autowired
+    protected MediaRepository mediaRepository;
 
-	@Mapping(target = "categoryId", source = "id")
-	@Mapping(target = "imageUrl", ignore = true)
-	@Mapping(target = "itemCount", ignore = true)
-	public abstract MenuCategoryDto.CategoryResponse toResponse(MenuCategory category);
+    @Mapping(target = "categoryId", source = "id")
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "itemCount", ignore = true)
+    public abstract MenuCategoryDto.CategoryResponse toResponse(MenuCategory category);
 
-	@Mapping(target = "categoryId", source = "entity.id")
-	@Mapping(target = "imageUrl", ignore = true)
-	@Mapping(target = "itemCount", source = "count")
-	public abstract MenuCategoryDto.CategoryResponse toResponseWithCount(MenuCategory entity, int count);
+    @Mapping(target = "categoryId", source = "entity.id")
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "itemCount", source = "count")
+    public abstract MenuCategoryDto.CategoryResponse toResponseWithCount(MenuCategory entity, int count);
 
-	@AfterMapping
-	protected void addImageUrl(MenuCategory category, @MappingTarget MenuCategoryDto.CategoryResponse.CategoryResponseBuilder builder) {
-		// Find the primary image URL where entityId matches the categoryId
-		mediaRepository.findPrimaryImageUrlByEntityId(category.getId())
-				.ifPresent(builder::imageUrl);
-	}
+    @AfterMapping
+    protected void addImageUrl(MenuCategory category, @MappingTarget MenuCategoryDto.CategoryResponse.CategoryResponseBuilder builder) {
+        // Find the primary image URL where entityId matches the categoryId
+        mediaRepository.findPrimaryImageUrlByEntityId(category.getId())
+                .ifPresent(builder::imageUrl);
+    }
 }

@@ -3,7 +3,9 @@ package com.tuttime.review.service.impl;
 import com.tuttime.common.enums.ReviewStatus;
 import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.ReviewEvent;
-import com.tuttime.common.event.proto.*;
+import com.tuttime.common.event.proto.GetUserDetailResponse;
+import com.tuttime.common.event.proto.GetUserDetailsRequest;
+import com.tuttime.common.event.proto.GetUserDetailsResponse;
 import com.tuttime.common.exception.ConflictException;
 import com.tuttime.common.exception.InvalidRequestException;
 import com.tuttime.review.dto.RatingDto;
@@ -37,175 +39,175 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
-	private final ReviewRepository reviewRepository;
-	private final RatingAggregateRepository aggregateRepository;
-	private final ModerationLogRepository moderationLogRepository;
-	private final ReviewMapper reviewMapper;
-	private final RestaurantGrpcClient restaurantGrpcClient;
-	private final UserGrpcClient userGrpcClient;
-	private final EventProducer eventProducer;
+    private final ReviewRepository reviewRepository;
+    private final RatingAggregateRepository aggregateRepository;
+    private final ModerationLogRepository moderationLogRepository;
+    private final ReviewMapper reviewMapper;
+    private final RestaurantGrpcClient restaurantGrpcClient;
+    private final UserGrpcClient userGrpcClient;
+    private final EventProducer eventProducer;
 
-	@Override
-	@Transactional
-	public ReviewDto.ReviewResponse createReview(UUID userId, ReviewDto.ReviewRequest request) {
-		restaurantGrpcClient.validateBranch(request.branchId());
+    @Override
+    @Transactional
+    public ReviewDto.ReviewResponse createReview(UUID userId, ReviewDto.ReviewRequest request) {
+        restaurantGrpcClient.validateBranch(request.branchId());
 
-		if (reviewRepository.existsByUserIdAndBranchId(userId, request.branchId())) {
-			throw new ConflictException("You have already reviewed this branch");
-		}
+        if (reviewRepository.existsByUserIdAndBranchId(userId, request.branchId())) {
+            throw new ConflictException("You have already reviewed this branch");
+        }
 
-		Review review = Review.builder()
-				.userId(userId)
-				.branchId(request.branchId())
-				.rating(request.rating())
-				.comment(request.comment())
-				.status(ReviewStatus.PENDING)
-				.build();
+        Review review = Review.builder()
+                .userId(userId)
+                .branchId(request.branchId())
+                .rating(request.rating())
+                .comment(request.comment())
+                .status(ReviewStatus.PENDING)
+                .build();
 
-		Review saved = reviewRepository.save(review);
-		dispatchReviewUpdatedEvent(saved);
-		return reviewMapper.toReviewResponse(saved);
-	}
+        Review saved = reviewRepository.save(review);
+        dispatchReviewUpdatedEvent(saved);
+        return reviewMapper.toReviewResponse(saved);
+    }
 
-	@Override
-	@Transactional(readOnly = true)
-	public Page<ReviewDto.ReviewResponse> getReviewsByStatus(UUID branchId, ReviewStatus status, Pageable pageable) {
-		log.debug("Fetching reviews for branch {} with status {}", branchId, status);
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReviewDto.ReviewResponse> getReviewsByStatus(UUID branchId, ReviewStatus status, Pageable pageable) {
+        log.debug("Fetching reviews for branch {} with status {}", branchId, status);
 
-		// 1. Fetch reviews from DB
-		Page<Review> reviewPage = reviewRepository.findByBranchIdAndStatus(branchId, status, pageable);
-		if (reviewPage.isEmpty()) return Page.empty();
+        // 1. Fetch reviews from DB
+        Page<Review> reviewPage = reviewRepository.findByBranchIdAndStatus(branchId, status, pageable);
+        if (reviewPage.isEmpty()) return Page.empty();
 
-		// 2. Batch fetch user info via gRPC to avoid N+1
+        // 2. Batch fetch user info via gRPC to avoid N+1
 
-		List<String> userIds = reviewPage.getContent().stream()
-				.map(review -> review.getUserId().toString())
-				.distinct()
-				.toList();
-		// Call User Service (Assuming a Batch RPC exists)
-		GetUserDetailsResponse usersResponse = userGrpcClient.getUserDetails(GetUserDetailsRequest.newBuilder()
-				.addAllUserIds(userIds)
-				.build());
+        List<String> userIds = reviewPage.getContent().stream()
+                .map(review -> review.getUserId().toString())
+                .distinct()
+                .toList();
+        // Call User Service (Assuming a Batch RPC exists)
+        GetUserDetailsResponse usersResponse = userGrpcClient.getUserDetails(GetUserDetailsRequest.newBuilder()
+                .addAllUserIds(userIds)
+                .build());
 
-		Map<String, GetUserDetailResponse> userMap = usersResponse.getProfilesList().stream()
-				.collect(Collectors.toMap(GetUserDetailResponse::getUserId, user -> user));
+        Map<String, GetUserDetailResponse> userMap = usersResponse.getProfilesList().stream()
+                .collect(Collectors.toMap(GetUserDetailResponse::getUserId, user -> user));
 
-		// 3. Map to DTOs and enrich with User info
-		return reviewPage.map(review -> {
-			GetUserDetailResponse user = userMap.getOrDefault(
-					review.getUserId().toString(),
-					GetUserDetailResponse.newBuilder().setFullName("Unknown User").build()
-			);
-			return reviewMapper.toReviewDetailResponse(review, user);
-		});
-	}
+        // 3. Map to DTOs and enrich with User info
+        return reviewPage.map(review -> {
+            GetUserDetailResponse user = userMap.getOrDefault(
+                    review.getUserId().toString(),
+                    GetUserDetailResponse.newBuilder().setFullName("Unknown User").build()
+            );
+            return reviewMapper.toReviewDetailResponse(review, user);
+        });
+    }
 
-	@Override
-	@Transactional
-	public ReviewDto.ReviewResponse moderateReview(UUID reviewId, ReviewDto.ReviewModerationRequest request,
-	                                               UUID currentUserId, String userRoles) {
-		Review review = reviewRepository.findById(reviewId)
-				.orElseThrow(() -> new InvalidRequestException("Review not found"));
+    @Override
+    @Transactional
+    public ReviewDto.ReviewResponse moderateReview(UUID reviewId, ReviewDto.ReviewModerationRequest request,
+                                                   UUID currentUserId, String userRoles) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new InvalidRequestException("Review not found"));
 
-		// Branch permission check
-		restaurantGrpcClient.validateBranchPermission(review.getBranchId(), currentUserId, userRoles);
+        // Branch permission check
+        restaurantGrpcClient.validateBranchPermission(review.getBranchId(), currentUserId, userRoles);
 
-		ReviewStatus oldStatus = review.getStatus();
-		if (oldStatus == request.status()) {
-			return reviewMapper.toReviewResponse(review);
-		}
+        ReviewStatus oldStatus = review.getStatus();
+        if (oldStatus == request.status()) {
+            return reviewMapper.toReviewResponse(review);
+        }
 
-		review.setStatus(request.status());
+        review.setStatus(request.status());
 
-		// Log with oldStatus
-		ReviewModerationLog logEntry = ReviewModerationLog.builder()
-				.review(review)
-				.moderatorId(currentUserId)
-				.action(request.action())
-				.reason(request.reason())
-				.build();
-		moderationLogRepository.save(logEntry);
+        // Log with oldStatus
+        ReviewModerationLog logEntry = ReviewModerationLog.builder()
+                .review(review)
+                .moderatorId(currentUserId)
+                .action(request.action())
+                .reason(request.reason())
+                .build();
+        moderationLogRepository.save(logEntry);
 
-		// Update aggregate statistics
-		if (request.status() == ReviewStatus.APPROVED && oldStatus != ReviewStatus.APPROVED) {
-			updateRatingAggregate(review.getBranchId(), review.getRating());
-		} else if (oldStatus == ReviewStatus.APPROVED && request.status() != ReviewStatus.APPROVED) {
-			subtractFromRatingAggregate(review.getBranchId(), review.getRating());
-		}
+        // Update aggregate statistics
+        if (request.status() == ReviewStatus.APPROVED && oldStatus != ReviewStatus.APPROVED) {
+            updateRatingAggregate(review.getBranchId(), review.getRating());
+        } else if (oldStatus == ReviewStatus.APPROVED && request.status() != ReviewStatus.APPROVED) {
+            subtractFromRatingAggregate(review.getBranchId(), review.getRating());
+        }
 
-		Review updated = reviewRepository.save(review);
-		dispatchReviewUpdatedEvent(updated);
-		return reviewMapper.toReviewResponse(updated);
-	}
+        Review updated = reviewRepository.save(review);
+        dispatchReviewUpdatedEvent(updated);
+        return reviewMapper.toReviewResponse(updated);
+    }
 
-	@Override
-	@Transactional(readOnly = true)
-	public RatingDto.RatingAggregateResponse getAggregateStats(UUID branchId) {
-		return aggregateRepository.findById(branchId)
-				.map(reviewMapper::toRatingResponse) // Map the entity if found
-				.orElseGet(() -> RatingDto.RatingAggregateResponse.builder()
-						.branchId(branchId)
-						.averageRating(BigDecimal.ZERO)
-						.totalReviews(0)
-						.ratingDistribution(Map.of("1", 0, "2", 0, "3", 0, "4", 0, "5", 0))
-						.build());
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public RatingDto.RatingAggregateResponse getAggregateStats(UUID branchId) {
+        return aggregateRepository.findById(branchId)
+                .map(reviewMapper::toRatingResponse) // Map the entity if found
+                .orElseGet(() -> RatingDto.RatingAggregateResponse.builder()
+                        .branchId(branchId)
+                        .averageRating(BigDecimal.ZERO)
+                        .totalReviews(0)
+                        .ratingDistribution(Map.of("1", 0, "2", 0, "3", 0, "4", 0, "5", 0))
+                        .build());
+    }
 
-	private void updateRatingAggregate(UUID branchId, Integer newRating) {
-		RatingAggregate aggregate = aggregateRepository.findById(branchId)
-				.orElse(RatingAggregate.builder()
-						.branchId(branchId)
-						.averageRating(BigDecimal.ZERO)
-						.totalReviews(0)
-						.ratingDistribution(new java.util.HashMap<>(Map.of("1", 0, "2", 0, "3", 0, "4", 0, "5", 0)))
-						.build());
+    private void updateRatingAggregate(UUID branchId, Integer newRating) {
+        RatingAggregate aggregate = aggregateRepository.findById(branchId)
+                .orElse(RatingAggregate.builder()
+                        .branchId(branchId)
+                        .averageRating(BigDecimal.ZERO)
+                        .totalReviews(0)
+                        .ratingDistribution(new java.util.HashMap<>(Map.of("1", 0, "2", 0, "3", 0, "4", 0, "5", 0)))
+                        .build());
 
-		// Update distribution map
-		Map<String, Integer> dist = aggregate.getRatingDistribution();
-		String ratingKey = String.valueOf(newRating);
-		dist.put(ratingKey, dist.getOrDefault(ratingKey, 0) + 1);
+        // Update distribution map
+        Map<String, Integer> dist = aggregate.getRatingDistribution();
+        String ratingKey = String.valueOf(newRating);
+        dist.put(ratingKey, dist.getOrDefault(ratingKey, 0) + 1);
 
-		// Update total and average
-		int newTotal = aggregate.getTotalReviews() + 1;
-		BigDecimal totalScore = aggregate.getAverageRating()
-				.multiply(BigDecimal.valueOf(aggregate.getTotalReviews()))
-				.add(BigDecimal.valueOf(newRating));
+        // Update total and average
+        int newTotal = aggregate.getTotalReviews() + 1;
+        BigDecimal totalScore = aggregate.getAverageRating()
+                .multiply(BigDecimal.valueOf(aggregate.getTotalReviews()))
+                .add(BigDecimal.valueOf(newRating));
 
-		aggregate.setTotalReviews(newTotal);
-		aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
+        aggregate.setTotalReviews(newTotal);
+        aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
 
-		aggregateRepository.save(aggregate);
-	}
+        aggregateRepository.save(aggregate);
+    }
 
-	private void subtractFromRatingAggregate(UUID branchId, Integer rating) {
-		RatingAggregate aggregate = aggregateRepository.findById(branchId)
-				.orElseThrow(() -> new InvalidRequestException("No aggregate found for branch"));
-		// Update distribution (decrement)
-		Map<String, Integer> dist = aggregate.getRatingDistribution();
-		String ratingKey = String.valueOf(rating);
-		dist.put(ratingKey, dist.getOrDefault(ratingKey, 0) - 1);
-		// Update total and average
-		int newTotal = aggregate.getTotalReviews() - 1;
-		if (newTotal == 0) {
-			aggregate.setAverageRating(BigDecimal.ZERO);
-		} else {
-			BigDecimal totalScore = aggregate.getAverageRating()
-					.multiply(BigDecimal.valueOf(aggregate.getTotalReviews()))
-					.subtract(BigDecimal.valueOf(rating));
-			aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
-		}
-		aggregate.setTotalReviews(newTotal);
-		aggregateRepository.save(aggregate);
-	}
+    private void subtractFromRatingAggregate(UUID branchId, Integer rating) {
+        RatingAggregate aggregate = aggregateRepository.findById(branchId)
+                .orElseThrow(() -> new InvalidRequestException("No aggregate found for branch"));
+        // Update distribution (decrement)
+        Map<String, Integer> dist = aggregate.getRatingDistribution();
+        String ratingKey = String.valueOf(rating);
+        dist.put(ratingKey, dist.getOrDefault(ratingKey, 0) - 1);
+        // Update total and average
+        int newTotal = aggregate.getTotalReviews() - 1;
+        if (newTotal == 0) {
+            aggregate.setAverageRating(BigDecimal.ZERO);
+        } else {
+            BigDecimal totalScore = aggregate.getAverageRating()
+                    .multiply(BigDecimal.valueOf(aggregate.getTotalReviews()))
+                    .subtract(BigDecimal.valueOf(rating));
+            aggregate.setAverageRating(totalScore.divide(BigDecimal.valueOf(newTotal), 2, RoundingMode.HALF_UP));
+        }
+        aggregate.setTotalReviews(newTotal);
+        aggregateRepository.save(aggregate);
+    }
 
-	private void dispatchReviewUpdatedEvent(Review review) {
-		ReviewEvent.ReviewUpdatedEvent event = ReviewEvent.ReviewUpdatedEvent.builder()
-				.reviewId(review.getId())
-				.branchId(review.getBranchId())
-				.userId(review.getUserId())
-				.rating(review.getRating())
-				.status(review.getStatus())
-				.build();
-		eventProducer.sendReviewUpdatedEvent(event);
-	}
+    private void dispatchReviewUpdatedEvent(Review review) {
+        ReviewEvent.ReviewUpdatedEvent event = ReviewEvent.ReviewUpdatedEvent.builder()
+                .reviewId(review.getId())
+                .branchId(review.getBranchId())
+                .userId(review.getUserId())
+                .rating(review.getRating())
+                .status(review.getStatus())
+                .build();
+        eventProducer.sendReviewUpdatedEvent(event);
+    }
 }

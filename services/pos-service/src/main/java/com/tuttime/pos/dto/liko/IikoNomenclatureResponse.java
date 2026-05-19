@@ -6,5 +6,5 @@ import java.util.List;
 
 @Data
 public class IikoNomenclatureResponse {
-	private List<IikoProduct> products;
+    private List<IikoProduct> products;
 }

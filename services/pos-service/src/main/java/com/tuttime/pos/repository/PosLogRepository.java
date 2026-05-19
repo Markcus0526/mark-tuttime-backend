@@ -14,24 +14,24 @@ import java.util.UUID;
 @Repository
 public interface PosLogRepository extends JpaRepository<PosLog, Integer> {
 
-	// Used by getSyncLogs in the controller to show history
-	List<PosLog> findAllByEntityIdOrderByCreatedAtDesc(UUID entityId);
+    // Used by getSyncLogs in the controller to show history
+    List<PosLog> findAllByEntityIdOrderByCreatedAtDesc(UUID entityId);
 
-	// Used to check if an order was already successfully synced (Idempotency)
-	boolean existsByEntityIdAndStatus(UUID entityId, String status);
+    // Used to check if an order was already successfully synced (Idempotency)
+    boolean existsByEntityIdAndStatus(UUID entityId, String status);
 
-	@Query(value = """
-			SELECT * FROM pos_service.pos_logs 
-			WHERE status = 'FAILED' 
-			AND request_payload ->> 'branch_id' = :branchId
-			""", nativeQuery = true)
-	List<PosLog> findAllFailedByBranch(@Param("branchId") String branchId);
+    @Query(value = """
+            SELECT * FROM pos_service.pos_logs 
+            WHERE status = 'FAILED' 
+            AND request_payload ->> 'branch_id' = :branchId
+            """, nativeQuery = true)
+    List<PosLog> findAllFailedByBranch(@Param("branchId") String branchId);
 
-	long countByBranchIdAndCreatedAtAfter(UUID branchId, OffsetDateTime since);
+    long countByBranchIdAndCreatedAtAfter(UUID branchId, OffsetDateTime since);
 
-	long countByBranchIdAndStatusAndCreatedAtAfter(UUID branchId, String status, OffsetDateTime since);
+    long countByBranchIdAndStatusAndCreatedAtAfter(UUID branchId, String status, OffsetDateTime since);
 
-	@Query("SELECT MAX(createdAt) FROM PosLog WHERE branchId = :branchId AND status = 'SUCCESS' AND createdAt >= :since")
-	Optional<OffsetDateTime> findLatestSuccessTimestamp(@Param("branchId") UUID branchId,
-	                                                    @Param("since") OffsetDateTime since);
+    @Query("SELECT MAX(createdAt) FROM PosLog WHERE branchId = :branchId AND status = 'SUCCESS' AND createdAt >= :since")
+    Optional<OffsetDateTime> findLatestSuccessTimestamp(@Param("branchId") UUID branchId,
+                                                        @Param("since") OffsetDateTime since);
 }

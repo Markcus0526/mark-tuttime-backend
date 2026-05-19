@@ -17,24 +17,24 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Staff extends BaseUuidEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "restaurant_id", nullable = false)
-	private Restaurant restaurant;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "restaurant_id", nullable = false)
+    private Restaurant restaurant;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "branch_id")
-	private Branch branch;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
 
-	@Column(name = "user_id", nullable = false)
-	private UUID userId; // Link to User Service
+    @Column(name = "user_id", nullable = false)
+    private UUID userId; // Link to User Service
 
-	@Column(name = "role_name", nullable = false)
-	private String roleName; // "MANAGER", "HOSTESS"
+    @Column(name = "role_name", nullable = false)
+    private String roleName; // "MANAGER", "HOSTESS"
 
-	@Column(name = "active")
-	@Builder.Default
-	private Boolean active = true;
+    @Column(name = "active")
+    @Builder.Default
+    private Boolean active = true;
 
-	@Version
-	private Long version;
+    @Version
+    private Long version;
 }

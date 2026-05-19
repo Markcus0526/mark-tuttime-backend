@@ -17,14 +17,14 @@ import java.util.UUID;
 @Slf4j
 public class PaymentGrpcDelegate {
 
-	private final PaymentRepository paymentRepository;
+    private final PaymentRepository paymentRepository;
 
-	@Transactional(readOnly = true)
-	public GetPaymentCountsResponse getPaymentCounts(GetPaymentCountsRequest request) {
-		UUID branchId = UUID.fromString(request.getBranchId());
-		LocalDate start = LocalDate.parse(request.getStartDate());
-		LocalDate end = LocalDate.parse(request.getEndDate());
-		long payments = paymentRepository.countPayments(branchId, start, end);
-		return GetPaymentCountsResponse.newBuilder().setPayments(payments).build();
-	}
+    @Transactional(readOnly = true)
+    public GetPaymentCountsResponse getPaymentCounts(GetPaymentCountsRequest request) {
+        UUID branchId = UUID.fromString(request.getBranchId());
+        LocalDate start = LocalDate.parse(request.getStartDate());
+        LocalDate end = LocalDate.parse(request.getEndDate());
+        long payments = paymentRepository.countPayments(branchId, start, end);
+        return GetPaymentCountsResponse.newBuilder().setPayments(payments).build();
+    }
 }

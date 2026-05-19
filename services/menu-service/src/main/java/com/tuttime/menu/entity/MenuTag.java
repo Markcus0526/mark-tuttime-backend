@@ -15,11 +15,11 @@ import lombok.*;
 @Builder
 public class MenuTag extends BaseUuidEntity {
 
-	@Column(name = "name", nullable = false, unique = true, length = 50)
-	private String name;
+    @Column(name = "name", nullable = false, unique = true, length = 50)
+    private String name;
 
-	@Column(name = "icon_url", length = 255)
-	private String iconUrl;
+    @Column(name = "icon_url", length = 255)
+    private String iconUrl;
 
 }
 

@@ -10,13 +10,13 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class GatewaySecurityConfig {
 
-	@Bean
-	public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-		return http
-				.csrf(ServerHttpSecurity.CsrfSpec::disable)  // disable CSRF
-				.authorizeExchange(exchanges -> exchanges
-						.anyExchange().permitAll()           // no authentication at Spring Security level
-				)
-				.build();
-	}
+    @Bean
+    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)  // disable CSRF
+                .authorizeExchange(exchanges -> exchanges
+                        .anyExchange().permitAll()           // no authentication at Spring Security level
+                )
+                .build();
+    }
 }

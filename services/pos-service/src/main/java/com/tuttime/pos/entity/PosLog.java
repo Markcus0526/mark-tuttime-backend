@@ -23,29 +23,29 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class PosLog extends BaseSerialEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "entity_id", nullable = false)
-	private UUID entityId; // Can be bookingId or orderId
+    @Column(name = "entity_id", nullable = false)
+    private UUID entityId; // Can be bookingId or orderId
 
-	@Column(name = "entity_type", nullable = false)
-	private String entityType; // "BOOKING", "ORDER", "MENU"
+    @Column(name = "entity_type", nullable = false)
+    private String entityType; // "BOOKING", "ORDER", "MENU"
 
-	@Column(nullable = false)
-	private String action; // "RESERVE_TABLE", "SEND_ORDER"
+    @Column(nullable = false)
+    private String action; // "RESERVE_TABLE", "SEND_ORDER"
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "request_payload")
-	private Map<String, Object> requestPayload;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "request_payload")
+    private Map<String, Object> requestPayload;
 
-	@Column(name = "response_payload", columnDefinition = "TEXT")
-	private String responsePayload;
+    @Column(name = "response_payload", columnDefinition = "TEXT")
+    private String responsePayload;
 
-	@Column(nullable = false)
-	private String status; // "SUCCESS", "FAILED", "SUCCESS_ALREADY_SET"
+    @Column(nullable = false)
+    private String status; // "SUCCESS", "FAILED", "SUCCESS_ALREADY_SET"
 
-	@Column(name = "attempt_count")
-	@Builder.Default
-	private Integer attemptCount = 1;
+    @Column(name = "attempt_count")
+    @Builder.Default
+    private Integer attemptCount = 1;
 }

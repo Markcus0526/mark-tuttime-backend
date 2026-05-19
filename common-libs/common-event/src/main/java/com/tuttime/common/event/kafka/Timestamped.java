@@ -1,6 +1,7 @@
 package com.tuttime.common.event.kafka;
 
 public interface Timestamped<T> {
-	T getTimestamp();
-	void setTimestamp(T timestamp);
+    T getTimestamp();
+
+    void setTimestamp(T timestamp);
 }

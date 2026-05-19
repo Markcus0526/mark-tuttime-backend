@@ -4,7 +4,7 @@ metadata:
   name: pos-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: pos-service
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: pos-service-uploads-pvc.yaml
+            claimName: pos-service-uploads-pvc

@@ -14,22 +14,22 @@ import java.time.OffsetDateTime;
 @Builder
 public class BookingTable {
 
-	@EmbeddedId
-	private BookingTableId id;
+    @EmbeddedId
+    private BookingTableId id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@MapsId("bookingId")
-	@JoinColumn(name = "booking_id", nullable = false)
-	private Booking booking;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("bookingId")
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
 
-	// No @ManyToOne to Table (from restaurant service) – not available in this service.
-	// The tableId is just a logical reference; you cannot have a JPA relation across services.
+    // No @ManyToOne to Table (from restaurant service) – not available in this service.
+    // The tableId is just a logical reference; you cannot have a JPA relation across services.
 
-	// Optional extra fields
-	@Column(name = "assigned_at", nullable = false)
-	@Builder.Default
-	private OffsetDateTime assignedAt = OffsetDateTime.now();
+    // Optional extra fields
+    @Column(name = "assigned_at", nullable = false)
+    @Builder.Default
+    private OffsetDateTime assignedAt = OffsetDateTime.now();
 
-	@Column(name = "notes")
-	private String notes;
+    @Column(name = "notes")
+    private String notes;
 }

@@ -17,19 +17,19 @@ import java.math.BigDecimal;
 @EntityListeners(AuditingEntityListener.class)
 public class Refund extends BaseUuidEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "payment_id", nullable = false)
-	private Payment payment;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id", nullable = false)
+    private Payment payment;
 
-	@Column(name = "yookassa_refund_id", nullable = false, unique = true)
-	private String yookassaRefundId;
+    @Column(name = "yookassa_refund_id", nullable = false, unique = true)
+    private String yookassaRefundId;
 
-	@Column(nullable = false, precision = 10, scale = 2)
-	private BigDecimal amount;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
 
-	@Column(nullable = false, length = 20)
-	private String status; // SUCCEEDED, FAILED
+    @Column(nullable = false, length = 20)
+    private String status; // SUCCEEDED, FAILED
 
-	@Column(length = 255)
-	private String reason;
+    @Column(length = 255)
+    private String reason;
 }

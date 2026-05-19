@@ -7,13 +7,13 @@ import java.util.UUID;
 
 public interface PaymentMethodService {
 
-	String initializeCardBinding(UUID userId);
+    String initializeCardBinding(UUID userId);
 
-	void savePaymentMethod(UUID userId, PaymentMethodDto.YooKassaPaymentMethod yooMethod);
+    void savePaymentMethod(UUID userId, PaymentMethodDto.YooKassaPaymentMethod yooMethod);
 
-	List<PaymentMethodDto.Response> getUserPaymentMethods(UUID userId);
+    List<PaymentMethodDto.Response> getUserPaymentMethods(UUID userId);
 
-	void removePaymentMethod(UUID userId, UUID methodId);
+    void removePaymentMethod(UUID userId, UUID methodId);
 
-	void setDefaultMethod(UUID userId, UUID methodId);
+    void setDefaultMethod(UUID userId, UUID methodId);
 }

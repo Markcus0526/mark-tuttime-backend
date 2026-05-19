@@ -17,39 +17,39 @@ import java.util.List;
 @Component
 public class GatewayHeaderSecurityFilter extends OncePerRequestFilter {
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request,
-	                                HttpServletResponse response,
-	                                FilterChain filterChain) throws ServletException, IOException {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-		String userId = request.getHeader("X-User-Id");
-		String rolesHeader = request.getHeader("X-User-Roles");
+        String userId = request.getHeader("X-User-Id");
+        String rolesHeader = request.getHeader("X-User-Roles");
 
-		// 1. Spring Security context (optional but fine)
-		if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-			List<SimpleGrantedAuthority> authorities = List.of();
-			if (rolesHeader != null && !rolesHeader.isBlank()) {
-				authorities = Arrays.stream(rolesHeader.split(","))
-						.map(SimpleGrantedAuthority::new)
-						.toList();
-			}
-			var authToken = new UsernamePasswordAuthenticationToken(userId, null, authorities);
-			SecurityContextHolder.getContext().setAuthentication(authToken);
-		}
+        // 1. Spring Security context (optional but fine)
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            List<SimpleGrantedAuthority> authorities = List.of();
+            if (rolesHeader != null && !rolesHeader.isBlank()) {
+                authorities = Arrays.stream(rolesHeader.split(","))
+                        .map(SimpleGrantedAuthority::new)
+                        .toList();
+            }
+            var authToken = new UsernamePasswordAuthenticationToken(userId, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        }
 
-		// 2. CRITICAL: Populate custom UserContext (used by your permission methods)
-		if (userId != null && !userId.isBlank()) {
-			UserContext.setUserId(userId);
-		}
-		if (rolesHeader != null && !rolesHeader.isBlank()) {
-			UserContext.setRoles(rolesHeader);
-		}
+        // 2. CRITICAL: Populate custom UserContext (used by your permission methods)
+        if (userId != null && !userId.isBlank()) {
+            UserContext.setUserId(userId);
+        }
+        if (rolesHeader != null && !rolesHeader.isBlank()) {
+            UserContext.setRoles(rolesHeader);
+        }
 
-		try {
-			filterChain.doFilter(request, response);
-		} finally {
-			// 3. Prevent memory leaks
-			UserContext.clear();
-		}
-	}
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            // 3. Prevent memory leaks
+            UserContext.clear();
+        }
+    }
 }

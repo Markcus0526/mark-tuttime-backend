@@ -35,32 +35,32 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
-	private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
-	private static final String CORRELATION_ID_MDC_KEY = "correlationId";
+    private static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    private static final String CORRELATION_ID_MDC_KEY = "correlationId";
 
-	@Override
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-			throws ServletException, IOException {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-		String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
 
-		// Generate correlation ID if not present
-		if (correlationId == null || correlationId.isEmpty()) {
-			correlationId = UUID.randomUUID().toString();
-		}
+        // Generate correlation ID if not present
+        if (correlationId == null || correlationId.isEmpty()) {
+            correlationId = UUID.randomUUID().toString();
+        }
 
-		// Add correlation ID to MDC for logging
-		MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
+        // Add correlation ID to MDC for logging
+        MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
 
-		// Add correlation ID to response headers
-		response.setHeader(CORRELATION_ID_HEADER, correlationId);
+        // Add correlation ID to response headers
+        response.setHeader(CORRELATION_ID_HEADER, correlationId);
 
-		try {
-			filterChain.doFilter(request, response);
-		} finally {
-			// Clean up MDC after request processing
-			MDC.clear();
-		}
-	}
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            // Clean up MDC after request processing
+            MDC.clear();
+        }
+    }
 }
 

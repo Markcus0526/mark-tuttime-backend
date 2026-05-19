@@ -9,9 +9,9 @@ import java.util.List;
 
 public interface PricingService {
 
-	DiscountDto.PricingResult calculateFinalPrice(MenuItem item);
+    DiscountDto.PricingResult calculateFinalPrice(MenuItem item);
 
-	DiscountDto.PricingResult calculateFinalPrice(MenuItem item, List<Discount> preloadedDiscounts);
+    DiscountDto.PricingResult calculateFinalPrice(MenuItem item, List<Discount> preloadedDiscounts);
 
-	BigDecimal applyDiscount(BigDecimal price, Discount discount);
+    BigDecimal applyDiscount(BigDecimal price, Discount discount);
 }

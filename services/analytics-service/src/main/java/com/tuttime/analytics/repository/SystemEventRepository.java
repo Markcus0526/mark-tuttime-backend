@@ -10,6 +10,6 @@ import java.util.UUID;
 @Repository
 public interface SystemEventRepository extends JpaRepository<SystemEvent, UUID> {
 
-	// Find all events for a specific branch (useful for report generation)
-	List<SystemEvent> findAllByBranchIdOrderByOccurredAtDesc(UUID branchId);
+    // Find all events for a specific branch (useful for report generation)
+    List<SystemEvent> findAllByBranchIdOrderByOccurredAtDesc(UUID branchId);
 }

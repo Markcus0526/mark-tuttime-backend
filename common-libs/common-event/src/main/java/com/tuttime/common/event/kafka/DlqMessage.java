@@ -1,5 +1,6 @@
 package com.tuttime.common.event.kafka;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,8 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
  * Dead Letter Queue Message
@@ -22,46 +21,72 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 @AllArgsConstructor
 public class DlqMessage {
 
-	/** Original topic where the message was consumed from */
-	private String originalTopic;
+    /**
+     * Original topic where the message was consumed from
+     */
+    private String originalTopic;
 
-	/** Original partition */
-	private Integer originalPartition;
+    /**
+     * Original partition
+     */
+    private Integer originalPartition;
 
-	/** Original offset */
-	private Long originalOffset;
+    /**
+     * Original offset
+     */
+    private Long originalOffset;
 
-	/** Original message key */
-	private String originalKey;
+    /**
+     * Original message key
+     */
+    private String originalKey;
 
-	/** Original message payload */
-	private String originalPayload;
+    /**
+     * Original message payload
+     */
+    private String originalPayload;
 
-	/** Consumer group that failed to process the message */
-	private String consumerGroup;
+    /**
+     * Consumer group that failed to process the message
+     */
+    private String consumerGroup;
 
-	/** Error message */
-	private String errorMessage;
+    /**
+     * Error message
+     */
+    private String errorMessage;
 
-	/** Error class name */
-	private String errorClass;
+    /**
+     * Error class name
+     */
+    private String errorClass;
 
-	/** Stack trace */
-	private String stackTrace;
+    /**
+     * Stack trace
+     */
+    private String stackTrace;
 
-	/** Number of retry attempts made */
-	private Integer retryCount;
+    /**
+     * Number of retry attempts made
+     */
+    private Integer retryCount;
 
-	/** Timestamp when the message was first received */
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-	private OffsetDateTime firstReceivedAt;
+    /**
+     * Timestamp when the message was first received
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+    private OffsetDateTime firstReceivedAt;
 
-	/** Timestamp when the message was sent to DLQ */
-	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
-	private OffsetDateTime dlqTimestamp;
+    /**
+     * Timestamp when the message was sent to DLQ
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", timezone = "UTC")
+    private OffsetDateTime dlqTimestamp;
 
-	/** Additional metadata */
-	private Map<String, Object> metadata;
+    /**
+     * Additional metadata
+     */
+    private Map<String, Object> metadata;
 }
 
 

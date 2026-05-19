@@ -24,96 +24,96 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ZoneServiceImpl implements ZoneService {
 
-	private final StaffService staffService;
-	private final ZoneRepository zoneRepository;
-	private final BranchRepository branchRepository;
-	private final ZoneMapper zoneMapper;
-	private final TableService tableService;
-	private final MediaService mediaService;
+    private final StaffService staffService;
+    private final ZoneRepository zoneRepository;
+    private final BranchRepository branchRepository;
+    private final ZoneMapper zoneMapper;
+    private final TableService tableService;
+    private final MediaService mediaService;
 
-	@Override
-	@Transactional(readOnly = true)
-	public List<ZoneDto.ZoneResponse> getZonesByBranchId(UUID branchId) {
-		List<Zone> zones = zoneRepository.findAllByBranchIdAndDeletedFalse(branchId);
-		return zones.stream().map(zoneMapper::toResponse).collect(Collectors.toList());
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public List<ZoneDto.ZoneResponse> getZonesByBranchId(UUID branchId) {
+        List<Zone> zones = zoneRepository.findAllByBranchIdAndDeletedFalse(branchId);
+        return zones.stream().map(zoneMapper::toResponse).collect(Collectors.toList());
+    }
 
-	@Override
-	@Transactional(readOnly = true)
-	public ZoneDto.ZoneDetailResponse getZoneById(UUID zoneId) {
-		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
-				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
-		return zoneMapper.toDetailResponse(zone);
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public ZoneDto.ZoneDetailResponse getZoneById(UUID zoneId) {
+        Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
+                .orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
+        return zoneMapper.toDetailResponse(zone);
+    }
 
-	@Override
-	@Transactional
-	public ZoneDto.ZoneResponse createZone(ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
-		Branch branch = branchRepository.findByIdAndDeletedFalse(request.branchId())
-				.orElseThrow(() -> new InvalidRequestException("Branch not found: " + request.branchId()));
+    @Override
+    @Transactional
+    public ZoneDto.ZoneResponse createZone(ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
+        Branch branch = branchRepository.findByIdAndDeletedFalse(request.branchId())
+                .orElseThrow(() -> new InvalidRequestException("Branch not found: " + request.branchId()));
 
-		staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
+        staffService.validatePermissions(branch.getId(), currentUserId, userRoles);
 
-		// Check for duplicate zone name within the same branch
-		if (zoneRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(branch.getId(), request.name())) {
-			throw new ConflictException("Zone with name '" + request.name() + "' already exists in this branch.");
-		}
+        // Check for duplicate zone name within the same branch
+        if (zoneRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(branch.getId(), request.name())) {
+            throw new ConflictException("Zone with name '" + request.name() + "' already exists in this branch.");
+        }
 
-		Zone zone = zoneMapper.toEntity(request);
-		zone.setBranch(branch);
-		zone.setDeleted(false);
-		Zone savedZone = zoneRepository.save(zone);
-		return zoneMapper.toResponse(savedZone);
-	}
+        Zone zone = zoneMapper.toEntity(request);
+        zone.setBranch(branch);
+        zone.setDeleted(false);
+        Zone savedZone = zoneRepository.save(zone);
+        return zoneMapper.toResponse(savedZone);
+    }
 
-	@Override
-	@Transactional
-	public ZoneDto.ZoneResponse updateZone(UUID zoneId, ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
-		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
-				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
+    @Override
+    @Transactional
+    public ZoneDto.ZoneResponse updateZone(UUID zoneId, ZoneDto.ZoneRequest request, UUID currentUserId, String userRoles) {
+        Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
+                .orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
-		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
+        staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
-		if (request.name() != null && !request.name().equals(zone.getName())) {
-			if (zoneRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(zone.getBranch().getId(), request.name(), zoneId)) {
-				throw new ConflictException("Zone name already exists in this branch.");
-			}
-		}
+        if (request.name() != null && !request.name().equals(zone.getName())) {
+            if (zoneRepository.existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(zone.getBranch().getId(), request.name(), zoneId)) {
+                throw new ConflictException("Zone name already exists in this branch.");
+            }
+        }
 
-		zoneMapper.updateEntityFromRequest(request, zone);
+        zoneMapper.updateEntityFromRequest(request, zone);
 
-		// No need for .save(zone) - Hibernate dirty checking handles it
-		return zoneMapper.toResponse(zone);
-	}
+        // No need for .save(zone) - Hibernate dirty checking handles it
+        return zoneMapper.toResponse(zone);
+    }
 
-	@Override
-	@Transactional
-	public void deleteZone(UUID zoneId, UUID currentUserId, String userRoles) {
-		Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
-				.orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
+    @Override
+    @Transactional
+    public void deleteZone(UUID zoneId, UUID currentUserId, String userRoles) {
+        Zone zone = zoneRepository.findByIdAndDeletedFalse(zoneId)
+                .orElseThrow(() -> new InvalidRequestException("Zone not found with id " + zoneId));
 
-		staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
+        staffService.validatePermissions(zone.getBranch().getId(), currentUserId, userRoles);
 
-		zone.setDeleted(true); // Assuming soft delete
-		zoneRepository.save(zone);
-	}
+        zone.setDeleted(true); // Assuming soft delete
+        zoneRepository.save(zone);
+    }
 
-	@Override
-	@Transactional
-	public boolean deleteAllByBranchId(UUID branchId) {
-		List<Zone> zones = zoneRepository.findAllByBranchIdAndDeletedFalse(branchId);
-		if (zones.isEmpty()) {
-			return true;
-		}
+    @Override
+    @Transactional
+    public boolean deleteAllByBranchId(UUID branchId) {
+        List<Zone> zones = zoneRepository.findAllByBranchIdAndDeletedFalse(branchId);
+        if (zones.isEmpty()) {
+            return true;
+        }
 
-		for (Zone zone : zones) {
-			if (!tableService.deleteAllByZoneId(zone.getId())) {
-				return false;
-			}
+        for (Zone zone : zones) {
+            if (!tableService.deleteAllByZoneId(zone.getId())) {
+                return false;
+            }
 
-			mediaService.deleteAllByEntityId(zone.getId());
-		}
-		zoneRepository.deleteAllByBranchId(branchId);
-		return true;
-	}
+            mediaService.deleteAllByEntityId(zone.getId());
+        }
+        zoneRepository.deleteAllByBranchId(branchId);
+        return true;
+    }
 }

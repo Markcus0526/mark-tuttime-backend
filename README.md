@@ -37,3 +37,27 @@ Order	Service	Reason / Dependencies
 9	notification-service	Consumes events from many services, but can start anytime. Placing it after core services ensures it can respond to events immediately.
 10	analytics-service	Also consumes events; can start anytime. Start after core services.
 11	api-gateway	Should be started last, after all backend services are ready to accept traffic.
+
+
+For Windows:
+Open Notepad as Administrator.
+
+Open C:\Windows\System32\drivers\etc\hosts.
+
+Add the line:
+
+text
+109.199.112.48 api-gateway
+Save and close.
+
+Flush DNS: ipconfig /flushdns
+
+For Linux/macOS:
+Open a terminal.
+
+Edit /etc/hosts (e.g., sudo nano /etc/hosts).
+
+Add the line:
+
+text
+109.199.112.48 api-gateway

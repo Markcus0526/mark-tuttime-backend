@@ -17,35 +17,35 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Handles user registration, authentication, profile management, and KYC processing.
  */
 @SpringBootApplication(
-		scanBasePackages = "com.tuttime",
-		exclude = CacheAutoConfiguration.class
+        scanBasePackages = "com.tuttime",
+        exclude = CacheAutoConfiguration.class
 )
 @EnableScheduling
 @Slf4j
 public class UserServiceApplication {
 
-	/**
-	 * Main method to start the User Service application.
-	 *
-	 * @param args Command-line arguments
-	 */
-	public static void main(String[] args) {
-		SpringApplication.run(UserServiceApplication.class, args);
-	}
+    /**
+     * Main method to start the User Service application.
+     *
+     * @param args Command-line arguments
+     */
+    public static void main(String[] args) {
+        SpringApplication.run(UserServiceApplication.class, args);
+    }
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void logStartupInfo(ApplicationReadyEvent event) {
-		Environment env = event.getApplicationContext().getEnvironment();
+    @EventListener(ApplicationReadyEvent.class)
+    public void logStartupInfo(ApplicationReadyEvent event) {
+        Environment env = event.getApplicationContext().getEnvironment();
 
-		// Modern way to check profiles in Spring 3.x
-		boolean isGraylogEnabled = env.acceptsProfiles(Profiles.of("graylog-enabled"));
+        // Modern way to check profiles in Spring 3.x
+        boolean isGraylogEnabled = env.acceptsProfiles(Profiles.of("graylog-enabled"));
 
-		log.info("==========================================");
-		log.info("Active Profiles: {}", String.join(", ", env.getActiveProfiles()));
-		log.info("Graylog Host: {}", env.getProperty("graylog.host", "NOT SET"));
-		log.info("Graylog Port: {}", env.getProperty("graylog.port", "NOT SET"));
-		log.info("Graylog Status: {}", isGraylogEnabled ? "ENABLED" : "DISABLED");
-		log.info("==========================================");
-	}
+        log.info("==========================================");
+        log.info("Active Profiles: {}", String.join(", ", env.getActiveProfiles()));
+        log.info("Graylog Host: {}", env.getProperty("graylog.host", "NOT SET"));
+        log.info("Graylog Port: {}", env.getProperty("graylog.port", "NOT SET"));
+        log.info("Graylog Status: {}", isGraylogEnabled ? "ENABLED" : "DISABLED");
+        log.info("==========================================");
+    }
 }
 

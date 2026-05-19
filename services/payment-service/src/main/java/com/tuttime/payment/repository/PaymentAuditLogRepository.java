@@ -7,9 +7,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PaymentAuditLogRepository extends JpaRepository<PaymentAuditLog, Long> {
 
-	/**
-	 * Critical for Idempotency: Checks if this specific Stripe Event ID
-	 * has already been processed and logged.
-	 */
-	boolean existsByEventId(String eventId);
+    /**
+     * Critical for Idempotency: Checks if this specific Stripe Event ID
+     * has already been processed and logged.
+     */
+    boolean existsByEventId(String eventId);
 }

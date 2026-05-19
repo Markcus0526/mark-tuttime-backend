@@ -25,114 +25,114 @@ import java.util.Map;
 @Slf4j
 public class KafkaDlqConfig {
 
-	/**
-	 * Creates a consumer factory with error handling deserializers.
-	 *
-	 * @param bootstrapServers Kafka bootstrap servers
-	 * @param groupId Consumer group ID
-	 * @param enableAutoCommit Whether to enable auto-commit
-	 * @param additionalProperties Additional Kafka properties (e.g., SASL configuration)
-	 */
-	public static ConsumerFactory<String, String> createConsumerFactory(
-			String bootstrapServers,
-			String groupId,
-			boolean enableAutoCommit,
-			Map<String, Object> additionalProperties) {
+    /**
+     * Creates a consumer factory with error handling deserializers.
+     *
+     * @param bootstrapServers     Kafka bootstrap servers
+     * @param groupId              Consumer group ID
+     * @param enableAutoCommit     Whether to enable auto-commit
+     * @param additionalProperties Additional Kafka properties (e.g., SASL configuration)
+     */
+    public static ConsumerFactory<String, String> createConsumerFactory(
+            String bootstrapServers,
+            String groupId,
+            boolean enableAutoCommit,
+            Map<String, Object> additionalProperties) {
 
-		Map<String, Object> props = new HashMap<>();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit);
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, enableAutoCommit);
 
-		// Error handling deserializers
-		props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-		props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, StringDeserializer.class);
+        // Error handling deserializers
+        props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, StringDeserializer.class);
 
-		// Retry configuration
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
-		props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 720000); // 12 min — must exceed FFmpeg processing timeout (600s)
+        // Retry configuration
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
+        props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 720000); // 12 min — must exceed FFmpeg processing timeout (600s)
 
-		// Add additional properties (e.g., SASL configuration)
-		if (additionalProperties != null && !additionalProperties.isEmpty()) {
-			props.putAll(additionalProperties);
-			log.debug("Added {} additional properties to Kafka consumer configuration", additionalProperties.size());
-		}
+        // Add additional properties (e.g., SASL configuration)
+        if (additionalProperties != null && !additionalProperties.isEmpty()) {
+            props.putAll(additionalProperties);
+            log.debug("Added {} additional properties to Kafka consumer configuration", additionalProperties.size());
+        }
 
-		return new DefaultKafkaConsumerFactory<>(props);
-	}
+        return new DefaultKafkaConsumerFactory<>(props);
+    }
 
-	/**
-	 * Creates a consumer factory with error handling deserializers.
-	 * Backward compatibility method without additional properties.
-	 */
-	public static ConsumerFactory<String, String> createConsumerFactory(
-			String bootstrapServers,
-			String groupId,
-			boolean enableAutoCommit) {
-		return createConsumerFactory(bootstrapServers, groupId, enableAutoCommit, null);
-	}
+    /**
+     * Creates a consumer factory with error handling deserializers.
+     * Backward compatibility method without additional properties.
+     */
+    public static ConsumerFactory<String, String> createConsumerFactory(
+            String bootstrapServers,
+            String groupId,
+            boolean enableAutoCommit) {
+        return createConsumerFactory(bootstrapServers, groupId, enableAutoCommit, null);
+    }
 
-	/**
-	 * Creates a DLQ error handler.
-	 */
-	public static CommonErrorHandler createDlqErrorHandler(
-			KafkaTemplate<String, String> kafkaTemplate,
-			ObjectMapper objectMapper,
-			String dlqTopic,
-			int maxRetries,
-			long initialRetryDelayMs,
-			double retryMultiplier,
-			KafkaMetrics kafkaMetrics) {
+    /**
+     * Creates a DLQ error handler.
+     */
+    public static CommonErrorHandler createDlqErrorHandler(
+            KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper,
+            String dlqTopic,
+            int maxRetries,
+            long initialRetryDelayMs,
+            double retryMultiplier,
+            KafkaMetrics kafkaMetrics) {
 
-		return new DlqErrorHandler(
-				kafkaTemplate,
-				objectMapper,
-				dlqTopic,
-				maxRetries,
-				initialRetryDelayMs,
-				retryMultiplier,
-				kafkaMetrics
-		);
-	}
+        return new DlqErrorHandler(
+                kafkaTemplate,
+                objectMapper,
+                dlqTopic,
+                maxRetries,
+                initialRetryDelayMs,
+                retryMultiplier,
+                kafkaMetrics
+        );
+    }
 
-	/**
-	 * Configures a listener container factory with DLQ error handler.
-	 */
-	public static void configureDlqErrorHandler(
-			ConcurrentKafkaListenerContainerFactory<String, String> factory,
-			ConsumerFactory<String, String> consumerFactory,
-			KafkaTemplate<String, String> kafkaTemplate,
-			ObjectMapper objectMapper,
-			String dlqTopic,
-			boolean enableAutoCommit,
-			int maxRetries,
-			long initialRetryDelayMs,
-			double retryMultiplier,
-			int concurrency,
-			KafkaMetrics kafkaMetrics) {
+    /**
+     * Configures a listener container factory with DLQ error handler.
+     */
+    public static void configureDlqErrorHandler(
+            ConcurrentKafkaListenerContainerFactory<String, String> factory,
+            ConsumerFactory<String, String> consumerFactory,
+            KafkaTemplate<String, String> kafkaTemplate,
+            ObjectMapper objectMapper,
+            String dlqTopic,
+            boolean enableAutoCommit,
+            int maxRetries,
+            long initialRetryDelayMs,
+            double retryMultiplier,
+            int concurrency,
+            KafkaMetrics kafkaMetrics) {
 
-		factory.setConsumerFactory(consumerFactory);
+        factory.setConsumerFactory(consumerFactory);
 
-		// Set concurrency (number of concurrent consumer threads)
-		factory.setConcurrency(concurrency);
+        // Set concurrency (number of concurrent consumer threads)
+        factory.setConcurrency(concurrency);
 
-		// Set error handler with DLQ support
-		CommonErrorHandler errorHandler = createDlqErrorHandler(
-				kafkaTemplate,
-				objectMapper,
-				dlqTopic,
-				maxRetries,
-				initialRetryDelayMs,
-				retryMultiplier,
-				kafkaMetrics
-		);
-		factory.setCommonErrorHandler(errorHandler);
+        // Set error handler with DLQ support
+        CommonErrorHandler errorHandler = createDlqErrorHandler(
+                kafkaTemplate,
+                objectMapper,
+                dlqTopic,
+                maxRetries,
+                initialRetryDelayMs,
+                retryMultiplier,
+                kafkaMetrics
+        );
+        factory.setCommonErrorHandler(errorHandler);
 
-		log.info("Configured Kafka listener with DLQ topic: {}, max retries: {}, concurrency: {}",
-				dlqTopic, maxRetries, concurrency);
-	}
+        log.info("Configured Kafka listener with DLQ topic: {}, max retries: {}, concurrency: {}",
+                dlqTopic, maxRetries, concurrency);
+    }
 }
 

@@ -8,11 +8,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GrpcSecurityConfig {
 
-	@Bean
-	public GrpcAuthenticationReader grpcAuthenticationReader() {
-		// This tells gRPC to look for the "Authorization: Bearer <token>" header
-		return new BearerAuthenticationReader(token ->
-				new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(token, token)
-		);
-	}
+    @Bean
+    public GrpcAuthenticationReader grpcAuthenticationReader() {
+        // This tells gRPC to look for the "Authorization: Bearer <token>" header
+        return new BearerAuthenticationReader(token ->
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(token, token)
+        );
+    }
 }

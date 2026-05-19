@@ -16,34 +16,34 @@ import java.util.UUID;
 @Repository
 public interface MediaRepository extends JpaRepository<Media, UUID> {
 
-	/**
-	 * Finds the primary image URL for a given entity (Item, Category, or Modifier)
-	 */
-	@Query("SELECT m.url FROM Media m WHERE m.entityId = :entityId AND m.primaryEntity = true AND m.deleted = false")
-	Optional<String> findPrimaryImageUrlByEntityId(@Param("entityId") UUID entityId);
+    /**
+     * Finds the primary image URL for a given entity (Item, Category, or Modifier)
+     */
+    @Query("SELECT m.url FROM Media m WHERE m.entityId = :entityId AND m.primaryEntity = true AND m.deleted = false")
+    Optional<String> findPrimaryImageUrlByEntityId(@Param("entityId") UUID entityId);
 
-	@Query("SELECT m FROM Media m WHERE m.entityId = :entityId " +
-			"AND (cast(:mediaType as string) IS NULL OR m.mediaType = :mediaType) " +
-			"AND m.deleted = false")
-	List<Media> findAllByEntityIdAndOptionalMediaType(
-			@Param("entityId") UUID entityId,
-			@Param("mediaType") MediaType mediaType
-	);
+    @Query("SELECT m FROM Media m WHERE m.entityId = :entityId " +
+            "AND (cast(:mediaType as string) IS NULL OR m.mediaType = :mediaType) " +
+            "AND m.deleted = false")
+    List<Media> findAllByEntityIdAndOptionalMediaType(
+            @Param("entityId") UUID entityId,
+            @Param("mediaType") MediaType mediaType
+    );
 
-	Optional<Media> findFirstByEntityIdAndPrimaryEntityTrue(UUID entityId);
+    Optional<Media> findFirstByEntityIdAndPrimaryEntityTrue(UUID entityId);
 
-	// Fetches every image/video linked to this item
-	List<Media> findAllByEntityIdAndDeletedFalse(UUID entityId);
+    // Fetches every image/video linked to this item
+    List<Media> findAllByEntityIdAndDeletedFalse(UUID entityId);
 
-	@Modifying
-	@Transactional
-	@Query("UPDATE Media m SET m.primaryEntity = false WHERE m.entityId = :entityId AND m.primaryEntity = true")
-	void resetPrimaryStatus(@Param("entityId") UUID entityId);
+    @Modifying
+    @Transactional
+    @Query("UPDATE Media m SET m.primaryEntity = false WHERE m.entityId = :entityId AND m.primaryEntity = true")
+    void resetPrimaryStatus(@Param("entityId") UUID entityId);
 
-	Optional<Media> findFirstByEntityIdOrderByCreatedAtAsc(UUID entityId);
+    Optional<Media> findFirstByEntityIdOrderByCreatedAtAsc(UUID entityId);
 
-	void deleteByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
+    void deleteByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
 
-	List<Media> findByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
+    List<Media> findByEntityIdAndMediaType(UUID entityId, MediaType mediaType);
 }
 

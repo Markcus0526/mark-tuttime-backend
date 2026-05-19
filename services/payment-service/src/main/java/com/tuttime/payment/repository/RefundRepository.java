@@ -10,8 +10,8 @@ import java.util.UUID;
 @Repository
 public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
-	/**
-	 * Retrieves all refunds associated with a specific payment.
-	 */
-	List<Refund> findByPaymentId(UUID paymentId);
+    /**
+     * Retrieves all refunds associated with a specific payment.
+     */
+    List<Refund> findByPaymentId(UUID paymentId);
 }

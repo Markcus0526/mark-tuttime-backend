@@ -15,9 +15,9 @@ import java.util.UUID;
 @EqualsAndHashCode
 public class OrderTableId implements Serializable {
 
-	@Column(name = "order_id")
-	private UUID orderId;
+    @Column(name = "order_id")
+    private UUID orderId;
 
-	@Column(name = "table_id")
-	private UUID tableId;
+    @Column(name = "table_id")
+    private UUID tableId;
 }

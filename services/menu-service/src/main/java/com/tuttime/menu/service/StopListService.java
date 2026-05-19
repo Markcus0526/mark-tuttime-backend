@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface StopListService {
-	StopListDto.StopListResponse addToStopList(StopListDto.StopListRequest request, UUID currentUserId, String userRoles);
+    StopListDto.StopListResponse addToStopList(StopListDto.StopListRequest request, UUID currentUserId, String userRoles);
 
-	List<StopListDto.StopListResponse> getStopListByBranch(UUID branchId);
+    List<StopListDto.StopListResponse> getStopListByBranch(UUID branchId);
 
-	void removeFromStopList(UUID id, UUID currentUserId, String userRoles);
+    void removeFromStopList(UUID id, UUID currentUserId, String userRoles);
 }

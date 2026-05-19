@@ -19,34 +19,34 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_COMPLE
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final OrderService orderService;
-	private final PosGrpcClient posGrpcClient; // To push to the kitchen
+    private final ObjectMapper objectMapper;
+    private final OrderService orderService;
+    private final PosGrpcClient posGrpcClient; // To push to the kitchen
 
-	@KafkaListener(
-			topics = TOPIC_PAYMENT_COMPLETED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handlePaymentSuccess(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_PAYMENT_COMPLETED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handlePaymentSuccess(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentCompletedEvent event =
-					objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+            PaymentEvent.PaymentCompletedEvent event =
+                    objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
-			// 1. Mark as CREATED and get the full order (including items for the POS)
-			Order updatedOrder = orderService.createOrUpdateOrder(event.bookingId(), event.userId(), event.branchId());
+            // 1. Mark as CREATED and get the full order (including items for the POS)
+            Order updatedOrder = orderService.createOrUpdateOrder(event.bookingId(), event.userId(), event.branchId());
 
-			// 2. IDEMPOTENCY CHECK: Only push if it hasn't been sent yet
-			if (updatedOrder.getStatus() == OrderStatus.CREATED) {
-				posGrpcClient.pushToKitchen(updatedOrder);
+            // 2. IDEMPOTENCY CHECK: Only push if it hasn't been sent yet
+            if (updatedOrder.getStatus() == OrderStatus.CREATED) {
+                posGrpcClient.pushToKitchen(updatedOrder);
 
-				// 3. Move status to SENT_TO_RESTAURANT immediately after successful push
-				orderService.updateStatusFromPayment(updatedOrder.getId(), OrderStatus.SENT_TO_RESTAURANT);
-			}
+                // 3. Move status to SENT_TO_RESTAURANT immediately after successful push
+                orderService.updateStatusFromPayment(updatedOrder.getId(), OrderStatus.SENT_TO_RESTAURANT);
+            }
 
-		} catch (Exception e) {
-			log.error("<<< KAFKA >>> Consumer Error: {}: {}",
-					TOPIC_PAYMENT_COMPLETED, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA >>> Consumer Error: {}: {}",
+                    TOPIC_PAYMENT_COMPLETED, e.getMessage());
+        }
+    }
 }

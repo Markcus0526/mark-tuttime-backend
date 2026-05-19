@@ -1,8 +1,8 @@
 package com.tuttime.common.enums;
 
 public enum ReviewStatus {
-	PENDING,
-	APPROVED,
-	REJECTED,
-	DELETED
+    PENDING,
+    APPROVED,
+    REJECTED,
+    DELETED
 }

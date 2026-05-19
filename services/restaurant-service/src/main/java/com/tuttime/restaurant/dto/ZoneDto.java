@@ -13,65 +13,65 @@ import java.util.UUID;
 
 public class ZoneDto {
 
-	@Schema(description = "Zone request details")
-	public record ZoneRequest(
+    @Schema(description = "Zone request details")
+    public record ZoneRequest(
 
-			@NotNull(message = "Branch ID must not be null")
-			UUID branchId,
+            @NotNull(message = "Branch ID must not be null")
+            UUID branchId,
 
-			@NotBlank(message = "Name must not be blank")
-			@Size(max = 255, message = "Name must be at most 255 characters")
-			String name,
+            @NotBlank(message = "Name must not be blank")
+            @Size(max = 255, message = "Name must be at most 255 characters")
+            String name,
 
-			@Size(max = 1000, message = "Description must be at most 1000 characters")
-			String description,
+            @Size(max = 1000, message = "Description must be at most 1000 characters")
+            String description,
 
-			@NotNull(message = "Capacity must not be null")
-			@Min(value = 1, message = "Capacity must be at least 1")
-			Integer capacity,
+            @NotNull(message = "Capacity must not be null")
+            @Min(value = 1, message = "Capacity must be at least 1")
+            Integer capacity,
 
-			@NotNull(message = "closed must not be null")
-			Boolean closed
-	) {
-	}
+            @NotNull(message = "closed must not be null")
+            Boolean closed
+    ) {
+    }
 
-	@Schema(description = "Zone response")
-	@Builder
-	public record ZoneResponse(
+    @Schema(description = "Zone response")
+    @Builder
+    public record ZoneResponse(
 
-			UUID zoneId,
-			UUID branchId,
-			String name,
-			String description,
-			int capacity,
-			boolean closed,
-			String imageUrl,
-			OffsetDateTime createdAt,
-			OffsetDateTime updatedAt
-	) {
-	}
+            UUID zoneId,
+            UUID branchId,
+            String name,
+            String description,
+            int capacity,
+            boolean closed,
+            String imageUrl,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
+    ) {
+    }
 
-	@Schema(description = "Zone response details")
-	@Builder
-	public record ZoneDetailResponse(
+    @Schema(description = "Zone response details")
+    @Builder
+    public record ZoneDetailResponse(
 
-			UUID zoneId,
+            UUID zoneId,
 
-			UUID branchId,
+            UUID branchId,
 
-			String name,
+            String name,
 
-			String description,
+            String description,
 
-			int capacity,
+            int capacity,
 
-			boolean closed,
+            boolean closed,
 
-			@Schema(description = "URL for all images and videos from Media table")
-			List<MediaDto.MediaResponse> medias,
+            @Schema(description = "URL for all images and videos from Media table")
+            List<MediaDto.MediaResponse> medias,
 
-			OffsetDateTime createdAt,
-			OffsetDateTime updatedAt
-	) {
-	}
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
+    ) {
+    }
 }

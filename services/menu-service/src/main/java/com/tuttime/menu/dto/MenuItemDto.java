@@ -13,89 +13,89 @@ import java.util.UUID;
 
 public class MenuItemDto {
 
-	@Schema(description = "Menu Item request details")
-	public record MenuItemRequest(
+    @Schema(description = "Menu Item request details")
+    public record MenuItemRequest(
 
-			@Schema(description = "The category this dish belongs to", example = "550e8400-e29b-41d4-a716-446655440000")
-			@NotNull UUID categoryId,
+            @Schema(description = "The category this dish belongs to", example = "550e8400-e29b-41d4-a716-446655440000")
+            @NotNull UUID categoryId,
 
-			@Schema(description = "Dish name displayed to customer", example = "Bacon Double Cheeseburger")
-			@NotBlank String name,
+            @Schema(description = "Dish name displayed to customer", example = "Bacon Double Cheeseburger")
+            @NotBlank String name,
 
-			@Schema(description = "Short ingredients description", example = "Two premium beef patties with crisp bacon")
-			String description,
+            @Schema(description = "Short ingredients description", example = "Two premium beef patties with crisp bacon")
+            String description,
 
-			@Schema(description = "Base price before modifications", example = "12.50")
-			@NotNull @DecimalMin("0.00") BigDecimal price,
+            @Schema(description = "Base price before modifications", example = "12.50")
+            @NotNull @DecimalMin("0.00") BigDecimal price,
 
-			@Schema(description = "If false, prevents customer selection", example = "true")
-			Boolean available,
+            @Schema(description = "If false, prevents customer selection", example = "true")
+            Boolean available,
 
-			@Schema(description = "Display order priority", example = "1")
-			Integer priority
-	) {
-	}
+            @Schema(description = "Display order priority", example = "1")
+            Integer priority
+    ) {
+    }
 
-	@Schema(description = "Tag request details for branch association")
-	public record TagRequest(
-			@NotBlank(message = "Tag name is required")
-			@Size(max = 50, message = "Tag name must be under 50 characters")
-			String name,
+    @Schema(description = "Tag request details for branch association")
+    public record TagRequest(
+            @NotBlank(message = "Tag name is required")
+            @Size(max = 50, message = "Tag name must be under 50 characters")
+            String name,
 
-			@NotBlank(message = "Tag icon is required")
-			String iconUrl // Stores the Emoji (e.g., "🌶️")
-	) {
-	}
+            @NotBlank(message = "Tag icon is required")
+            String iconUrl // Stores the Emoji (e.g., "🌶️")
+    ) {
+    }
 
-	@Schema(description = "Tag details for UI display")
-	public record TagResponse(
-			UUID id,
-			String name,
-			String iconUrl // Contains the Emoji (e.g., "🌿") or URL
-	) {
-	}
+    @Schema(description = "Tag details for UI display")
+    public record TagResponse(
+            UUID id,
+            String name,
+            String iconUrl // Contains the Emoji (e.g., "🌿") or URL
+    ) {
+    }
 
-	@Schema(description = "Compact summary response for category list views")
-	@Builder(toBuilder = true)
-	public record MenuItemResponse(
-			UUID menuItemId,
-			String name,
-			@Schema(description = "The lower price (discounted) to show in lists")
-			BigDecimal currentPrice,
-			Boolean available,
-			Integer priority,
-			String imageUrl,
+    @Schema(description = "Compact summary response for category list views")
+    @Builder(toBuilder = true)
+    public record MenuItemResponse(
+            UUID menuItemId,
+            String name,
+            @Schema(description = "The lower price (discounted) to show in lists")
+            BigDecimal currentPrice,
+            Boolean available,
+            Integer priority,
+            String imageUrl,
 
-			List<TagResponse> tags // icons like 🌿, 🌶️
-	) {
-	}
+            List<TagResponse> tags // icons like 🌿, 🌶️
+    ) {
+    }
 
-	@Schema(description = "Menu Item response with full customization and pricing logic")
-	@Builder
-	public record MenuItemDetailResponse(
-			UUID menuItemId,
-			UUID categoryId,
-			String name,
-			String description,
+    @Schema(description = "Menu Item response with full customization and pricing logic")
+    @Builder
+    public record MenuItemDetailResponse(
+            UUID menuItemId,
+            UUID categoryId,
+            String name,
+            String description,
 
-			@Schema(description = "Base price set in database")
-			BigDecimal originalPrice,
+            @Schema(description = "Base price set in database")
+            BigDecimal originalPrice,
 
-			@Schema(description = "Price after active discounts applied")
-			BigDecimal discountedPrice,
+            @Schema(description = "Price after active discounts applied")
+            BigDecimal discountedPrice,
 
-			@Schema(description = "Name of the promotion applied", example = "Happy Hour")
-			String activeDiscountName,
+            @Schema(description = "Name of the promotion applied", example = "Happy Hour")
+            String activeDiscountName,
 
-			Boolean available,
+            Boolean available,
 
-			@Schema(description = "Merged list: Item-specific + Inherited Category modifier groups")
-			List<ModifierDto.ModifierGroupResponse> modifierGroups,
+            @Schema(description = "Merged list: Item-specific + Inherited Category modifier groups")
+            List<ModifierDto.ModifierGroupResponse> modifierGroups,
 
-			@Schema(description = "URL for all images and videos from Media table")
-			List<MediaDto.MediaResponse> medias,
+            @Schema(description = "URL for all images and videos from Media table")
+            List<MediaDto.MediaResponse> medias,
 
-			List<TagResponse> tags // icons like 🌿, 🌶️
-	) {
-	}
+            List<TagResponse> tags // icons like 🌿, 🌶️
+    ) {
+    }
 }

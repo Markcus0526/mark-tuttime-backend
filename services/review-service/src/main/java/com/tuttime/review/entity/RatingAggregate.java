@@ -18,24 +18,24 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class RatingAggregate extends BaseTimeStampEntity {
-	// Note: In your SQL, branch_id is the Primary Key
+    // Note: In your SQL, branch_id is the Primary Key
 
-	@Id
-	@Column(name = "branch_id") // This matches your SQL pkey
-	private UUID branchId;
+    @Id
+    @Column(name = "branch_id") // This matches your SQL pkey
+    private UUID branchId;
 
-	@Column(name = "average_rating", precision = 3, scale = 2)
-	private BigDecimal averageRating;
+    @Column(name = "average_rating", precision = 3, scale = 2)
+    private BigDecimal averageRating;
 
-	@Column(name = "total_reviews")
-	private Integer totalReviews;
+    @Column(name = "total_reviews")
+    private Integer totalReviews;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	@Column(name = "rating_dist", columnDefinition = "jsonb")
-	private Map<String, Integer> ratingDistribution;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "rating_dist", columnDefinition = "jsonb")
+    private Map<String, Integer> ratingDistribution;
 
-	@Version
-	private Long version;
+    @Version
+    private Long version;
 }
 
 

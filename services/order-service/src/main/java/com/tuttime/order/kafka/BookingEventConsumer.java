@@ -17,28 +17,28 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_BOOKING_STATUS
 @Slf4j
 public class BookingEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final OrderService orderService;
+    private final ObjectMapper objectMapper;
+    private final OrderService orderService;
 
-	@KafkaListener(
-			topics = TOPIC_BOOKING_STATUS_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handleBookingStatusUpdated(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_BOOKING_STATUS_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handleBookingStatusUpdated(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			BookingEvent.BookingStatusUpdatedEvent event =
-					objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
+            BookingEvent.BookingStatusUpdatedEvent event =
+                    objectMapper.readValue(eventString, BookingEvent.BookingStatusUpdatedEvent.class);
 
-			// Handle CANCELLATIONS only
-			if (event.newStatus() == BookingStatus.CANCELED) {
-				orderService.cancelOrderByBookingId(event.bookingId());
-			}
+            // Handle CANCELLATIONS only
+            if (event.newStatus() == BookingStatus.CANCELED) {
+                orderService.cancelOrderByBookingId(event.bookingId());
+            }
 
-			// DO NOT handle PAID here. Let the Payment Consumer do it.
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[order-service], Error: {}",
-					TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
-		}
-	}
+            // DO NOT handle PAID here. Let the Payment Consumer do it.
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[order-service], Error: {}",
+                    TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+        }
+    }
 }

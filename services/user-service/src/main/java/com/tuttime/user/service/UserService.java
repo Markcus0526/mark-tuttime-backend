@@ -10,28 +10,28 @@ import java.util.UUID;
 
 public interface UserService {
 
-	UserDto.UserResponse createUser(UserDto.UserCreateRequest request);
+    UserDto.UserResponse createUser(UserDto.UserCreateRequest request);
 
-	UserDto.UserResponse getUserById(UUID id);
+    UserDto.UserResponse getUserById(UUID id);
 
-	UserDto.UserResponse updateUser(UUID id, UserDto.UserUpdateRequest request);
+    UserDto.UserResponse updateUser(UUID id, UserDto.UserUpdateRequest request);
 
-	UserDto.UserResponse updateMe(UUID id, UserDto.UserUpdateRequest request, MultipartFile file);
+    UserDto.UserResponse updateMe(UUID id, UserDto.UserUpdateRequest request, MultipartFile file);
 
-	void deleteUser(UUID id);
+    void deleteUser(UUID id);
 
-	Page<UserDto.UserResponse> findUsers(String query, UserStatus status, String roleName, Pageable pageable);
+    Page<UserDto.UserResponse> findUsers(String query, UserStatus status, String roleName, Pageable pageable);
 
-	void assignRoleToUser(UUID userId, String roleName);
+    void assignRoleToUser(UUID userId, String roleName);
 
-	void removeRoleFromUser(UUID userId, String roleName);
+    void removeRoleFromUser(UUID userId, String roleName);
 
-	void addAuthMethod(UUID userId, UserDto.AuthMethodCreateRequest request);
+    void addAuthMethod(UUID userId, UserDto.AuthMethodCreateRequest request);
 
-	void updateUserLocation(UUID userId, UserDto.UserLocationRequest userLocationRequest);
+    void updateUserLocation(UUID userId, UserDto.UserLocationRequest userLocationRequest);
 
-	UserDto.UserResponse blockUser(UUID id);
+    UserDto.UserResponse blockUser(UUID id);
 
-	UserDto.UserResponse unblockUser(UUID id);
+    UserDto.UserResponse unblockUser(UUID id);
 }
 

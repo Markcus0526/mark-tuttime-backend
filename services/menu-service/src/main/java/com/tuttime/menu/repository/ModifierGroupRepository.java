@@ -12,17 +12,17 @@ import java.util.UUID;
 @Repository
 public interface ModifierGroupRepository extends JpaRepository<ModifierGroup, UUID>, JpaSpecificationExecutor<ModifierGroup> {
 
-	Optional<ModifierGroup> findByIdAndDeletedFalse(UUID id);
+    Optional<ModifierGroup> findByIdAndDeletedFalse(UUID id);
 
-	// For creation
-	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
+    // For creation
+    boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
 
-	// For update
-	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
+    // For update
+    boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
 
-	// Optionally find by branch
-	List<ModifierGroup> findByBranchIdAndDeletedFalse(UUID branchId);
+    // Optionally find by branch
+    List<ModifierGroup> findByBranchIdAndDeletedFalse(UUID branchId);
 
-	List<ModifierGroup> findByBranchIdAndDeletedFalseOrderByNameAsc(UUID branchId);
+    List<ModifierGroup> findByBranchIdAndDeletedFalseOrderByNameAsc(UUID branchId);
 
 }

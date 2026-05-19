@@ -23,64 +23,64 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_RESTAURANT_STA
 @Slf4j
 public class RestaurantEventConsumer {
 
-	private final UserRepository userRepository;
-	private final RoleRepository roleRepository;
-	private final UserRoleRepository userRoleRepository;
-	private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final ObjectMapper objectMapper;
 
-	@KafkaListener(
-			topics = TOPIC_RESTAURANT_STAFF_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	@Transactional // Ensures the entire update/delete is atomic
-	public void handleStaffUpdated(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_RESTAURANT_STAFF_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    @Transactional // Ensures the entire update/delete is atomic
+    public void handleStaffUpdated(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			RestaurantEvent.StaffUpdatedEvent event =
-					objectMapper.readValue(eventString, RestaurantEvent.StaffUpdatedEvent.class);
+            RestaurantEvent.StaffUpdatedEvent event =
+                    objectMapper.readValue(eventString, RestaurantEvent.StaffUpdatedEvent.class);
 
-			userRepository.findByIdAndDeletedFalse(event.userId()).ifPresentOrElse(user -> {
+            userRepository.findByIdAndDeletedFalse(event.userId()).ifPresentOrElse(user -> {
 
-				// 1. Determine which role name to use
-				String targetRoleName = event.active() ? event.roleName() : "USER";
+                // 1. Determine which role name to use
+                String targetRoleName = event.active() ? event.roleName() : "USER";
 
-				// 2. Fetch the target role from DB
-				roleRepository.findByName(targetRoleName).ifPresentOrElse(newRole -> {
+                // 2. Fetch the target role from DB
+                roleRepository.findByName(targetRoleName).ifPresentOrElse(newRole -> {
 
-					// 1. Find the current role record
-					Optional<UserRole> existingRoleOpt = userRoleRepository.findByUserId(user.getId());
+                    // 1. Find the current role record
+                    Optional<UserRole> existingRoleOpt = userRoleRepository.findByUserId(user.getId());
 
-					if (existingRoleOpt.isPresent()) {
-						UserRole existing = existingRoleOpt.get();
+                    if (existingRoleOpt.isPresent()) {
+                        UserRole existing = existingRoleOpt.get();
 
-						// 2. Optimization: If they already have this role, do nothing
-						if (existing.getRole().getId().equals(newRole.getId())) {
-							log.info("User {} already has role {}, no update needed.", user.getId(), targetRoleName);
-							return;
-						}
+                        // 2. Optimization: If they already have this role, do nothing
+                        if (existing.getRole().getId().equals(newRole.getId())) {
+                            log.info("User {} already has role {}, no update needed.", user.getId(), targetRoleName);
+                            return;
+                        }
 
-						// 3. Delete the old record (crucial for composite keys)
-						userRoleRepository.delete(existing);
-						// Force Hibernate to sync with DB immediately to avoid "duplicate key" errors on next step
-						userRoleRepository.flush();
-					}
+                        // 3. Delete the old record (crucial for composite keys)
+                        userRoleRepository.delete(existing);
+                        // Force Hibernate to sync with DB immediately to avoid "duplicate key" errors on next step
+                        userRoleRepository.flush();
+                    }
 
-					// 4. Create and save the new record with the new Role ID
-					UserRole newUserRole = UserRole.builder()
-							.user(user)
-							.role(newRole)
-							.build();
+                    // 4. Create and save the new record with the new Role ID
+                    UserRole newUserRole = UserRole.builder()
+                            .user(user)
+                            .role(newRole)
+                            .build();
 
-					userRoleRepository.save(newUserRole);
-					log.info("Successfully changed User {} role to {}", user.getId(), targetRoleName);
+                    userRoleRepository.save(newUserRole);
+                    log.info("Successfully changed User {} role to {}", user.getId(), targetRoleName);
 
-				}, () -> log.error("CRITICAL: Role '{}' not found in database", targetRoleName));
+                }, () -> log.error("CRITICAL: Role '{}' not found in database", targetRoleName));
 
-			}, () -> log.warn("User {} not found, skipping staff update", event.userId()));
+            }, () -> log.warn("User {} not found, skipping staff update", event.userId()));
 
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[user-service], Error: {}",
-					TOPIC_RESTAURANT_STAFF_UPDATED, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[user-service], Error: {}",
+                    TOPIC_RESTAURANT_STAFF_UPDATED, e.getMessage());
+        }
+    }
 }

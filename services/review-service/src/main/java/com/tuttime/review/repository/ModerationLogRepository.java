@@ -10,14 +10,14 @@ import java.util.UUID;
 @Repository
 public interface ModerationLogRepository extends JpaRepository<ReviewModerationLog, UUID> {
 
-	/**
-	 * Retrieves all moderation actions taken on a specific review.
-	 * Useful for dispute resolution in the Admin Panel.
-	 */
-	List<ReviewModerationLog> findByReviewIdOrderByCreatedAtDesc(UUID reviewId);
+    /**
+     * Retrieves all moderation actions taken on a specific review.
+     * Useful for dispute resolution in the Admin Panel.
+     */
+    List<ReviewModerationLog> findByReviewIdOrderByCreatedAtDesc(UUID reviewId);
 
-	/**
-	 * Tracks performance of a specific moderator.
-	 */
-	List<ReviewModerationLog> findByModeratorId(UUID moderatorId);
+    /**
+     * Tracks performance of a specific moderator.
+     */
+    List<ReviewModerationLog> findByModeratorId(UUID moderatorId);
 }

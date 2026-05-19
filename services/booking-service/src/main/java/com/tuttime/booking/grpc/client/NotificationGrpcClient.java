@@ -18,18 +18,18 @@ import static com.tuttime.common.constants.ServiceNames.NOTIFICATION_SERVICE;
 @Slf4j
 public class NotificationGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("notification-service")
-	private NotificationServiceGrpc.NotificationServiceBlockingStub notificationServiceBlockingStub;
+    @GrpcClient("notification-service")
+    private NotificationServiceGrpc.NotificationServiceBlockingStub notificationServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public void sendNotification(SendNotificationRequest request) {
-		grpcExecutor.execute(NOTIFICATION_SERVICE, "sendNotification", () ->
-				notificationServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.sendNotification(request));
-	}
+    public void sendNotification(SendNotificationRequest request) {
+        grpcExecutor.execute(NOTIFICATION_SERVICE, "sendNotification", () ->
+                notificationServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .sendNotification(request));
+    }
 }

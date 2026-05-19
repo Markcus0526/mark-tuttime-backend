@@ -12,56 +12,56 @@ import java.util.UUID;
 
 public class PosEvent {
 
-	@Builder(toBuilder = true)
-	@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-	public record PosMenuUpdatedEvent(
-			UUID eventId,
-			UUID branchId,
-			List<UUID> itemIds,
-			String updateType, // "DEACTIVATION" or "ACTIVATION"
-			OffsetDateTime occurredAt
-	) implements BaseEvent {
+    @Builder(toBuilder = true)
+    @JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
+    public record PosMenuUpdatedEvent(
+            UUID eventId,
+            UUID branchId,
+            List<UUID> itemIds,
+            String updateType, // "DEACTIVATION" or "ACTIVATION"
+            OffsetDateTime occurredAt
+    ) implements BaseEvent {
 
-		// Canonical Constructor to handle default values manually
-		public PosMenuUpdatedEvent {
-			if (eventId == null) eventId = UUID.randomUUID();
-			if (occurredAt == null) occurredAt = OffsetDateTime.now();
-		}
+        // Canonical Constructor to handle default values manually
+        public PosMenuUpdatedEvent {
+            if (eventId == null) eventId = UUID.randomUUID();
+            if (occurredAt == null) occurredAt = OffsetDateTime.now();
+        }
 
-		@Override
-		public UUID eventId() {
-			return eventId;
-		}
+        @Override
+        public UUID eventId() {
+            return eventId;
+        }
 
-		@Override
-		public OffsetDateTime occurredAt() {
-			return occurredAt;
-		}
-	}
+        @Override
+        public OffsetDateTime occurredAt() {
+            return occurredAt;
+        }
+    }
 
-	@Builder(toBuilder = true)
-	public record PosPriceUpdatedEvent(
-			UUID eventId,
-			UUID branchId,
-			UUID menuItemId,
-			BigDecimal newPrice,
-			OffsetDateTime occurredAt
-	) implements BaseEvent {
+    @Builder(toBuilder = true)
+    public record PosPriceUpdatedEvent(
+            UUID eventId,
+            UUID branchId,
+            UUID menuItemId,
+            BigDecimal newPrice,
+            OffsetDateTime occurredAt
+    ) implements BaseEvent {
 
-		// Canonical Constructor to handle default values manually
-		public PosPriceUpdatedEvent {
-			if (eventId == null) eventId = UUID.randomUUID();
-			if (occurredAt == null) occurredAt = OffsetDateTime.now();
-		}
+        // Canonical Constructor to handle default values manually
+        public PosPriceUpdatedEvent {
+            if (eventId == null) eventId = UUID.randomUUID();
+            if (occurredAt == null) occurredAt = OffsetDateTime.now();
+        }
 
-		@Override
-		public UUID eventId() {
-			return eventId;
-		}
+        @Override
+        public UUID eventId() {
+            return eventId;
+        }
 
-		@Override
-		public OffsetDateTime occurredAt() {
-			return occurredAt;
-		}
-	}
+        @Override
+        public OffsetDateTime occurredAt() {
+            return occurredAt;
+        }
+    }
 }

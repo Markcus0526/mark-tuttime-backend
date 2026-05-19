@@ -17,34 +17,34 @@ import java.util.Map;
 @RequestMapping
 public class HealthController {
 
-	private final HealthEndpoint healthEndpoint;
+    private final HealthEndpoint healthEndpoint;
 
-	public HealthController(HealthEndpoint healthEndpoint) {
-		this.healthEndpoint = healthEndpoint;
-	}
+    public HealthController(HealthEndpoint healthEndpoint) {
+        this.healthEndpoint = healthEndpoint;
+    }
 
-	@GetMapping("/health")
-	public Mono<ResponseEntity<Map<String, Object>>> health() {
-		return getHealthResponse();
-	}
+    @GetMapping("/health")
+    public Mono<ResponseEntity<Map<String, Object>>> health() {
+        return getHealthResponse();
+    }
 
-	@GetMapping("/api/v1/health")
-	public Mono<ResponseEntity<Map<String, Object>>> healthApi() {
-		return getHealthResponse();
-	}
+    @GetMapping("/api/v1/health")
+    public Mono<ResponseEntity<Map<String, Object>>> healthApi() {
+        return getHealthResponse();
+    }
 
-	private Mono<ResponseEntity<Map<String, Object>>> getHealthResponse() {
-		return Mono.fromCallable(() -> {
-					HealthComponent healthComponent = healthEndpoint.health();
-					Status status = healthComponent.getStatus(); // Safe interface method
+    private Mono<ResponseEntity<Map<String, Object>>> getHealthResponse() {
+        return Mono.fromCallable(() -> {
+                    HealthComponent healthComponent = healthEndpoint.health();
+                    Status status = healthComponent.getStatus(); // Safe interface method
 
-					Map<String, Object> response = new HashMap<>();
-					response.put("status", status.getCode());
-					response.put("details", healthComponent);
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", status.getCode());
+                    response.put("details", healthComponent);
 
-					int httpStatus = status.equals(Status.UP) ? 200 : 503;
-					return ResponseEntity.status(httpStatus).body(response);
-				})
-				.subscribeOn(Schedulers.boundedElastic());
-	}
+                    int httpStatus = status.equals(Status.UP) ? 200 : 503;
+                    return ResponseEntity.status(httpStatus).body(response);
+                })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
 }

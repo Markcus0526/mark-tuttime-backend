@@ -12,20 +12,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
-		unmappedTargetPolicy = ReportingPolicy.IGNORE)
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
-	@Mapping(source = "id", target = "userId")
-	@Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
-	UserDto.UserResponse toResponse(User entity);
+    @Mapping(source = "id", target = "userId")
+    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
+    UserDto.UserResponse toResponse(User entity);
 
-	@Named("mapRoles")
-	default String mapRoles(Set<UserRole> roles) {
-		if (roles == null) {
-			return null;
-		}
-		return roles.stream()
-				.map(userRole -> userRole.getRole().getName())
-				.collect(Collectors.joining(", "));
-	}
+    @Named("mapRoles")
+    default String mapRoles(Set<UserRole> roles) {
+        if (roles == null) {
+            return null;
+        }
+        return roles.stream()
+                .map(userRole -> userRole.getRole().getName())
+                .collect(Collectors.joining(", "));
+    }
 }

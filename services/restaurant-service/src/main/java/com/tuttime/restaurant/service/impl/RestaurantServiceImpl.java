@@ -32,161 +32,161 @@ import static com.tuttime.restaurant.util.GeometryUtil.createPoint;
 @RequiredArgsConstructor
 public class RestaurantServiceImpl implements RestaurantService {
 
-	private final StaffService staffService;
-	private final RestaurantRepository restaurantRepository;
-	private final BranchRepository branchRepository;
-	private final StaffRepository staffRepository;
-	private final RestaurantMapper restaurantMapper;
-	private final BranchService branchService;
-	private final MediaService mediaService;
-	private final ScheduleService scheduleService;
+    private final StaffService staffService;
+    private final RestaurantRepository restaurantRepository;
+    private final BranchRepository branchRepository;
+    private final StaffRepository staffRepository;
+    private final RestaurantMapper restaurantMapper;
+    private final BranchService branchService;
+    private final MediaService mediaService;
+    private final ScheduleService scheduleService;
 
-	@Override
-	@Transactional(readOnly = true)
-	public Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
-		Specification<Restaurant> spec = createSpecification(query, ownerUserId, minRating, maxRating);
-		return restaurantRepository.findAll(spec, pageable)
-				.map(restaurantMapper::toResponse);
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable) {
+        Specification<Restaurant> spec = createSpecification(query, ownerUserId, minRating, maxRating);
+        return restaurantRepository.findAll(spec, pageable)
+                .map(restaurantMapper::toResponse);
+    }
 
-	@Override
-	@Transactional(readOnly = true)
-	public RestaurantDto.RestaurantDetailResponse getRestaurantById(UUID restaurantId) {
-		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
-		return restaurantMapper.toDetailResponse(restaurant);
-	}
+    @Override
+    @Transactional(readOnly = true)
+    public RestaurantDto.RestaurantDetailResponse getRestaurantById(UUID restaurantId) {
+        Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+                .orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
+        return restaurantMapper.toDetailResponse(restaurant);
+    }
 
-	@Override
-	@Transactional
-	public RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
-		staffService.validateAdminOrOwnerAccess(currentUserId);
+    @Override
+    @Transactional
+    public RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles) {
+        staffService.validateAdminOrOwnerAccess(currentUserId);
 
-		if (staffRepository.existsByUserIdAndRoleName(currentUserId, UserRoleKind.OWNER.name())) {
-			throw new ConflictException("Restaurant is been created by this user.");
-		}
+        if (staffRepository.existsByUserIdAndRoleName(currentUserId, UserRoleKind.OWNER.name())) {
+            throw new ConflictException("Restaurant is been created by this user.");
+        }
 
-		// Unique name check
-		if (restaurantRepository.existsByNameIgnoreCase(request.name())) {
-			throw new ConflictException("Restaurant with name '" + request.name() + "' already exists.");
-		}
+        // Unique name check
+        if (restaurantRepository.existsByNameIgnoreCase(request.name())) {
+            throw new ConflictException("Restaurant with name '" + request.name() + "' already exists.");
+        }
 
-		// Unique phone check (if phone is provided)
-		if (request.phone() != null && restaurantRepository.existsByPhone(request.phone())) {
-			throw new ConflictException("Restaurant with phone number '" + request.phone() + "' already exists.");
-		}
+        // Unique phone check (if phone is provided)
+        if (request.phone() != null && restaurantRepository.existsByPhone(request.phone())) {
+            throw new ConflictException("Restaurant with phone number '" + request.phone() + "' already exists.");
+        }
 
-		// Map request DTO to entity
-		Restaurant restaurant = restaurantMapper.toEntity(request);
-		Restaurant savedRestaurant = restaurantRepository.save(restaurant);
+        // Map request DTO to entity
+        Restaurant restaurant = restaurantMapper.toEntity(request);
+        Restaurant savedRestaurant = restaurantRepository.save(restaurant);
 
-		// Create Staff table as owner
-		if (userRoles.contains(UserRoleKind.OWNER.name())) {
-			Staff staff = new Staff();
-			staff.setRestaurant(savedRestaurant);
-			staff.setUserId(currentUserId);
-			staff.setRoleName(UserRoleKind.OWNER.name());
-			staff.setActive(true);
-			staffRepository.save(staff);
-		}
+        // Create Staff table as owner
+        if (userRoles.contains(UserRoleKind.OWNER.name())) {
+            Staff staff = new Staff();
+            staff.setRestaurant(savedRestaurant);
+            staff.setUserId(currentUserId);
+            staff.setRoleName(UserRoleKind.OWNER.name());
+            staff.setActive(true);
+            staffRepository.save(staff);
+        }
 
-		// Create default branch linked to restaurant
-		if (request.generateBranch()) {
-			Branch defaultBranch = new Branch();
-			defaultBranch.setRestaurant(savedRestaurant);
-			defaultBranch.setName(request.name());
-			defaultBranch.setDescription(request.description());
-			defaultBranch.setAddress(request.address());
-			defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
-			defaultBranch.setPhone(request.phone());
-			defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
-			branchRepository.save(defaultBranch);
-		}
+        // Create default branch linked to restaurant
+        if (request.generateBranch()) {
+            Branch defaultBranch = new Branch();
+            defaultBranch.setRestaurant(savedRestaurant);
+            defaultBranch.setName(request.name());
+            defaultBranch.setDescription(request.description());
+            defaultBranch.setAddress(request.address());
+            defaultBranch.setTimezone("UTC"); // Default timezone; adjust as needed
+            defaultBranch.setPhone(request.phone());
+            defaultBranch.setLocation(createPoint(request.longitude(), request.latitude()));
+            branchRepository.save(defaultBranch);
+        }
 
-		// Return mapped response DTO
-		return restaurantMapper.toResponse(savedRestaurant);
-	}
+        // Return mapped response DTO
+        return restaurantMapper.toResponse(savedRestaurant);
+    }
 
-	@Override
-	@Transactional
-	public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantUpdateRequest request, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
+    @Override
+    @Transactional
+    public RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantUpdateRequest request, UUID currentUserId, String userRoles) {
+        Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+                .orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
-		// 1. Unified Permission Check
-		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
+        // 1. Unified Permission Check
+        staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
-		// 2. Validate uniqueness of name (if changing)
-		if (request.name() != null && !request.name().equals(restaurant.getName())) {
-			if (restaurantRepository.existsByNameIgnoreCaseAndIdNot(request.name(), restaurantId)) {
-				throw new ConflictException("Restaurant with name '" + request.name() + "' already exists.");
-			}
-		}
+        // 2. Validate uniqueness of name (if changing)
+        if (request.name() != null && !request.name().equals(restaurant.getName())) {
+            if (restaurantRepository.existsByNameIgnoreCaseAndIdNot(request.name(), restaurantId)) {
+                throw new ConflictException("Restaurant with name '" + request.name() + "' already exists.");
+            }
+        }
 
-		// 3. Validate uniqueness of phone (if changing and phone is provided)
-		if (request.phone() != null && !request.phone().equals(restaurant.getPhone())) {
-			if (restaurantRepository.existsByPhoneAndIdNot(request.phone(), restaurantId)) {
-				throw new ConflictException("Restaurant with phone number '" + request.phone() + "' already exists.");
-			}
-		}
+        // 3. Validate uniqueness of phone (if changing and phone is provided)
+        if (request.phone() != null && !request.phone().equals(restaurant.getPhone())) {
+            if (restaurantRepository.existsByPhoneAndIdNot(request.phone(), restaurantId)) {
+                throw new ConflictException("Restaurant with phone number '" + request.phone() + "' already exists.");
+            }
+        }
 
-		restaurantMapper.toEntityFromUpdateRequest(request, restaurant);
+        restaurantMapper.toEntityFromUpdateRequest(request, restaurant);
 
-		// Hibernate dirty checking updates the DB automatically
-		return restaurantMapper.toResponse(restaurant);
-	}
+        // Hibernate dirty checking updates the DB automatically
+        return restaurantMapper.toResponse(restaurant);
+    }
 
-	@Override
-	@Transactional
-	public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
-		Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
-				.orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
+    @Override
+    @Transactional
+    public void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles) {
+        Restaurant restaurant = restaurantRepository.findByIdAndDeletedFalse(restaurantId)
+                .orElseThrow(() -> new InvalidRequestException("Restaurant not found: " + restaurantId));
 
-		// 1. Unified Permission Check
-		staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
+        // 1. Unified Permission Check
+        staffService.validatePermissions(restaurant.getId(), currentUserId, userRoles);
 
-		// 2. Soft delete related entities
-		// Consider moving these to a single Batch Update query for better performance
-		branchService.deleteAllByRestaurantId(restaurantId);
-		mediaService.deleteAllByEntityId(restaurantId);
-		scheduleService.deleteAllByEntityId(restaurantId);
+        // 2. Soft delete related entities
+        // Consider moving these to a single Batch Update query for better performance
+        branchService.deleteAllByRestaurantId(restaurantId);
+        mediaService.deleteAllByEntityId(restaurantId);
+        scheduleService.deleteAllByEntityId(restaurantId);
 
-		// 3. Soft delete the Restaurant
-		restaurant.setDeleted(true);
-		restaurantRepository.save(restaurant);
-	}
+        // 3. Soft delete the Restaurant
+        restaurant.setDeleted(true);
+        restaurantRepository.save(restaurant);
+    }
 
-	private Specification<Restaurant> createSpecification(String query, UUID ownerId, Double minRating, Double maxRating) {
-		return (root, criteriaQuery, cb) -> {
-			List<Predicate> predicates = new ArrayList<>();
+    private Specification<Restaurant> createSpecification(String query, UUID ownerId, Double minRating, Double maxRating) {
+        return (root, criteriaQuery, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
 
-			// 1. Keyword search (Name or Address)
-			if (query != null && !query.isBlank()) {
-				String pattern = "%" + query.toLowerCase() + "%";
-				predicates.add(cb.or(
-						cb.like(cb.lower(root.get("name")), pattern),
-						cb.like(cb.lower(root.get("address")), pattern)
-				));
-			}
+            // 1. Keyword search (Name or Address)
+            if (query != null && !query.isBlank()) {
+                String pattern = "%" + query.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), pattern),
+                        cb.like(cb.lower(root.get("address")), pattern)
+                ));
+            }
 
-			// 2. Owner filter TODO
+            // 2. Owner filter TODO
 //			if (ownerId != null) {
 //				predicates.add(cb.equal(root.get("ownerUserId"), ownerId));
 //			}
 
-			// 3. Rating range
-			if (minRating != null) {
-				predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), minRating));
-			}
-			if (maxRating != null) {
-				predicates.add(cb.lessThanOrEqualTo(root.get("rating"), maxRating));
-			}
+            // 3. Rating range
+            if (minRating != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), minRating));
+            }
+            if (maxRating != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("rating"), maxRating));
+            }
 
-			// 4. Soft-delete filter (Always exclude deleted by default)
-			predicates.add(cb.equal(root.get("deleted"), false));
+            // 4. Soft-delete filter (Always exclude deleted by default)
+            predicates.add(cb.equal(root.get("deleted"), false));
 
-			return cb.and(predicates.toArray(new Predicate[0]));
-		};
-	}
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+    }
 
 }

@@ -1,7 +1,9 @@
 package com.tuttime.booking.grpc.client;
 
 import com.tuttime.common.event.grpc.GrpcExecutor;
-import com.tuttime.common.event.proto.*;
+import com.tuttime.common.event.proto.GetUserDetailRequest;
+import com.tuttime.common.event.proto.GetUserDetailResponse;
+import com.tuttime.common.event.proto.UserServiceGrpc;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -17,18 +19,18 @@ import static com.tuttime.common.constants.ServiceNames.USER_SERVICE;
 @Slf4j
 public class UserGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("user-service")
-	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
+    @GrpcClient("user-service")
+    private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public GetUserDetailResponse getUserDetail(GetUserDetailRequest request) {
-		return grpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
-				userServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getUserDetail(request));
-	}
+    public GetUserDetailResponse getUserDetail(GetUserDetailRequest request) {
+        return grpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
+                userServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getUserDetail(request));
+    }
 }

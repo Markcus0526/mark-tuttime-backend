@@ -17,40 +17,40 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class GatewayHealthIndicator implements HealthIndicator {
 
-	private final ReactiveRedisConnectionFactory redisConnectionFactory;
+    private final ReactiveRedisConnectionFactory redisConnectionFactory;
 
-	@Override
-	public Health health() {
-		Health.Builder builder = Health.up();
+    @Override
+    public Health health() {
+        Health.Builder builder = Health.up();
 
-		try {
-			boolean redisHealthy = checkRedisHealth();
-			if (!redisHealthy) {
-				builder.down().withDetail("redis", "Connection failed");
-			} else {
-				builder.withDetail("redis", "Connected");
-			}
-		} catch (Exception e) {
-			log.warn("Redis health check failed: {}", e.getMessage());
-			builder.down().withDetail("redis", "Error: " + e.getMessage());
-		}
+        try {
+            boolean redisHealthy = checkRedisHealth();
+            if (!redisHealthy) {
+                builder.down().withDetail("redis", "Connection failed");
+            } else {
+                builder.withDetail("redis", "Connected");
+            }
+        } catch (Exception e) {
+            log.warn("Redis health check failed: {}", e.getMessage());
+            builder.down().withDetail("redis", "Error: " + e.getMessage());
+        }
 
-		return builder.build();
-	}
+        return builder.build();
+    }
 
-	/**
-	 * Checks Redis connectivity.
-	 */
-	private boolean checkRedisHealth() {
-		try {
-			String result = redisConnectionFactory.getReactiveConnection()
-					.ping()
-					.block(Duration.ofSeconds(2));
-			return "PONG".equals(result);
-		} catch (Exception e) {
-			log.debug("Redis ping failed: {}", e.getMessage());
-			return false;
-		}
-	}
+    /**
+     * Checks Redis connectivity.
+     */
+    private boolean checkRedisHealth() {
+        try {
+            String result = redisConnectionFactory.getReactiveConnection()
+                    .ping()
+                    .block(Duration.ofSeconds(2));
+            return "PONG".equals(result);
+        } catch (Exception e) {
+            log.debug("Redis ping failed: {}", e.getMessage());
+            return false;
+        }
+    }
 }
 

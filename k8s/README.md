@@ -1,3 +1,99 @@
+
+## Install stern
+```bash
+# Install stern first, then use it:
+cd /tmp
+curl -L https://github.com/stern/stern/releases/download/v1.30.0/stern_1.30.0_linux_amd64.tar.gz -o stern.tar.gz
+tar xzf stern.tar.gz
+sudo mv stern /usr/local/bin/
+stern --version
+
+# Then:
+stern . -n tuttime
+```
+
+Filter stern logs by:
+
+Specific pod: stern user-service -n tuttime
+
+Multiple pods: stern "user|restaurant" -n tuttime (regex)
+
+Exclude pod: stern . -n tuttime --exclude "mongodb|redis"
+
+Tail last N lines: stern . -n tuttime --tail 10
+
+Follow only new logs (no tail): stern . -n tuttime --tail 0
+
+Show timestamps: stern . -n tuttime -t
+
+Output to file: stern . -n tuttime > logs.txt
+
+Example: stern "user-service|api-gateway" -n tuttime --tail 20 -t
+
+## Run it:
+```bash
+chmod +x docker-image-all.sh
+./docker-image-all.sh
+```
+```bash
+kubectl rollout restart deployment/restaurant-service -n tuttime
+
+kubectl delete pods -n tuttime -l app=api-gateway
+```
+
+
+## Import images into K3s (containerd)
+```bash
+chmod +x import-to-k3s.sh
+```
+
+### Verify images are in containerd:
+```bash
+sudo k3s ctr image ls | grep tuttime
+```
+
+### Fix kubectl permissions
+```bash
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER:$USER ~/.kube/config
+chmod 600 ~/.kube/config
+export KUBECONFIG=~/.kube/config
+echo 'export KUBECONFIG=~/.kube/config' >> ~/.bashrc
+kubectl get nodes   # test
+```
+
+## Deploy the Kubernetes manifests
+```bash
+# Create namespace
+kubectl create namespace tuttime
+
+# Apply infrastructure (databases, Kafka, Redis, etc.)
+kubectl apply -f k8s/infra/ -n tuttime
+
+# Wait for infrastructure to be ready
+kubectl get pods -n tuttime -w
+
+# Apply API gateway
+kubectl apply -f k8s/api-gateway/ -n tuttime
+
+# Apply all microservices
+kubectl apply -f k8s/ -n tuttime
+./import-to-k3s.sh
+```
+
+## Expose API gateway externally (NodePort)
+```bash
+kubectl apply -f k8s/api-gateway/service.yaml -n tuttime
+```
+Now access your API at http://<VPS-IP>:30080
+
+## Monitor
+```bash
+kubectl get pods -n tuttime -w
+kubectl logs -f <pod-name> -n tuttime
+```
+
 # Full Useful Commands for K3s & TutTime
 
 ## Cluster & Node Management

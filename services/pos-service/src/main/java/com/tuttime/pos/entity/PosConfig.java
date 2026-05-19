@@ -20,29 +20,29 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class PosConfig extends BaseSerialEntity {
 
-	@Column(name = "branch_id", nullable = false, unique = true)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false, unique = true)
+    private UUID branchId;
 
-	@Enumerated(EnumType.STRING)
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	@Column(name = "pos_provider", nullable = false)
-	private PosProvider posProvider;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "pos_provider", nullable = false)
+    private PosProvider posProvider;
 
-	@Column(name = "api_endpoint", nullable = false)
-	private String apiEndpoint;
+    @Column(name = "api_endpoint", nullable = false)
+    private String apiEndpoint;
 
-	@Column(name = "api_key")
-	private String apiKey;
+    @Column(name = "api_key")
+    private String apiKey;
 
-	@Column(name = "webhook_secret")
-	private String webhookSecret;
+    @Column(name = "webhook_secret")
+    private String webhookSecret;
 
-	@Column(name = "organization_id")
-	private String organizationId;
+    @Column(name = "organization_id")
+    private String organizationId;
 
-	@Column(name = "terminal_group_id")
-	private String terminalGroupId;
+    @Column(name = "terminal_group_id")
+    private String terminalGroupId;
 
-	@Builder.Default
-	private boolean enabled = true;
+    @Builder.Default
+    private boolean enabled = true;
 }

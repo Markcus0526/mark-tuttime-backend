@@ -17,17 +17,17 @@ import java.math.BigDecimal;
 @EntityListeners(AuditingEntityListener.class)
 public class Modifier extends BaseUuidAnDeleteEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "modifier_group_id", nullable = false)
-	private ModifierGroup modifierGroup;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "modifier_group_id", nullable = false)
+    private ModifierGroup modifierGroup;
 
-	@Column(name = "name", nullable = false)
-	private String name;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-	@Column(name = "description")
-	private String description;
+    @Column(name = "description")
+    private String description;
 
-	@Column(name = "price_adjustment", precision = 10, scale = 2)
-	@Builder.Default
-	private BigDecimal priceAdjustment = BigDecimal.ZERO;
+    @Column(name = "price_adjustment", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal priceAdjustment = BigDecimal.ZERO;
 }

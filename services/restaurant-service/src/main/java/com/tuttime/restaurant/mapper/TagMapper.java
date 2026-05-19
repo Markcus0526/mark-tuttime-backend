@@ -9,13 +9,13 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface TagMapper {
 
-	@Mapping(target = "id", source = "id")
-	@Mapping(target = "name", source = "name")
-	@Mapping(target = "iconUrl", source = "iconUrl")
-	BranchDto.TagResponse toTagResponse(Tag tag);
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "iconUrl", source = "iconUrl")
+    BranchDto.TagResponse toTagResponse(Tag tag);
 
-	@Mapping(target = "id", source = "tag.id")
-	@Mapping(target = "name", source = "tag.name")
-	@Mapping(target = "iconUrl", source = "tag.iconUrl")
-	BranchDto.TagResponse toTagResponse(BranchTag branchTag);
+    @Mapping(target = "id", source = "tag.id")
+    @Mapping(target = "name", source = "tag.name")
+    @Mapping(target = "iconUrl", source = "tag.iconUrl")
+    BranchDto.TagResponse toTagResponse(BranchTag branchTag);
 }
