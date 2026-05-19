@@ -8,14 +8,14 @@ import java.util.UUID;
 
 public interface RestaurantService {
 
-	Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable);
+    Page<RestaurantDto.RestaurantResponse> findRestaurants(String query, UUID ownerUserId, Double minRating, Double maxRating, Pageable pageable);
 
-	RestaurantDto.RestaurantDetailResponse getRestaurantById(UUID restaurantId);
+    RestaurantDto.RestaurantDetailResponse getRestaurantById(UUID restaurantId);
 
-	RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles);
+    RestaurantDto.RestaurantResponse createRestaurant(RestaurantDto.RestaurantRequest request, UUID currentUserId, String userRoles);
 
-	RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantUpdateRequest request, UUID currentUserId, String userRoles);
+    RestaurantDto.RestaurantResponse updateRestaurant(UUID restaurantId, RestaurantDto.RestaurantUpdateRequest request, UUID currentUserId, String userRoles);
 
-	void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles);
+    void deleteRestaurant(UUID restaurantId, UUID currentUserId, String userRoles);
 
 }

@@ -110,11 +110,14 @@ services:
       # Timeouts
       CIRCUIT_BREAKER_TIMEOUT: 305s
 
+      # Swagger
+      SWAGGER_API_GATEWAY_URL: http://api-gateway:8080/payment-docs
+
       # Monitoring & logging
       MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: false
       ZIPKIN_URL: http://zipkin:9411/api/v2/spans
       LOG_LEVEL: INFO
-      GRAYLOG_HOST: 173.249.29.61
+      GRAYLOG_HOST: graylog
       GRAYLOG_PORT: 12203
       GRAYLOG_ORIGIN_HOST: payment-service
       GRAYLOG_FACILITY: payment-service

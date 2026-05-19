@@ -13,10 +13,10 @@ import java.util.UUID;
 @Repository
 public interface PosSyncQueueRepository extends JpaRepository<PosSyncQueue, Integer> {
 
-	// Finds all tasks that are due for a retry right now
-	List<PosSyncQueue> findAllByStatusAndNextRetryAtBefore(String status, OffsetDateTime now);
+    // Finds all tasks that are due for a retry right now
+    List<PosSyncQueue> findAllByStatusAndNextRetryAtBefore(String status, OffsetDateTime now);
 
-	Optional<PosSyncQueue> findByBranchIdAndBookingId(@Param("branchId") UUID branchId, @Param("bookingId") UUID bookingId);
+    Optional<PosSyncQueue> findByBranchIdAndBookingId(@Param("branchId") UUID branchId, @Param("bookingId") UUID bookingId);
 
-	long countByBranchIdAndStatus(UUID branchId, String status);
+    long countByBranchIdAndStatus(UUID branchId, String status);
 }

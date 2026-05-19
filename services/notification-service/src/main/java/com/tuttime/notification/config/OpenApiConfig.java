@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import jakarta.annotation.PostConstruct;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,22 +23,21 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
+	@Value("${springdoc.swagger.gateway.url}")
+	private String gatewayUrl;
+
 	@PostConstruct
 	public void init() {
-		// Tells Springdoc to completely ignore these HTTP header names in UI generation
 		SpringDocUtils.getConfig()
 				.addRequestWrapperToIgnore(
 						jakarta.servlet.http.HttpServletRequest.class
 				);
-
-		// Alternatively, ignore by parameter name if they aren't strict servlets:
-		// SpringDocUtils.getConfig().addAnnotationsToIgnore(SomeCustomAnnotation.class);
 	}
 
 	@Bean
 	public OpenAPI customOpenAPI() {
 		Server gatewayServer = new Server();
-		gatewayServer.setUrl("http://173.249.29.61:8080/notification-docs");
+		gatewayServer.setUrl(gatewayUrl);
 		gatewayServer.setDescription("Gateway Route");
 
 		// Create a security requirement pointing to the name used in your annotation above

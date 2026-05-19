@@ -21,37 +21,37 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final GatewayHeaderSecurityFilter gatewayHeaderSecurityFilter;
+    private final GatewayHeaderSecurityFilter gatewayHeaderSecurityFilter;
 
-	@Value("${app.media.local.upload-url}")
-	private String uploadUrl;
+    @Value("${app.media.local.upload-url}")
+    private String uploadUrl;
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session
-						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				)
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(uploadUrl + "**").permitAll()
-						.requestMatchers(
-								"/api/v1/restaurants/**",
-								"/api/v1/restaurant-branches/**",
-								"/api/v1/restaurant-zones/**",
-								"/api/v1/restaurant-tables/**",
-								"/api/v1/restaurant-schedules/**",
-								"/api/v1/restaurant-medias/**").permitAll() // Add /v1
-						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-				)
-				.addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(uploadUrl + "**").permitAll()
+                        .requestMatchers(
+                                "/api/v1/restaurants/**",
+                                "/api/v1/restaurant-branches/**",
+                                "/api/v1/restaurant-zones/**",
+                                "/api/v1/restaurant-tables/**",
+                                "/api/v1/restaurant-schedules/**",
+                                "/api/v1/restaurant-medias/**").permitAll() // Add /v1
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                )
+                .addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
 
-		return http.build();
-	}
+        return http.build();
+    }
 
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-		return config.getAuthenticationManager();
-	}
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 }
 

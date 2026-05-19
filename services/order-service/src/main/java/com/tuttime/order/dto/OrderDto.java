@@ -13,124 +13,124 @@ import java.util.UUID;
 
 public class OrderDto {
 
-	@Schema(description = "Request object for creating a new order")
-	public record OrderRequest(
-			@NotNull @Schema(description = "Associated booking ID", example = "550e8400-e29b-41d4-a716-446655440000")
-			UUID bookingId,
+    @Schema(description = "Request object for creating a new order")
+    public record OrderRequest(
+            @NotNull @Schema(description = "Associated booking ID", example = "550e8400-e29b-41d4-a716-446655440000")
+            UUID bookingId,
 
-			@NotNull @Schema(description = "ID of the user placing the order")
-			UUID userId,
+            @NotNull @Schema(description = "ID of the user placing the order")
+            UUID userId,
 
-			@NotEmpty @Schema(description = "List of items in the order")
-			List<OrderItemDto.OrderItemRequest> items
-	) {
-	}
+            @NotEmpty @Schema(description = "List of items in the order")
+            List<OrderItemDto.OrderItemRequest> items
+    ) {
+    }
 
-	public record OrderUpdateRequest(
-			@NotEmpty @Schema(description = "The complete list of items for the order")
-			List<OrderItemDto.OrderItemUpdateRequest> items
-	) {
-	}
+    public record OrderUpdateRequest(
+            @NotEmpty @Schema(description = "The complete list of items for the order")
+            List<OrderItemDto.OrderItemUpdateRequest> items
+    ) {
+    }
 
-	public record PosSyncRequest(
-			@NotNull(message = "POS Status is required")
-			OrderStatus posStatus,
-			String posOrderId,       // The ID from the physical system (e.g., iiko ID)
-			String kitchenNote,      // Optional notes from the chef
-			OffsetDateTime syncTime  // Timestamp from the restaurant hardware
-	) {
-	}
+    public record PosSyncRequest(
+            @NotNull(message = "POS Status is required")
+            OrderStatus posStatus,
+            String posOrderId,       // The ID from the physical system (e.g., iiko ID)
+            String kitchenNote,      // Optional notes from the chef
+            OffsetDateTime syncTime  // Timestamp from the restaurant hardware
+    ) {
+    }
 
-	public record OrderResponse(
+    public record OrderResponse(
 
-			UUID orderId,
+            UUID orderId,
 
-			UUID bookingId,
+            UUID bookingId,
 
-			OffsetDateTime bookingDatetime,
+            OffsetDateTime bookingDatetime,
 
-			UUID userId,
+            UUID userId,
 
-			OrderStatus status,
+            OrderStatus status,
 
-			BigDecimal totalAmount,
+            BigDecimal totalAmount,
 
-			String guestName,
+            String guestName,
 
-			String guestPhone,
+            String guestPhone,
 
-			String specialRequest,
+            String specialRequest,
 
-			List<OrderItemDto.OrderItemResponse> items,
+            List<OrderItemDto.OrderItemResponse> items,
 
-			OffsetDateTime createdAt
-	) {
-	}
+            OffsetDateTime createdAt
+    ) {
+    }
 
-	public record OrderDetailResponse(
+    public record OrderDetailResponse(
 
-			UUID orderId,
+            UUID orderId,
 
-			UUID bookingId,
+            UUID bookingId,
 
-			OffsetDateTime bookingDatetime,
+            OffsetDateTime bookingDatetime,
 
-			OrderStatus status,
+            OrderStatus status,
 
-			BigDecimal totalAmount,
+            BigDecimal totalAmount,
 
-			String guestName,
+            String guestName,
 
-			String guestPhone,
+            String guestPhone,
 
-			String specialRequest,
+            String specialRequest,
 
-			List<MenuItemDto> items,
+            List<MenuItemDto> items,
 
-			List<TableDetailDto> tables,
+            List<TableDetailDto> tables,
 
-			UserDetailDto user,
+            UserDetailDto user,
 
-			OffsetDateTime createdAt
-	) {
-		public record UserDetailDto(
-				UUID userId,
-				String phoneNumber,
-				String email,
-				String fullName
-		) {
-		}
+            OffsetDateTime createdAt
+    ) {
+        public record UserDetailDto(
+                UUID userId,
+                String phoneNumber,
+                String email,
+                String fullName
+        ) {
+        }
 
-		public record TableDetailDto(
-				UUID branchId,
-				UUID restaurantId,
-				UUID zoneId,
-				UUID tableId,
-				String restaurantName,
-				String branchName,
-				String branchAddress,
-				String branchPhone,
-				String zoneName,
-				String tableLabel
-		) {
-		}
+        public record TableDetailDto(
+                UUID branchId,
+                UUID restaurantId,
+                UUID zoneId,
+                UUID tableId,
+                String restaurantName,
+                String branchName,
+                String branchAddress,
+                String branchPhone,
+                String zoneName,
+                String tableLabel
+        ) {
+        }
 
-		@Builder
-		public record MenuItemDto(
-				UUID menuItemId,
-				String name,      // From Menu gRPC
-				Integer quantity,     // From local DB
-				BigDecimal price,
-				List<ModifierDto> modifiers
-		) {
-		}
+        @Builder
+        public record MenuItemDto(
+                UUID menuItemId,
+                String name,      // From Menu gRPC
+                Integer quantity,     // From local DB
+                BigDecimal price,
+                List<ModifierDto> modifiers
+        ) {
+        }
 
-		@Builder
-		public record ModifierDto(
-				UUID modifierId,
-				String name,           // Enriched from Menu Service
-				BigDecimal priceAdjustment // From Order Service DB
-		) {
-		}
-	}
+        @Builder
+        public record ModifierDto(
+                UUID modifierId,
+                String name,           // Enriched from Menu Service
+                BigDecimal priceAdjustment // From Order Service DB
+        ) {
+        }
+    }
 }

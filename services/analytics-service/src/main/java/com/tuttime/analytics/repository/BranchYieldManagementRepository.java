@@ -14,13 +14,13 @@ import java.util.UUID;
 @Repository
 public interface BranchYieldManagementRepository extends JpaRepository<BranchYieldManagement, BranchYieldManagement.BranchSlotId> {
 
-	// Find occupancy for a specific 15-minute slot
-	@Query("SELECT b FROM BranchYieldManagement b WHERE b.id.branchId = :branchId AND b.id.timeSlot = :timeSlot")
-	Optional<BranchYieldManagement> findByBranchAndTime(@Param("branchId") UUID branchId,
-	                                                    @Param("timeSlot") OffsetDateTime timeSlot);
+    // Find occupancy for a specific 15-minute slot
+    @Query("SELECT b FROM BranchYieldManagement b WHERE b.id.branchId = :branchId AND b.id.timeSlot = :timeSlot")
+    Optional<BranchYieldManagement> findByBranchAndTime(@Param("branchId") UUID branchId,
+                                                        @Param("timeSlot") OffsetDateTime timeSlot);
 
-	@Query("SELECT AVG(b.occupancyRate) FROM BranchYieldManagement b")
-	Double calculateAveragePlatformOccupancy();
+    @Query("SELECT AVG(b.occupancyRate) FROM BranchYieldManagement b")
+    Double calculateAveragePlatformOccupancy();
 
-	List<BranchYieldManagement> findAllByIdBranchIdOrderByIdTimeSlotAsc(UUID branchId);
+    List<BranchYieldManagement> findAllByIdBranchIdOrderByIdTimeSlotAsc(UUID branchId);
 }

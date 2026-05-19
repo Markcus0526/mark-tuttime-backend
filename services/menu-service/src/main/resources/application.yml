@@ -254,6 +254,9 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
+  swagger:
+    gateway:
+      url: ${SWAGGER_API_GATEWAY_URL}
 
 bruteforce:
   warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD}

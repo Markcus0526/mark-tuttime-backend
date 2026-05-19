@@ -8,21 +8,21 @@ import java.util.UUID;
 
 public class PosConfigDto {
 
-	public record PosConfigRequest(
-			@NotNull
-			UUID branchId,
+    public record PosConfigRequest(
+            @NotNull
+            UUID branchId,
 
-			@NotNull
-			PosProvider provider,
+            @NotNull
+            PosProvider provider,
 
-			@NotBlank
-			String apiEndpoint,
+            @NotBlank
+            String apiEndpoint,
 
-			String apiKey,
+            String apiKey,
 
-			String webhookSecret,
+            String webhookSecret,
 
-			Boolean enabled
-	) {
-	}
+            Boolean enabled
+    ) {
+    }
 }

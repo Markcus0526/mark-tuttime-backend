@@ -12,15 +12,15 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-	private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-	/**
-	 * Loads user by username (email or phone). Not used in JWT flow here.
-	 */
-	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		// Optional: Implement if needed for form login
-		throw new InvalidRequestException("Load by username not supported");
-	}
+    /**
+     * Loads user by username (email or phone). Not used in JWT flow here.
+     */
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Optional: Implement if needed for form login
+        throw new InvalidRequestException("Load by username not supported");
+    }
 
 }

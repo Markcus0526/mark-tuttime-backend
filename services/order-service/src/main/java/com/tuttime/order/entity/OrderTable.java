@@ -13,11 +13,11 @@ import lombok.*;
 @Builder
 public class OrderTable {
 
-	@EmbeddedId
-	private OrderTableId id;
+    @EmbeddedId
+    private OrderTableId id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@MapsId("orderId")
-	@JoinColumn(name = "order_id", nullable = false)
-	private Order order;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("orderId")
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 }

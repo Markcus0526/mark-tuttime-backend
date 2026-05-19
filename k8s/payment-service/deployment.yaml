@@ -4,7 +4,7 @@ metadata:
   name: payment-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: payment-service
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: payment-service-uploads-pvc.yaml
+            claimName: payment-service-uploads-pvc

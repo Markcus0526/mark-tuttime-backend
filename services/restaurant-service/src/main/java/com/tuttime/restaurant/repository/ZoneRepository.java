@@ -14,16 +14,16 @@ import java.util.UUID;
 @Repository
 public interface ZoneRepository extends JpaRepository<Zone, UUID> {
 
-	List<Zone> findAllByBranchIdAndDeletedFalse(UUID branchId);
+    List<Zone> findAllByBranchIdAndDeletedFalse(UUID branchId);
 
-	Optional<Zone> findByIdAndDeletedFalse(UUID zoneId);
+    Optional<Zone> findByIdAndDeletedFalse(UUID zoneId);
 
-	@Modifying
-	@Query("UPDATE Zone z SET z.deleted = true, z.deletedAt = CURRENT_TIMESTAMP " +
-			"WHERE z.branch.id = :branchId AND z.deleted = false")
-	void deleteAllByBranchId(@Param("branchId") UUID branchId);
+    @Modifying
+    @Query("UPDATE Zone z SET z.deleted = true, z.deletedAt = CURRENT_TIMESTAMP " +
+            "WHERE z.branch.id = :branchId AND z.deleted = false")
+    void deleteAllByBranchId(@Param("branchId") UUID branchId);
 
-	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
+    boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalse(UUID branchId, String name);
 
-	boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
+    boolean existsByBranchIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID branchId, String name, UUID excludeId);
 }

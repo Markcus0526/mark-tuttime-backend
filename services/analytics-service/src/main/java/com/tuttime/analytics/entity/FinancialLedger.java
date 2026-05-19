@@ -19,25 +19,25 @@ import java.util.UUID;
 @Builder
 public class FinancialLedger extends BaseUuidEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "report_date", nullable = false)
-	private LocalDate reportDate;
+    @Column(name = "report_date", nullable = false)
+    private LocalDate reportDate;
 
-	@Column(name = "order_count")
-	@Builder.Default
-	private Integer orderCount = 0;
+    @Column(name = "order_count")
+    @Builder.Default
+    private Integer orderCount = 0;
 
-	@Column(name = "total_gmv", precision = 15, scale = 2)
-	private BigDecimal totalGmv;
+    @Column(name = "total_gmv", precision = 15, scale = 2)
+    private BigDecimal totalGmv;
 
-	@Column(name = "commission_earned", precision = 15, scale = 2)
-	private BigDecimal commissionEarned;
+    @Column(name = "commission_earned", precision = 15, scale = 2)
+    private BigDecimal commissionEarned;
 
-	@Column(name = "payout_due_restaurant", precision = 15, scale = 2)
-	private BigDecimal payoutDueRestaurant;
+    @Column(name = "payout_due_restaurant", precision = 15, scale = 2)
+    private BigDecimal payoutDueRestaurant;
 
-	@Column(name = "refund_volume", precision = 15, scale = 2)
-	private BigDecimal refundVolume;
+    @Column(name = "refund_volume", precision = 15, scale = 2)
+    private BigDecimal refundVolume;
 }

@@ -10,25 +10,25 @@ package com.tuttime.common.exception;
  */
 public class RateLimitExceededException extends RuntimeException {
 
-	private final int retryAfterSeconds;
+    private final int retryAfterSeconds;
 
-	public RateLimitExceededException(String message, int retryAfterSeconds) {
-		super(message);
-		this.retryAfterSeconds = retryAfterSeconds;
-	}
+    public RateLimitExceededException(String message, int retryAfterSeconds) {
+        super(message);
+        this.retryAfterSeconds = retryAfterSeconds;
+    }
 
-	public RateLimitExceededException(String message, int retryAfterSeconds, Throwable cause) {
-		super(message, cause);
-		this.retryAfterSeconds = retryAfterSeconds;
-	}
+    public RateLimitExceededException(String message, int retryAfterSeconds, Throwable cause) {
+        super(message, cause);
+        this.retryAfterSeconds = retryAfterSeconds;
+    }
 
-	/**
-	 * Returns the number of seconds the client should wait before retrying the request.
-	 *
-	 * @return retry after seconds
-	 */
-	public int getRetryAfterSeconds() {
-		return retryAfterSeconds;
-	}
+    /**
+     * Returns the number of seconds the client should wait before retrying the request.
+     *
+     * @return retry after seconds
+     */
+    public int getRetryAfterSeconds() {
+        return retryAfterSeconds;
+    }
 }
 

@@ -12,8 +12,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "medias", schema = "menu_service", indexes = {
-		@Index(name = "idx_medias_deleted", columnList = "deleted"),
-		@Index(name = "idx_media_lookup", columnList = "entity_id")
+        @Index(name = "idx_medias_deleted", columnList = "deleted"),
+        @Index(name = "idx_media_lookup", columnList = "entity_id")
 })
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,22 +23,22 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Media extends BaseUuidAnDeleteEntity {
 
-	@Column(name = "entity_id", nullable = false)
-	private UUID entityId;
+    @Column(name = "entity_id", nullable = false)
+    private UUID entityId;
 
-	@Column(name = "url", length = 1024)
-	private String url;
+    @Column(name = "url", length = 1024)
+    private String url;
 
-	@Column(name = "alt_text", length = 255)
-	private String altText;
+    @Column(name = "alt_text", length = 255)
+    private String altText;
 
-	@Builder.Default
-	@Column(name = "primary_entity")
-	private Boolean primaryEntity = false;
+    @Builder.Default
+    @Column(name = "primary_entity")
+    private Boolean primaryEntity = false;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "media_type")
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM) // Maps to your PostgreSQL 'media_type_enum'
-	private MediaType mediaType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "media_type")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM) // Maps to your PostgreSQL 'media_type_enum'
+    private MediaType mediaType;
 
 }

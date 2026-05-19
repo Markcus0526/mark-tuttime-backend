@@ -4,23 +4,23 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface BranchProjection {
-	UUID getBranchId();
+    UUID getBranchId();
 
-	UUID getRestaurantId();
+    UUID getRestaurantId();
 
-	String getBranchName();
+    String getBranchName();
 
-	String getBranchAddress();
+    String getBranchAddress();
 
-	String getBranchPhone();
+    String getBranchPhone();
 
-	String getRestaurantName();
+    String getRestaurantName();
 
-	Double getDistanceInMeters();
+    Double getDistanceInMeters();
 
-	Long getAvailableTables(); // COUNT returns Long in SQL
+    Long getAvailableTables(); // COUNT returns Long in SQL
 
-	BigDecimal getMinPrice();
+    BigDecimal getMinPrice();
 
-	BigDecimal getMaxPrice();
+    BigDecimal getMaxPrice();
 }

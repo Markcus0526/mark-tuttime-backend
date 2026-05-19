@@ -17,25 +17,25 @@ import static com.tuttime.common.constants.ServiceNames.USER_SERVICE;
 @Slf4j
 public class UserGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("user-service")
-	private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
+    @GrpcClient("user-service")
+    private UserServiceGrpc.UserServiceBlockingStub userServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public GetUserDetailResponse getUserDetail(GetUserDetailRequest request) {
-		return grpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
-				userServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getUserDetail(request));
-	}
+    public GetUserDetailResponse getUserDetail(GetUserDetailRequest request) {
+        return grpcExecutor.execute(USER_SERVICE, "getUserDetail", () ->
+                userServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getUserDetail(request));
+    }
 
-	public GetUserDetailsResponse getUserDetails(GetUserDetailsRequest request) {
-		return grpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
-				userServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getUserDetails(request));
-	}
+    public GetUserDetailsResponse getUserDetails(GetUserDetailsRequest request) {
+        return grpcExecutor.execute(USER_SERVICE, "getUserDetails", () ->
+                userServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getUserDetails(request));
+    }
 }

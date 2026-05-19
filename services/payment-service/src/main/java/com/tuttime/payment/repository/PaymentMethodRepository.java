@@ -10,12 +10,12 @@ import java.util.UUID;
 
 public interface PaymentMethodRepository extends JpaRepository<UserPaymentMethod, UUID> {
 
-	List<UserPaymentMethod> findAllByUserIdAndActiveTrue(UUID userId);
+    List<UserPaymentMethod> findAllByUserIdAndActiveTrue(UUID userId);
 
-	@Modifying
-	@Query("UPDATE UserPaymentMethod p SET p.defaultMethod = false WHERE p.userId = :userId")
-	void resetDefaultFlags(UUID userId);
+    @Modifying
+    @Query("UPDATE UserPaymentMethod p SET p.defaultMethod = false WHERE p.userId = :userId")
+    void resetDefaultFlags(UUID userId);
 
-	// Checks if the user has any existing saved cards
-	boolean existsByUserId(UUID userId);
+    // Checks if the user has any existing saved cards
+    boolean existsByUserId(UUID userId);
 }

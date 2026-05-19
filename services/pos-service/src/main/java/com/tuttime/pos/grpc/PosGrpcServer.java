@@ -14,43 +14,43 @@ import net.devh.boot.grpc.server.service.GrpcService;
 @Slf4j
 public class PosGrpcServer extends PosServiceGrpc.PosServiceImplBase {
 
-	private final PosGrpcDelegate delegate;
+    private final PosGrpcDelegate delegate;
 
-	@Override
-	public void pushToKitchen(PushToKitchenRequest request, StreamObserver<PushToKitchenResponse> responseObserver) {
-		try {
-			PosGrpcDelegate.PosSyncResult result = delegate.pushToKitchen(request);
-			responseObserver.onNext(PushToKitchenResponse.newBuilder()
-					.setSuccess(true)
-					.setPosTransactionId(result.posTransactionId())
-					.build());
-			responseObserver.onCompleted();
+    @Override
+    public void pushToKitchen(PushToKitchenRequest request, StreamObserver<PushToKitchenResponse> responseObserver) {
+        try {
+            PosGrpcDelegate.PosSyncResult result = delegate.pushToKitchen(request);
+            responseObserver.onNext(PushToKitchenResponse.newBuilder()
+                    .setSuccess(true)
+                    .setPosTransactionId(result.posTransactionId())
+                    .build());
+            responseObserver.onCompleted();
 
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
-		} catch (InvalidRequestException e) {
-			responseObserver.onError(Status.NOT_FOUND
-					.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
-		} catch (Exception e) {
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
-		}
-	}
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+        } catch (InvalidRequestException e) {
+            responseObserver.onError(Status.NOT_FOUND
+                    .withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+        }
+    }
 
-	@Override
-	public void getPosHealth(GetPosHealthRequest request,
-	                         StreamObserver<GetPosHealthResponse> responseObserver) {
-		try {
-			responseObserver.onNext(delegate.getPosHealth(request));
-			responseObserver.onCompleted();
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
-		} catch (InvalidRequestException e) {
-			responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
-		} catch (Exception e) {
-			log.error("Unexpected error in getPosHealth", e);
-			responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
-		}
-	}
+    @Override
+    public void getPosHealth(GetPosHealthRequest request,
+                             StreamObserver<GetPosHealthResponse> responseObserver) {
+        try {
+            responseObserver.onNext(delegate.getPosHealth(request));
+            responseObserver.onCompleted();
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (InvalidRequestException e) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            log.error("Unexpected error in getPosHealth", e);
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
+    }
 }

@@ -13,25 +13,25 @@ import java.util.UUID;
 @Repository
 public interface StaffRepository extends JpaRepository<Staff, UUID> {
 
-	List<Staff> findAllByRestaurantId(UUID restaurantId);
+    List<Staff> findAllByRestaurantId(UUID restaurantId);
 
-	Optional<Staff> findByUserId(UUID userId);
+    Optional<Staff> findByUserId(UUID userId);
 
-	boolean existsByRestaurantIdAndUserId(UUID restaurantId, UUID userId);
+    boolean existsByRestaurantIdAndUserId(UUID restaurantId, UUID userId);
 
-	boolean existsByUserIdAndRoleName(UUID userId, String roleName);
+    boolean existsByUserIdAndRoleName(UUID userId, String roleName);
 
-	boolean existsByRestaurantIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
+    boolean existsByRestaurantIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
 
-	boolean existsByBranchIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
+    boolean existsByBranchIdAndUserIdAndRoleName(UUID branchId, UUID userId, String roleName);
 
-	void deleteByUserId(UUID userId);
+    void deleteByUserId(UUID userId);
 
-	@Query("""
-			    SELECT s.userId FROM Staff s 
-			    WHERE s.branch.id = :branchId 
-			    AND s.active = true 
-			    AND s.roleName IN ('MANAGER', 'OWNER')
-			""")
-	List<UUID> findManagerUserIdsByBranchId(@Param("branchId") UUID branchId);
+    @Query("""
+                SELECT s.userId FROM Staff s 
+                WHERE s.branch.id = :branchId 
+                AND s.active = true 
+                AND s.roleName IN ('MANAGER', 'OWNER')
+            """)
+    List<UUID> findManagerUserIdsByBranchId(@Param("branchId") UUID branchId);
 }

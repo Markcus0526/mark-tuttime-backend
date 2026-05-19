@@ -19,39 +19,39 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Payment extends BaseUuidEntity {
 
-	@Column(name = "booking_id", nullable = false)
-	private UUID bookingId;
+    @Column(name = "booking_id", nullable = false)
+    private UUID bookingId;
 
-	@Column(name = "user_id", nullable = false)
-	private UUID userId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "yookassa_payment_id", unique = true)
-	private String yookassaPaymentId;
+    @Column(name = "yookassa_payment_id", unique = true)
+    private String yookassaPaymentId;
 
-	@Column(name = "idempotency_key", unique = true)
-	private UUID idempotencyKey;
+    @Column(name = "idempotency_key", unique = true)
+    private UUID idempotencyKey;
 
-	@Column(nullable = false, precision = 10, scale = 2)
-	private BigDecimal amount;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
 
-	@Column(nullable = false, length = 10)
-	@Builder.Default
-	private String currency = "RUB";
+    @Column(nullable = false, length = 10)
+    @Builder.Default
+    private String currency = "RUB";
 
-	@Column(name = "payment_method_type", length = 50)
-	private String paymentMethodType; // e.g., "card", "apple_pay"
+    @Column(name = "payment_method_type", length = 50)
+    private String paymentMethodType; // e.g., "card", "apple_pay"
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 20)
-	@Builder.Default
-	private PaymentStatus status = PaymentStatus.PENDING;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private PaymentStatus status = PaymentStatus.PENDING;
 
-	@Column(name = "confirmation_url", length = 500)
-	private String confirmationUrl;
+    @Column(name = "confirmation_url", length = 500)
+    private String confirmationUrl;
 
-	@Column(name = "failure_message", columnDefinition = "TEXT")
-	private String failureMessage;
+    @Column(name = "failure_message", columnDefinition = "TEXT")
+    private String failureMessage;
 }

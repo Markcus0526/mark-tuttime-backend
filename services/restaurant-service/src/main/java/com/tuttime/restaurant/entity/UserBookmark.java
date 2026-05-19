@@ -17,17 +17,17 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class UserBookmark extends BaseTimeStampEntity {
 
-	@EmbeddedId
-	private UserBookmarkId id;
+    @EmbeddedId
+    private UserBookmarkId id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@MapsId("branchId")
-	@JoinColumn(name = "branch_id")
-	private Branch branch;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("branchId")
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
 
-	// Custom constructor for easier use in Service
-	public UserBookmark(UUID userId, Branch branch) {
-		this.id = new UserBookmarkId(userId, branch.getId());
-		this.branch = branch;
-	}
+    // Custom constructor for easier use in Service
+    public UserBookmark(UUID userId, Branch branch) {
+        this.id = new UserBookmarkId(userId, branch.getId());
+        this.branch = branch;
+    }
 }

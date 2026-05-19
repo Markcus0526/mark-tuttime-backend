@@ -18,19 +18,19 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class StopList extends BaseUuidEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "menu_item_id", nullable = false)
-	private MenuItem menuItem;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "menu_item_id", nullable = false)
+    private MenuItem menuItem;
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "start_date", nullable = false)
-	private LocalDate startDate;
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
 
-	@Column(name = "end_date")
-	private LocalDate endDate;
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
-	@Column(name = "reason")
-	private String reason;
+    @Column(name = "reason")
+    private String reason;
 }

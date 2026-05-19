@@ -9,16 +9,16 @@ import ru.loolzaaa.youkassa.client.ApiClientBuilder;
 @Configuration
 public class YooKassaConfig {
 
-	@Value("${yookassa.shop-id}")
-	private String shopId;
+    @Value("${yookassa.shop-id}")
+    private String shopId;
 
-	@Value("${yookassa.secret-key}")
-	private String secretKey;
+    @Value("${yookassa.secret-key}")
+    private String secretKey;
 
-	@Bean
-	public ApiClient apiKassaClient() {
-		return ApiClientBuilder.newBuilder()
-				.configureBasicAuth(shopId, secretKey)
-				.build();
-	}
+    @Bean
+    public ApiClient apiKassaClient() {
+        return ApiClientBuilder.newBuilder()
+                .configureBasicAuth(shopId, secretKey)
+                .build();
+    }
 }

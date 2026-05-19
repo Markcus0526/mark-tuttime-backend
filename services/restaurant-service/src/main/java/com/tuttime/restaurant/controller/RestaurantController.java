@@ -33,220 +33,220 @@ import java.util.UUID;
 @Tag(name = "1.Restaurants", description = "Operations related to restaurants, branches, zones, tables, schedules & media")
 public class RestaurantController {
 
-	private final RestaurantService restaurantService;
-	private final StaffService staffService;
+    private final RestaurantService restaurantService;
+    private final StaffService staffService;
 
-	// --- Restaurant CRUD ---
+    // --- Restaurant CRUD ---
 
-	@Operation(summary = "Get/Search all restaurants", description = "Retrieve paginated restaurants with filters for keyword, owner, and ratings.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Restaurants retrieved successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid request parameters")
-	})
-	@GetMapping
-	public ResponseEntity<ApiRes<Page<RestaurantDto.RestaurantResponse>>> getAllRestaurants(
-			@Parameter(description = "Search by name or address")
-			@RequestParam(required = false) String query,
+    @Operation(summary = "Get/Search all restaurants", description = "Retrieve paginated restaurants with filters for keyword, owner, and ratings.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Restaurants retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters")
+    })
+    @GetMapping
+    public ResponseEntity<ApiRes<Page<RestaurantDto.RestaurantResponse>>> getAllRestaurants(
+            @Parameter(description = "Search by name or address")
+            @RequestParam(required = false) String query,
 
-			@Parameter(description = "Filter by specific owner")
-			@RequestParam(required = false) UUID ownerUserId,
+            @Parameter(description = "Filter by specific owner")
+            @RequestParam(required = false) UUID ownerUserId,
 
-			@RequestParam(required = false) Double minRating,
-			@RequestParam(required = false) Double maxRating,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size,
-			@RequestParam(defaultValue = "createdAt") String sort,
-			@RequestParam(defaultValue = "desc") String direction) {
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) Double maxRating,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
 
-		// Cap the page size for performance
-		int pageSize = Math.min(size, 100);
+        // Cap the page size for performance
+        int pageSize = Math.min(size, 100);
 
-		Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
-		Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
+        Sort sortOrder = direction.equalsIgnoreCase("asc") ? Sort.by(sort).ascending() : Sort.by(sort).descending();
+        Pageable pageable = PageRequest.of(page, pageSize, sortOrder);
 
-		Page<RestaurantDto.RestaurantResponse> restaurants = restaurantService.findRestaurants(query, ownerUserId, minRating, maxRating, pageable);
-		return ResponseEntity.ok(ApiRes.success(restaurants));
-	}
+        Page<RestaurantDto.RestaurantResponse> restaurants = restaurantService.findRestaurants(query, ownerUserId, minRating, maxRating, pageable);
+        return ResponseEntity.ok(ApiRes.success(restaurants));
+    }
 
-	@Operation(summary = "Get a restaurant by ID", description = "Retrieve detailed information about a restaurant by its ID")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Restaurant retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Restaurant not found")
-	})
-	@GetMapping("/{restaurantId}")
-	public ResponseEntity<ApiRes<RestaurantDto.RestaurantDetailResponse>> getRestaurantById(
-			@Parameter(description = "UUID of the restaurant to retrieve", required = true)
-			@PathVariable UUID restaurantId) {
+    @Operation(summary = "Get a restaurant by ID", description = "Retrieve detailed information about a restaurant by its ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Restaurant retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Restaurant not found")
+    })
+    @GetMapping("/{restaurantId}")
+    public ResponseEntity<ApiRes<RestaurantDto.RestaurantDetailResponse>> getRestaurantById(
+            @Parameter(description = "UUID of the restaurant to retrieve", required = true)
+            @PathVariable UUID restaurantId) {
 
-		RestaurantDto.RestaurantDetailResponse restaurant = restaurantService.getRestaurantById(restaurantId);
-		return ResponseEntity.ok(ApiRes.success(restaurant));
-	}
+        RestaurantDto.RestaurantDetailResponse restaurant = restaurantService.getRestaurantById(restaurantId);
+        return ResponseEntity.ok(ApiRes.success(restaurant));
+    }
 
-	@Operation(summary = "Create a new restaurant", description = "Add a new restaurant to the system")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Restaurant created successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid input data"),
-			@ApiResponse(responseCode = "403", description = "Access denied")
-	})
-	@PostMapping
-	public ResponseEntity<ApiRes<RestaurantDto.RestaurantResponse>> createRestaurant(
-			@Parameter(description = "Restaurant creation payload", required = true)
-			@Valid @RequestBody RestaurantDto.RestaurantRequest request) {
+    @Operation(summary = "Create a new restaurant", description = "Add a new restaurant to the system")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Restaurant created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @PostMapping
+    public ResponseEntity<ApiRes<RestaurantDto.RestaurantResponse>> createRestaurant(
+            @Parameter(description = "Restaurant creation payload", required = true)
+            @Valid @RequestBody RestaurantDto.RestaurantRequest request) {
 
-		validateAdminOrOwner();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwner();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		RestaurantDto.RestaurantResponse created = restaurantService.createRestaurant(request, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
-	}
+        RestaurantDto.RestaurantResponse created = restaurantService.createRestaurant(request, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+    }
 
-	@Operation(summary = "Update a restaurant", description = "Update an existing restaurant's details")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Restaurant updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid update data"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Restaurant not found")
-	})
-	@PutMapping("/{restaurantId}")
-	public ResponseEntity<ApiRes<RestaurantDto.RestaurantResponse>> updateRestaurant(
-			@Parameter(description = "UUID of the restaurant to update", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "Updated restaurant details", required = true)
-			@Valid @RequestBody RestaurantDto.RestaurantUpdateRequest request) {
+    @Operation(summary = "Update a restaurant", description = "Update an existing restaurant's details")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Restaurant updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid update data"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Restaurant not found")
+    })
+    @PutMapping("/{restaurantId}")
+    public ResponseEntity<ApiRes<RestaurantDto.RestaurantResponse>> updateRestaurant(
+            @Parameter(description = "UUID of the restaurant to update", required = true)
+            @PathVariable UUID restaurantId,
+            @Parameter(description = "Updated restaurant details", required = true)
+            @Valid @RequestBody RestaurantDto.RestaurantUpdateRequest request) {
 
-		validateAdminOrOwner();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwner();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		RestaurantDto.RestaurantResponse updated = restaurantService.updateRestaurant(restaurantId, request, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(updated));
-	}
+        RestaurantDto.RestaurantResponse updated = restaurantService.updateRestaurant(restaurantId, request, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(updated));
+    }
 
-	@Operation(summary = "Delete a restaurant", description = "Remove a restaurant and all its associated data")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Restaurant deleted successfully"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Restaurant not found")
-	})
-	@DeleteMapping("/{restaurantId}")
-	public ResponseEntity<ApiRes<Void>> deleteRestaurant(
-			@Parameter(description = "UUID of the restaurant to delete", required = true)
-			@PathVariable UUID restaurantId) {
+    @Operation(summary = "Delete a restaurant", description = "Remove a restaurant and all its associated data")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Restaurant deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Restaurant not found")
+    })
+    @DeleteMapping("/{restaurantId}")
+    public ResponseEntity<ApiRes<Void>> deleteRestaurant(
+            @Parameter(description = "UUID of the restaurant to delete", required = true)
+            @PathVariable UUID restaurantId) {
 
-		validateAdmin();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdmin();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		restaurantService.deleteRestaurant(restaurantId, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        restaurantService.deleteRestaurant(restaurantId, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	// --- Restaurant Staff ---
+    // --- Restaurant Staff ---
 
-	@Operation(summary = "Assign a staff member", description = "Allows a Restaurant Owner to assign a user as a Manager or Hostess to a restaurant or specific branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Staff assigned successfully"),
-			@ApiResponse(responseCode = "403", description = "Access denied - Only Owners can manage staff"),
-			@ApiResponse(responseCode = "404", description = "Restaurant or Branch not found")
-	})
-	@PostMapping("/{restaurantId}/staffs")
-	public ResponseEntity<ApiRes<StaffDto.StaffResponse>> assignStaff(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@RequestBody @Valid StaffDto.StaffRequest request) {
+    @Operation(summary = "Assign a staff member", description = "Allows a Restaurant Owner to assign a user as a Manager or Hostess to a restaurant or specific branch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Staff assigned successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied - Only Owners can manage staff"),
+            @ApiResponse(responseCode = "404", description = "Restaurant or Branch not found")
+    })
+    @PostMapping("/{restaurantId}/staffs")
+    public ResponseEntity<ApiRes<StaffDto.StaffResponse>> assignStaff(
+            @Parameter(description = "UUID of the restaurant", required = true)
+            @PathVariable UUID restaurantId,
+            @RequestBody @Valid StaffDto.StaffRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		StaffDto.StaffResponse response = staffService.assignStaff(restaurantId, request, currentUserId, userRoles);
+        StaffDto.StaffResponse response = staffService.assignStaff(restaurantId, request, currentUserId, userRoles);
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(response));
-	}
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(response));
+    }
 
-	@Operation(summary = "Get all restaurant staff", description = "Retrieve a list of all staff members (Managers, Hostesses, etc.) for a specific restaurant")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Staff list retrieved successfully"),
-			@ApiResponse(responseCode = "403", description = "Access denied")
-	})
-	@GetMapping("/{restaurantId}/staffs")
-	public ResponseEntity<ApiRes<List<StaffDto.StaffResponse>>> getStaffs(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId) {
+    @Operation(summary = "Get all restaurant staff", description = "Retrieve a list of all staff members (Managers, Hostesses, etc.) for a specific restaurant")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Staff list retrieved successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @GetMapping("/{restaurantId}/staffs")
+    public ResponseEntity<ApiRes<List<StaffDto.StaffResponse>>> getStaffs(
+            @Parameter(description = "UUID of the restaurant", required = true)
+            @PathVariable UUID restaurantId) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		List<StaffDto.StaffResponse> staffs = staffService.getStaffByRestaurant(restaurantId, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(staffs));
-	}
+        List<StaffDto.StaffResponse> staffs = staffService.getStaffByRestaurant(restaurantId, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(staffs));
+    }
 
-	@Operation(summary = "Remove a staff member", description = "Remove a staff member from the restaurant (unassign their role)")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Staff removed successfully"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Staff record not found")
-	})
-	@DeleteMapping("/{restaurantId}/staffs/{staffId}")
-	public ResponseEntity<ApiRes<Void>> removeStaff(
-			@Parameter(description = "UUID of the restaurant", required = true)
-			@PathVariable UUID restaurantId,
-			@Parameter(description = "UUID of the staff record to delete", required = true)
-			@PathVariable UUID staffId) {
+    @Operation(summary = "Remove a staff member", description = "Remove a staff member from the restaurant (unassign their role)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Staff removed successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Staff record not found")
+    })
+    @DeleteMapping("/{restaurantId}/staffs/{staffId}")
+    public ResponseEntity<ApiRes<Void>> removeStaff(
+            @Parameter(description = "UUID of the restaurant", required = true)
+            @PathVariable UUID restaurantId,
+            @Parameter(description = "UUID of the staff record to delete", required = true)
+            @PathVariable UUID staffId) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		staffService.removeStaff(restaurantId, staffId, currentUserId, userRoles);
+        staffService.removeStaff(restaurantId, staffId, currentUserId, userRoles);
 
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	@Operation(summary = "Update staff role or status", description = "Update the role (e.g., Hostess to Manager) or toggle active status of a staff member")
-	@PatchMapping("/{restaurantId}/staffs/{staffId}")
-	public ResponseEntity<ApiRes<StaffDto.StaffResponse>> updateStaff(
-			@PathVariable UUID restaurantId,
-			@PathVariable UUID staffId,
-			@RequestBody @Valid StaffDto.StaffUpdateRequest request) {
+    @Operation(summary = "Update staff role or status", description = "Update the role (e.g., Hostess to Manager) or toggle active status of a staff member")
+    @PatchMapping("/{restaurantId}/staffs/{staffId}")
+    public ResponseEntity<ApiRes<StaffDto.StaffResponse>> updateStaff(
+            @PathVariable UUID restaurantId,
+            @PathVariable UUID staffId,
+            @RequestBody @Valid StaffDto.StaffUpdateRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		StaffDto.StaffResponse updated = staffService.updateStaff(restaurantId, staffId, request, currentUserId, userRoles);
+        StaffDto.StaffResponse updated = staffService.updateStaff(restaurantId, staffId, request, currentUserId, userRoles);
 
-		return ResponseEntity.ok(ApiRes.success(updated));
-	}
+        return ResponseEntity.ok(ApiRes.success(updated));
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

@@ -18,23 +18,23 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_REFUND
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final PosConfigRepository posConfigRepository;
-	private final PosAdapterFactory posAdapterFactory;
+    private final ObjectMapper objectMapper;
+    private final PosConfigRepository posConfigRepository;
+    private final PosAdapterFactory posAdapterFactory;
 
-	/**
-	 * Cancels the booking and frees the table if a refund occurs.
-	 */
-	@KafkaListener(
-			topics = TOPIC_PAYMENT_REFUND,
-			groupId = "${spring.kafka.consumer.group-id}")
-	@Transactional(readOnly = true)
-	public void handlePaymentRefunded(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    /**
+     * Cancels the booking and frees the table if a refund occurs.
+     */
+    @KafkaListener(
+            topics = TOPIC_PAYMENT_REFUND,
+            groupId = "${spring.kafka.consumer.group-id}")
+    @Transactional(readOnly = true)
+    public void handlePaymentRefunded(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentRefundedEvent event =
-					objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
+            PaymentEvent.PaymentRefundedEvent event =
+                    objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
 
 //			if ("REFUND_COMPLETED".equals(finalEvent.getType())) {
 //				log.info("Processing refund sync for Order: {}", finalEvent.getOrderId());
@@ -45,9 +45,9 @@ public class PaymentEventConsumer {
 //				PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
 //				adapter.refundOrder(config, finalEvent.getOrderId(), finalEvent.getAmount(), "Payment Gateway Refund");
 //			}TODO
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
-					TOPIC_PAYMENT_REFUND, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+                    TOPIC_PAYMENT_REFUND, e.getMessage());
+        }
+    }
 }

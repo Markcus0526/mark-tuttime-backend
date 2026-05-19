@@ -9,14 +9,14 @@ import lombok.Data;
 @JacksonXmlRootElement(localName = "RK7QueryResult")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RK7Response {
-	@JacksonXmlProperty(isAttribute = true, localName = "Status")
-	private String status; // e.g., "Ok" or "Error"
+    @JacksonXmlProperty(isAttribute = true, localName = "Status")
+    private String status; // e.g., "Ok" or "Error"
 
-	@JacksonXmlProperty(isAttribute = true, localName = "ErrorID")
-	private Integer errorId;
+    @JacksonXmlProperty(isAttribute = true, localName = "ErrorID")
+    private Integer errorId;
 
-	@JacksonXmlProperty(isAttribute = true, localName = "ErrorText")
-	private String errorText;
+    @JacksonXmlProperty(isAttribute = true, localName = "ErrorText")
+    private String errorText;
 }
 
 //ErrorID	Meaning	           Logic Strategy

@@ -29,155 +29,155 @@ import java.util.UUID;
 @Tag(name = "3.Branch Zones", description = "Operations related to zones within branches of restaurants")
 public class ZoneController {
 
-	private final ZoneService zoneService;
-	private final ZoneLayoutService zoneLayoutService;
+    private final ZoneService zoneService;
+    private final ZoneLayoutService zoneLayoutService;
 
-	// --- Zone CRUD ---
+    // --- Zone CRUD ---
 
-	@Operation(summary = "Get zone by ID", description = "Retrieve detailed information about a zone")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Zone retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Zone not found")
-	})
-	@GetMapping("/{zoneId}")
-	public ResponseEntity<ApiRes<ZoneDto.ZoneDetailResponse>> getZoneById(
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId) {
+    @Operation(summary = "Get zone by ID", description = "Retrieve detailed information about a zone")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Zone retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Zone not found")
+    })
+    @GetMapping("/{zoneId}")
+    public ResponseEntity<ApiRes<ZoneDto.ZoneDetailResponse>> getZoneById(
+            @Parameter(description = "UUID of the zone", required = true)
+            @PathVariable UUID zoneId) {
 
-		ZoneDto.ZoneDetailResponse zone = zoneService.getZoneById(zoneId);
-		return ResponseEntity.ok(ApiRes.success(zone));
-	}
+        ZoneDto.ZoneDetailResponse zone = zoneService.getZoneById(zoneId);
+        return ResponseEntity.ok(ApiRes.success(zone));
+    }
 
-	@Operation(summary = "Create a new zone", description = "Add a new zone to a branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Zone created successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid input data"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	@PostMapping
-	public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> createZone(
-			@Parameter(description = "Zone creation payload", required = true)
-			@Valid @RequestBody ZoneDto.ZoneRequest request) {
+    @Operation(summary = "Create a new zone", description = "Add a new zone to a branch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Zone created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Branch not found")
+    })
+    @PostMapping
+    public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> createZone(
+            @Parameter(description = "Zone creation payload", required = true)
+            @Valid @RequestBody ZoneDto.ZoneRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		ZoneDto.ZoneResponse created = zoneService.createZone(request, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
-	}
+        ZoneDto.ZoneResponse created = zoneService.createZone(request, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+    }
 
-	@Operation(summary = "Update a zone", description = "Update details of an existing zone")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Zone updated successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid update data"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Zone not found")
-	})
-	@PutMapping("/{zoneId}")
-	public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> updateZone(
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId,
-			@Parameter(description = "Updated zone details", required = true)
-			@Valid @RequestBody ZoneDto.ZoneRequest request) {
+    @Operation(summary = "Update a zone", description = "Update details of an existing zone")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Zone updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid update data"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Zone not found")
+    })
+    @PutMapping("/{zoneId}")
+    public ResponseEntity<ApiRes<ZoneDto.ZoneResponse>> updateZone(
+            @Parameter(description = "UUID of the zone", required = true)
+            @PathVariable UUID zoneId,
+            @Parameter(description = "Updated zone details", required = true)
+            @Valid @RequestBody ZoneDto.ZoneRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		ZoneDto.ZoneResponse updated = zoneService.updateZone(zoneId, request, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(updated));
-	}
+        ZoneDto.ZoneResponse updated = zoneService.updateZone(zoneId, request, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(updated));
+    }
 
-	@Operation(summary = "Delete a zone", description = "Remove a zone from a branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "204", description = "Zone deleted successfully"),
-			@ApiResponse(responseCode = "403", description = "Access denied"),
-			@ApiResponse(responseCode = "404", description = "Zone not found")
-	})
-	@DeleteMapping("/{zoneId}")
-	public ResponseEntity<ApiRes<Void>> deleteZone(
-			@Parameter(description = "UUID of the zone", required = true)
-			@PathVariable UUID zoneId) {
+    @Operation(summary = "Delete a zone", description = "Remove a zone from a branch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Zone deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Zone not found")
+    })
+    @DeleteMapping("/{zoneId}")
+    public ResponseEntity<ApiRes<Void>> deleteZone(
+            @Parameter(description = "UUID of the zone", required = true)
+            @PathVariable UUID zoneId) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		zoneService.deleteZone(zoneId, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        zoneService.deleteZone(zoneId, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	@Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Zones retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	@GetMapping("/branches/{branchId}")
-	public ResponseEntity<ApiRes<List<ZoneDto.ZoneResponse>>> getZonesByBranch(
-			@Parameter(description = "UUID of the branch", required = true)
-			@PathVariable UUID branchId) {
+    @Operation(summary = "Get all zones for a branch", description = "Retrieve list of zones for a specified branch")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Zones retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Branch not found")
+    })
+    @GetMapping("/branches/{branchId}")
+    public ResponseEntity<ApiRes<List<ZoneDto.ZoneResponse>>> getZonesByBranch(
+            @Parameter(description = "UUID of the branch", required = true)
+            @PathVariable UUID branchId) {
 
-		List<ZoneDto.ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
-		return ResponseEntity.ok(ApiRes.success(zones));
-	}
+        List<ZoneDto.ZoneResponse> zones = zoneService.getZonesByBranchId(branchId);
+        return ResponseEntity.ok(ApiRes.success(zones));
+    }
 
-	/**
-	 * GET /api/v1/zones/{zoneId}/layout
-	 * Retrieves the visual layout, fixtures, and table positions for the admin panel.
-	 */
-	@GetMapping("/{zoneId}/layout")
-	public ResponseEntity<ApiRes<ZoneLayoutDto.LayoutDto>> getLayout(
-			@PathVariable UUID zoneId) {
+    /**
+     * GET /api/v1/zones/{zoneId}/layout
+     * Retrieves the visual layout, fixtures, and table positions for the admin panel.
+     */
+    @GetMapping("/{zoneId}/layout")
+    public ResponseEntity<ApiRes<ZoneLayoutDto.LayoutDto>> getLayout(
+            @PathVariable UUID zoneId) {
 
-		ZoneLayoutDto.LayoutDto layout = zoneLayoutService.getZoneLayout(zoneId);
-		return ResponseEntity.ok(ApiRes.success(layout));
-	}
+        ZoneLayoutDto.LayoutDto layout = zoneLayoutService.getZoneLayout(zoneId);
+        return ResponseEntity.ok(ApiRes.success(layout));
+    }
 
-	/**
-	 * PUT /api/v1/zones/{zoneId}/layout
-	 * Synchronizes the layout from the admin panel (Inserts new, Updates moved, Soft-Deletes removed).
-	 */
-	@PutMapping("/{zoneId}/layout")
-	public ResponseEntity<ApiRes<Void>> updateLayout(
-			@PathVariable UUID zoneId,
-			@RequestBody ZoneLayoutDto.LayoutDto layoutDto) {
+    /**
+     * PUT /api/v1/zones/{zoneId}/layout
+     * Synchronizes the layout from the admin panel (Inserts new, Updates moved, Soft-Deletes removed).
+     */
+    @PutMapping("/{zoneId}/layout")
+    public ResponseEntity<ApiRes<Void>> updateLayout(
+            @PathVariable UUID zoneId,
+            @RequestBody ZoneLayoutDto.LayoutDto layoutDto) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		zoneLayoutService.syncLayout(zoneId, layoutDto, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        zoneLayoutService.syncLayout(zoneId, layoutDto, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

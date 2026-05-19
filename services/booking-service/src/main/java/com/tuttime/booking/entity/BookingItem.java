@@ -16,18 +16,18 @@ import java.util.UUID;
 @AllArgsConstructor
 public class BookingItem extends BaseUuidEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "booking_id", nullable = false)
-	private Booking booking;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
 
-	@Column(name = "menu_item_id", nullable = false)
-	private UUID menuItemId;
+    @Column(name = "menu_item_id", nullable = false)
+    private UUID menuItemId;
 
-	@Column(name = "selected_modifiers") // Add this to your SQL too!
-	private String selectedModifiers;
+    @Column(name = "selected_modifiers") // Add this to your SQL too!
+    private String selectedModifiers;
 
-	private Integer quantity;
-	private BigDecimal unitPrice;
-	private BigDecimal totalPrice;
-	private String notes;
+    private Integer quantity;
+    private BigDecimal unitPrice;
+    private BigDecimal totalPrice;
+    private String notes;
 }

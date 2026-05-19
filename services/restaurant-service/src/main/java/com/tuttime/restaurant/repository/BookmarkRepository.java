@@ -13,7 +13,7 @@ import java.util.UUID;
 @Repository
 public interface BookmarkRepository extends JpaRepository<UserBookmark, UserBookmarkId> {
 
-	// Efficiently returns only the branch IDs the user has bookmarked
-	@Query("SELECT b.id.branchId FROM UserBookmark b WHERE b.id.userId = :userId")
-	List<UUID> findBookmarkedBranchIdsByUserId(@Param("userId") UUID userId);
+    // Efficiently returns only the branch IDs the user has bookmarked
+    @Query("SELECT b.id.branchId FROM UserBookmark b WHERE b.id.userId = :userId")
+    List<UUID> findBookmarkedBranchIdsByUserId(@Param("userId") UUID userId);
 }

@@ -10,7 +10,7 @@ import java.util.UUID;
 @Repository
 public interface TagRepository extends JpaRepository<Tag, UUID> {
 
-	// Logic #1 & #3: Find globally by name (ignore case)
-	// Ensures a single master tag exists for everyone
-	Optional<Tag> findByNameIgnoreCase(String name);
+    // Logic #1 & #3: Find globally by name (ignore case)
+    // Ensures a single master tag exists for everyone
+    Optional<Tag> findByNameIgnoreCase(String name);
 }

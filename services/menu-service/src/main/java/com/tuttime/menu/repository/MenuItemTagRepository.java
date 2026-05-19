@@ -12,20 +12,20 @@ import java.util.UUID;
 
 public interface MenuItemTagRepository extends JpaRepository<MenuItemTag, MenuItemTagId> {
 
-	@Query("SELECT mt FROM MenuItemTag mt JOIN FETCH mt.menuTag WHERE mt.id.menuItemId = :menuItemId")
-	List<MenuItemTag> findAllByMenuItemId(@Param("menuItemId") UUID menuItemId);
+    @Query("SELECT mt FROM MenuItemTag mt JOIN FETCH mt.menuTag WHERE mt.id.menuItemId = :menuItemId")
+    List<MenuItemTag> findAllByMenuItemId(@Param("menuItemId") UUID menuItemId);
 
-	@Modifying
-	@Query("DELETE FROM MenuItemTag bt WHERE bt.id.menuItemId = :menuItemId")
-	void deleteByMenuItemId(UUID menuItemId);
+    @Modifying
+    @Query("DELETE FROM MenuItemTag bt WHERE bt.id.menuItemId = :menuItemId")
+    void deleteByMenuItemId(UUID menuItemId);
 
-	boolean existsByMenuTagId(UUID tagId);
+    boolean existsByMenuTagId(UUID tagId);
 
-	// Fetches the bridge entity and the actual MenuTag data for a list of item IDs
-	@Query("""
-			    SELECT mit FROM MenuItemTag mit 
-			    JOIN FETCH mit.menuTag 
-			    WHERE mit.id.menuItemId IN :itemIds
-			""")
-	List<MenuItemTag> findAllByMenuItemIdIn(@Param("itemIds") List<UUID> itemIds);
+    // Fetches the bridge entity and the actual MenuTag data for a list of item IDs
+    @Query("""
+                SELECT mit FROM MenuItemTag mit 
+                JOIN FETCH mit.menuTag 
+                WHERE mit.id.menuItemId IN :itemIds
+            """)
+    List<MenuItemTag> findAllByMenuItemIdIn(@Param("itemIds") List<UUID> itemIds);
 }

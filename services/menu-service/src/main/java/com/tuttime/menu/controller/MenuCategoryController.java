@@ -31,164 +31,164 @@ import java.util.UUID;
 @Tag(name = "1.Menu Categories", description = "Endpoints for managing top-level menu groupings and bulk menu fetches")
 public class MenuCategoryController {
 
-	private final MenuCategoryService categoryService;
+    private final MenuCategoryService categoryService;
 
-	@PostMapping
-	@Operation(summary = "Create a new category")
-	@io.swagger.v3.oas.annotations.parameters.RequestBody(
-			content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryRequest.class))
-	)
-	@ApiResponses({
-			@ApiResponse(responseCode = "201", description = "Category created",
-					content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
-			@ApiResponse(responseCode = "400", description = "Invalid input data")
-	})
-	public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody MenuCategoryDto.CategoryRequest request) {
+    @PostMapping
+    @Operation(summary = "Create a new category")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryRequest.class))
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Category created",
+                    content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data")
+    })
+    public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> createCategory(@Valid @RequestBody MenuCategoryDto.CategoryRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		MenuCategoryDto.CategoryResponse data = categoryService.createCategory(request, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
-	}
+        MenuCategoryDto.CategoryResponse data = categoryService.createCategory(request, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
+    }
 
-	@GetMapping("/{categoryId}")
-	@Operation(summary = "Get category by ID")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Success",
-					content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
-			@ApiResponse(responseCode = "404", description = "Category not found")
-	})
-	public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> getCategoryById(
-			@PathVariable UUID categoryId) {
+    @GetMapping("/{categoryId}")
+    @Operation(summary = "Get category by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Success",
+                    content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
+    public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> getCategoryById(
+            @PathVariable UUID categoryId) {
 
-		MenuCategoryDto.CategoryResponse data = categoryService.getCategoryById(categoryId);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
+        MenuCategoryDto.CategoryResponse data = categoryService.getCategoryById(categoryId);
+        return ResponseEntity.ok(ApiRes.success(data));
+    }
 
-	@PutMapping("/{categoryId}")
-	@Operation(summary = "Update an existing category")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Update successful",
-					content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
-			@ApiResponse(responseCode = "404", description = "Category not found")
-	})
-	public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> updateCategory(
-			@PathVariable UUID categoryId,
-			@Valid @RequestBody MenuCategoryDto.CategoryRequest request) {
+    @PutMapping("/{categoryId}")
+    @Operation(summary = "Update an existing category")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Update successful",
+                    content = @Content(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
+    public ResponseEntity<ApiRes<MenuCategoryDto.CategoryResponse>> updateCategory(
+            @PathVariable UUID categoryId,
+            @Valid @RequestBody MenuCategoryDto.CategoryRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		MenuCategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
+        MenuCategoryDto.CategoryResponse data = categoryService.updateCategory(categoryId, request, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(data));
+    }
 
-	@DeleteMapping("/{categoryId}")
-	@Operation(summary = "Delete a category")
-	@ApiResponses({
-			@ApiResponse(responseCode = "204", description = "Category deleted"),
-			@ApiResponse(responseCode = "404", description = "Category not found")
-	})
-	public ResponseEntity<ApiRes<Void>> deleteCategory(@PathVariable UUID categoryId) {
+    @DeleteMapping("/{categoryId}")
+    @Operation(summary = "Delete a category")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Category deleted"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
+    public ResponseEntity<ApiRes<Void>> deleteCategory(@PathVariable UUID categoryId) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		categoryService.deleteCategory(categoryId, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        categoryService.deleteCategory(categoryId, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	@GetMapping("/branches/{branchId}")
-	@Operation(summary = "Search and sort categories by branch")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Success",
-					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))))
-	})
-	public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> getCategoriesByBranch(
-			@PathVariable UUID branchId,
-			@RequestParam(required = false) String query,
-			@Parameter(description = "Sort field: priority, name, or created_at")
-			@RequestParam(defaultValue = "priority") String sortBy,
-			@Parameter(description = "Sort direction: asc or desc")
-			@RequestParam(defaultValue = "asc") String direction) {
+    @GetMapping("/branches/{branchId}")
+    @Operation(summary = "Search and sort categories by branch")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Success",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class))))
+    })
+    public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> getCategoriesByBranch(
+            @PathVariable UUID branchId,
+            @RequestParam(required = false) String query,
+            @Parameter(description = "Sort field: priority, name, or created_at")
+            @RequestParam(defaultValue = "priority") String sortBy,
+            @Parameter(description = "Sort direction: asc or desc")
+            @RequestParam(defaultValue = "asc") String direction) {
 
-		List<MenuCategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId, query, sortBy, direction);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
+        List<MenuCategoryDto.CategoryResponse> data = categoryService.getCategoriesByBranch(branchId, query, sortBy, direction);
+        return ResponseEntity.ok(ApiRes.success(data));
+    }
 
-	@GetMapping("/branches/{branchId}/full-menu")
-	@Operation(summary = "Master Endpoint: Fetch complete branch menu")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Full menu tree retrieved",
-					content = @Content(schema = @Schema(implementation = FullMenuDto.FullMenuBranchMenuResponse.class))),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	public ResponseEntity<ApiRes<FullMenuDto.FullMenuBranchMenuResponse>> getFullMenu(
-			@Parameter(description = "UUID of the branch") @PathVariable UUID branchId) {
+    @GetMapping("/branches/{branchId}/full-menu")
+    @Operation(summary = "Master Endpoint: Fetch complete branch menu")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Full menu tree retrieved",
+                    content = @Content(schema = @Schema(implementation = FullMenuDto.FullMenuBranchMenuResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Branch not found")
+    })
+    public ResponseEntity<ApiRes<FullMenuDto.FullMenuBranchMenuResponse>> getFullMenu(
+            @Parameter(description = "UUID of the branch") @PathVariable UUID branchId) {
 
-		FullMenuDto.FullMenuBranchMenuResponse data = categoryService.getFullMenuForBranch(branchId);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
+        FullMenuDto.FullMenuBranchMenuResponse data = categoryService.getFullMenuForBranch(branchId);
+        return ResponseEntity.ok(ApiRes.success(data));
+    }
 
-	@PutMapping("/branches/{branchId}/categories/priorities")
-	@Operation(summary = "Reorder menu categories for a branch (set priorities based on list order)")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "Priorities updated",
-					content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class)))),
-			@ApiResponse(responseCode = "400", description = "Invalid input – e.g., category not in branch"),
-			@ApiResponse(responseCode = "403", description = "Insufficient permissions"),
-			@ApiResponse(responseCode = "404", description = "Branch not found")
-	})
-	public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> updateCategoriesPriority(
-			@Parameter(description = "Branch UUID") @PathVariable UUID branchId,
-			@io.swagger.v3.oas.annotations.parameters.RequestBody(
-					description = "Ordered list of category UUIDs (first = highest priority)",
-					content = @Content(schema = @Schema(example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]"))
-			)
-			@RequestBody List<UUID> categoryIdsInOrder) {
+    @PutMapping("/branches/{branchId}/categories/priorities")
+    @Operation(summary = "Reorder menu categories for a branch (set priorities based on list order)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Priorities updated",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = MenuCategoryDto.CategoryResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid input – e.g., category not in branch"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Branch not found")
+    })
+    public ResponseEntity<ApiRes<List<MenuCategoryDto.CategoryResponse>>> updateCategoriesPriority(
+            @Parameter(description = "Branch UUID") @PathVariable UUID branchId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Ordered list of category UUIDs (first = highest priority)",
+                    content = @Content(schema = @Schema(example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]"))
+            )
+            @RequestBody List<UUID> categoryIdsInOrder) {
 
-		// 1. Authentication & role check
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        // 1. Authentication & role check
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		// 3. Service call
-		List<MenuCategoryDto.CategoryResponse> updated =
-				categoryService.updatePrioritiesForBranch(branchId, categoryIdsInOrder, currentUserId, userRoles);
+        // 3. Service call
+        List<MenuCategoryDto.CategoryResponse> updated =
+                categoryService.updatePrioritiesForBranch(branchId, categoryIdsInOrder, currentUserId, userRoles);
 
-		return ResponseEntity.ok(ApiRes.success(updated));
-	}
+        return ResponseEntity.ok(ApiRes.success(updated));
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

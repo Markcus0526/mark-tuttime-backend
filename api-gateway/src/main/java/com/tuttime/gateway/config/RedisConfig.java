@@ -24,53 +24,53 @@ import reactor.core.publisher.Mono;
 @Configuration("apiGatewayRedisConfig")
 public class RedisConfig {
 
-	@Bean
-	public ReactiveRedisTemplate<String, String> reactiveRedisTemplate(
-			ReactiveRedisConnectionFactory connectionFactory) {
-		StringRedisSerializer serializer = new StringRedisSerializer();
+    @Bean
+    public ReactiveRedisTemplate<String, String> reactiveRedisTemplate(
+            ReactiveRedisConnectionFactory connectionFactory) {
+        StringRedisSerializer serializer = new StringRedisSerializer();
 
-		RedisSerializationContext.RedisSerializationContextBuilder<String, String> builder =
-				RedisSerializationContext.newSerializationContext(serializer);
+        RedisSerializationContext.RedisSerializationContextBuilder<String, String> builder =
+                RedisSerializationContext.newSerializationContext(serializer);
 
-		RedisSerializationContext<String, String> context = builder
-				.key(serializer)
-				.value(serializer)
-				.hashKey(serializer)
-				.hashValue(serializer)
-				.build();
+        RedisSerializationContext<String, String> context = builder
+                .key(serializer)
+                .value(serializer)
+                .hashKey(serializer)
+                .hashValue(serializer)
+                .build();
 
-		return new ReactiveRedisTemplate<>(connectionFactory, context);
-	}
+        return new ReactiveRedisTemplate<>(connectionFactory, context);
+    }
 
-	/**
-	 * ObjectMapper bean for JSON serialization/deserialization.
-	 * Used by GlobalExceptionHandler and other components.
-	 */
-	@Bean
-	public ObjectMapper objectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-		return mapper;
-	}
+    /**
+     * ObjectMapper bean for JSON serialization/deserialization.
+     * Used by GlobalExceptionHandler and other components.
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        return mapper;
+    }
 
-	/**
-	 * KeyResolver that uses the authenticated user ID if present,
-	 * otherwise falls back to the client IP address.
-	 */
-	@Bean
-	public KeyResolver userKeyResolver() {
-		return exchange -> {
-			// Try to get user ID from the JWT filter headers
-			String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
-			if (userId != null && !userId.isEmpty()) {
-				return Mono.just(userId);
-			}
-			// Fallback to client IP
-			String ip = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
-			return Mono.just(ip);
-		};
-	}
+    /**
+     * KeyResolver that uses the authenticated user ID if present,
+     * otherwise falls back to the client IP address.
+     */
+    @Bean
+    public KeyResolver userKeyResolver() {
+        return exchange -> {
+            // Try to get user ID from the JWT filter headers
+            String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
+            if (userId != null && !userId.isEmpty()) {
+                return Mono.just(userId);
+            }
+            // Fallback to client IP
+            String ip = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+            return Mono.just(ip);
+        };
+    }
 
 }
 

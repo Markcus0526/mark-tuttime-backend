@@ -21,76 +21,76 @@ import java.util.UUID;
 @Slf4j
 public class BookingGrpcDelegate {
 
-	private final BookingRepository bookingRepository;
+    private final BookingRepository bookingRepository;
 
-	@Transactional(readOnly = true)
-	public GetCustomerRetentionResponse getCustomerRetention(GetCustomerRetentionRequest request) {
-		UUID branchId = UUID.fromString(request.getBranchId());
-		String period = request.getPeriod();
-		LocalDate startDate = getStartDateForPeriod(period);
+    @Transactional(readOnly = true)
+    public GetCustomerRetentionResponse getCustomerRetention(GetCustomerRetentionRequest request) {
+        UUID branchId = UUID.fromString(request.getBranchId());
+        String period = request.getPeriod();
+        LocalDate startDate = getStartDateForPeriod(period);
 
-		OffsetDateTime startDateTime = startDate.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime startDateTime = startDate.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
 
-		int newCustomers = bookingRepository.countFirstTimeCustomers(branchId, startDateTime);
-		int repeatCustomers = bookingRepository.countRepeatCustomers(branchId, startDateTime);
-		double repeatRate = (newCustomers + repeatCustomers) == 0 ? 0 :
-				(repeatCustomers * 100.0 / (newCustomers + repeatCustomers));
-		double avgOrders = bookingRepository.averageOrdersPerCustomer(branchId, startDateTime);
+        int newCustomers = bookingRepository.countFirstTimeCustomers(branchId, startDateTime);
+        int repeatCustomers = bookingRepository.countRepeatCustomers(branchId, startDateTime);
+        double repeatRate = (newCustomers + repeatCustomers) == 0 ? 0 :
+                (repeatCustomers * 100.0 / (newCustomers + repeatCustomers));
+        double avgOrders = bookingRepository.averageOrdersPerCustomer(branchId, startDateTime);
 
-		return GetCustomerRetentionResponse.newBuilder()
-				.setNewCustomers(newCustomers)
-				.setRepeatCustomers(repeatCustomers)
-				.setRepeatRate(repeatRate)
-				.setAvgOrdersPerCustomer(avgOrders)
-				.build();
-	}
+        return GetCustomerRetentionResponse.newBuilder()
+                .setNewCustomers(newCustomers)
+                .setRepeatCustomers(repeatCustomers)
+                .setRepeatRate(repeatRate)
+                .setAvgOrdersPerCustomer(avgOrders)
+                .build();
+    }
 
-	@Transactional(readOnly = true)
-	public GetFunnelCountsResponse getFunnelCounts(GetFunnelCountsRequest request) {
-		UUID branchId = UUID.fromString(request.getBranchId());
-		LocalDate start = LocalDate.parse(request.getStartDate());
-		LocalDate end = LocalDate.parse(request.getEndDate());
+    @Transactional(readOnly = true)
+    public GetFunnelCountsResponse getFunnelCounts(GetFunnelCountsRequest request) {
+        UUID branchId = UUID.fromString(request.getBranchId());
+        LocalDate start = LocalDate.parse(request.getStartDate());
+        LocalDate end = LocalDate.parse(request.getEndDate());
 
-		OffsetDateTime startDate = start.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
-		OffsetDateTime endDate = end.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime startDate = start.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime endDate = end.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
 
-		long bookings = bookingRepository.countBookings(branchId, startDate, endDate);
-		long arrivals = bookingRepository.countArrivals(branchId, startDate, endDate);
-		// For views, you might track via another source (e.g., analytics events)
-		long views = 0;   // placeholder; implement if you have view tracking
+        long bookings = bookingRepository.countBookings(branchId, startDate, endDate);
+        long arrivals = bookingRepository.countArrivals(branchId, startDate, endDate);
+        // For views, you might track via another source (e.g., analytics events)
+        long views = 0;   // placeholder; implement if you have view tracking
 
-		return GetFunnelCountsResponse.newBuilder()
-				.setViews(views)
-				.setBookings(bookings)
-				.setArrivals(arrivals)
-				.build();
-	}
+        return GetFunnelCountsResponse.newBuilder()
+                .setViews(views)
+                .setBookings(bookings)
+                .setArrivals(arrivals)
+                .build();
+    }
 
-	@Transactional(readOnly = true)
-	public GetTopCustomersResponse getTopCustomers(GetTopCustomersRequest request) {
-		UUID branchId = UUID.fromString(request.getBranchId());
-		int limit = request.getLimit();
-		Pageable pageable = PageRequest.of(0, limit);
-		Page<Object[]> results = bookingRepository.findTopCustomersBySpending(branchId, pageable);
+    @Transactional(readOnly = true)
+    public GetTopCustomersResponse getTopCustomers(GetTopCustomersRequest request) {
+        UUID branchId = UUID.fromString(request.getBranchId());
+        int limit = request.getLimit();
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<Object[]> results = bookingRepository.findTopCustomersBySpending(branchId, pageable);
 
-		GetTopCustomersResponse.Builder responseBuilder = GetTopCustomersResponse.newBuilder();
-		for (Object[] row : results.getContent()) {
-			TopCustomerPto customer = TopCustomerPto.newBuilder()
-					.setUserId(row[0].toString())
-					.setTotalSpent(((BigDecimal) row[1]).doubleValue())
-					.setBookingCount(((Number) row[2]).intValue())
-					.build();
-			responseBuilder.addCustomers(customer);
-		}
-		return responseBuilder.build();
-	}
+        GetTopCustomersResponse.Builder responseBuilder = GetTopCustomersResponse.newBuilder();
+        for (Object[] row : results.getContent()) {
+            TopCustomerPto customer = TopCustomerPto.newBuilder()
+                    .setUserId(row[0].toString())
+                    .setTotalSpent(((BigDecimal) row[1]).doubleValue())
+                    .setBookingCount(((Number) row[2]).intValue())
+                    .build();
+            responseBuilder.addCustomers(customer);
+        }
+        return responseBuilder.build();
+    }
 
-	private LocalDate getStartDateForPeriod(String period) {
-		return switch (period.toUpperCase()) {
-			case "WEEK" -> LocalDate.now().minusWeeks(1);
-			case "MONTH" -> LocalDate.now().minusMonths(1);
-			case "QUARTER" -> LocalDate.now().minusMonths(3);
-			default -> LocalDate.now().minusMonths(1);
-		};
-	}
+    private LocalDate getStartDateForPeriod(String period) {
+        return switch (period.toUpperCase()) {
+            case "WEEK" -> LocalDate.now().minusWeeks(1);
+            case "MONTH" -> LocalDate.now().minusMonths(1);
+            case "QUARTER" -> LocalDate.now().minusMonths(3);
+            default -> LocalDate.now().minusMonths(1);
+        };
+    }
 }

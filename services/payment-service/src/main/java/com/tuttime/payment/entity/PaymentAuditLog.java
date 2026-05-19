@@ -18,21 +18,21 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class PaymentAuditLog {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@Column(name = "payment_id")
-	private UUID paymentId;
+    @Column(name = "payment_id")
+    private UUID paymentId;
 
-	@Column(name = "event_id", unique = true)
-	private String eventId;
+    @Column(name = "event_id", unique = true)
+    private String eventId;
 
-	@Column(name = "event_type", nullable = false, length = 100)
-	private String eventType;
+    @Column(name = "event_type", nullable = false, length = 100)
+    private String eventType;
 
-	@JdbcTypeCode(SqlTypes.JSON) // Hibernate 6 (Spring Boot 3.3) way to handle JSONB
-	@Column(name = "event_data", columnDefinition = "jsonb")
-	private String eventData;
+    @JdbcTypeCode(SqlTypes.JSON) // Hibernate 6 (Spring Boot 3.3) way to handle JSONB
+    @Column(name = "event_data", columnDefinition = "jsonb")
+    private String eventData;
 
 }

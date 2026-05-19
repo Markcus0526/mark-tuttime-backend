@@ -9,26 +9,27 @@ import java.util.UUID;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@Getter @Setter
+@Getter
+@Setter
 public abstract class BaseLockingEntity extends BaseTimeStampEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
-	private UUID id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-	@Version // <--- THE MAGIC LINE for Optimistic Locking
-	private Long version;
+    @Version // <--- THE MAGIC LINE for Optimistic Locking
+    private Long version;
 
-	@Transient
-	private boolean isNew = true;
+    @Transient
+    private boolean isNew = true;
 
-	@PrePersist
-	@PostLoad
-	void markNotNew() {
-		this.isNew = false;
-	}
+    @PrePersist
+    @PostLoad
+    void markNotNew() {
+        this.isNew = false;
+    }
 
-	public boolean isNew() {
-		return isNew || id == null;
-	}
+    public boolean isNew() {
+        return isNew || id == null;
+    }
 }

@@ -14,49 +14,49 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
-		unmappedTargetPolicy = ReportingPolicy.IGNORE,
-		uses = {MediaMapper.class})
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {MediaMapper.class})
 public abstract class RestaurantMapper {
 
-	@Autowired
-	protected MediaRepository mediaRepository;
+    @Autowired
+    protected MediaRepository mediaRepository;
 
-	@Autowired
-	protected MediaMapper mediaMapper;
+    @Autowired
+    protected MediaMapper mediaMapper;
 
-	@Mapping(target = "restaurantId", source = "id")
-	@Mapping(target = "imageUrl", ignore = true)
-	public abstract RestaurantDto.RestaurantResponse toResponse(Restaurant entity);
+    @Mapping(target = "restaurantId", source = "id")
+    @Mapping(target = "imageUrl", ignore = true)
+    public abstract RestaurantDto.RestaurantResponse toResponse(Restaurant entity);
 
-	@Mapping(target = "restaurantId", source = "id")
-	@Mapping(target = "medias", ignore = true)
-	public abstract RestaurantDto.RestaurantDetailResponse toDetailResponse(Restaurant entity);
+    @Mapping(target = "restaurantId", source = "id")
+    @Mapping(target = "medias", ignore = true)
+    public abstract RestaurantDto.RestaurantDetailResponse toDetailResponse(Restaurant entity);
 
-	public abstract Restaurant toEntity(RestaurantDto.RestaurantRequest request);
+    public abstract Restaurant toEntity(RestaurantDto.RestaurantRequest request);
 
-	public abstract void toEntityFromUpdateRequest(RestaurantDto.RestaurantUpdateRequest request, @MappingTarget Restaurant entity);
+    public abstract void toEntityFromUpdateRequest(RestaurantDto.RestaurantUpdateRequest request, @MappingTarget Restaurant entity);
 
-	@AfterMapping
-	protected void addImageUrl(Restaurant entity, @MappingTarget RestaurantDto.RestaurantResponse.RestaurantResponseBuilder builder) {
-		// Uses the logic from Page 9 of your PDF (entity_id + is_primary)
-		mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
-				.ifPresent(builder::imageUrl);
-	}
+    @AfterMapping
+    protected void addImageUrl(Restaurant entity, @MappingTarget RestaurantDto.RestaurantResponse.RestaurantResponseBuilder builder) {
+        // Uses the logic from Page 9 of your PDF (entity_id + is_primary)
+        mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
+                .ifPresent(builder::imageUrl);
+    }
 
-	@AfterMapping
-	protected void addMedias(Restaurant item, @MappingTarget RestaurantDto.RestaurantDetailResponse.RestaurantDetailResponseBuilder builder) {
-		// Fetch ALL Media (Images & Videos)
-		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
-				.stream()
-				.map(mediaMapper::toResponse)
-				.collect(Collectors.toList());
+    @AfterMapping
+    protected void addMedias(Restaurant item, @MappingTarget RestaurantDto.RestaurantDetailResponse.RestaurantDetailResponseBuilder builder) {
+        // Fetch ALL Media (Images & Videos)
+        List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
+                .stream()
+                .map(mediaMapper::toResponse)
+                .collect(Collectors.toList());
 
-		builder.medias(allMedia);
-	}
+        builder.medias(allMedia);
+    }
 
-	// Reusable helper for JTS Points
-	protected Point toPoint(Double lon, Double lat) {
-		if (lon == null || lat == null) return null;
-		return new GeometryFactory().createPoint(new Coordinate(lon, lat));
-	}
+    // Reusable helper for JTS Points
+    protected Point toPoint(Double lon, Double lat) {
+        if (lon == null || lat == null) return null;
+        return new GeometryFactory().createPoint(new Coordinate(lon, lat));
+    }
 }

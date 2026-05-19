@@ -18,38 +18,38 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_USER_SECURITY_
 @Slf4j
 public class UserEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final StaffRepository staffRepository;
+    private final ObjectMapper objectMapper;
+    private final StaffRepository staffRepository;
 
-	@KafkaListener(
-			topics = TOPIC_USER_SECURITY_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	@Transactional
-	public void handleSecurityEvent(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_USER_SECURITY_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    @Transactional
+    public void handleSecurityEvent(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			UserEvent.SecurityEvent event =
-					objectMapper.readValue(eventString, UserEvent.SecurityEvent.class);
+            UserEvent.SecurityEvent event =
+                    objectMapper.readValue(eventString, UserEvent.SecurityEvent.class);
 
-			staffRepository.findByUserId(event.userId()).ifPresentOrElse(user -> {
-				switch (event.type()) {
-					case UserStatusEvent.USER_BLOCKED, UserStatusEvent.USER_UNBLOCKED -> {
-						boolean shouldBeActive = event.type().equals(UserStatusEvent.USER_UNBLOCKED);
-						staffRepository.findByUserId(event.userId())
-								.ifPresent(staff -> staff.setActive(shouldBeActive));
-					}
+            staffRepository.findByUserId(event.userId()).ifPresentOrElse(user -> {
+                switch (event.type()) {
+                    case UserStatusEvent.USER_BLOCKED, UserStatusEvent.USER_UNBLOCKED -> {
+                        boolean shouldBeActive = event.type().equals(UserStatusEvent.USER_UNBLOCKED);
+                        staffRepository.findByUserId(event.userId())
+                                .ifPresent(staff -> staff.setActive(shouldBeActive));
+                    }
 
-					case UserStatusEvent.USER_DELETED -> staffRepository.deleteByUserId(event.userId());
+                    case UserStatusEvent.USER_DELETED -> staffRepository.deleteByUserId(event.userId());
 
-					default -> log.warn("Unknown event type: {}", event.type());
-				}
+                    default -> log.warn("Unknown event type: {}", event.type());
+                }
 
-			}, () -> log.warn("User {} not found or deleted, skipping update", event.userId()));
+            }, () -> log.warn("User {} not found or deleted, skipping update", event.userId()));
 
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
-					TOPIC_USER_SECURITY_UPDATED, e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
+                    TOPIC_USER_SECURITY_UPDATED, e.getMessage());
+        }
+    }
 }

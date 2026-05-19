@@ -20,21 +20,21 @@ import java.time.OffsetDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class VerificationCode extends BaseUuidEntity {
 
-	@Column(nullable = false)
-	private String target; // email or phone
+    @Column(nullable = false)
+    private String target; // email or phone
 
-	@Column(name = "code_hash", nullable = false)
-	private String codeHash;
+    @Column(name = "code_hash", nullable = false)
+    private String codeHash;
 
-	@Enumerated(EnumType.STRING)
-	@JdbcType(PostgreSQLEnumJdbcType.class)
-	@Column(nullable = false, columnDefinition = "verification_type")
-	private VerificationType type;
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(nullable = false, columnDefinition = "verification_type")
+    private VerificationType type;
 
-	@Column(nullable = false)
-	private OffsetDateTime expiresAt;
+    @Column(nullable = false)
+    private OffsetDateTime expiresAt;
 
-	@Builder.Default
-	private boolean used = false;
+    @Builder.Default
+    private boolean used = false;
 }
 

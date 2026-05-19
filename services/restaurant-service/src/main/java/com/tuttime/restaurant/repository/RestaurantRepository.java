@@ -11,14 +11,14 @@ import java.util.UUID;
 @Repository
 public interface RestaurantRepository extends JpaRepository<Restaurant, UUID>, JpaSpecificationExecutor<Restaurant> {
 
-	Optional<Restaurant> findByIdAndDeletedFalse(UUID restaurantId);
+    Optional<Restaurant> findByIdAndDeletedFalse(UUID restaurantId);
 
-	boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCase(String name);
 
-	boolean existsByPhone(String phone);
+    boolean existsByPhone(String phone);
 
-	boolean existsByNameIgnoreCaseAndIdNot(String name, UUID id);
+    boolean existsByNameIgnoreCaseAndIdNot(String name, UUID id);
 
-	boolean existsByPhoneAndIdNot(String phone, UUID id);
+    boolean existsByPhoneAndIdNot(String phone, UUID id);
 
 }

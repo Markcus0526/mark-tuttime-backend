@@ -24,35 +24,35 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class PosSyncQueue extends BaseSerialEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(name = "booking_id")
-	private UUID bookingId;
+    @Column(name = "booking_id")
+    private UUID bookingId;
 
-	@Column(name = "order_id")
-	private UUID orderId;
+    @Column(name = "order_id")
+    private UUID orderId;
 
-	@Column(name = "table_ids")
-	private String tableIds;   // e.g., "uuid1,uuid2,uuid3"
+    @Column(name = "table_ids")
+    private String tableIds;   // e.g., "uuid1,uuid2,uuid3"
 
-	@Column(nullable = false)
-	private String action;
+    @Column(nullable = false)
+    private String action;
 
-	@JdbcTypeCode(SqlTypes.JSON)
-	private Map<String, Object> payload;
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<String, Object> payload;
 
-	@Column(nullable = false)
-	@Builder.Default
-	private String status = "PENDING"; // "PENDING", "COMPLETED", "FAILED_PERMANENTLY"
+    @Column(nullable = false)
+    @Builder.Default
+    private String status = "PENDING"; // "PENDING", "COMPLETED", "FAILED_PERMANENTLY"
 
-	@Column(name = "retry_count")
-	@Builder.Default
-	private Integer retryCount = 0;
+    @Column(name = "retry_count")
+    @Builder.Default
+    private Integer retryCount = 0;
 
-	@Column(name = "next_retry_at")
-	private OffsetDateTime nextRetryAt;
+    @Column(name = "next_retry_at")
+    private OffsetDateTime nextRetryAt;
 
-	@Column(name = "last_error")
-	private String lastError;
+    @Column(name = "last_error")
+    private String lastError;
 }

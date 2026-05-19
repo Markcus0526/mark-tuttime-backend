@@ -1,4 +1,4 @@
-package com.tuttime.common.config;
+package com.tuttime.notification.config;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

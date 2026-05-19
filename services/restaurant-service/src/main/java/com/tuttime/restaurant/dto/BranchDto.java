@@ -11,197 +11,197 @@ import java.util.UUID;
 
 public class BranchDto {
 
-	@Schema(description = "Branch request details")
-	public record BranchRequest(
+    @Schema(description = "Branch request details")
+    public record BranchRequest(
 
-			@NotNull(message = "Restaurant ID is required")
-			UUID restaurantId,
+            @NotNull(message = "Restaurant ID is required")
+            UUID restaurantId,
 
-			@NotBlank(message = "Restaurant name is required")
-			@Size(max = 255, message = "Restaurant name must be at most 255 characters")
-			String name,
+            @NotBlank(message = "Restaurant name is required")
+            @Size(max = 255, message = "Restaurant name must be at most 255 characters")
+            String name,
 
-			@Size(max = 5000, message = "Description can be up to 5000 characters")
-			String description,
+            @Size(max = 5000, message = "Description can be up to 5000 characters")
+            String description,
 
-			@NotBlank(message = "Address is required")
-			@Size(max = 512, message = "Address must be at most 512 characters")
-			String address,
+            @NotBlank(message = "Address is required")
+            @Size(max = 512, message = "Address must be at most 512 characters")
+            String address,
 
-			@Size(max = 20, message = "Phone must be at most 20 characters")
-			@Pattern(regexp = "^\\+?[0-9\\-\\s]{7,20}$", message = "Phone must be a valid phone number")
-			String phone,
+            @Size(max = 20, message = "Phone must be at most 20 characters")
+            @Pattern(regexp = "^\\+?[0-9\\-\\s]{7,20}$", message = "Phone must be a valid phone number")
+            String phone,
 
-			@NotBlank(message = "Timezone is required")
-			@Size(max = 50, message = "Timezone must be at most 50 characters")
-			String timezone,
+            @NotBlank(message = "Timezone is required")
+            @Size(max = 50, message = "Timezone must be at most 50 characters")
+            String timezone,
 
-			@DecimalMin(value = "-90.0", message = "Latitude must be >= -90")
-			@DecimalMax(value = "90.0", message = "Latitude must be <= 90")
-			Double latitude,
+            @DecimalMin(value = "-90.0", message = "Latitude must be >= -90")
+            @DecimalMax(value = "90.0", message = "Latitude must be <= 90")
+            Double latitude,
 
-			@DecimalMin(value = "-180.0", message = "Longitude must be >= -180")
-			@DecimalMax(value = "180.0", message = "Longitude must be <= 180")
-			Double longitude,
+            @DecimalMin(value = "-180.0", message = "Longitude must be >= -180")
+            @DecimalMax(value = "180.0", message = "Longitude must be <= 180")
+            Double longitude,
 
-			@DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
-			BigDecimal minPrice,
+            @DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
+            BigDecimal minPrice,
 
-			@DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
-			BigDecimal maxPrice,
+            @DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
+            BigDecimal maxPrice,
 
-			@Schema(description = "Status of the Branch", example = "false")
-			Boolean closed,
+            @Schema(description = "Status of the Branch", example = "false")
+            Boolean closed,
 
-			Boolean favorite
-	) {
-	}
+            Boolean favorite
+    ) {
+    }
 
-	@Schema(description = "Tag request details for branch association")
-	public record TagRequest(
-			@NotBlank(message = "Tag name is required")
-			@Size(max = 50, message = "Tag name must be under 50 characters")
-			String name,
+    @Schema(description = "Tag request details for branch association")
+    public record TagRequest(
+            @NotBlank(message = "Tag name is required")
+            @Size(max = 50, message = "Tag name must be under 50 characters")
+            String name,
 
-			@NotBlank(message = "Tag icon is required")
-			String iconUrl // Stores the Emoji (e.g., "🌶️")
-	) {
-	}
+            @NotBlank(message = "Tag icon is required")
+            String iconUrl // Stores the Emoji (e.g., "🌶️")
+    ) {
+    }
 
-	@Schema(description = "Tag details for UI display")
-	public record TagResponse(
-			UUID id,
-			String name,
-			String iconUrl // Contains the Emoji (e.g., "🌿") or URL
-	) {
-	}
+    @Schema(description = "Tag details for UI display")
+    public record TagResponse(
+            UUID id,
+            String name,
+            String iconUrl // Contains the Emoji (e.g., "🌿") or URL
+    ) {
+    }
 
-	@Schema(description = "Branch response")
-	@Builder(toBuilder = true)
-	public record BranchResponse(
+    @Schema(description = "Branch response")
+    @Builder(toBuilder = true)
+    public record BranchResponse(
 
-			UUID branchId,
+            UUID branchId,
 
-			String name,
+            String name,
 
-			String description,
+            String description,
 
-			String address,
+            String address,
 
-			String phone,
+            String phone,
 
-			String timezone,
+            String timezone,
 
-			Double latitude,
+            Double latitude,
 
-			Double longitude,
+            Double longitude,
 
-			BigDecimal rating,
+            BigDecimal rating,
 
-			Boolean closed,
+            Boolean closed,
 
-			String imageUrl,
+            String imageUrl,
 
-			UUID restaurantId,
+            UUID restaurantId,
 
-			String restaurantName,
+            String restaurantName,
 
-			BigDecimal minPrice,
+            BigDecimal minPrice,
 
-			BigDecimal maxPrice,
+            BigDecimal maxPrice,
 
-			List<TagResponse> tags // icons like 🌿, 🌶️
-	) {
-	}
+            List<TagResponse> tags // icons like 🌿, 🌶️
+    ) {
+    }
 
-	@Schema(description = "Branch response details")
-	@Builder(toBuilder = true)
-	public record BranchDetailResponse(
+    @Schema(description = "Branch response details")
+    @Builder(toBuilder = true)
+    public record BranchDetailResponse(
 
-			UUID branchId,
+            UUID branchId,
 
-			String name,
+            String name,
 
-			String description,
+            String description,
 
-			String address,
+            String address,
 
-			String phone,
+            String phone,
 
-			String timezone,
+            String timezone,
 
-			Double latitude,
+            Double latitude,
 
-			Double longitude,
+            Double longitude,
 
-			BigDecimal rating,
+            BigDecimal rating,
 
-			List<MediaDto.MediaResponse> medias,
+            List<MediaDto.MediaResponse> medias,
 
-			UUID restaurantId,
+            UUID restaurantId,
 
-			String restaurantName,
+            String restaurantName,
 
-			BigDecimal minPrice,
+            BigDecimal minPrice,
 
-			BigDecimal maxPrice,
+            BigDecimal maxPrice,
 
-			List<TagResponse> tags, // icons like 🌿, 🌶️
+            List<TagResponse> tags, // icons like 🌿, 🌶️
 
-			Boolean favorite,
+            Boolean favorite,
 
-			List<ScheduleDto.ScheduleResponse> schedules,
+            List<ScheduleDto.ScheduleResponse> schedules,
 
-			OffsetDateTime createdAt,
+            OffsetDateTime createdAt,
 
-			OffsetDateTime updatedAt
-	) {
-	}
+            OffsetDateTime updatedAt
+    ) {
+    }
 
-	@Schema(description = "Branch Map response")
-	@Builder(toBuilder = true)
-	public record BranchMapResponse(
+    @Schema(description = "Branch Map response")
+    @Builder(toBuilder = true)
+    public record BranchMapResponse(
 
-			UUID branchId,
+            UUID branchId,
 
-			String name,
+            String name,
 
-			String description,
+            String description,
 
-			String address,
+            String address,
 
-			String phone,
+            String phone,
 
-			String timezone,
+            String timezone,
 
-			Double latitude,
+            Double latitude,
 
-			Double longitude,
+            Double longitude,
 
-			BigDecimal rating,
+            BigDecimal rating,
 
-			Boolean closed,
+            Boolean closed,
 
-			String imageUrl,
+            String imageUrl,
 
-			UUID restaurantId,
+            UUID restaurantId,
 
-			String restaurantName,
+            String restaurantName,
 
-			Double distance, // ST_Distance result
+            Double distance, // ST_Distance result
 
-			BigDecimal minPrice,
+            BigDecimal minPrice,
 
-			BigDecimal maxPrice,
+            BigDecimal maxPrice,
 
-			String priceRangeLabel, // e.g., "1200 ~ 2000"
+            String priceRangeLabel, // e.g., "1200 ~ 2000"
 
-			@Schema(description = "Count of currently available tables")
-			Integer availableTables, // New field for "24 tables available"
+            @Schema(description = "Count of currently available tables")
+            Integer availableTables, // New field for "24 tables available"
 
-			List<TagResponse> tags, // icons like 🌿, 🌶️
+            List<TagResponse> tags, // icons like 🌿, 🌶️
 
-			Boolean favorite
-	) {
-	}
+            Boolean favorite
+    ) {
+    }
 }

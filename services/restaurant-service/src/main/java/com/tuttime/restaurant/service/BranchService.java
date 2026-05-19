@@ -11,31 +11,31 @@ import java.util.UUID;
 
 public interface BranchService {
 
-	Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, List<UUID> tagIds, String query,
-	                                               BigDecimal minPrice, BigDecimal maxPrice,
-	                                               Double minRating, Double maxRating,
-	                                               Pageable pageable);
+    Page<BranchDto.BranchResponse> findAllBranches(UUID restaurantId, List<UUID> tagIds, String query,
+                                                   BigDecimal minPrice, BigDecimal maxPrice,
+                                                   Double minRating, Double maxRating,
+                                                   Pageable pageable);
 
-	BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, List<MultipartFile> files,
-	                                      UUID currentUserId, String userRoles);
+    BranchDto.BranchResponse createBranch(BranchDto.BranchRequest request, List<MultipartFile> files,
+                                          UUID currentUserId, String userRoles);
 
-	BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, List<MultipartFile> files,
-	                                      UUID currentUserId, String userRoles);
+    BranchDto.BranchResponse updateBranch(UUID branchId, BranchDto.BranchRequest request, List<MultipartFile> files,
+                                          UUID currentUserId, String userRoles);
 
-	BranchDto.BranchDetailResponse getBranchById(UUID branchId);
+    BranchDto.BranchDetailResponse getBranchById(UUID branchId);
 
-	void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
+    void deleteBranch(UUID branchId, UUID currentUserId, String userRoles);
 
-	void deleteAllByRestaurantId(UUID restaurantId);
+    void deleteAllByRestaurantId(UUID restaurantId);
 
-	List<BranchDto.TagResponse> getAllTags();
+    List<BranchDto.TagResponse> getAllTags();
 
-	void syncBranchTags(UUID branchId, List<BranchDto.TagRequest> requests, UUID userId, String roles);
+    void syncBranchTags(UUID branchId, List<BranchDto.TagRequest> requests, UUID userId, String roles);
 
-	boolean toggleBookmark(UUID branchId, UUID userId);
+    boolean toggleBookmark(UUID branchId, UUID userId);
 
-	Page<BranchDto.BranchMapResponse> searchMap(double latitude, double longitude, double radiusMeters,
-	                                            List<UUID> tagIds, String query,
-	                                            Pageable pageable,
-	                                            UUID currentUserId);
+    Page<BranchDto.BranchMapResponse> searchMap(double latitude, double longitude, double radiusMeters,
+                                                List<UUID> tagIds, String query,
+                                                Pageable pageable,
+                                                UUID currentUserId);
 }

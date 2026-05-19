@@ -11,16 +11,16 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class MenuItemTag {
-	@EmbeddedId
-	private MenuItemTagId id;
+    @EmbeddedId
+    private MenuItemTagId id;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@MapsId("menuItemId")
-	@JoinColumn(name = "menu_item_id")
-	private MenuItem menuItem;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("menuItemId")
+    @JoinColumn(name = "menu_item_id")
+    private MenuItem menuItem;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@MapsId("tagId")
-	@JoinColumn(name = "tag_id")
-	private MenuTag menuTag;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("tagId")
+    @JoinColumn(name = "tag_id")
+    private MenuTag menuTag;
 }

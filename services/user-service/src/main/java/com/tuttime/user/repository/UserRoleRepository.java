@@ -14,16 +14,16 @@ import java.util.UUID;
 @Repository
 public interface UserRoleRepository extends JpaRepository<UserRole, UserRoleId> {
 
-	boolean existsByUserIdAndRole(UUID userId, Role role);
+    boolean existsByUserIdAndRole(UUID userId, Role role);
 
-	void deleteByUserIdAndRole(UUID userId, Role role);
+    void deleteByUserIdAndRole(UUID userId, Role role);
 
-	Optional<UserRole> findByUserIdAndRole(UUID userId, Role role);
+    Optional<UserRole> findByUserIdAndRole(UUID userId, Role role);
 
-	Optional<UserRole> findByUserId(UUID userId);
+    Optional<UserRole> findByUserId(UUID userId);
 
-	@Query("SELECT COUNT(ur) FROM UserRole ur WHERE ur.user.id = :userId")
-	long countByUserId(@Param("userId") UUID userId);
+    @Query("SELECT COUNT(ur) FROM UserRole ur WHERE ur.user.id = :userId")
+    long countByUserId(@Param("userId") UUID userId);
 
 }
 

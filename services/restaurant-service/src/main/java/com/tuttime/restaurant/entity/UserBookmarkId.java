@@ -14,9 +14,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class UserBookmarkId implements Serializable {
-	@Column(name = "user_id")
-	private UUID userId;
+    @Column(name = "user_id")
+    private UUID userId;
 
-	@Column(name = "branch_id")
-	private UUID branchId;
+    @Column(name = "branch_id")
+    private UUID branchId;
 }

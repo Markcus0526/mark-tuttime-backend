@@ -4,7 +4,8 @@
     <property name="HOSTNAME" value="review-service" />
     <contextName>review-service</contextName>
 
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org.springframework.boot/logging/logback/defaults.xml"/>
+
     <!-- CUSTOM CONSOLE APPENDER WITH RED ERRORS -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -14,34 +15,46 @@
         </encoder>
     </appender>
 
-    <springProperty scope="context" name="graylogHost" source="graylog.host" defaultValue="173.249.29.61"/>
-    <springProperty scope="context" name="graylogPort" source="graylog.port" defaultValue="12203"/>
+    <!-- No default values – they must be provided by Spring environment -->
+    <springProperty scope="context" name="graylogHost" source="graylog.host" />
+    <springProperty scope="context" name="graylogPort" source="graylog.port" />
 
     <springProfile name="graylog-enabled">
-        <appender name="GELF_UDP" class="de.siegmar.logbackgelf.GelfUdpAppender">
-            <graylogHost>${graylogHost}</graylogHost>
-            <graylogPort>${graylogPort}</graylogPort>
-            <useCompression>true</useCompression>
-            <originHost>review-service</originHost>
-            <facility>review-service</facility>
+        <if condition='isDefined("graylogHost") &amp;&amp; isDefined("graylogPort")'>
+            <then>
+                <appender name="GELF_UDP" class="de.siegmar.logbackgelf.GelfUdpAppender">
+                    <graylogHost>${graylogHost}</graylogHost>
+                    <graylogPort>${graylogPort}</graylogPort>
+                    <useCompression>true</useCompression>
+                    <originHost>review-service</originHost>
+                    <facility>review-service</facility>
 
-            <encoder class="de.siegmar.logbackgelf.GelfEncoder">
-                <!-- HARDCODED: This prevents the UnknownHostException -->
-                <originHost>review-service</originHost>
-                <includeRawMessage>false</includeRawMessage>
-                <includeMdcKeyName>correlationId</includeMdcKeyName>
-            </encoder>
-        </appender>
+                    <encoder class="de.siegmar.logbackgelf.GelfEncoder">
+                        <originHost>review-service</originHost>
+                        <includeRawMessage>false</includeRawMessage>
+                        <includeMdcKeyName>correlationId</includeMdcKeyName>
+                    </encoder>
+                </appender>
 
-        <appender name="ASYNC_GELF_UDP" class="ch.qos.logback.classic.AsyncAppender">
-            <appender-ref ref="GELF_UDP"/>
-        </appender>
+                <appender name="ASYNC_GELF_UDP" class="ch.qos.logback.classic.AsyncAppender">
+                    <appender-ref ref="GELF_UDP"/>
+                </appender>
+            </then>
+            <else>
+                <!-- If graylog properties are missing, log a warning and do not start the GELF appender -->
+                <logger name="de.siegmar.logbackgelf" level="WARN"/>
+            </else>
+        </if>
     </springProfile>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <springProfile name="graylog-enabled">
-            <appender-ref ref="ASYNC_GELF_UDP"/>
+            <if condition='isDefined("graylogHost") &amp;&amp; isDefined("graylogPort")'>
+                <then>
+                    <appender-ref ref="ASYNC_GELF_UDP"/>
+                </then>
+            </if>
         </springProfile>
     </root>
 </configuration>

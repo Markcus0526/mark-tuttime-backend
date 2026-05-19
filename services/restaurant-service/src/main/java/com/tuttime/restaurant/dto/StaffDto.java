@@ -9,42 +9,42 @@ import java.util.UUID;
 
 public class StaffDto {
 
-	@Schema(description = "Staff request details")
-	public record StaffRequest(
-			@NotNull
-			UUID userId,
+    @Schema(description = "Staff request details")
+    public record StaffRequest(
+            @NotNull
+            UUID userId,
 
-			UUID branchId, // Optional: if null, they are restaurant-level staff
+            UUID branchId, // Optional: if null, they are restaurant-level staff
 
-			@NotBlank
-			String roleName, // "MANAGER", "HOSTESS", "WAITER"
+            @NotBlank
+            String roleName, // "MANAGER", "HOSTESS", "WAITER"
 
-			@NotNull
-			boolean active
-	) {
-	}
+            @NotNull
+            boolean active
+    ) {
+    }
 
-	@Schema(description = "Staff request details")
-	public record StaffResponse(
-			UUID staffId,
-			UUID restaurantId,
-			UUID branchId,
-			UUID userId,
-			String fullName,
-			String phoneNumber,
-			String email,
-			String roleName,
-			boolean active,
-			OffsetDateTime createdAt
-	) {
-	}
+    @Schema(description = "Staff request details")
+    public record StaffResponse(
+            UUID staffId,
+            UUID restaurantId,
+            UUID branchId,
+            UUID userId,
+            String fullName,
+            String phoneNumber,
+            String email,
+            String roleName,
+            boolean active,
+            OffsetDateTime createdAt
+    ) {
+    }
 
-	@Schema(description = "Staff update request details")
-	public record StaffUpdateRequest(
-			String roleName,
+    @Schema(description = "Staff update request details")
+    public record StaffUpdateRequest(
+            String roleName,
 
-			@NotNull
-			Boolean active
-	) {
-	}
+            @NotNull
+            Boolean active
+    ) {
+    }
 }

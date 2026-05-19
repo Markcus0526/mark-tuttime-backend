@@ -15,28 +15,28 @@ import java.util.UUID;
 @Repository
 public interface WaitlistRepository extends JpaRepository<WaitlistEntry, UUID> {
 
-	// Finds the next person in line for a specific branch/zone
-	@Query("""
-			    SELECT w FROM WaitlistEntry w 
-			    WHERE w.branchId = :branchId 
-			    AND w.status = 'WAITING' 
-			    AND (:zoneId IS NULL OR w.zoneId = :zoneId)
-			    ORDER BY w.joinedAt ASC
-			""")
-	List<WaitlistEntry> findPriorityQueue(@Param("branchId") UUID branchId,
-	                                      @Param("zoneId") UUID zoneId);
+    // Finds the next person in line for a specific branch/zone
+    @Query("""
+                SELECT w FROM WaitlistEntry w 
+                WHERE w.branchId = :branchId 
+                AND w.status = 'WAITING' 
+                AND (:zoneId IS NULL OR w.zoneId = :zoneId)
+                ORDER BY w.joinedAt ASC
+            """)
+    List<WaitlistEntry> findPriorityQueue(@Param("branchId") UUID branchId,
+                                          @Param("zoneId") UUID zoneId);
 
-	boolean existsByUserIdAndBranchIdAndStatus(UUID userId, UUID branchId, WaitlistStatus status);
+    boolean existsByUserIdAndBranchIdAndStatus(UUID userId, UUID branchId, WaitlistStatus status);
 
-	/**
-	 * Finds the next person in line for a specific branch AND a specific zone (e.g., VIP, Terrace).
-	 */
-	Optional<WaitlistEntry> findFirstByBranchIdAndZoneIdAndStatusOrderByJoinedAtAsc(
-			UUID branchId,
-			UUID zoneId,
-			WaitlistStatus status
-	);
+    /**
+     * Finds the next person in line for a specific branch AND a specific zone (e.g., VIP, Terrace).
+     */
+    Optional<WaitlistEntry> findFirstByBranchIdAndZoneIdAndStatusOrderByJoinedAtAsc(
+            UUID branchId,
+            UUID zoneId,
+            WaitlistStatus status
+    );
 
-	long countByBranchIdAndZoneIdAndStatusAndJoinedAtBefore(UUID branchId, UUID zoneId, WaitlistStatus status, OffsetDateTime joinedAt);
+    long countByBranchIdAndZoneIdAndStatusAndJoinedAtBefore(UUID branchId, UUID zoneId, WaitlistStatus status, OffsetDateTime joinedAt);
 
 }

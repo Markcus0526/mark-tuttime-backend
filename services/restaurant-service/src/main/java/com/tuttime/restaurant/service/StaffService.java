@@ -6,21 +6,21 @@ import java.util.List;
 import java.util.UUID;
 
 public interface StaffService {
-	StaffDto.StaffResponse assignStaff(UUID restaurantId, StaffDto.StaffRequest request, UUID currentUserId, String userRoles);
+    StaffDto.StaffResponse assignStaff(UUID restaurantId, StaffDto.StaffRequest request, UUID currentUserId, String userRoles);
 
-	List<StaffDto.StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles);
+    List<StaffDto.StaffResponse> getStaffByRestaurant(UUID restaurantId, UUID currentUserId, String userRoles);
 
-	StaffDto.StaffResponse updateStaff(UUID restaurantId, UUID staffId, StaffDto.StaffUpdateRequest request, UUID currentUserId, String userRoles);
+    StaffDto.StaffResponse updateStaff(UUID restaurantId, UUID staffId, StaffDto.StaffUpdateRequest request, UUID currentUserId, String userRoles);
 
-	void removeStaff(UUID restaurantId, UUID staffId, UUID currentUserId, String userRoles);
+    void removeStaff(UUID restaurantId, UUID staffId, UUID currentUserId, String userRoles);
 
-	void validateAdminAccess(UUID currentUserId);
+    void validateAdminAccess(UUID currentUserId);
 
-	void validateAdminOrOwnerAccess(UUID currentUserId);
+    void validateAdminOrOwnerAccess(UUID currentUserId);
 
-	void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles);
+    void validateRestaurantAccess(UUID restaurantId, UUID currentUserId, String userRoles);
 
-	void validateBranchAccess(UUID branchId, UUID currentUserId, String userRoles);
+    void validateBranchAccess(UUID branchId, UUID currentUserId, String userRoles);
 
-	void validatePermissions(UUID entityId, UUID currentUserId, String userRoles);
+    void validatePermissions(UUID entityId, UUID currentUserId, String userRoles);
 }

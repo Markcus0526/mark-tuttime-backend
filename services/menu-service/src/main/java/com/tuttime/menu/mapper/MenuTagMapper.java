@@ -9,10 +9,10 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface MenuTagMapper {
 
-	MenuItemDto.TagResponse toTagResponse(MenuTag tag);
+    MenuItemDto.TagResponse toTagResponse(MenuTag tag);
 
-	@Mapping(target = "id", source = "menuTag.id")
-	@Mapping(target = "name", source = "menuTag.name")
-	@Mapping(target = "iconUrl", source = "menuTag.iconUrl")
-	MenuItemDto.TagResponse toTagResponse(MenuItemTag menuItemTag);
+    @Mapping(target = "id", source = "menuTag.id")
+    @Mapping(target = "name", source = "menuTag.name")
+    @Mapping(target = "iconUrl", source = "menuTag.iconUrl")
+    MenuItemDto.TagResponse toTagResponse(MenuItemTag menuItemTag);
 }

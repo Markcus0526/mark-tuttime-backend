@@ -30,95 +30,95 @@ import java.util.UUID;
 @Tag(name = "6.Restaurant Medias", description = "Operations related to media of restaurants, branches, zones, tables")
 public class MediaController {
 
-	private final MediaService mediaService;
+    private final MediaService mediaService;
 
-	@Operation(summary = "Get medias", description = "Retrieve all media associated with an entity ID (Restaurant, Branch, Zone, Table)")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Media retrieved successfully"),
-			@ApiResponse(responseCode = "404", description = "Entity not found")
-	})
-	@GetMapping("/{entityId}")
-	public ResponseEntity<ApiRes<List<MediaDto.MediaResponse>>> getMedia(
-			@PathVariable UUID entityId,
-			@Parameter(description = "Optional filter by IMAGE or VIDEO")
-			@RequestParam(required = false) MediaType mediaType) {
+    @Operation(summary = "Get medias", description = "Retrieve all media associated with an entity ID (Restaurant, Branch, Zone, Table)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Media retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Entity not found")
+    })
+    @GetMapping("/{entityId}")
+    public ResponseEntity<ApiRes<List<MediaDto.MediaResponse>>> getMedia(
+            @PathVariable UUID entityId,
+            @Parameter(description = "Optional filter by IMAGE or VIDEO")
+            @RequestParam(required = false) MediaType mediaType) {
 
-		List<MediaDto.MediaResponse> medias = mediaService.getMediaByEntity(entityId, mediaType);
-		return ResponseEntity.ok(ApiRes.success(medias));
-	}
+        List<MediaDto.MediaResponse> medias = mediaService.getMediaByEntity(entityId, mediaType);
+        return ResponseEntity.ok(ApiRes.success(medias));
+    }
 
-	@Operation(summary = "Add media", description = "Upload a new media item. Required: 'mediaRequest' (JSON) and 'file' (Binary)")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "201", description = "Media added successfully"),
-			@ApiResponse(responseCode = "400", description = "Invalid media data")
-	})
-	@PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> addMedia(
-			@Parameter(content = @Content(mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE))
-			// Forces Swagger to send as JSON
-			@RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
-			@RequestPart("file") MultipartFile file) {
+    @Operation(summary = "Add media", description = "Upload a new media item. Required: 'mediaRequest' (JSON) and 'file' (Binary)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Media added successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid media data")
+    })
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiRes<MediaDto.MediaResponse>> addMedia(
+            @Parameter(content = @Content(mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE))
+            // Forces Swagger to send as JSON
+            @RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
+            @RequestPart("file") MultipartFile file) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		MediaDto.MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
-	}
+        MediaDto.MediaResponse created = mediaService.createMedia(request, file, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(created));
+    }
 
-	@Operation(summary = "Update media", description = "Update media metadata or replace the file. File is optional.")
-	@PutMapping(value = "/{mediaId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ApiRes<MediaDto.MediaResponse>> updateMedia(
-			@PathVariable UUID mediaId,
-			@RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
-			@RequestPart(value = "file", required = false) MultipartFile file) {
+    @Operation(summary = "Update media", description = "Update media metadata or replace the file. File is optional.")
+    @PutMapping(value = "/{mediaId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiRes<MediaDto.MediaResponse>> updateMedia(
+            @PathVariable UUID mediaId,
+            @RequestPart("mediaRequest") @Valid MediaDto.MediaRequest request,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		MediaDto.MediaResponse updated = mediaService.updateMedia(mediaId, request, file, currentUserId, userRoles);
-		return ResponseEntity.ok(ApiRes.success(updated));
-	}
+        MediaDto.MediaResponse updated = mediaService.updateMedia(mediaId, request, file, currentUserId, userRoles);
+        return ResponseEntity.ok(ApiRes.success(updated));
+    }
 
-	@Operation(summary = "Delete media")
-	@DeleteMapping("/{mediaId}")
-	public ResponseEntity<ApiRes<Void>> deleteMedia(@PathVariable UUID mediaId) {
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+    @Operation(summary = "Delete media")
+    @DeleteMapping("/{mediaId}")
+    public ResponseEntity<ApiRes<Void>> deleteMedia(@PathVariable UUID mediaId) {
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		mediaService.deleteMedia(mediaId, currentUserId, userRoles);
-		return ResponseEntity.noContent().build(); // 204 No Content is standard for delete
-	}
+        mediaService.deleteMedia(mediaId, currentUserId, userRoles);
+        return ResponseEntity.noContent().build(); // 204 No Content is standard for delete
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

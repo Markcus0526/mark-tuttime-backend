@@ -17,22 +17,22 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class UserReliabilityIndex extends BaseTimeStampEntity {
-	@Id
-	@Column(name = "user_id")
-	private UUID userId;
+    @Id
+    @Column(name = "user_id")
+    private UUID userId;
 
-	@Column(name = "reliability_score")
-	private Integer reliabilityScore;
+    @Column(name = "reliability_score")
+    private Integer reliabilityScore;
 
-	@Column(name = "total_bookings")
-	private Integer totalBookings;
+    @Column(name = "total_bookings")
+    private Integer totalBookings;
 
-	@Column(name = "no_show_count")
-	private Integer noShowCount;
+    @Column(name = "no_show_count")
+    private Integer noShowCount;
 
-	@Column(name = "late_cancel_count")
-	private Integer lateCancelCount;
+    @Column(name = "late_cancel_count")
+    private Integer lateCancelCount;
 
-	@Column(name = "risk_level", length = 20)
-	private String riskLevel;
+    @Column(name = "risk_level", length = 20)
+    private String riskLevel;
 }

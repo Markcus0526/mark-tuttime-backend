@@ -20,25 +20,25 @@ import static com.tuttime.common.constants.ServiceNames.RESTAURANT_SERVICE;
 @Slf4j
 public class RestaurantGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("restaurant-service")
-	private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
+    @GrpcClient("restaurant-service")
+    private RestaurantServiceGrpc.RestaurantServiceBlockingStub restaurantServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public void ping() {
-		grpcExecutor.execute(RESTAURANT_SERVICE, "ping", () ->
-				restaurantServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.ping(Empty.getDefaultInstance()));
-	}
+    public void ping() {
+        grpcExecutor.execute(RESTAURANT_SERVICE, "ping", () ->
+                restaurantServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .ping(Empty.getDefaultInstance()));
+    }
 
-	public GetStaffForUserResponse getStaffForUser(GetStaffForUserRequest request) {
-		return grpcExecutor.execute(RESTAURANT_SERVICE, "getStaffForUser", () ->
-				restaurantServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getStaffForUser(request));
-	}
+    public GetStaffForUserResponse getStaffForUser(GetStaffForUserRequest request) {
+        return grpcExecutor.execute(RESTAURANT_SERVICE, "getStaffForUser", () ->
+                restaurantServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getStaffForUser(request));
+    }
 }

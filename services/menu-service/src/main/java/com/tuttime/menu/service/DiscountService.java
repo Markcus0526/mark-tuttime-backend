@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.UUID;
 
 public interface DiscountService {
-	DiscountDto.DiscountResponse createDiscount(DiscountDto.DiscountRequest request, UUID currentUserId, String userRoles);
+    DiscountDto.DiscountResponse createDiscount(DiscountDto.DiscountRequest request, UUID currentUserId, String userRoles);
 
-	DiscountDto.DiscountResponse updateDiscount(UUID id, DiscountDto.DiscountRequest request, UUID currentUserId, String userRoles);
+    DiscountDto.DiscountResponse updateDiscount(UUID id, DiscountDto.DiscountRequest request, UUID currentUserId, String userRoles);
 
-	DiscountDto.DiscountResponse getDiscountById(UUID id);
+    DiscountDto.DiscountResponse getDiscountById(UUID id);
 
-	List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID branchId, AppliesTo appliesTo, UUID referenceId);
+    List<DiscountDto.DiscountResponse> getActiveDiscountsForReference(UUID branchId, AppliesTo appliesTo, UUID referenceId);
 
-	void deleteDiscount(UUID id, UUID currentUserId, String userRoles);
+    void deleteDiscount(UUID id, UUID currentUserId, String userRoles);
 }

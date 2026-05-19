@@ -4,7 +4,7 @@ metadata:
   name: api-gateway
   namespace: tuttime
 spec:
-  replicas: 2   # adjust to 1 if single node
+  replicas: 1   # adjust to 1 if single node
   selector:
     matchLabels:
       app: api-gateway
@@ -39,7 +39,7 @@ spec:
           resources:
             requests:
               memory: "1024Mi"
-              cpu: "250m"
+              cpu: "500m"
             limits:
               memory: "1536Mi"
               cpu: "1000m"

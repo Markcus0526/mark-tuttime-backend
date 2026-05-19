@@ -18,60 +18,60 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_PAYMENT_REFUND
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final AnalyticsService analyticsService;
+    private final ObjectMapper objectMapper;
+    private final AnalyticsService analyticsService;
 
-	/**
-	 * Confirms the booking once payment is successful.
-	 */
-	@KafkaListener(
-			topics = TOPIC_PAYMENT_COMPLETED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handlePaymentCompleted(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    /**
+     * Confirms the booking once payment is successful.
+     */
+    @KafkaListener(
+            topics = TOPIC_PAYMENT_COMPLETED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handlePaymentCompleted(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentCompletedEvent event =
-					objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
+            PaymentEvent.PaymentCompletedEvent event =
+                    objectMapper.readValue(eventString, PaymentEvent.PaymentCompletedEvent.class);
 
-			log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
+            log.info("Kafka: Payment confirmed for booking {}", event.bookingId());
 
-			// Mapping the specific event to the generic Analytics log
-			analyticsService.processEvent(
-					SOURCE_PAYMENT_SERVICE,
-					EVENT_PAYMENT_SUCCESS,
-					event.branchId(), // Important: Pass the branchId for physical tracking
-					event);
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
-					TOPIC_PAYMENT_COMPLETED, e.getMessage());
-		}
-	}
+            // Mapping the specific event to the generic Analytics log
+            analyticsService.processEvent(
+                    SOURCE_PAYMENT_SERVICE,
+                    EVENT_PAYMENT_SUCCESS,
+                    event.branchId(), // Important: Pass the branchId for physical tracking
+                    event);
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+                    TOPIC_PAYMENT_COMPLETED, e.getMessage());
+        }
+    }
 
-	/**
-	 * Cancels the booking and frees the table if a refund occurs.
-	 */
-	@KafkaListener(
-			topics = TOPIC_PAYMENT_REFUND,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handlePaymentRefunded(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    /**
+     * Cancels the booking and frees the table if a refund occurs.
+     */
+    @KafkaListener(
+            topics = TOPIC_PAYMENT_REFUND,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handlePaymentRefunded(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			PaymentEvent.PaymentRefundedEvent event =
-					objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
+            PaymentEvent.PaymentRefundedEvent event =
+                    objectMapper.readValue(eventString, PaymentEvent.PaymentRefundedEvent.class);
 
-			log.info("Kafka: Refund received for booking {}. Releasing table.", event.bookingId());
+            log.info("Kafka: Refund received for booking {}. Releasing table.", event.bookingId());
 
-			// Mapping the specific event to the generic Analytics log
-			analyticsService.processEvent(
-					SOURCE_PAYMENT_SERVICE,
-					EVENT_PAYMENT_REFUNDED,
-					event.branchId(), // Important: Pass the branchId for physical tracking
-					event);
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
-					TOPIC_PAYMENT_REFUND, e.getMessage());
-		}
-	}
+            // Mapping the specific event to the generic Analytics log
+            analyticsService.processEvent(
+                    SOURCE_PAYMENT_SERVICE,
+                    EVENT_PAYMENT_REFUNDED,
+                    event.branchId(), // Important: Pass the branchId for physical tracking
+                    event);
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
+                    TOPIC_PAYMENT_REFUND, e.getMessage());
+        }
+    }
 }

@@ -11,45 +11,45 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring",
-		unmappedTargetPolicy = ReportingPolicy.IGNORE,
-		uses = {MediaMapper.class})
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        uses = {MediaMapper.class})
 public abstract class TableMapper {
 
-	@Autowired
-	protected MediaRepository mediaRepository;
+    @Autowired
+    protected MediaRepository mediaRepository;
 
-	@Autowired
-	protected MediaMapper mediaMapper;
+    @Autowired
+    protected MediaMapper mediaMapper;
 
-	public abstract DishTable toEntity(TableDto.TableRequest request);
+    public abstract DishTable toEntity(TableDto.TableRequest request);
 
-	@Mapping(target = "tableId", source = "id")
-	@Mapping(target = "zoneId", source = "zone.id")
-	public abstract TableDto.TableResponse toResponse(DishTable table);
+    @Mapping(target = "tableId", source = "id")
+    @Mapping(target = "zoneId", source = "zone.id")
+    public abstract TableDto.TableResponse toResponse(DishTable table);
 
-	@Mapping(target = "tableId", source = "id")
-	@Mapping(target = "zoneId", source = "zone.id")
-	public abstract TableDto.TableDetailResponse toDetailResponse(DishTable table);
+    @Mapping(target = "tableId", source = "id")
+    @Mapping(target = "zoneId", source = "zone.id")
+    public abstract TableDto.TableDetailResponse toDetailResponse(DishTable table);
 
 
-	public abstract void updateEntityFromRequest(TableDto.TableRequest request, @MappingTarget DishTable entity);
+    public abstract void updateEntityFromRequest(TableDto.TableRequest request, @MappingTarget DishTable entity);
 
-	@AfterMapping
-	protected void addImageUrl(DishTable entity, @MappingTarget TableDto.TableResponse.TableResponseBuilder builder) {
-		// Uses the logic from Page 9 of your PDF (entity_id + is_primary)
-		mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
-				.ifPresent(builder::imageUrl);
-	}
+    @AfterMapping
+    protected void addImageUrl(DishTable entity, @MappingTarget TableDto.TableResponse.TableResponseBuilder builder) {
+        // Uses the logic from Page 9 of your PDF (entity_id + is_primary)
+        mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
+                .ifPresent(builder::imageUrl);
+    }
 
-	@AfterMapping
-	protected void addMedias(DishTable item, @MappingTarget TableDto.TableDetailResponse.TableDetailResponseBuilder builder) {
-		// Fetch ALL Media (Images & Videos)
-		List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
-				.stream()
-				.map(mediaMapper::toResponse)
-				.collect(Collectors.toList());
+    @AfterMapping
+    protected void addMedias(DishTable item, @MappingTarget TableDto.TableDetailResponse.TableDetailResponseBuilder builder) {
+        // Fetch ALL Media (Images & Videos)
+        List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
+                .stream()
+                .map(mediaMapper::toResponse)
+                .collect(Collectors.toList());
 
-		builder.medias(allMedia);
-	}
+        builder.medias(allMedia);
+    }
 }
 

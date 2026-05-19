@@ -10,26 +10,26 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Configuration
 public class RedisConfig {
 
-	@Value("${spring.data.redis.host:localhost}")
-	private String redisHost;
+    @Value("${spring.data.redis.host:localhost}")
+    private String redisHost;
 
-	@Value("${spring.data.redis.port:6379}")
-	private int redisPort;
+    @Value("${spring.data.redis.port:6379}")
+    private int redisPort;
 
-	@Value("${spring.data.redis.password:}")
-	private String redisPassword;
+    @Value("${spring.data.redis.password:}")
+    private String redisPassword;
 
-	@Bean
-	public RedisConnectionFactory redisConnectionFactory() {
-		LettuceConnectionFactory factory = new LettuceConnectionFactory(redisHost, redisPort);
-		if (redisPassword != null && !redisPassword.isEmpty()) {
-			factory.setPassword(redisPassword);
-		}
-		return factory;
-	}
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(redisHost, redisPort);
+        if (redisPassword != null && !redisPassword.isEmpty()) {
+            factory.setPassword(redisPassword);
+        }
+        return factory;
+    }
 
-	@Bean
-	public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
-		return new StringRedisTemplate(connectionFactory);
-	}
+    @Bean
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
+        return new StringRedisTemplate(connectionFactory);
+    }
 }

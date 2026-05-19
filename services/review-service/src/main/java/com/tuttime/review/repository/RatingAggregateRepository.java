@@ -10,14 +10,14 @@ import java.util.UUID;
 @Repository
 public interface RatingAggregateRepository extends JpaRepository<RatingAggregate, UUID> {
 
-	/**
-	 * Finds aggregate data for a specific restaurant.
-	 * Used for the 'Restaurant Service' map-based search results.
-	 */
-	Optional<RatingAggregate> findByBranchId(UUID branchId);
+    /**
+     * Finds aggregate data for a specific restaurant.
+     * Used for the 'Restaurant Service' map-based search results.
+     */
+    Optional<RatingAggregate> findByBranchId(UUID branchId);
 
-	/**
-	 * Efficiently checks if an aggregate record exists before recalculating.
-	 */
-	boolean existsByBranchId(UUID branchId);
+    /**
+     * Efficiently checks if an aggregate record exists before recalculating.
+     */
+    boolean existsByBranchId(UUID branchId);
 }

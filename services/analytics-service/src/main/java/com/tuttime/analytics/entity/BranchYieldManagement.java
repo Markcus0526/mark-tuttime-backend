@@ -18,30 +18,30 @@ import java.util.UUID;
 @Builder
 public class BranchYieldManagement extends BaseTimeStampEntity {
 
-	@EmbeddedId
-	private BranchSlotId id;
+    @EmbeddedId
+    private BranchSlotId id;
 
-	@Column(name = "total_capacity", nullable = false)
-	private Integer totalCapacity;
+    @Column(name = "total_capacity", nullable = false)
+    private Integer totalCapacity;
 
-	@Column(name = "current_bookings")
-	private Integer currentBookings;
+    @Column(name = "current_bookings")
+    private Integer currentBookings;
 
-	@Column(name = "occupancy_rate", precision = 3, scale = 2)
-	private BigDecimal occupancyRate;
+    @Column(name = "occupancy_rate", precision = 3, scale = 2)
+    private BigDecimal occupancyRate;
 
-	@Column(name = "demand_level", length = 10)
-	private String demandLevel;
+    @Column(name = "demand_level", length = 10)
+    private String demandLevel;
 
-	@Column(name = "recommended_discount_pct")
-	private Float recommendedDiscountPct;
+    @Column(name = "recommended_discount_pct")
+    private Float recommendedDiscountPct;
 
-	@Embeddable
-	@Data
-	@AllArgsConstructor
-	@NoArgsConstructor
-	public static class BranchSlotId implements Serializable {
-		private UUID branchId;
-		private OffsetDateTime timeSlot;
-	}
+    @Embeddable
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class BranchSlotId implements Serializable {
+        private UUID branchId;
+        private OffsetDateTime timeSlot;
+    }
 }

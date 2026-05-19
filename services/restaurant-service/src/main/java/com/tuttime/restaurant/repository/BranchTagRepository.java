@@ -12,12 +12,12 @@ import java.util.UUID;
 
 public interface BranchTagRepository extends JpaRepository<BranchTag, BranchTagId> {
 
-	@Query("SELECT bt FROM BranchTag bt JOIN FETCH bt.tag WHERE bt.id.branchId = :branchId")
-	List<BranchTag> findAllByBranchId(@Param("branchId") UUID branchId);
+    @Query("SELECT bt FROM BranchTag bt JOIN FETCH bt.tag WHERE bt.id.branchId = :branchId")
+    List<BranchTag> findAllByBranchId(@Param("branchId") UUID branchId);
 
-	@Modifying
-	@Query("DELETE FROM BranchTag bt WHERE bt.id.branchId = :branchId")
-	void deleteByBranchId(UUID branchId);
+    @Modifying
+    @Query("DELETE FROM BranchTag bt WHERE bt.id.branchId = :branchId")
+    void deleteByBranchId(UUID branchId);
 
-	boolean existsByTagId(UUID tagId);
+    boolean existsByTagId(UUID tagId);
 }

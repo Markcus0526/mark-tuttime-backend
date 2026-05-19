@@ -11,37 +11,37 @@ import java.util.UUID;
 
 public class MediaDto {
 
-	@Schema(description = "Branch request details")
-	public record MediaRequest(
-			@NotNull(message = "Entity ID is required")
-			UUID entityId,
+    @Schema(description = "Branch request details")
+    public record MediaRequest(
+            @NotNull(message = "Entity ID is required")
+            UUID entityId,
 
-			@NotBlank(message = "Media URL is required")
-			@Size(max = 1024, message = "Media URL must be at most 1024 characters")
-			String url,
+            @NotBlank(message = "Media URL is required")
+            @Size(max = 1024, message = "Media URL must be at most 1024 characters")
+            String url,
 
-			@Size(max = 255, message = "Alt text must be at most 255 characters")
-			String altText,
+            @Size(max = 255, message = "Alt text must be at most 255 characters")
+            String altText,
 
-			Boolean primaryEntity,
+            Boolean primaryEntity,
 
-			@NotNull(message = "Media type is required")
-			MediaType mediaType // Could be validated against Enum in service layer
-	) {
-	}
+            @NotNull(message = "Media type is required")
+            MediaType mediaType // Could be validated against Enum in service layer
+    ) {
+    }
 
-	@Schema(description = "Branch response details")
-	public record MediaResponse(
+    @Schema(description = "Branch response details")
+    public record MediaResponse(
 
-			UUID mediaId,
-			UUID entityId,
-			String url,
-			String altText,
-			boolean primaryEntity,
-			String mediaType, // IMAGE, VIDEO
-			OffsetDateTime createdAt,
-			OffsetDateTime updatedAt
-	) {
-	}
+            UUID mediaId,
+            UUID entityId,
+            String url,
+            String altText,
+            boolean primaryEntity,
+            String mediaType, // IMAGE, VIDEO
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
+    ) {
+    }
 
 }

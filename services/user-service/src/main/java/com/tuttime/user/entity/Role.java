@@ -15,18 +15,18 @@ import java.util.Set;
 @Builder
 public class Role {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-	@Column(name = "name", length = 50, unique = true, nullable = false)
-	private String name;
+    @Column(name = "name", length = 50, unique = true, nullable = false)
+    private String name;
 
-	@Column(name = "description", columnDefinition = "TEXT")
-	private String description;
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
 
-	@Builder.Default
-	@OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<UserRole> userRoles = new HashSet<>();
+    @Builder.Default
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserRole> userRoles = new HashSet<>();
 }
 

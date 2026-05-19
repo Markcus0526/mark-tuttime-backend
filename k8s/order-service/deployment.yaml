@@ -4,7 +4,7 @@ metadata:
   name: order-service
   namespace: tuttime
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: order-service
@@ -64,4 +64,4 @@ spec:
       volumes:
         - name: uploads
           persistentVolumeClaim:
-            claimName: order-service-uploads-pvc.yaml
+            claimName: order-service-uploads-pvc

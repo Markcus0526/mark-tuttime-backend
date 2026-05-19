@@ -12,8 +12,8 @@ import java.util.UUID;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PosMapper {
 
-	@Mapping(target = "entityId", source = "entityId")
-	@Mapping(target = "logs", source = "logs")
-	PosSyncLogDto.PosSyncLogResponse toResponse(UUID entityId, List<PosLog> logs);
+    @Mapping(target = "entityId", source = "entityId")
+    @Mapping(target = "logs", source = "logs")
+    PosSyncLogDto.PosSyncLogResponse toResponse(UUID entityId, List<PosLog> logs);
 
 }

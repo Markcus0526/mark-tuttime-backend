@@ -15,16 +15,16 @@ import java.util.UUID;
 @Builder
 public class ReviewModerationLog extends BaseUuidEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "review_id", nullable = false)
-	private Review review;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "review_id", nullable = false)
+    private Review review;
 
-	@Column(name = "moderator_id", nullable = false)
-	private UUID moderatorId;
+    @Column(name = "moderator_id", nullable = false)
+    private UUID moderatorId;
 
-	@Column(nullable = false, length = 50)
-	private String action; // e.g., "APPROVE", "REJECT"
+    @Column(nullable = false, length = 50)
+    private String action; // e.g., "APPROVE", "REJECT"
 
-	@Column(columnDefinition = "TEXT")
-	private String reason;
+    @Column(columnDefinition = "TEXT")
+    private String reason;
 }

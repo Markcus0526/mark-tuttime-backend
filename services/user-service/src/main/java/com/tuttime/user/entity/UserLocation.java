@@ -19,17 +19,17 @@ import java.time.OffsetDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class UserLocation extends BaseUuidEntity {
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id")
-	private User user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
-	@Column(columnDefinition = "geography(Point,4326)", nullable = false)
-	private Point location;
+    @Column(columnDefinition = "geography(Point,4326)", nullable = false)
+    private Point location;
 
-	private Float accuracyMeters;
+    private Float accuracyMeters;
 
-	@Column(nullable = false)
-	@CreationTimestamp
-	private OffsetDateTime recordedAt;
+    @Column(nullable = false)
+    @CreationTimestamp
+    private OffsetDateTime recordedAt;
 }
 

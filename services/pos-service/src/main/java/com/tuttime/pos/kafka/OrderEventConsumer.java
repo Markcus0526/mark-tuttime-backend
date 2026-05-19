@@ -31,89 +31,89 @@ import static com.tuttime.common.event.kafka.TopicConstants.TOPIC_ORDER_STATUS_U
 @Slf4j
 public class OrderEventConsumer {
 
-	private final ObjectMapper objectMapper;
-	private final PosConfigRepository posConfigRepository;
-	private final PosSyncQueueRepository posSyncQueueRepository;
-	private final PosAdapterFactory posAdapterFactory;
-	private final PosService posService;
-	private final OrderGrpcClient orderGrpcClient;
+    private final ObjectMapper objectMapper;
+    private final PosConfigRepository posConfigRepository;
+    private final PosSyncQueueRepository posSyncQueueRepository;
+    private final PosAdapterFactory posAdapterFactory;
+    private final PosService posService;
+    private final OrderGrpcClient orderGrpcClient;
 
-	@KafkaListener(
-			topics = TOPIC_ORDER_CREATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	public void handleOrderCreated(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_ORDER_CREATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    public void handleOrderCreated(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			OrderEvent.OrderCreatedEvent event =
-					objectMapper.readValue(eventString, OrderEvent.OrderCreatedEvent.class);
+            OrderEvent.OrderCreatedEvent event =
+                    objectMapper.readValue(eventString, OrderEvent.OrderCreatedEvent.class);
 
-			PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(event.orderId(), event.branchId());
-			posService.syncOrder(request);
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
-					TOPIC_ORDER_CREATED, e.getMessage());
-		}
-	}
+            PosSyncDto.OrderSyncRequest request = new PosSyncDto.OrderSyncRequest(event.orderId(), event.branchId());
+            posService.syncOrder(request);
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+                    TOPIC_ORDER_CREATED, e.getMessage());
+        }
+    }
 
-	@KafkaListener(
-			topics = TOPIC_ORDER_STATUS_UPDATED,
-			groupId = "${spring.kafka.consumer.group-id}")
-	@Transactional
-	public void handleOrderStatusChange(String eventString) {
-		try {
-			if (!StringUtils.hasText(eventString)) return;
+    @KafkaListener(
+            topics = TOPIC_ORDER_STATUS_UPDATED,
+            groupId = "${spring.kafka.consumer.group-id}")
+    @Transactional
+    public void handleOrderStatusChange(String eventString) {
+        try {
+            if (!StringUtils.hasText(eventString)) return;
 
-			OrderEvent.OrderStatusEvent event =
-					objectMapper.readValue(eventString, OrderEvent.OrderStatusEvent.class);
+            OrderEvent.OrderStatusEvent event =
+                    objectMapper.readValue(eventString, OrderEvent.OrderStatusEvent.class);
 
-			// Logic: Only process when the order is CREATED
-			if (event.newStatus() == OrderStatus.CREATED) {
+            // Logic: Only process when the order is CREATED
+            if (event.newStatus() == OrderStatus.CREATED) {
 
-				// 1. Fetch rich data via gRPC
-				GetOrderDetailResponse details = orderGrpcClient.getOrderDetail(event.orderId());
+                // 1. Fetch rich data via gRPC
+                GetOrderDetailResponse details = orderGrpcClient.getOrderDetail(event.orderId());
 
-				// 2. Fetch POS Config
-				var config = posConfigRepository.findByBranchIdAndEnabledTrue(event.branchId())
-						.orElseGet(() -> {
-							log.warn("No active POS config found for branch {}", event.branchId());
-							return null;
-						});
-				if (config == null) return;
+                // 2. Fetch POS Config
+                var config = posConfigRepository.findByBranchIdAndEnabledTrue(event.branchId())
+                        .orElseGet(() -> {
+                            log.warn("No active POS config found for branch {}", event.branchId());
+                            return null;
+                        });
+                if (config == null) return;
 
-				// 3. Get the correct Provider (iiko/R-Keeper)
-				PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
+                // 3. Get the correct Provider (iiko/R-Keeper)
+                PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
 
-				try {
-					// 4. Try real-time sync immediately
-					adapter.sendOrder(config, details);
-				} catch (Exception e) {
-					log.error("Real-time sync failed for Order {}. Moving to Queue.", event.orderId());
+                try {
+                    // 4. Try real-time sync immediately
+                    adapter.sendOrder(config, details);
+                } catch (Exception e) {
+                    log.error("Real-time sync failed for Order {}. Moving to Queue.", event.orderId());
 
-					// 5. Failover: Save to pos_sync_queues for the background worker
-					posSyncQueueRepository.save(PosSyncQueue.builder()
-							.branchId(event.branchId())
-							.orderId(event.orderId())
-							.action("SEND_ORDER")
-							.payload(Map.of("order_id", event.orderId())) // Minimal payload, worker will re-fetch if needed
-							.status("PENDING")
-							.nextRetryAt(OffsetDateTime.now().plusMinutes(1))
-							.retryCount(0)
-							.lastError(e.getMessage())
-							.build());
-				}
-			}
+                    // 5. Failover: Save to pos_sync_queues for the background worker
+                    posSyncQueueRepository.save(PosSyncQueue.builder()
+                            .branchId(event.branchId())
+                            .orderId(event.orderId())
+                            .action("SEND_ORDER")
+                            .payload(Map.of("order_id", event.orderId())) // Minimal payload, worker will re-fetch if needed
+                            .status("PENDING")
+                            .nextRetryAt(OffsetDateTime.now().plusMinutes(1))
+                            .retryCount(0)
+                            .lastError(e.getMessage())
+                            .build());
+                }
+            }
 
-			if (event.newStatus() == OrderStatus.CANCELED) {
-				PosConfig config = posConfigRepository.findByBranchId(event.branchId())
-						.orElseThrow(() -> new RuntimeException("Config not found"));
+            if (event.newStatus() == OrderStatus.CANCELED) {
+                PosConfig config = posConfigRepository.findByBranchId(event.branchId())
+                        .orElseThrow(() -> new RuntimeException("Config not found"));
 
-				PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
-				adapter.cancelOrder(config, event.orderId(), "User requested cancellation");
-			}
-		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
-					TOPIC_ORDER_STATUS_UPDATED, e.getMessage());
-		}
-	}
+                PosAdapter adapter = posAdapterFactory.getAdapter(config.getPosProvider());
+                adapter.cancelOrder(config, event.orderId(), "User requested cancellation");
+            }
+        } catch (Exception e) {
+            log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
+                    TOPIC_ORDER_STATUS_UPDATED, e.getMessage());
+        }
+    }
 }

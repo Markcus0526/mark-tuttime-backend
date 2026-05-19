@@ -23,42 +23,42 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Discount extends BaseUuidAnDeleteEntity {
 
-	@Column(name = "branch_id", nullable = false)
-	private UUID branchId;
+    @Column(name = "branch_id", nullable = false)
+    private UUID branchId;
 
-	@Column(nullable = false)
-	private String name;
+    @Column(nullable = false)
+    private String name;
 
-	@Enumerated(EnumType.STRING)
-	@JdbcType(PostgreSQLEnumJdbcType.class) // Maps Java Enum directly to PostgreSQL Enum
-	@Column(name = "discount_type", nullable = false)
-	private DiscountType discountType;
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class) // Maps Java Enum directly to PostgreSQL Enum
+    @Column(name = "discount_type", nullable = false)
+    private DiscountType discountType;
 
-	@Column(nullable = false, precision = 10, scale = 2)
-	private BigDecimal amount;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal amount;
 
-	@Enumerated(EnumType.STRING)
-	@JdbcType(PostgreSQLEnumJdbcType.class)
-	@Column(name = "applies_to", nullable = false)
-	private AppliesTo appliesTo;
+    @Enumerated(EnumType.STRING)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(name = "applies_to", nullable = false)
+    private AppliesTo appliesTo;
 
-	/**
-	 * Generic reference to either a Menu Item ID or Menu Category ID.
-	 * Logic is handled in the Service layer based on 'appliesTo'.
-	 */
-	@Column(name = "reference_id")
-	private UUID referenceId; // Can be a Category UUID or an Item UUID
+    /**
+     * Generic reference to either a Menu Item ID or Menu Category ID.
+     * Logic is handled in the Service layer based on 'appliesTo'.
+     */
+    @Column(name = "reference_id")
+    private UUID referenceId; // Can be a Category UUID or an Item UUID
 
-	@Column(name = "start_date")
-	private OffsetDateTime startDate;
+    @Column(name = "start_date")
+    private OffsetDateTime startDate;
 
-	@Column(name = "end_date")
-	private OffsetDateTime endDate;
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
 
-	@Column(name = "active")
-	@Builder.Default
-	private Boolean active = true;
+    @Column(name = "active")
+    @Builder.Default
+    private Boolean active = true;
 
-	@Version
-	private Long version;
+    @Version
+    private Long version;
 }

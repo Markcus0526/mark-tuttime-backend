@@ -1,4 +1,4 @@
-package com.tuttime.common.config;
+package com.tuttime.notification.config;
 
 import com.tuttime.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;

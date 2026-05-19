@@ -7,15 +7,15 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RK7MenuItem {
-	@JacksonXmlProperty(isAttribute = true, localName = "Ident")
-	private String ident; // The primary numeric ID in RK7
+    @JacksonXmlProperty(isAttribute = true, localName = "Ident")
+    private String ident; // The primary numeric ID in RK7
 
-	@JacksonXmlProperty(isAttribute = true, localName = "GUIDString")
-	private String guid;  // The global unique ID string
+    @JacksonXmlProperty(isAttribute = true, localName = "GUIDString")
+    private String guid;  // The global unique ID string
 
-	@JacksonXmlProperty(isAttribute = true, localName = "Name")
-	private String name;
+    @JacksonXmlProperty(isAttribute = true, localName = "Name")
+    private String name;
 
-	@JacksonXmlProperty(isAttribute = true, localName = "Price")
-	private Double price;
+    @JacksonXmlProperty(isAttribute = true, localName = "Price")
+    private Double price;
 }

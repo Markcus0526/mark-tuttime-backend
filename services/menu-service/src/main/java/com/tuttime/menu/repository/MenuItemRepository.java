@@ -16,33 +16,33 @@ import java.util.UUID;
 @Repository
 public interface MenuItemRepository extends JpaRepository<MenuItem, UUID> {
 
-	Optional<MenuItem> findByIdAndDeletedFalse(UUID id);
+    Optional<MenuItem> findByIdAndDeletedFalse(UUID id);
 
-	// Finds items in a category where name or description contains the search string
-	@Query("SELECT mi FROM MenuItem mi WHERE mi.category.id = :categoryId " +
-			"AND mi.deleted = false " +
-			"AND (CAST(:search AS string) IS NULL OR " + // Added CAST here
-			"LOWER(mi.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
-			"LOWER(mi.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
-	List<MenuItem> findByCategoryAndSearch(@Param("categoryId") UUID categoryId,
-	                                       @Param("search") String search,
-	                                       Sort sort);
+    // Finds items in a category where name or description contains the search string
+    @Query("SELECT mi FROM MenuItem mi WHERE mi.category.id = :categoryId " +
+            "AND mi.deleted = false " +
+            "AND (CAST(:search AS string) IS NULL OR " + // Added CAST here
+            "LOWER(mi.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
+            "LOWER(mi.description) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))")
+    List<MenuItem> findByCategoryAndSearch(@Param("categoryId") UUID categoryId,
+                                           @Param("search") String search,
+                                           Sort sort);
 
-	@Modifying
-	@Transactional
-	@Query("UPDATE MenuItem m SET m.available = true, m.updatedAt = CURRENT_TIMESTAMP " +
-			"WHERE m.id IN :itemIds")
-	void activateItemsFromPos(@Param("itemIds") List<UUID> itemIds);
+    @Modifying
+    @Transactional
+    @Query("UPDATE MenuItem m SET m.available = true, m.updatedAt = CURRENT_TIMESTAMP " +
+            "WHERE m.id IN :itemIds")
+    void activateItemsFromPos(@Param("itemIds") List<UUID> itemIds);
 
-	@Modifying
-	@Transactional
-	@Query("UPDATE MenuItem m SET m.available = false, m.updatedAt = CURRENT_TIMESTAMP " +
-			"WHERE m.id IN :itemIds")
-	void deactivateItemsFromPos(@Param("itemIds") List<UUID> itemIds);
+    @Modifying
+    @Transactional
+    @Query("UPDATE MenuItem m SET m.available = false, m.updatedAt = CURRENT_TIMESTAMP " +
+            "WHERE m.id IN :itemIds")
+    void deactivateItemsFromPos(@Param("itemIds") List<UUID> itemIds);
 
-	boolean existsByCategoryIdAndNameIgnoreCaseAndDeletedFalse(UUID categoryId, String name);
+    boolean existsByCategoryIdAndNameIgnoreCaseAndDeletedFalse(UUID categoryId, String name);
 
-	boolean existsByCategoryIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID categoryId, String name, UUID excludeId);
+    boolean existsByCategoryIdAndNameIgnoreCaseAndDeletedFalseAndIdNot(UUID categoryId, String name, UUID excludeId);
 
-	List<MenuItem> findByCategoryIdAndDeletedFalse(UUID categoryId);
+    List<MenuItem> findByCategoryIdAndDeletedFalse(UUID categoryId);
 }

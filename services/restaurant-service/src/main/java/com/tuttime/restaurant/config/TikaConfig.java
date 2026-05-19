@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class TikaConfig {
-	@Bean
-	public Tika tika() {
-		return new Tika();
-	}
+    @Bean
+    public Tika tika() {
+        return new Tika();
+    }
 }

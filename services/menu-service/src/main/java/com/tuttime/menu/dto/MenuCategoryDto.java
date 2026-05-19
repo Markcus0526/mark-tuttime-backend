@@ -9,32 +9,32 @@ import java.util.UUID;
 
 public class MenuCategoryDto {
 
-	// Request payload for creating/updating a category
-	@Schema(description = "Category request details")
-	public record CategoryRequest(
+    // Request payload for creating/updating a category
+    @Schema(description = "Category request details")
+    public record CategoryRequest(
 
-			@NotNull(message = "Branch ID is required")
-			UUID branchId,
+            @NotNull(message = "Branch ID is required")
+            UUID branchId,
 
-			@NotBlank(message = "Category name cannot be empty")
-			String name,
+            @NotBlank(message = "Category name cannot be empty")
+            String name,
 
-			String description,
+            String description,
 
-			Integer priority
-	) {
-	}
+            Integer priority
+    ) {
+    }
 
-	// Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
-	@Schema(description = "Category response details")
-	@Builder
-	public record CategoryResponse(
-			UUID categoryId,
-			String name,
-			String description,
-			Integer priority,
-			String imageUrl,
-			Integer itemCount
-	) {
-	}
+    // Perfect for mapping a deep fetch with items (e.g., getting a full branch menu)
+    @Schema(description = "Category response details")
+    @Builder
+    public record CategoryResponse(
+            UUID categoryId,
+            String name,
+            String description,
+            Integer priority,
+            String imageUrl,
+            Integer itemCount
+    ) {
+    }
 }

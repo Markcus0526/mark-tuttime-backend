@@ -2,7 +2,9 @@ package com.tuttime.analytics.grpc;
 
 import com.tuttime.analytics.entity.UserReliabilityIndex;
 import com.tuttime.analytics.service.AnalyticsService;
-import com.tuttime.common.event.proto.*;
+import com.tuttime.common.event.proto.AnalyticsServiceGrpc;
+import com.tuttime.common.event.proto.GetUserScoreRequest;
+import com.tuttime.common.event.proto.GetUserScoreResponse;
 import com.tuttime.common.exception.InvalidRequestException;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -15,35 +17,35 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AnalyticsGrpcServer extends AnalyticsServiceGrpc.AnalyticsServiceImplBase {
 
-	private final AnalyticsService analyticsService;
+    private final AnalyticsService analyticsService;
 
-	@Override
-	public void getUserScore(GetUserScoreRequest req, StreamObserver<GetUserScoreResponse> responseObserver) {
-		try {
-			UserReliabilityIndex stats = analyticsService.getUserReliability(UUID.fromString(req.getUserId()));
+    @Override
+    public void getUserScore(GetUserScoreRequest req, StreamObserver<GetUserScoreResponse> responseObserver) {
+        try {
+            UserReliabilityIndex stats = analyticsService.getUserReliability(UUID.fromString(req.getUserId()));
 
-			GetUserScoreResponse response = GetUserScoreResponse.newBuilder()
-					.setScore(stats != null ? stats.getReliabilityScore() : 50)
-					.setRiskLevel(stats != null ? stats.getRiskLevel() : "STANDARD")
-					.setRequiresFullPrepay(stats != null && stats.getReliabilityScore() < 25)
-					.build();
+            GetUserScoreResponse response = GetUserScoreResponse.newBuilder()
+                    .setScore(stats != null ? stats.getReliabilityScore() : 50)
+                    .setRiskLevel(stats != null ? stats.getRiskLevel() : "STANDARD")
+                    .setRequiresFullPrepay(stats != null && stats.getReliabilityScore() < 25)
+                    .build();
 
-			responseObserver.onNext(response);
-			responseObserver.onCompleted();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
 
-		} catch (IllegalArgumentException e) {
-			responseObserver.onError(Status.INVALID_ARGUMENT
-					.withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
-		} catch (InvalidRequestException e) {
-			// Map your custom business exception to NOT_FOUND instead of INTERNAL
-			responseObserver.onError(Status.NOT_FOUND
-					.withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
-		} catch (Exception e) {
-			// Keep this for actual system failures (DB down, etc.)
-			responseObserver.onError(Status.INTERNAL
-					.withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
-		}
-	}
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("<<< gRPC>>> Invalid argument: " + e.getMessage()).asRuntimeException());
+        } catch (InvalidRequestException e) {
+            // Map your custom business exception to NOT_FOUND instead of INTERNAL
+            responseObserver.onError(Status.NOT_FOUND
+                    .withDescription("<<< gRPC>>> Invalid request: " + e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            // Keep this for actual system failures (DB down, etc.)
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("<<< gRPC>>> Unexpected error: " + e.getMessage()).asRuntimeException());
+        }
+    }
 
 //	@Override
 //	public void getBranchYield(YieldRequest req, StreamObserver<YieldResponse> responseObserver) {

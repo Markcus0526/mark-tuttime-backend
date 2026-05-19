@@ -49,13 +49,16 @@ spec:
               value: "1"
             - name: KAFKA_CFG_LOG_DIRS
               value: "/bitnami/kafka/data"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx2g -Xms2g"
           volumeMounts:
             - name: kafka-data
               mountPath: /bitnami/kafka/data
           livenessProbe:
             tcpSocket:
               port: 9093
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
+            timeoutSeconds: 5
             periodSeconds: 10
           readinessProbe:
             exec:
@@ -63,16 +66,16 @@ spec:
                 - /opt/bitnami/kafka/bin/kafka-broker-api-versions.sh
                 - --bootstrap-server
                 - localhost:9093
-            initialDelaySeconds: 30
+            initialDelaySeconds: 120
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
             failureThreshold: 3
           resources:
             requests:
-              memory: "1Gi"
+              memory: "2Gi"
               cpu: "500m"
             limits:
-              memory: "2Gi"
+              memory: "4Gi"
               cpu: "1"
       volumes:
         - name: kafka-data

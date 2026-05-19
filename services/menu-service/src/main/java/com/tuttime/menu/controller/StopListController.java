@@ -30,80 +30,80 @@ import java.util.UUID;
 @Tag(name = "5.Stop Lists", description = "Controls instantaneous out-of-stock actions per branch")
 public class StopListController {
 
-	private final StopListService stopListService;
+    private final StopListService stopListService;
 
-	@PostMapping
-	@Operation(summary = "Place item on stop list", description = "Marks a specific menu item as unavailable for a branch due to raw material deficits.")
-	@ApiResponses({
-			@ApiResponse(responseCode = "201", description = "Item added to stop list",
-					content = @Content(schema = @Schema(implementation = StopListDto.StopListResponse.class))),
-			@ApiResponse(responseCode = "400", description = "Invalid request or item already stopped")
-	})
-	public ResponseEntity<ApiRes<StopListDto.StopListResponse>> addToStopList(@Valid @RequestBody StopListDto.StopListRequest request) {
+    @PostMapping
+    @Operation(summary = "Place item on stop list", description = "Marks a specific menu item as unavailable for a branch due to raw material deficits.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Item added to stop list",
+                    content = @Content(schema = @Schema(implementation = StopListDto.StopListResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or item already stopped")
+    })
+    public ResponseEntity<ApiRes<StopListDto.StopListResponse>> addToStopList(@Valid @RequestBody StopListDto.StopListRequest request) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		StopListDto.StopListResponse data = stopListService.addToStopList(request, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
-	}
+        StopListDto.StopListResponse data = stopListService.addToStopList(request, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiRes.success(data));
+    }
 
-	@GetMapping("/branch/{branchId}")
-	@Operation(summary = "Gather full branch stop list", description = "Aids localized portals in reviewing stopped operations.")
-	@ApiResponses({
-			@ApiResponse(responseCode = "200", description = "List of stopped items retrieved",
-					content = @Content(array = @ArraySchema(schema = @Schema(implementation = StopListDto.StopListResponse.class))))
-	})
-	public ResponseEntity<ApiRes<List<StopListDto.StopListResponse>>> getStopListByBranch(
-			@Parameter(description = "UUID of the branch") @PathVariable UUID branchId) {
+    @GetMapping("/branch/{branchId}")
+    @Operation(summary = "Gather full branch stop list", description = "Aids localized portals in reviewing stopped operations.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "List of stopped items retrieved",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = StopListDto.StopListResponse.class))))
+    })
+    public ResponseEntity<ApiRes<List<StopListDto.StopListResponse>>> getStopListByBranch(
+            @Parameter(description = "UUID of the branch") @PathVariable UUID branchId) {
 
-		List<StopListDto.StopListResponse> data = stopListService.getStopListByBranch(branchId);
-		return ResponseEntity.ok(ApiRes.success(data));
-	}
+        List<StopListDto.StopListResponse> data = stopListService.getStopListByBranch(branchId);
+        return ResponseEntity.ok(ApiRes.success(data));
+    }
 
-	@DeleteMapping("/{stopId}")
-	@Operation(summary = "Restore item stock status", description = "Removes the item from the stop list, making it available for orders again.")
-	@ApiResponses({
-			@ApiResponse(responseCode = "204", description = "Item restored to active status"),
-			@ApiResponse(responseCode = "404", description = "Stop list entry not found")
-	})
-	public ResponseEntity<ApiRes<Void>> removeFromStopList(@PathVariable UUID stopId) {
+    @DeleteMapping("/{stopId}")
+    @Operation(summary = "Restore item stock status", description = "Removes the item from the stop list, making it available for orders again.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Item restored to active status"),
+            @ApiResponse(responseCode = "404", description = "Stop list entry not found")
+    })
+    public ResponseEntity<ApiRes<Void>> removeFromStopList(@PathVariable UUID stopId) {
 
-		validateAdminOrOwnerOrManager();
-		UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
-		String userRoles = UserContext.getRoles();
+        validateAdminOrOwnerOrManager();
+        UUID currentUserId = UuidUtil.toUuid(UserContext.getUserId());
+        String userRoles = UserContext.getRoles();
 
-		stopListService.removeFromStopList(stopId, currentUserId, userRoles);
-		return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
-	}
+        stopListService.removeFromStopList(stopId, currentUserId, userRoles);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+    }
 
-	/**
-	 * Private helper to keep the controller DRY
-	 */
-	private void validateLogin() {
-		if (!UserContext.isValidUUID()) {
-			throw new UnauthorizedException("Unauthorized: You should login");
-		}
-	}
+    /**
+     * Private helper to keep the controller DRY
+     */
+    private void validateLogin() {
+        if (!UserContext.isValidUUID()) {
+            throw new UnauthorizedException("Unauthorized: You should login");
+        }
+    }
 
-	private void validateAdmin() {
-		if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdmin() {
+        if (!UserContext.isValidUUID() || !UserContext.isRoleAdmin()) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwner() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwner() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 
-	private void validateAdminOrOwnerOrManager() {
-		if (!UserContext.isValidUUID()
-				|| !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
-			throw new ForbiddenException("Access forbidden: Insufficient permissions");
-		}
-	}
+    private void validateAdminOrOwnerOrManager() {
+        if (!UserContext.isValidUUID()
+                || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
+            throw new ForbiddenException("Access forbidden: Insufficient permissions");
+        }
+    }
 }

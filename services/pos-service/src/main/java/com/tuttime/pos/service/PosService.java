@@ -9,20 +9,20 @@ import java.util.UUID;
 
 public interface PosService {
 
-	// Manual/On-demand Sync
-	void syncBooking(PosSyncDto.BookingSyncRequest request);
+    // Manual/On-demand Sync
+    void syncBooking(PosSyncDto.BookingSyncRequest request);
 
-	void syncOrder(PosSyncDto.OrderSyncRequest request);
+    void syncOrder(PosSyncDto.OrderSyncRequest request);
 
-	void syncMenu(PosSyncDto.MenuSyncRequest request);
+    void syncMenu(PosSyncDto.MenuSyncRequest request);
 
-	// Maintenance & Recovery
-	void forceSyncByBranchId(UUID branchId);
+    // Maintenance & Recovery
+    void forceSyncByBranchId(UUID branchId);
 
-	PosSyncLogDto.PosSyncLogResponse getSyncLogs(UUID entityId);
+    PosSyncLogDto.PosSyncLogResponse getSyncLogs(UUID entityId);
 
-	// Configuration
-	PosConfig saveConfig(PosConfigDto.PosConfigRequest request);
+    // Configuration
+    PosConfig saveConfig(PosConfigDto.PosConfigRequest request);
 
-	void saveLog(UUID branchId, UUID entityId, String entityType, String action, Object request, String response, String status);
+    void saveLog(UUID branchId, UUID entityId, String entityType, String action, Object request, String response, String status);
 }

@@ -8,9 +8,9 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface StopListMapper {
 
-	// Converts Group Entity -> Group Response DTO
-	@Mapping(target = "stopListId", source = "id")
-	@Mapping(target = "menuItemId", source = "menuItem.id")
-	@Mapping(target = "menuItemName", source = "menuItem.name")
-	StopListDto.StopListResponse toResponse(StopList stopList);
+    // Converts Group Entity -> Group Response DTO
+    @Mapping(target = "stopListId", source = "id")
+    @Mapping(target = "menuItemId", source = "menuItem.id")
+    @Mapping(target = "menuItemName", source = "menuItem.name")
+    StopListDto.StopListResponse toResponse(StopList stopList);
 }

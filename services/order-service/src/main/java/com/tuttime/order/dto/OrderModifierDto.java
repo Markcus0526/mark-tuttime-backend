@@ -7,15 +7,15 @@ import java.util.UUID;
 
 public class OrderModifierDto {
 
-	public record OrderModifierRequest(
-			@NotNull UUID modifierId,
-			@NotNull BigDecimal priceAdjustment
-	) {
-	}
+    public record OrderModifierRequest(
+            @NotNull UUID modifierId,
+            @NotNull BigDecimal priceAdjustment
+    ) {
+    }
 
-	public record OrderModifierResponse(
-			UUID modifierId,
-			BigDecimal priceAdjustment
-	) {
-	}
+    public record OrderModifierResponse(
+            UUID modifierId,
+            BigDecimal priceAdjustment
+    ) {
+    }
 }

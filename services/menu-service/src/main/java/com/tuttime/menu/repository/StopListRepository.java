@@ -11,10 +11,10 @@ import java.util.UUID;
 @Repository
 public interface StopListRepository extends JpaRepository<StopList, UUID> {
 
-	List<StopList> findByBranchId(UUID branchId);
+    List<StopList> findByBranchId(UUID branchId);
 
-	Optional<StopList> findByMenuItemIdAndBranchId(UUID menuItemId, UUID branchId);
+    Optional<StopList> findByMenuItemIdAndBranchId(UUID menuItemId, UUID branchId);
 
-	// Used to check if an item is currently active on a stop list
-	boolean existsByMenuItemIdAndBranchId(UUID menuItemId, UUID branchId);
+    // Used to check if an item is currently active on a stop list
+    boolean existsByMenuItemIdAndBranchId(UUID menuItemId, UUID branchId);
 }

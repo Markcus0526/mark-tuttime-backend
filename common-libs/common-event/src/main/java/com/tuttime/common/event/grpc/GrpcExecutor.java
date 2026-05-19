@@ -14,28 +14,28 @@ import java.util.function.Supplier;
 @Slf4j
 public class GrpcExecutor {
 
-	private final RetryRegistry retryRegistry;
+    private final RetryRegistry retryRegistry;
 
-	/**
-	 * Executes a gRPC call with Resilience4j retry.
-	 * Uses the "grpc" Retry instance configured in application.yml.
-	 */
-	public <T> T execute(String serviceName, String methodName, Supplier<T> grpcCall) {
-		Retry retry = retryRegistry.retry("grpc");
-		Supplier<T> decoratedSupplier = Retry.decorateSupplier(retry, () -> {
-			log.debug("Initiating gRPC call: {}.{}", serviceName, methodName);
-			return grpcCall.get();
-		});
-		try {
-			return decoratedSupplier.get();
-		} catch (StatusRuntimeException e) {
-			// The retry already attempted several times; log and rethrow.
-			log.error("<<< gRPC >>> Persistent failure in {}.{} | Code: {} | Description: {}",
-					serviceName, methodName, e.getStatus().getCode(), e.getStatus().getDescription());
-			throw e;
-		} catch (Exception e) {
-			log.error("<<< gRPC >>> Non-gRPC error in {}.{}: {}", serviceName, methodName, e.getMessage());
-			throw e;
-		}
-	}
+    /**
+     * Executes a gRPC call with Resilience4j retry.
+     * Uses the "grpc" Retry instance configured in application.yml.
+     */
+    public <T> T execute(String serviceName, String methodName, Supplier<T> grpcCall) {
+        Retry retry = retryRegistry.retry("grpc");
+        Supplier<T> decoratedSupplier = Retry.decorateSupplier(retry, () -> {
+            log.debug("Initiating gRPC call: {}.{}", serviceName, methodName);
+            return grpcCall.get();
+        });
+        try {
+            return decoratedSupplier.get();
+        } catch (StatusRuntimeException e) {
+            // The retry already attempted several times; log and rethrow.
+            log.error("<<< gRPC >>> Persistent failure in {}.{} | Code: {} | Description: {}",
+                    serviceName, methodName, e.getStatus().getCode(), e.getStatus().getDescription());
+            throw e;
+        } catch (Exception e) {
+            log.error("<<< gRPC >>> Non-gRPC error in {}.{}: {}", serviceName, methodName, e.getMessage());
+            throw e;
+        }
+    }
 }

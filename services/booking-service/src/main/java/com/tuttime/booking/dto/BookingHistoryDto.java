@@ -7,14 +7,14 @@ import java.util.UUID;
 
 public class BookingHistoryDto {
 
-	public record BookingHistoryResponse(
-			Long historyId,
-			BookingStatus oldStatus,
-			BookingStatus newStatus,
-			UUID changedBy,
-			OffsetDateTime changedAt,
-			String reason
-	) {
-	}
+    public record BookingHistoryResponse(
+            Long historyId,
+            BookingStatus oldStatus,
+            BookingStatus newStatus,
+            UUID changedBy,
+            OffsetDateTime changedAt,
+            String reason
+    ) {
+    }
 
 }

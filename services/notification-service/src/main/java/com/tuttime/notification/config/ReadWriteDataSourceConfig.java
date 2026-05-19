@@ -1,4 +1,4 @@
-package com.tuttime.common.config;
+package com.tuttime.notification.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;

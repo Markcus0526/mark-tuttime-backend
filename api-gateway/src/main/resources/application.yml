@@ -47,12 +47,11 @@ spring:
       # Global default filters (applied to all routes)
       # ----------------------------------------------
       default-filters:
-        - JwtAuthentication
         - name: RequestRateLimiter
           args:
             key-resolver: "#{@userKeyResolver}"
-            redis-rate-limiter.replenishRate: 10
-            redis-rate-limiter.burstCapacity: 20
+            redis-rate-limiter.replenishRate: 50
+            redis-rate-limiter.burstCapacity: 100
         - name: Retry
           args:
             retries: 3
@@ -79,6 +78,7 @@ spring:
             - Method=POST,GET,OPTIONS
           filters:
             - name: BruteForceProtection           # only on auth (before rate limit)
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
@@ -90,6 +90,7 @@ spring:
             - Path=/api/v1/users/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
@@ -114,6 +115,7 @@ spring:
             - Path=/api/v1/restaurants/**,/api/v1/restaurant-branches/**,/api/v1/restaurant-zones/**,/api/v1/restaurant-tables/**,/api/v1/restaurant-schedules/**,/api/v1/restaurant-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: restaurantServiceCircuitBreaker
@@ -133,6 +135,7 @@ spring:
             - Path=/api/v1/menus/**,/api/v1/menu-items/**,/api/v1/menu-modifiers/**,/api/v1/menu-discounts/**,/api/v1/menu-stoplists/**,/api/v1/menu-medias/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: menuServiceCircuitBreaker
@@ -150,6 +153,7 @@ spring:
             - Path=/api/v1/bookings/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: bookingServiceCircuitBreaker
@@ -162,6 +166,7 @@ spring:
             - Path=/api/v1/orders/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: orderServiceCircuitBreaker
@@ -174,6 +179,7 @@ spring:
             - Path=/api/v1/payments/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: paymentServiceCircuitBreaker
@@ -186,6 +192,7 @@ spring:
             - Path=/api/v1/poses/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: posServiceCircuitBreaker
@@ -198,6 +205,7 @@ spring:
             - Path=/api/v1/reviews/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: reviewServiceCircuitBreaker
@@ -210,6 +218,7 @@ spring:
             - Path=/api/v1/analytics/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: analyticsServiceCircuitBreaker
@@ -222,6 +231,7 @@ spring:
             - Path=/api/v1/notifications/**
             - Method=GET,POST,PUT,PATCH,DELETE,OPTIONS
           filters:
+            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: notificationServiceCircuitBreaker
@@ -237,6 +247,7 @@ spring:
           uri: http://${USER_SERVICE}
           predicates:
             - Path=/user-docs/**
+            - Method=GET
           filters:
             - RewritePath=/user-docs/(?<segment>.*), /${segment}
 
@@ -244,6 +255,7 @@ spring:
           uri: http://${RESTAURANT_SERVICE}
           predicates:
             - Path=/restaurant-docs/**
+            - Method=GET
           filters:
             - RewritePath=/restaurant-docs/(?<segment>.*), /${segment}
 
@@ -251,6 +263,7 @@ spring:
           uri: http://${MENU_SERVICE}
           predicates:
             - Path=/menu-docs/**
+            - Method=GET
           filters:
             - RewritePath=/menu-docs/(?<segment>.*), /${segment}
 
@@ -258,6 +271,7 @@ spring:
           uri: http://${BOOKING_SERVICE}
           predicates:
             - Path=/booking-docs/**
+            - Method=GET
           filters:
             - RewritePath=/booking-docs/(?<segment>.*), /${segment}
 
@@ -265,6 +279,7 @@ spring:
           uri: http://${ORDER_SERVICE}
           predicates:
             - Path=/order-docs/**
+            - Method=GET
           filters:
             - RewritePath=/order-docs/(?<segment>.*), /${segment}
 
@@ -272,6 +287,7 @@ spring:
           uri: http://${PAYMENT_SERVICE}
           predicates:
             - Path=/payment-docs/**
+            - Method=GET
           filters:
             - RewritePath=/payment-docs/(?<segment>.*), /${segment}
 
@@ -279,6 +295,7 @@ spring:
           uri: http://${POS_SERVICE}
           predicates:
             - Path=/pos-docs/**
+            - Method=GET
           filters:
             - RewritePath=/pos-docs/(?<segment>.*), /${segment}
 
@@ -286,6 +303,7 @@ spring:
           uri: http://${REVIEW_SERVICE}
           predicates:
             - Path=/review-docs/**
+            - Method=GET
           filters:
             - RewritePath=/review-docs/(?<segment>.*), /${segment}
 
@@ -293,6 +311,7 @@ spring:
           uri: http://${ANALYTICS_SERVICE}
           predicates:
             - Path=/analytics-docs/**
+            - Method=GET
           filters:
             - RewritePath=/analytics-docs/(?<segment>.*), /${segment}
 
@@ -300,12 +319,13 @@ spring:
           uri: http://${NOTIFICATION_SERVICE}
           predicates:
             - Path=/notification-docs/**
+            - Method=GET
           filters:
             - RewritePath=/notification-docs/(?<segment>.*), /${segment}
 
         # ---------- Fallback for unmatched routes ----------
         - id: not-found
-          uri: ${GATEWAY_FALLBACK_URI:https://example.com}
+          uri: ${GATEWAY_FALLBACK_URI:forward:/404}
           predicates:
             - Path=/**
           filters:
@@ -449,6 +469,7 @@ logging:
   level:
     root: ${LOG_LEVEL:INFO}
     com.tuttime: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG
     org.springframework.cloud.gateway: INFO
     io.github.resilience4j.circuitbreaker: DEBUG
 
@@ -473,6 +494,7 @@ springdoc:
     disabled: true
   swagger-ui:
     path: /swagger-ui.html
+    config-url: /v3/api-docs
     operations-sorter: alpha
     tags-sorter: alpha
     urls:

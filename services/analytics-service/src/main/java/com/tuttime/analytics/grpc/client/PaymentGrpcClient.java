@@ -19,24 +19,24 @@ import static com.tuttime.common.constants.ServiceNames.PAYMENT_SERVICE;
 @RequiredArgsConstructor
 public class PaymentGrpcClient {
 
-	@Value("${grpc.client-deadline-seconds}")
-	private int grpcDeadline;
+    @Value("${grpc.client-deadline-seconds}")
+    private int grpcDeadline;
 
-	@GrpcClient("payment-service")
-	private PaymentServiceGrpc.PaymentServiceBlockingStub paymentServiceBlockingStub;
+    @GrpcClient("payment-service")
+    private PaymentServiceGrpc.PaymentServiceBlockingStub paymentServiceBlockingStub;
 
-	private final GrpcExecutor grpcExecutor;
+    private final GrpcExecutor grpcExecutor;
 
-	public GetPaymentCountsResponse getPaymentCounts(UUID branchId, LocalDate start, LocalDate end) {
-		GetPaymentCountsRequest request = GetPaymentCountsRequest.newBuilder()
-				.setBranchId(branchId.toString())
-				.setStartDate(start.toString())
-				.setEndDate(end.toString())
-				.build();
+    public GetPaymentCountsResponse getPaymentCounts(UUID branchId, LocalDate start, LocalDate end) {
+        GetPaymentCountsRequest request = GetPaymentCountsRequest.newBuilder()
+                .setBranchId(branchId.toString())
+                .setStartDate(start.toString())
+                .setEndDate(end.toString())
+                .build();
 
-		return grpcExecutor.execute(PAYMENT_SERVICE, "getPaymentCounts", () ->
-				paymentServiceBlockingStub
-						.withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
-						.getPaymentCounts(request));
-	}
+        return grpcExecutor.execute(PAYMENT_SERVICE, "getPaymentCounts", () ->
+                paymentServiceBlockingStub
+                        .withDeadlineAfter(grpcDeadline, TimeUnit.SECONDS)
+                        .getPaymentCounts(request));
+    }
 }

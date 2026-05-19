@@ -15,13 +15,13 @@ import lombok.*;
 @Builder
 public class Tag extends BaseUuidEntity {
 
-	@Column(name = "name", nullable = false, unique = true, length = 50)
-	private String name;
+    @Column(name = "name", nullable = false, unique = true, length = 50)
+    private String name;
 
-	@Column(name = "icon_url", length = 255)
-	private String iconUrl;
+    @Column(name = "icon_url", length = 255)
+    private String iconUrl;
 
-	@Column(name = "category", nullable = false, length = 30)
-	private String category; // e.g., 'CUISINE', 'DIETARY'
+    @Column(name = "category", nullable = false, length = 30)
+    private String category; // e.g., 'CUISINE', 'DIETARY'
 }
 

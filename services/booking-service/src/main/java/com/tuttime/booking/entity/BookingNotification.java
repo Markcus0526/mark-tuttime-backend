@@ -21,18 +21,18 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class BookingNotification extends BaseUuidEntity {
 
-	@Column(name = "booking_id", nullable = false)
-	private UUID bookingId;
+    @Column(name = "booking_id", nullable = false)
+    private UUID bookingId;
 
-	@Column(name = "notification_type", nullable = false, length = 50)
-	private String notificationType; // SMS, EMAIL, PUSH
+    @Column(name = "notification_type", nullable = false, length = 50)
+    private String notificationType; // SMS, EMAIL, PUSH
 
-	@Column(name = "status", nullable = false, length = 20)
-	private String status; // SENT, FAILED, DELIVERED
+    @Column(name = "status", nullable = false, length = 20)
+    private String status; // SENT, FAILED, DELIVERED
 
-	@Column(name = "recipient_contact", nullable = false)
-	private String recipientContact;
+    @Column(name = "recipient_contact", nullable = false)
+    private String recipientContact;
 
-	@Column(name = "sent_at", nullable = false)
-	private OffsetDateTime sentAt;
+    @Column(name = "sent_at", nullable = false)
+    private OffsetDateTime sentAt;
 }

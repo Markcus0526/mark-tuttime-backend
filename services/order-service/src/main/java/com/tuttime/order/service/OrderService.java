@@ -13,35 +13,35 @@ import java.util.UUID;
 
 public interface OrderService {
 
-	// User Operations
-	OrderDto.OrderDetailResponse getOrderById(UUID orderId, UUID currentUserId, String userRoles);
+    // User Operations
+    OrderDto.OrderDetailResponse getOrderById(UUID orderId, UUID currentUserId, String userRoles);
 
-	Page<OrderDto.OrderDetailResponse> getOrdersByUserId(UUID userId, UUID branchId, OrderStatus status,
-	                                                     int page, int size, UUID currentUserId, String userRoles);
+    Page<OrderDto.OrderDetailResponse> getOrdersByUserId(UUID userId, UUID branchId, OrderStatus status,
+                                                         int page, int size, UUID currentUserId, String userRoles);
 
-	OrderDto.OrderDetailResponse getOrderByBookingId(UUID bookingId, UUID currentUserId, String userRoles);
+    OrderDto.OrderDetailResponse getOrderByBookingId(UUID bookingId, UUID currentUserId, String userRoles);
 
-	OrderDto.OrderResponse updateOrderContent(UUID orderId, OrderDto.OrderUpdateRequest request,
-	                                          UUID currentUserId, String userRoles);
+    OrderDto.OrderResponse updateOrderContent(UUID orderId, OrderDto.OrderUpdateRequest request,
+                                              UUID currentUserId, String userRoles);
 
-	OrderDto.OrderResponse cancelOrder(UUID orderId, UUID currentUserId, String userRoles);
+    OrderDto.OrderResponse cancelOrder(UUID orderId, UUID currentUserId, String userRoles);
 
-	List<OrderDto.OrderResponse> updateStatus(List<UUID> orderIds, OrderStatus newStatus, UUID currentUserId, String userRoles);
+    List<OrderDto.OrderResponse> updateStatus(List<UUID> orderIds, OrderStatus newStatus, UUID currentUserId, String userRoles);
 
-	OrderDto.OrderResponse syncStatusFromPos(UUID orderId, OrderDto.PosSyncRequest request, String apiKey);
+    OrderDto.OrderResponse syncStatusFromPos(UUID orderId, OrderDto.PosSyncRequest request, String apiKey);
 
-	Page<OrderDto.OrderDetailResponse> searchOrders(UUID branchId, String query, OrderStatus status,
-	                                                OffsetDateTime startDateTime, OffsetDateTime endDateTime,
-	                                                BigDecimal minAmount, BigDecimal maxAmount,
-	                                                Pageable pageable, UUID currentUserId, String userRoles);
+    Page<OrderDto.OrderDetailResponse> searchOrders(UUID branchId, String query, OrderStatus status,
+                                                    OffsetDateTime startDateTime, OffsetDateTime endDateTime,
+                                                    BigDecimal minAmount, BigDecimal maxAmount,
+                                                    Pageable pageable, UUID currentUserId, String userRoles);
 
-	void deleteOrder(UUID orderId); // Soft delete
+    void deleteOrder(UUID orderId); // Soft delete
 
-	Order createOrUpdateOrder(UUID bookingId, UUID userId, UUID branchId);
+    Order createOrUpdateOrder(UUID bookingId, UUID userId, UUID branchId);
 
-	void cancelOrderByBookingId(UUID bookingId);
+    void cancelOrderByBookingId(UUID bookingId);
 
-	Page<OrderDto.OrderDetailResponse> getMyOrders(UUID userId, OrderStatus status, int page, int size);
+    Page<OrderDto.OrderDetailResponse> getMyOrders(UUID userId, OrderStatus status, int page, int size);
 
-	void updateStatusFromPayment(UUID orderId, OrderStatus newStatus);
+    void updateStatusFromPayment(UUID orderId, OrderStatus newStatus);
 }
