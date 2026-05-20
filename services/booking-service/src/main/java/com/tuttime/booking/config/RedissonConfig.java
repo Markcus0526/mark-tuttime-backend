@@ -6,6 +6,7 @@ import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 @Configuration
 public class RedissonConfig {
@@ -23,6 +24,7 @@ public class RedissonConfig {
     private boolean useSsl;
 
     @Bean(destroyMethod = "shutdown") // Ensures graceful release of connections on app stop
+    @Lazy
     public RedissonClient redissonClient() {
         Config config = new Config();
 
@@ -40,10 +42,10 @@ public class RedissonConfig {
                 .setIdleConnectionTimeout(10000)      // Close idle connections after 10s
 
                 // --- Resiliency & Timeouts ---
-                .setConnectTimeout(10000)             // 10s to establish connection
+                .setConnectTimeout(5000)             // 10s to establish connection
                 .setTimeout(3000)                     // 3s wait for command response
-                .setRetryAttempts(3)                  // Retry failed commands 3 times
-                .setRetryInterval(1500)               // Wait 1.5s between retries
+                .setRetryAttempts(10)                  // Retry failed commands 3 times
+                .setRetryInterval(2000)               // Wait 1.5s between retries
 
                 // --- Reliability ---
                 .setPingConnectionInterval(30000);    // Keep-alive ping every 30s

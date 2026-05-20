@@ -17,15 +17,15 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
-      timeout: ${REDIS_TIMEOUT:5000ms}
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:5000ms}
       lettuce:
         pool:
-          max-active: ${REDIS_POOL_MAX_ACTIVE}
-          max-idle: ${REDIS_POOL_MAX_IDLE}
-          min-idle: ${REDIS_POOL_MIN_IDLE}
+          max-active: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE}
+          max-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE}
+          min-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE}
 
   cloud:
     kubernetes:
@@ -47,11 +47,11 @@ spring:
       # Global default filters (applied to all routes)
       # ----------------------------------------------
       default-filters:
-        - name: RequestRateLimiter
-          args:
-            key-resolver: "#{@userKeyResolver}"
-            redis-rate-limiter.replenishRate: 50
-            redis-rate-limiter.burstCapacity: 100
+#        - name: RequestRateLimiter
+#          args:
+#            key-resolver: "#{@userKeyResolver}"
+#            redis-rate-limiter.replenishRate: 50
+#            redis-rate-limiter.burstCapacity: 100
         - name: Retry
           args:
             retries: 3
@@ -77,12 +77,17 @@ spring:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTIONS
           filters:
+#            - name: RequestRateLimiter   # ADD this block
+#              args:
+#                key-resolver: "#{@userKeyResolver}"
+#                redis-rate-limiter.replenishRate: 50
+#                redis-rate-limiter.burstCapacity: 100
             - name: BruteForceProtection           # only on auth (before rate limit)
             - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
-                fallbackUri: forward:/fallback/user-service
+                #fallbackUri: forward:/fallback/user-service
 
         - id: user-service-user
           uri: http://${USER_SERVICE}
@@ -469,9 +474,7 @@ logging:
   level:
     root: ${LOG_LEVEL:INFO}
     com.tuttime: DEBUG
-    org.springframework.boot.autoconfigure: DEBUG
     org.springframework.cloud.gateway: INFO
-    io.github.resilience4j.circuitbreaker: DEBUG
 
 graylog:
   host: ${GRAYLOG_HOST}
