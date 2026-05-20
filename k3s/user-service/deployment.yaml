@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: tuttime
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "28001"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: user-service
+          image: tuttime/user-service:v1
+          imagePullPolicy: IfNotPresent   # or Never
+          ports:
+            - containerPort: 28001
+              name: http
+            - containerPort: 29001
+              name: grpc
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:ActiveProcessorCount=2"
+          envFrom:
+            - configMapRef:
+                name: user-service-config
+            - secretRef:
+                name: user-service-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "500m"
+            limits:
+              memory: "2048Mi"
+              cpu: "1000m"
+          livenessProbe:
+            tcpSocket:
+              port: 28001
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: 28001
+            initialDelaySeconds: 45
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 15"]
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: user-service-uploads-pvc

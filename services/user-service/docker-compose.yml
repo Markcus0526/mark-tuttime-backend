@@ -49,14 +49,17 @@ services:
       DB_REPLICA_POOL_MAX_SIZE: 50
       DB_REPLICA_POOL_MIN_IDLE: 10
 
-      # Redis
-      CACHE_TYPE: redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ""
-      REDIS_POOL_MAX_ACTIVE: 20
-      REDIS_POOL_MAX_IDLE: 10
-      REDIS_POOL_MIN_IDLE: 2
+      # Redis (disabled)
+      MANAGEMENT_HEALTH_REDIS_ENABLED: false
+      SPRING_CACHE_TYPE: none
+      SPRING_DATA_REDIS_HOST: tuttime-redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: password
+      SPRING_DATA_REDIS_TIMEOUT: 8000ms
+      SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: 20
+      SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: 10
+      SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: 2
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration
 
       # Kafka
       KAFKA_ENABLED: true

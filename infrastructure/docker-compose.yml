@@ -12,13 +12,13 @@ services:
     volumes:
       - redis_data:/data
     environment:
-      REDIS_PASSWORD: ""
+      REDIS_PASSWORD: password
     command: >
       sh -c "
       if [ -n \"$$REDIS_PASSWORD\" ]; then
-        redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru --requirepass \"$$REDIS_PASSWORD\"
+        redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru --bind 0.0.0.0 --protected-mode no --requirepass \"$$REDIS_PASSWORD\"
       else
-        redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+        redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru --bind 0.0.0.0 --protected-mode no
       fi
       "
     healthcheck:
@@ -115,7 +115,7 @@ services:
     image: opensearchproject/opensearch:2.11.0
     container_name: tuttime-opensearch
     environment:
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
       - "bootstrap.memory_lock=true"
       - "discovery.type=single-node"
       - "action.auto_create_index=true"

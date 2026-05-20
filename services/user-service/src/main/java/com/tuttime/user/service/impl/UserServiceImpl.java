@@ -413,7 +413,6 @@ public class UserServiceImpl implements UserService {
         user.setStatus(UserStatus.BLOCKED);
         userRepository.save(user);
 
-        // Broadcast to Kafka topic so Gateway updates Redis immediately
         Map<String, Object> params = new HashMap<>();
         params.put("phoneNumber", user.getPhoneNumber());
         params.put("email", user.getEmail());
@@ -440,7 +439,6 @@ public class UserServiceImpl implements UserService {
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
 
-        // Broadcast to Kafka to remove from Redis blocklist
         Map<String, Object> params = new HashMap<>();
         params.put("phoneNumber", user.getPhoneNumber());
         params.put("email", user.getEmail());
