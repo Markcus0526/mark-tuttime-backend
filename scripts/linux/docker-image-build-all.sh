@@ -14,6 +14,11 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  TutTime - Build All Docker Images${NC}"
 echo -e "${GREEN}========================================${NC}"
 
+# Restart Docker to avoid iptables conflicts with K3s or other network changes
+echo -e "${YELLOW}Restarting Docker daemon to reset network rules...${NC}"
+sudo systemctl restart docker
+echo -e "${GREEN}Docker restarted successfully.${NC}"
+
 # List of services and their expected image tags
 SERVICES=(
     "api-gateway"
