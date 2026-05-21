@@ -27,9 +27,6 @@ spec:
               name: http
             - containerPort: 29001
               name: grpc
-          env:
-            - name: JAVA_TOOL_OPTIONS
-              value: "-XX:ActiveProcessorCount=2"
           envFrom:
             - configMapRef:
                 name: user-service-config
@@ -41,7 +38,7 @@ spec:
           resources:
             requests:
               memory: "1024Mi"
-              cpu: "500m"
+              cpu: "200m"
             limits:
               memory: "2048Mi"
               cpu: "1000m"

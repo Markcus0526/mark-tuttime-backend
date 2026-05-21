@@ -5,7 +5,7 @@ metadata:
   namespace: tuttime
 data:
   # ========== Spring Boot Core ==========
-  SPRING_PROFILES_ACTIVE: "k8s,graylog-enabled"
+  SPRING_PROFILES_ACTIVE: "k3s"
   SERVER_PORT: "8080"
   SPRING_CODEC_MAX_IN_MEMORY_SIZE: "500MB"
   GATEWAY_HTTP_KEEP_ALIVE: "3600s"

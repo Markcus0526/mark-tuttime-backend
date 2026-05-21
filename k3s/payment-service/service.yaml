@@ -13,7 +13,4 @@ spec:
     - name: grpc
       port: 29006
       targetPort: 29006
-    - name: debug
-      port: 5006
-      targetPort: 5006
   type: ClusterIP

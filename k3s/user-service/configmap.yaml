@@ -5,7 +5,7 @@ metadata:
   namespace: tuttime
 data:
   # ========== Spring Boot Core ==========
-  SPRING_PROFILES_ACTIVE: "k8s,graylog-enabled"
+  SPRING_PROFILES_ACTIVE: "k3s"
   SERVER_PORT: "28001"
   GRPC_PORT: "29001"
 

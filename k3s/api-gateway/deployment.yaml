@@ -26,9 +26,6 @@ spec:
           ports:
             - containerPort: 8080
               name: http
-          env:
-            - name: JAVA_TOOL_OPTIONS
-              value: "-XX:ActiveProcessorCount=2"
           envFrom:
             - configMapRef:
                 name: api-gateway-config
@@ -37,7 +34,7 @@ spec:
           resources:
             requests:
               memory: "2048Mi"
-              cpu: "500m"
+              cpu: "200m"
             limits:
               memory: "4196Mi"
               cpu: "1000m"
