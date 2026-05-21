@@ -42,10 +42,10 @@ public class RedissonConfig {
                 .setIdleConnectionTimeout(10000)      // Close idle connections after 10s
 
                 // --- Resiliency & Timeouts ---
-                .setConnectTimeout(5000)             // 10s to establish connection
-                .setTimeout(3000)                     // 3s wait for command response
-                .setRetryAttempts(10)                  // Retry failed commands 3 times
-                .setRetryInterval(2000)               // Wait 1.5s between retries
+                .setConnectTimeout(30000)             // 10s to establish connection
+                .setTimeout(10000)                     // 3s wait for command response
+                .setRetryAttempts(20)                  // Retry failed commands 3 times
+                .setRetryInterval(3000)               // Wait 1.5s between retries
 
                 // --- Reliability ---
                 .setPingConnectionInterval(30000);    // Keep-alive ping every 30s

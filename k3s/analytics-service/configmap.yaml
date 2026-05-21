@@ -4,17 +4,20 @@ metadata:
   name: analytics-service-config
   namespace: tuttime
 data:
-  SPRING_PROFILES_ACTIVE: "k8s,graylog-enabled"
+  # ========== Spring Boot Core ==========
+  SPRING_PROFILES_ACTIVE: "k3s"  # Dev: Graylog disabled - using kubectl logs instead
   SERVER_PORT: "28009"
   GRPC_PORT: "29009"
-  DATABASE_URL: "jdbc:postgresql://analytics-service-db:5432/analytics_service_db?currentSchema=analytics_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC"
+
+  # ========== Database (PostgreSQL) ==========
+  DATABASE_URL: "jdbc:postgresql://booking-service-db:5432/booking_service_db?currentSchema=booking_service&stringtype=unspecified&prepareThreshold=0&TimeZone=UTC"
   DB_POOL_MAX_SIZE: "100"
   DB_POOL_MIN_IDLE: "20"
   DB_REPLICA_POOL_MAX_SIZE: "50"
   DB_REPLICA_POOL_MIN_IDLE: "10"
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
 
-  # Redis
+  # ========== Redis (disabled via autoconfigure exclude) ==========
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
   SPRING_CACHE_TYPE: "redis"
   SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
   SPRING_DATA_REDIS_PORT: "6379"
@@ -24,52 +27,49 @@ data:
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
   SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
 
-  KAFKA_ENABLED: "true"
-  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:9093"
-  SPRING_KAFKA_SECURITY_PROTOCOL: "PLAINTEXT"
-  MEDIA_STORAGE_TYPE: "local"
-  LOCAL_STORAGE_PATH: "/app/uploads/medias"
-  LOCAL_MEDIA_URL_PATH: "/analytics-medias/"
-  MEDIA_MAX_SIZE: "5242880"
-  MEDIA_MAX_DIMENSION: "1024"
-  MEDIA_QUALITY: "0.85"
-  S3_ENDPOINT: "https://selcloud.ru"
-  S3_REGION: "ru-7"
-  S3_BUCKET: "tuttime-storage"
-  S3_BASE_URL: ""
-  S3_PRESIGNED_URL_EXPIRATION_HOURS: "24"
-  SPRING_SERVLET_MULTIPART_ENABLED: "true"
-  SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: "10MB"
-  SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: "10MB"
-  SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD: "2KB"
+  # Exclude Redis auto‑configuration – this service does not use Redis
+  SPRING_AUTOCONFIGURE_EXCLUDE: "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration"
 
-  # gRPC discovery
-  USER_GRPC_SERVICE: "user-service:29001"
-  RESTAURANT_GRPC_SERVICE: "restaurant-service:29002"
-  MENU_GRPC_SERVICE: "menu-service:29003"
-  BOOKING_GRPC_SERVICE: "booking-service:29004"
-  ORDER_GRPC_SERVICE: "order-service:29005"
-  PAYMENT_GRPC_SERVICE: "payment-service:29006"
-  POS_GRPC_SERVICE: "pos-service:29007"
-  REVIEW_GRPC_SERVICE: "review-service:29008"
-  ANALYTICS_GRPC_SERVICE: "analytics-service:29009"
-  NOTIFICATION_GRPC_SERVICE: "notification-service:29010"
+  # ========== Kafka ==========
+  KAFKA_ENABLED: "true"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka.tuttime.svc.cluster.local:9093"
+  SPRING_KAFKA_SECURITY_PROTOCOL: "PLAINTEXT"
+
+  # ========== gRPC Service Discovery ==========
+  USER_GRPC_SERVICE: "user-service.tuttime.svc.cluster.local:29001"
+  RESTAURANT_GRPC_SERVICE: "restaurant-service.tuttime.svc.cluster.local:29002"
+  MENU_GRPC_SERVICE: "menu-service.tuttime.svc.cluster.local:29003"
+  BOOKING_GRPC_SERVICE: "booking-service.tuttime.svc.cluster.local:29004"
+  ORDER_GRPC_SERVICE: "order-service.tuttime.svc.cluster.local:29005"
+  PAYMENT_GRPC_SERVICE: "payment-service.tuttime.svc.cluster.local:29006"
+  POS_GRPC_SERVICE: "pos-service.tuttime.svc.cluster.local:29007"
+  REVIEW_GRPC_SERVICE: "review-service.tuttime.svc.cluster.local:29008"
+  ANALYTICS_GRPC_SERVICE: "analytics-service.tuttime.svc.cluster.local:29009"
+  NOTIFICATION_GRPC_SERVICE: "notification-service.tuttime.svc.cluster.local:29010"
   GRPC_CLIENT_DEADLINE_SECONDS: "60"
+
+  # ========== Resilience & Timeouts ==========
   CIRCUIT_BREAKER_TIMEOUT: "305s"
+
+  # ========== Monitoring & OpenAPI ==========
   MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
-  SWAGGER_API_GATEWAY_URL: "http://api-gateway:8080"
-  ZIPKIN_URL: "http://zipkin:9411/api/v2/spans"
+  SWAGGER_API_GATEWAY_URL: "http://api-gateway.tuttime.svc.cluster.local:8080"
+  ZIPKIN_URL: "http://zipkin.tuttime.svc.cluster.local:9411/api/v2/spans"
   LOG_LEVEL: "INFO"
-  GRAYLOG_HOST: "graylog"
+
+  # ========== Graylog (Centralised Logging) ==========
+  GRAYLOG_HOST: "graylog.tuttime.svc.cluster.local"
   GRAYLOG_PORT: "12203"
-  GRAYLOG_ORIGIN_HOST: "analytics-service"
-  GRAYLOG_FACILITY: "analytics-service"
+  GRAYLOG_ORIGIN_HOST: "menu-service.tuttime.svc.cluster.local"
+  GRAYLOG_FACILITY: "menu-service"
   GRAYLOG_INCLUDE_SOURCE: "true"
   GRAYLOG_INCLUDE_MDC: "true"
   GRAYLOG_INCLUDE_MARKER: "true"
   GRAYLOG_INCLUDE_CALLER_DATA: "false"
   GRAYLOG_MAX_MESSAGE_SIZE: "8192"
   GRAYLOG_COMPRESSION_TYPE: "GZIP"
+
+  # ========== Security & Anti‑Fraud ==========
   BRUTEFORCE_WARNING_THRESHOLD: "3"
   BRUTEFORCE_IP_BLOCK_THRESHOLD: "5"
   BRUTEFORCE_PHONE_BLOCK_THRESHOLD: "10"
@@ -78,6 +78,8 @@ data:
   BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES: "60"
   ANTIFRAUD_MAX_DEVICES_PER_USER: "3"
   ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD: "3"
+
+  # ========== Cloud & Kubernetes Discovery ==========
   CONNECTION_POOL_MONITORING_ENABLED: "false"
   SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "false"
   SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: "false"

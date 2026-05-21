@@ -27,21 +27,15 @@ spec:
               name: http
             - containerPort: 29010
               name: grpc
-          env:
-            - name: JAVA_TOOL_OPTIONS
-              value: "-XX:ActiveProcessorCount=2"
           envFrom:
             - configMapRef:
                 name: notification-service-config
             - secretRef:
                 name: notification-service-secrets
-          volumeMounts:
-            - name: uploads
-              mountPath: /app/uploads
           resources:
             requests:
               memory: "1024Mi"
-              cpu: "500m"
+              cpu: "200m"
             limits:
               memory: "2048Mi"
               cpu: "1000m"
@@ -60,7 +54,3 @@ spec:
             preStop:
               exec:
                 command: ["sh", "-c", "sleep 15"]
-      volumes:
-        - name: uploads
-          persistentVolumeClaim:
-            claimName: notification-service-uploads-pvc

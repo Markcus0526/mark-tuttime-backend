@@ -13,7 +13,4 @@ spec:
     - name: grpc
       port: 29010
       targetPort: 29010
-    - name: debug
-      port: 5010
-      targetPort: 5010
   type: ClusterIP

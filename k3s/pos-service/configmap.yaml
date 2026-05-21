@@ -5,7 +5,7 @@ metadata:
   namespace: tuttime
 data:
   # ========== Spring Boot Core ==========
-  SPRING_PROFILES_ACTIVE: "k8s,graylog-enabled"
+  SPRING_PROFILES_ACTIVE: "k3s"
   SERVER_PORT: "28007"
   GRPC_PORT: "29007"
 
@@ -18,9 +18,7 @@ data:
 
   # ========== Redis (disabled via autoconfigure exclude) ==========
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
-  SPRING_CACHE_TYPE: "none"
-
-  # Redis connection settings (not used because RedisAutoConfiguration is excluded)
+  SPRING_CACHE_TYPE: "redis"
   SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
   SPRING_DATA_REDIS_PORT: "6379"
   SPRING_DATA_REDIS_PASSWORD: "password"
@@ -36,25 +34,6 @@ data:
   KAFKA_ENABLED: "true"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka.tuttime.svc.cluster.local:9093"
   SPRING_KAFKA_SECURITY_PROTOCOL: "PLAINTEXT"
-
-  # ========== Media Storage (Local) ==========
-  MEDIA_STORAGE_TYPE: "local"
-  LOCAL_STORAGE_PATH: "/app/uploads/medias"
-  LOCAL_MEDIA_URL_PATH: "/pos-medias/"
-  MEDIA_MAX_SIZE: "5242880"
-  MEDIA_MAX_DIMENSION: "1024"
-  MEDIA_QUALITY: "0.85"
-  S3_ENDPOINT: "https://selcloud.ru"
-  S3_REGION: "ru-7"
-  S3_BUCKET: "tuttime-storage"
-  S3_BASE_URL: ""
-  S3_PRESIGNED_URL_EXPIRATION_HOURS: "24"
-
-  # ========== Multipart File Uploads ==========
-  SPRING_SERVLET_MULTIPART_ENABLED: "true"
-  SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: "10MB"
-  SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: "10MB"
-  SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD: "2KB"
 
   # ========== gRPC Service Discovery ==========
   USER_GRPC_SERVICE: "user-service.tuttime.svc.cluster.local:29001"
