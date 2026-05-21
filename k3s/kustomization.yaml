@@ -15,15 +15,6 @@ resources:
   - infra/kafka-ui-service.yaml
   - infra/zipkin-deployment.yaml
   - infra/zipkin-service.yaml
-  - infra/mongodb-deployment.yaml
-  - infra/mongodb-pvc.yaml
-  - infra/mongodb-service.yaml
-  - infra/opensearch-deployment.yaml
-  - infra/opensearch-pvc.yaml
-  - infra/opensearch-service.yaml
-  - infra/graylog-deployment.yaml
-  - infra/graylog-secret.yaml
-  - infra/graylog-service.yaml
 
   # API Gateway
   - api-gateway/configmap.yaml
@@ -77,7 +68,6 @@ resources:
   - booking-service/deployment.yaml
   - booking-service/secret.yaml
   - booking-service/service.yaml
-  - booking-service/uploads-pvc.yaml
 
   # Payment Service + DB
   - payment-service/configmap.yaml
@@ -89,7 +79,6 @@ resources:
   - payment-service/deployment.yaml
   - payment-service/secret.yaml
   - payment-service/service.yaml
-  - payment-service/uploads-pvc.yaml
 
   # Order Service + DB
   - order-service/configmap.yaml
@@ -101,7 +90,6 @@ resources:
   - order-service/deployment.yaml
   - order-service/secret.yaml
   - order-service/service.yaml
-  - order-service/uploads-pvc.yaml
 
   # POS Service + DB
   - pos-service/configmap.yaml
@@ -113,7 +101,6 @@ resources:
   - pos-service/deployment.yaml
   - pos-service/secret.yaml
   - pos-service/service.yaml
-  - pos-service/uploads-pvc.yaml
 
   # Review Service + DB
   - review-service/configmap.yaml
@@ -125,7 +112,6 @@ resources:
   - review-service/deployment.yaml
   - review-service/secret.yaml
   - review-service/service.yaml
-  - review-service/uploads-pvc.yaml
 
   # Analytics Service + DB
   - analytics-service/configmap.yaml
@@ -137,7 +123,6 @@ resources:
   - analytics-service/deployment.yaml
   - analytics-service/secret.yaml
   - analytics-service/service.yaml
-  - analytics-service/uploads-pvc.yaml
 
   # Notification Service + DB
   - notification-service/configmap.yaml
@@ -149,7 +134,6 @@ resources:
   - notification-service/deployment.yaml
   - notification-service/secret.yaml
   - notification-service/service.yaml
-  - notification-service/uploads-pvc.yaml
 
 # Optional: override image tags for all services
 images:
