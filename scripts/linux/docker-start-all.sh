@@ -15,6 +15,11 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  TutTime - Starting All Services${NC}"
 echo -e "${GREEN}========================================${NC}"
 
+# Restart Docker to avoid iptables conflicts (e.g., after K3s)
+echo -e "${YELLOW}Restarting Docker daemon to reset network rules...${NC}"
+sudo systemctl restart docker
+echo -e "${GREEN}Docker restarted successfully.${NC}"
+
 # ------------------------------------------------------------
 # 1. Define directories
 # ------------------------------------------------------------

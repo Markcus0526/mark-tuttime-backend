@@ -1,63 +1,149 @@
-docker compose --env-file .env.docker up xx-service-db
+# Monitoring TutTime with Prometheus & Grafana on K3s
 
-- Healthy check
-docker inspect tuttime-api-gateway --format='{{range .State.Health.Log}}{{.Output}}{{end}}'
+This guide explains how to deploy a full monitoring stack (Prometheus + Grafana) on your K3s cluster, configure it to scrape metrics from your Spring Boot microservices, and visualise the data.
 
-docker inspect tuttime-api-gateway --format='{{json .State.Health}}'
+---
 
-docker compose config
+## Prerequisites
 
-docker compose up -d --build menu-service
+- K3s cluster up and running.
+- `kubectl` configured.
+- Helm 3 installed (`sudo snap install helm --classic`).
 
-docker compose up -d --force-recreate booking-service
+---
 
-docker compose up -d --build
+## 1. Install the kube-prometheus-stack (includes Prometheus, Grafana, Alertmanager)
 
-docker exec tuttime-booking-service printenv | grep ORDER_GRPC_SERVICE
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 
-# k3s configuration
+# Create a namespace for monitoring
+kubectl create namespace monitoring
 
-# Install K3s on your VPS (fresh install):
-curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644 --flannel-backend none
+# Install the stack
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --set grafana.service.type=NodePort \
+  --set grafana.service.nodePort=32000 \
+  --set prometheus.service.type=NodePort \
+  --set prometheus.service.nodePort=32001
+```
 
-sudo cat /etc/rancher/k3s/k3s.yaml
+> **Note:** The `NodePort` settings allow you to access Grafana and Prometheus directly from your VPS IP. Adjust ports if needed (must be in range 30000-32767).
 
-# Copy that to your local ~/.kube/config and change server: https://127.0.0.1:6443 to your VPS public IP.
+---
 
-Recommended Order (from earliest to latest)
-Order	Service	Reason / Dependencies
-1	user-service	No dependency on other app services. Provides authentication and user data.
-2	restaurant-service	No dependency on other app services. Provides restaurant, branch, table data.
-3	menu-service	Depends on restaurant-service (to know which restaurant/branch).
-4	review-service	Depends on user-service and restaurant-service (reviews need users and restaurants).
-5	booking-service	Depends on user-service, restaurant-service, menu-service (for pre‑orders).
-6	payment-service	Depends on booking-service (payments are tied to a booking).
-7	order-service	Depends on booking-service, menu-service, payment-service.
-8	pos-service	Depends on order-service and menu-service (synchronises orders to POS).
-9	notification-service	Consumes events from many services, but can start anytime. Placing it after core services ensures it can respond to events immediately.
-10	analytics-service	Also consumes events; can start anytime. Start after core services.
-11	api-gateway	Should be started last, after all backend services are ready to accept traffic.
+## 2. Access Grafana
 
+After installation, get the Node IP and port:
 
-For Windows:
-Open Notepad as Administrator.
+```bash
+kubectl get svc -n monitoring monitoring-grafana
+```
 
-Open C:\Windows\System32\drivers\etc\hosts.
+Open your browser at `http://<VPS‑IP>:32000` (or the nodePort you set).
 
-Add the line:
+- **Username:** `admin`
+- **Password:** To retrieve the auto‑generated password:
 
-text
-109.199.112.48 api-gateway
-Save and close.
+```bash
+kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+```
 
-Flush DNS: ipconfig /flushdns
+> Change the password after first login.
 
-For Linux/macOS:
-Open a terminal.
+---
 
-Edit /etc/hosts (e.g., sudo nano /etc/hosts).
+## 3. Configure Spring Boot Services to Expose Metrics
 
-Add the line:
+Each microservice must have the following dependency (already in your `pom.xml`):
 
-text
-109.199.112.48 api-gateway
+```xml
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+```
+
+And ensure the actuator endpoint is enabled in `application.yml`:
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+```
+
+After redeploying the services, Prometheus will automatically discover them because the `kube-prometheus-stack` includes a `PodMonitor` that scrapes any pod with the annotation `prometheus.io/scrape: "true"`. Your `deployment.yaml` files should already have this annotation (as shown in earlier manifests).
+
+---
+
+## 4. Default Dashboards
+
+The stack comes with many pre‑configured dashboards for Kubernetes clusters. To view them:
+
+- Log into Grafana.
+- Click the **Dashboards** icon (four squares) → **Browse**.
+- Look for dashboards like:
+    - **Kubernetes / Compute Resources / Pod**
+    - **Kubernetes / Networking / Pod**
+    - **Spring Boot Statistics** (if you import a Spring Boot dashboard)
+
+---
+
+## 5. Import a Spring Boot Dashboard
+
+To see detailed JVM, HTTP request, and database metrics:
+
+1. In Grafana, go to **Dashboards** → **Import**.
+2. Enter dashboard ID **12900** (Spring Boot 2.1+ Statistics) or **4701** (Spring Boot 2.1+).
+3. Select the Prometheus data source (named `Prometheus`).
+4. Click **Import**.
+
+Now you can see metrics from each of your microservices.
+
+---
+
+## 6. (Optional) Expose Prometheus externally
+
+If you want to query Prometheus directly, use the NodePort service:
+
+```bash
+kubectl get svc -n monitoring monitoring-kube-prometheus-prometheus
+```
+
+Access at `http://<VPS‑IP>:32001`.
+
+---
+
+## 7. Troubleshooting
+
+- **No metrics appear**: Ensure your services have the Prometheus annotation (`prometheus.io/scrape: "true"`) and that the `kube-prometheus-stack` `PodMonitor` is correctly selecting them.
+- **Check if Prometheus is scraping**:
+  ```bash
+  kubectl port-forward -n monitoring service/monitoring-kube-prometheus-prometheus 9090:9090
+  ```
+  Then open `http://localhost:9090/targets` – you should see your services as targets.
+- **Grafana not reachable**: Verify the NodePort service is running and the VPS firewall allows the port (e.g., `sudo ufw allow 32000/tcp`).
+
+---
+
+## 8. Clean Up
+
+To remove the monitoring stack:
+
+```bash
+helm uninstall monitoring -n monitoring
+kubectl delete namespace monitoring
+```
+
+---
+
+Now you have a professional monitoring system for your TutTime backend. Use it to track pod CPU/memory usage, request latencies, error rates, and more.
+```

@@ -161,6 +161,12 @@
             <artifactId>zipkin-reporter-brave</artifactId>
         </dependency>
 
+        <!-- Prometheus metrics -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- OpenAPI / Swagger UI (WebFlux) -->
         <dependency>
             <groupId>org.springdoc</groupId>
