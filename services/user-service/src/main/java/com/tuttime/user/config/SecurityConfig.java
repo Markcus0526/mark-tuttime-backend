@@ -3,6 +3,7 @@ package com.tuttime.user.config;
 import com.tuttime.common.auth.security.GatewayHeaderSecurityFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +20,9 @@ public class SecurityConfig {
 
     private final GatewayHeaderSecurityFilter gatewayHeaderSecurityFilter;
 
+    @Value("${app.media.local.upload-url}")
+    private String uploadUrl;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -27,8 +31,10 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**").permitAll() // Add /v1
-                        .requestMatchers("/api/v1/users/**").permitAll() // Add /v1
+                        .requestMatchers(uploadUrl + "**").permitAll()
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/api/v1/users/**").permitAll() // Add /v1
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 )
                 .addFilterBefore(gatewayHeaderSecurityFilter, UsernamePasswordAuthenticationFilter.class);
