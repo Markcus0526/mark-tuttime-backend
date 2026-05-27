@@ -47,19 +47,13 @@ spring:
       # Global default filters (applied to all routes)
       # ----------------------------------------------
       default-filters:
-#        - name: RequestRateLimiter
-#          args:
-#            key-resolver: "#{@userKeyResolver}"
-#            redis-rate-limiter.replenishRate: 50
-#            redis-rate-limiter.burstCapacity: 100
         - name: Retry
           args:
             retries: 3
-            statuses: SERVICE_UNAVAILABLE,INTERNAL_SERVER_ERROR
+            statuses: SERVICE_UNAVAILABLE
             methods: GET
             exceptions:
               - java.net.ConnectException
-              - java.net.SocketTimeoutException
               - java.net.UnknownHostException
         - AddResponseHeader=X-Content-Type-Options, nosniff
         - AddResponseHeader=X-Frame-Options, DENY
@@ -70,6 +64,52 @@ spring:
       # Route definitions
       # ----------------------------------------------
       routes:
+        # =================================================================
+        # ZERO-FILTER ISOLATED SAFETY CUTOFF FOR CIRCUIT BREAKER FALLBACKS
+        # =================================================================
+        - id: gateway-fallback-safety
+          uri: forward:/  # Terminates routing loops inside the Gateway context
+          predicates:
+            - Path=/fallback/**
+          order: -200 # HIGHEST PRIORITY: Must execute before any microservice rules
+          filters:
+            - name: SecureHeaders
+
+        # =================================================================
+        # 1. HIGH-PRIORITY RAW MEDIA ENDPOINTS (Executed First, No Filters)
+        # =================================================================
+        - id: user-service-media-direct
+          uri: http://${USER_SERVICE}
+          predicates:
+            - Path=/user-medias/**
+          order: -100
+          filters:
+            - name: SecureHeaders
+          metadata:
+            response-timeout: 30000
+            connect-timeout: 10000
+
+        - id: restaurant-service-media-direct
+          uri: http://${RESTAURANT_SERVICE}
+          predicates:
+            - Path=/restaurant-medias/**
+          order: -100
+          metadata:
+            response-timeout: 30000
+            connect-timeout: 10000
+
+        - id: menu-service-media-direct
+          uri: http://${MENU_SERVICE}
+          predicates:
+            - Path=/menu-medias/**
+          order: -100
+          metadata:
+            response-timeout: 30000
+            connect-timeout: 10000
+
+        # =================================================================
+        # 2. SECURE REST API ROUTES (Explicitly Isolated from Media paths)
+        # =================================================================
         # ---------- User Service ----------
         - id: user-service-auth
           uri: http://${USER_SERVICE}
@@ -77,11 +117,11 @@ spring:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTIONS
           filters:
-#            - name: RequestRateLimiter   # ADD this block
-#              args:
-#                key-resolver: "#{@userKeyResolver}"
-#                redis-rate-limiter.replenishRate: 50
-#                redis-rate-limiter.burstCapacity: 100
+            #            - name: RequestRateLimiter   # ADD this block
+            #              args:
+            #                key-resolver: "#{@userKeyResolver}"
+            #                redis-rate-limiter.replenishRate: 50
+            #                redis-rate-limiter.burstCapacity: 100
             - name: BruteForceProtection           # only on auth (before rate limit)
             - name: JwtAuthentication
             - name: CircuitBreaker
@@ -101,18 +141,6 @@ spring:
                 name: userServiceCircuitBreaker
                 fallbackUri: forward:/fallback/user-service
 
-        - id: user-service-media-direct
-          uri: http://${USER_SERVICE}
-          predicates:
-            - Path=/user-medias/**
-          filters:
-            - name: JwtAuthentication               # optional: media may be public
-            - name: Retry                           # keep retry for static assets
-              args:
-                retries: 2
-                statuses: SERVICE_UNAVAILABLE
-                methods: GET
-
         # ---------- Restaurant Service ----------
         - id: restaurant-service
           uri: http://${RESTAURANT_SERVICE}
@@ -126,13 +154,6 @@ spring:
                 name: restaurantServiceCircuitBreaker
                 fallbackUri: forward:/fallback/restaurant-service
 
-        - id: restaurant-service-media-direct
-          uri: http://${RESTAURANT_SERVICE}
-          predicates:
-            - Path=/restaurant-medias/**
-          filters:
-            - name: JwtAuthentication               # optional
-
         # ---------- Menu Service ----------
         - id: menu-service
           uri: http://${MENU_SERVICE}
@@ -145,11 +166,6 @@ spring:
               args:
                 name: menuServiceCircuitBreaker
                 fallbackUri: forward:/fallback/menu-service
-
-        - id: menu-service-media-direct
-          uri: http://${MENU_SERVICE}
-          predicates:
-            - Path=/menu-medias/**
 
         # ---------- Booking Service ----------
         - id: booking-service
@@ -446,8 +462,8 @@ resilience4j:
         timeoutDuration: 60s
         cancelRunningFuture: true
 
-  #retry:
-    # instances:
+      #retry:
+      # instances:
       #grpc:
       #  maxAttempts: 3
       #  waitDuration: 1s
