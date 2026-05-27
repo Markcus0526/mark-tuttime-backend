@@ -153,6 +153,18 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             ServerHttpRequest request = exchange.getRequest();
             String path = request.getURI().getPath();
             String method = request.getMethod().name();
+
+            // =================================================================
+            // CRITICAL FIX: HARD SHORT-CIRCUIT FOR MEDIA PAYLOADS
+            // Bypasses JSON body error handling, header inspections, and logging entirely.
+            // =================================================================
+            if ("GET".equalsIgnoreCase(method) && (
+                    path.contains("/user-medias/") ||
+                            path.contains("/restaurant-medias/") ||
+                            path.contains("/menu-medias/"))) {
+                return chain.filter(exchange);
+            }
+
             log.debug("JWT Filter: path={}, method={}", path, method);
 
             if ("OPTIONS".equalsIgnoreCase(method)) {
