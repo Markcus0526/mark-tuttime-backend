@@ -154,20 +154,24 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(new Amount(amount.toString(), "RUB"))
                 .build(), idempotencyKey);
 
+        // Save refund record with the status returned by YooKassa (may be "pending")
         Refund refund = refundRepository.save(Refund.builder()
                 .payment(payment)
                 .yookassaRefundId(yooRefund.getId())
                 .amount(amount)
-                .status(yooRefund.getStatus().toUpperCase())
+                .status(yooRefund.getStatus().toUpperCase()) // "PENDING" or "SUCCEEDED"
                 .reason(reason)
                 .build());
 
+        // Dispatch event immediately (optional, could wait for webhook)
         dispatchRefundCompletedEvent(payment, reason);
 
-        return refund.getStatus().equals("SUCCESS");
+        //return refund.getStatus().equals("SUCCESS");
+        return true;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public String fetchPaymentStatus(UUID bookingId) {
         return paymentRepository.findByBookingId(bookingId)
                 .map(p -> p.getStatus().name())
@@ -223,14 +227,29 @@ public class PaymentServiceImpl implements PaymentService {
             if (status != null) predicates.add(cb.equal(root.get("status"), status));
             if (fromDate != null) predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromDate));
             if (toDate != null) predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), toDate));
-            if (query != null && !query.isEmpty()) {
+
+            if (query != null && !query.trim().isEmpty()) {
+                String searchTerm = query.trim();
+                List<Predicate> searchPredicates = new ArrayList<>();
+
+                // Try to interpret as UUID for bookingId
                 try {
-                    UUID bookingUuid = UUID.fromString(query);
-                    predicates.add(cb.equal(root.get("bookingId"), bookingUuid));
+                    UUID bookingUuid = UUID.fromString(searchTerm);
+                    searchPredicates.add(cb.equal(root.get("bookingId"), bookingUuid));
                 } catch (IllegalArgumentException ignored) {
-                    // not a valid UUID – ignore (or add search by user email/phone later)
+                    // Not a valid UUID – ignore
                 }
+
+                // Search by yookassaPaymentId (partial match, case-insensitive)
+                searchPredicates.add(cb.like(cb.lower(root.get("yookassaPaymentId")), "%" + searchTerm.toLowerCase() + "%"));
+
+                // Search by userId as string (partial match)
+                searchPredicates.add(cb.like(cb.lower(root.get("userId").as(String.class)), "%" + searchTerm.toLowerCase() + "%"));
+
+                // Combine all search predicates with OR
+                predicates.add(cb.or(searchPredicates.toArray(new Predicate[0])));
             }
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -420,7 +439,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private String createNewPayment(UUID bookingId, UUID userId, UUID branchId, BigDecimal amount) {
         PaymentProcessor processor = new PaymentProcessor(apiKassaClient);
-        UUID idempotencyKey = UUID.randomUUID();
+        String idempotencyKey = bookingId.toString();
 
         var yooRequest = ru.loolzaaa.youkassa.model.Payment.builder()
                 .amount(new Amount(amount.toString(), "RUB"))
@@ -432,7 +451,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .description("Booking " + bookingId)
                 .build();
 
-        var yooResponse = processor.create(yooRequest, idempotencyKey.toString());
+        var yooResponse = processor.create(yooRequest, idempotencyKey);
 
         Payment payment = Payment.builder()
                 .bookingId(bookingId)
@@ -441,7 +460,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(amount)
                 .currency("RUB")
                 .yookassaPaymentId(yooResponse.getId())
-                .idempotencyKey(idempotencyKey)
+                .idempotencyKey(bookingId)
                 .confirmationUrl(yooResponse.getConfirmation().getConfirmationUrl())
                 .status(PaymentStatus.PENDING)
                 .build();
@@ -480,7 +499,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .externalPaymentId(externalId)
                 .amount(payment.getAmount())
                 .currency(payment.getCurrency())
-                .commissionRate(BigDecimal.valueOf(0.01))
+                .commissionRate(BigDecimal.valueOf(0.01)) // TODO set value in admin-panel
                 .status(payment.getStatus())
                 .build();
         eventProducer.sendPaymentCompletedEvent(event);
