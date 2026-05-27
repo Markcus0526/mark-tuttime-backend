@@ -43,7 +43,7 @@ FROM eclipse-temurin:21-jre-jammy AS runner
 RUN groupadd -r tuttime && useradd -r -g tuttime -ms /bin/bash tuttime
 
 WORKDIR /app
-RUN mkdir -p /app/uploads/medias && chown -R tuttime:tuttime /app
+RUN chown -R tuttime:tuttime /app
 COPY --from=builder /app/services/pos-service/target/pos-service-*.jar app.jar
 
 USER tuttime

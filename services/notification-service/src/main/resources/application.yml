@@ -92,11 +92,8 @@ spring:
       issuer: ${JWT_ISSUER}
       audience: ${JWT_AUDIENCE}
 
-  servlet:
-    multipart:
-      enabled: ${SPRING_SERVLET_MULTIPART_ENABLED}
-      max-file-size: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE}
-      max-request-size: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE}
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.MultipartAutoConfiguration
 
   threads:
     virtual:

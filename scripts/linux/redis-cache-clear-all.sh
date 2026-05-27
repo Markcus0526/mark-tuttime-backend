@@ -4,10 +4,10 @@
 # This clears all application caches including verification codes, rate limits, tokens, and Spring cache
 #
 # Usage:
-#   ./scripts/linux/clear-all-redis-cache.sh                    # Clear all application caches (safe)
-#   ./scripts/linux/clear-all-redis-cache.sh --flush-db         # Clear entire Redis database (WARNING: removes everything)
-#   ./scripts/linux/clear-all-redis-cache.sh --flush-all        # Clear all Redis databases (DANGER: removes everything from all DBs)
-#   ./scripts/linux/clear-all-redis-cache.sh --host localhost --port 6379 --password mypass
+#   ./scripts/linux/redis-cache-clear-all.sh                    # Clear all application caches (safe)
+#   ./scripts/linux/redis-cache-clear-all.sh --flush-db         # Clear entire Redis database (WARNING: removes everything)
+#   ./scripts/linux/redis-cache-clear-all.sh --flush-all        # Clear all Redis databases (DANGER: removes everything from all DBs)
+#   ./scripts/linux/redis-cache-clear-all.sh --host localhost --port 6379 --password mypass
 
 # Don't exit on error - we handle errors manually
 set +e

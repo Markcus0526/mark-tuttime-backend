@@ -1,61 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Force the property into the context immediately -->
-    <property name="HOSTNAME" value="restaurant-service"/>
+    <property name="HOSTNAME" value="restaurant-service" />
     <contextName>restaurant-service</contextName>
 
-    <include resource="org.springframework.boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>   <!-- includes defaults.xml and console appender -->
 
-    <!-- CUSTOM CONSOLE APPENDER WITH RED ERRORS -->
+    <!-- Console appender (already included in base.xml, but we customise pattern) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) : %highlight(%msg)
-                %n%highlight(%throwable)
-            </pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) : %highlight(%msg) %n%highlight(%throwable)</pattern>
         </encoder>
     </appender>
 
-    <!-- No default values – they must be provided by Spring environment -->
-    <springProperty scope="context" name="graylogHost" source="graylog.host"/>
-    <springProperty scope="context" name="graylogPort" source="graylog.port"/>
-
+    <!-- Graylog GELF appender (only when 'graylog-enabled' profile is active) -->
     <springProfile name="graylog-enabled">
-        <if condition='isDefined("graylogHost") &amp;&amp; isDefined("graylogPort")'>
-            <then>
-                <appender name="GELF_UDP" class="de.siegmar.logbackgelf.GelfUdpAppender">
-                    <graylogHost>${graylogHost}</graylogHost>
-                    <graylogPort>${graylogPort}</graylogPort>
-                    <useCompression>true</useCompression>
-                    <originHost>restaurant-service</originHost>
-                    <facility>restaurant-service</facility>
+        <appender name="GELF_UDP" class="de.siegmar.logbackgelf.GelfUdpAppender">
+            <graylogHost>${graylog.host:-localhost}</graylogHost>
+            <graylogPort>${graylog.port:-12203}</graylogPort>
+            <useCompression>true</useCompression>
+            <originHost>restaurant-service</originHost>
+            <facility>restaurant-service</facility>
+            <encoder class="de.siegmar.logbackgelf.GelfEncoder">
+                <originHost>restaurant-service</originHost>
+                <includeRawMessage>false</includeRawMessage>
+                <includeMdcKeyName>correlationId</includeMdcKeyName>
+            </encoder>
+        </appender>
 
-                    <encoder class="de.siegmar.logbackgelf.GelfEncoder">
-                        <originHost>restaurant-service</originHost>
-                        <includeRawMessage>false</includeRawMessage>
-                        <includeMdcKeyName>correlationId</includeMdcKeyName>
-                    </encoder>
-                </appender>
-
-                <appender name="ASYNC_GELF_UDP" class="ch.qos.logback.classic.AsyncAppender">
-                    <appender-ref ref="GELF_UDP"/>
-                </appender>
-            </then>
-            <else>
-                <!-- If graylog properties are missing, log a warning and do not start the GELF appender -->
-                <logger name="de.siegmar.logbackgelf" level="WARN"/>
-            </else>
-        </if>
+        <appender name="ASYNC_GELF_UDP" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="GELF_UDP"/>
+        </appender>
     </springProfile>
 
+    <!-- Root logger: always use CONSOLE, and also ASYNC_GELF_UDP if profile is active -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <springProfile name="graylog-enabled">
-            <if condition='isDefined("graylogHost") &amp;&amp; isDefined("graylogPort")'>
-                <then>
-                    <appender-ref ref="ASYNC_GELF_UDP"/>
-                </then>
-            </if>
-        </springProfile>
     </root>
+
+    <!-- This top‑level <springProfile> adds the Graylog appender when the profile is active -->
+    <springProfile name="graylog-enabled">
+        <root level="INFO">
+            <appender-ref ref="ASYNC_GELF_UDP"/>
+        </root>
+    </springProfile>
 </configuration>

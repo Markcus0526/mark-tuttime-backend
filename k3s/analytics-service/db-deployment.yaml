@@ -53,7 +53,7 @@ spec:
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: db-pvc.yaml
+            claimName: analytics-service-db-pvc
         - name: init-script
           configMap:
             name: analytics-service-db-init

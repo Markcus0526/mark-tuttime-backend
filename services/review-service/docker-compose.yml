@@ -70,27 +70,6 @@ services:
       SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: ""
       SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: ""
 
-      # Media storage
-      MEDIA_STORAGE_TYPE: local
-      LOCAL_STORAGE_PATH: /app/uploads/medias
-      LOCAL_MEDIA_URL_PATH: /review-medias/
-      MEDIA_MAX_SIZE: 5242880
-      MEDIA_MAX_DIMENSION: 1024
-      MEDIA_QUALITY: 0.85
-      S3_ENDPOINT: https://selcloud.ru
-      S3_REGION: ru-7
-      S3_BUCKET: tuttime-storage
-      S3_ACCESS_KEY: your_key
-      S3_SECRET_KEY: your_secret
-      S3_BASE_URL: ""
-      S3_PRESIGNED_URL_EXPIRATION_HOURS: 24
-
-      # File uploads
-      SPRING_SERVLET_MULTIPART_ENABLED: true
-      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 10MB
-      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 10MB
-      SPRING_SERVLET_MULTIPART_FILE_SIZE_THRESHOLD: 2KB
-
       # gRPC service discovery – use service names (not container names)
       USER_GRPC_SERVICE: user-service:29001
       RESTAURANT_GRPC_SERVICE: restaurant-service:29002
@@ -111,7 +90,6 @@ services:
       SWAGGER_API_GATEWAY_URL: http://api-gateway:8080/review-docs
 
       # Monitoring & logging
-      MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: false
       ZIPKIN_URL: http://zipkin:9411/api/v2/spans
       LOG_LEVEL: INFO
       GRAYLOG_HOST: graylog
@@ -147,8 +125,6 @@ services:
       - "28008:28008"
       - "29008:29008"
       - "5008:5008"
-    volumes:
-      - ./uploads:/app/uploads:rw
     deploy:
       resources:
         limits:
