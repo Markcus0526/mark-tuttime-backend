@@ -72,6 +72,12 @@ public abstract class BranchMapper {
     }
 
     @AfterMapping
+    protected void addImageUrlToMap(Branch entity, @MappingTarget BranchDto.BranchMapResponse.BranchMapResponseBuilder builder) {
+        mediaRepository.findPrimaryImageUrlByEntityId(entity.getId())
+                .ifPresent(builder::imageUrl);
+    }
+
+    @AfterMapping
     protected void addMedias(Branch item, @MappingTarget BranchDto.BranchDetailResponse.BranchDetailResponseBuilder builder) {
         // Fetch ALL Media (Images & Videos)
         List<MediaDto.MediaResponse> allMedia = mediaRepository.findAllImageAndVideoByEntityId(item.getId())
