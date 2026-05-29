@@ -84,8 +84,8 @@ services:
       GRPC_CLIENT_DEADLINE_SECONDS: 60
 
       # YooKassa configuration
-      YOOKASSA_SHOP_ID: ***REMOVED***
-      YOOKASSA_SECRET_KEY: ***REMOVED***
+      YOOKASSA_SHOP_ID: your_yookassa_shop_id
+      YOOKASSA_SECRET_KEY: your_yookassa_secret_id
 
       # Timeouts
       CIRCUIT_BREAKER_TIMEOUT: 305s
