@@ -40,13 +40,15 @@ spec:
               memory: "2048Mi"
               cpu: "1000m"
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health/liveness
               port: 28009
             initialDelaySeconds: 120
             periodSeconds: 20
             failureThreshold: 5
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health/readiness
               port: 28009
             initialDelaySeconds: 45
             periodSeconds: 10

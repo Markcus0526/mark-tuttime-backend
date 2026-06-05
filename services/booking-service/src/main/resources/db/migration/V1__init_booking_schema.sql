@@ -1,11 +1,17 @@
+-- ============================================================================
+-- Flyway Migration: V1__payment_booking_schema.sql
+-- Description: Core Schema Initialization for Booking Service
+-- Database Engine: PostgreSQL
+-- ============================================================================
+
 CREATE SCHEMA IF NOT EXISTS booking_service;
 SET
-search_path TO booking_service, public;
+    search_path TO booking_service, public;
 
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
+    EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Enum for Type-Safe Statuses
 CREATE TYPE booking_status_enum AS ENUM ('CREATED', 'PAID', 'ARRIVED', 'CANCELED', 'NO_SHOW', 'COMPLETED');

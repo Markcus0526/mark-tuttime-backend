@@ -1,16 +1,18 @@
 -- ============================================================================
--- MENU SERVICE - Complete Production Schema (UUID & Inheritance)
+-- Flyway Migration: V1__payment_menu_schema.sql
+-- Description: Core Schema Initialization for Menu Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS menu_service;
 SET
-search_path TO menu_service, public;
+    search_path TO menu_service, public;
 
 -- Enable extensions
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
+    EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ============================================================================
 -- 1. ENUMS
@@ -23,15 +25,15 @@ CREATE TYPE media_type_enum AS ENUM ('IMAGE', 'VIDEO');
 -- 2. HELPER FUNCTION FOR updated_at TIMESTAMPS
 -- ============================================================================
 CREATE
-OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
+    OR REPLACE FUNCTION update_modified_column()
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at
-= CURRENT_TIMESTAMP;
-RETURN NEW;
+        = CURRENT_TIMESTAMP;
+    RETURN NEW;
 END;
 $$
-LANGUAGE plpgsql;
+    LANGUAGE plpgsql;
 
 -- ============================================================================
 -- 3. TABLES

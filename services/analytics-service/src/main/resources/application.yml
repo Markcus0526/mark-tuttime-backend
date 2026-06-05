@@ -112,6 +112,15 @@ spring:
   aop:
     proxy-target-class: false
 
+  flyway:
+    enabled: true
+    # Tells Flyway to look for scripts in the standard resources directory
+    locations: classpath:db/migration
+    # Safeguard: Blocks Flyway from wiping data in a production environment
+    clean-disabled: true
+    # Ensures Flyway runs smoothly even if the schema tracking table doesn't exist yet
+    baseline-on-migrate: true
+
 server:
   port: ${SERVER_PORT}
   shutdown: graceful
@@ -199,13 +208,13 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,circuitbreakers
+        include: health,readiness,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
-      validate-group-membership: false
-      show-details: always
-      db:
+      probes:
         enabled: true
+      validate-group-membership: false
+      show-details: always   # optional, for debugging
       group:
         readiness:
           include: db,diskSpace,ping
@@ -218,6 +227,8 @@ management:
       percentiles-histogram:
         "[hikari.connections.*]": true
   health:
+    db:
+      enabled: true           # enables database health check
     grpc:
       enabled: false
     redis:

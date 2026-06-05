@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -79,6 +80,7 @@ public class PaymentController {
 
     @PostMapping("/test/confirm-booking/{bookingId}")
     @Operation(summary = "FOR TESTING: Manually confirms a YooKassa payment and triggers Kafka event")
+    @Profile("!production")
     public ResponseEntity<ApiRes<String>> testConfirmPayment(@PathVariable UUID bookingId) {
         // In dev mode, we skip YooKassa and force the 'COMPLETED' state
         String mockYooId = "test_pay_" + UUID.randomUUID();

@@ -1,6 +1,7 @@
 -- ============================================================================
--- REVIEW SERVICE - Production Ready Schema
--- Optimized for Spring Boot 3.3.13 + Hibernate 6
+-- Flyway Migration: V1__init_review_schema.sql
+-- Description: Core Schema Initialization for Review Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS review_service;
@@ -12,10 +13,10 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. Automation: Global Updated_At Trigger Function
 CREATE OR REPLACE FUNCTION update_timestamp()
-RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
-RETURN NEW;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 

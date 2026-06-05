@@ -62,11 +62,12 @@ services:
       # Cors
       APP_CORS_ALLOWED_ORIGINS: https://tuttime-web.vercel.app,http://localhost:8080,http://localhost:18080,http://localhost:5173,http://localhost:8081
 
-      # JWT
+      # JWT & CLUSTER INTERNAL SECRET
       JWT_SECRET: ***REMOVED***
       JWT_EXPIRATION: 86400000
       JWT_ISSUER: tuttime-backend
       JWT_AUDIENCE: tuttime-frontend
+      CLUSTER_INTERNAL_SECRET: ***REMOVED***
 
       # Rate limiting (optional, used by built‑in RequestRateLimiter)
       RATE_LIMIT_SIGNIN_CAPACITY: 5

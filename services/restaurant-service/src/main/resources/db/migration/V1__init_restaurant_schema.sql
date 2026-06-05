@@ -1,44 +1,45 @@
 -- ============================================================================
--- RESTAURANT SERVICE - Full Documented Schema
--- Optimized for Spring Boot 3.3.13 + Hibernate 6
+-- Flyway Migration: V1__init_restaurant_schema.sql
+-- Description: Core Schema Initialization for Restaurant Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS restaurant_service;
 SET
-search_path TO restaurant_service, public;
+    search_path TO restaurant_service, public;
 
 -- Enable required extensions
 CREATE
-EXTENSION IF NOT EXISTS postgis;
+    EXTENSION IF NOT EXISTS postgis;
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
+    EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- === ENUM TYPES ===
 DO
 $$
-BEGIN
-    IF
-NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'media_type_enum') THEN
-CREATE TYPE media_type_enum AS ENUM ('IMAGE', 'VIDEO', 'CANVAS');
-END IF;
-    IF
-NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'table_status_enum') THEN
-CREATE TYPE table_status_enum AS ENUM ('ACTIVE', 'RESERVED', 'OCCUPIED', 'CLOSED');
-END IF;
-END $$;
+    BEGIN
+        IF
+            NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'media_type_enum') THEN
+            CREATE TYPE media_type_enum AS ENUM ('IMAGE', 'VIDEO', 'CANVAS');
+        END IF;
+        IF
+            NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'table_status_enum') THEN
+            CREATE TYPE table_status_enum AS ENUM ('ACTIVE', 'RESERVED', 'OCCUPIED', 'CLOSED');
+        END IF;
+    END $$;
 
 -- === Timestamp Automation Function ===
 CREATE
-OR REPLACE FUNCTION update_modified_column()
-RETURNS TRIGGER AS $$
+    OR REPLACE FUNCTION update_modified_column()
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at
-= CURRENT_TIMESTAMP;
-RETURN NEW;
+        = CURRENT_TIMESTAMP;
+    RETURN NEW;
 END; $$
-LANGUAGE plpgsql;
+    LANGUAGE plpgsql;
 
 -- 1. RESTAURANTS
 CREATE TABLE restaurants
@@ -56,7 +57,7 @@ CREATE TABLE restaurants
 );
 
 COMMENT
-ON TABLE restaurants IS 'Primary dishTable for restaurants';
+    ON TABLE restaurants IS 'Primary dishTable for restaurants';
 
 -- 2. BRANCHES
 CREATE TABLE branches
@@ -83,7 +84,7 @@ CREATE TABLE branches
 CREATE INDEX idx_branches_rating ON branches (rating DESC) WHERE deleted = FALSE;
 
 COMMENT
-ON TABLE branches IS 'Physical locations or outlets of a specific restaurant';
+    ON TABLE branches IS 'Physical locations or outlets of a specific restaurant';
 
 -- 3. STAFFS
 CREATE TABLE staffs

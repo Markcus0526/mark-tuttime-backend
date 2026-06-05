@@ -1,23 +1,24 @@
 -- ============================================================================
--- POS SERVICE - Adjusted Database Schema
--- Optimized for Spring Boot 3.3.13
+-- Flyway Migration: V1__init_pos_schema.sql
+-- Description: Core Schema Initialization for Pos Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS pos_service;
 SET
-search_path TO pos_service, public;
+    search_path TO pos_service, public;
 
 SET
-timezone = 'UTC';
+    timezone = 'UTC';
 SET
-client_encoding = 'UTF8';
+    client_encoding = 'UTF8';
 SET
-client_min_messages TO WARNING;
+    client_min_messages TO WARNING;
 
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
+    EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Enums
 CREATE TYPE pos_provider AS ENUM ('IIKO', 'RKEEPER');
@@ -98,15 +99,15 @@ CREATE INDEX idx_pos_mapping_lookup ON pos_menu_mappings (branch_id, menu_item_i
 
 -- 5. Triggers for updated_at
 CREATE
-OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+    OR REPLACE FUNCTION update_updated_at_column()
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at
-= CURRENT_TIMESTAMP;
-RETURN NEW;
+        = CURRENT_TIMESTAMP;
+    RETURN NEW;
 END;
 $$
-language 'plpgsql';
+    language 'plpgsql';
 
 CREATE TRIGGER trg_pos_configs_updated
     BEFORE UPDATE

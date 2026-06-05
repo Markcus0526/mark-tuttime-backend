@@ -1,14 +1,16 @@
 -- ============================================================================
--- PAYMENT SERVICE - Unified Database Schema (PostgreSQL)
+-- Flyway Migration: V1__payment_pos_schema.sql
+-- Description: Core Schema Initialization for Payment Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS payment_service;
 SET
-search_path TO payment_service, public;
+    search_path TO payment_service, public;
 
 -- Enable UUID extension
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Payments Table
 -- Handles initial Yoomoney Checkout Sessions and resulting Payment Intents
@@ -85,15 +87,15 @@ CREATE INDEX idx_payment_methods_user_id ON user_payment_methods (user_id);
 
 -- Automatic Timestamp Trigger
 CREATE
-OR REPLACE FUNCTION update_timestamp()
-RETURNS TRIGGER AS $$
+    OR REPLACE FUNCTION update_timestamp()
+    RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at
-= NOW();
-RETURN NEW;
+        = NOW();
+    RETURN NEW;
 END;
 $$
-LANGUAGE plpgsql;
+    LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_payments_updated_at
     BEFORE UPDATE

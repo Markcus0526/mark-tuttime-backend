@@ -1,37 +1,38 @@
 -- ============================================================================
--- ORDER SERVICE - Cleaned Database Schema
--- Optimized for Spring Boot 3.3.13 + Hibernate 6
+-- Flyway Migration: V1__payment_pos_schema.sql
+-- Description: Core Schema Initialization for Payment Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS order_service;
 SET
-search_path TO order_service, public;
+    search_path TO order_service, public;
 
 -- Standardize Environment
 SET
-timezone = 'UTC';
+    timezone = 'UTC';
 SET
-client_encoding = 'UTF8';
+    client_encoding = 'UTF8';
 SET
-client_min_messages TO WARNING;
+    client_min_messages TO WARNING;
 
 -- Enable UUID extension (Required once per database)
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Create enum type for order status
 -- Note: Cast to TEXT in JPA/Hibernate is easier if this is defined.
 DO
 $$
-BEGIN
-    IF
-NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
-CREATE TYPE order_status AS ENUM (
-            'CREATED', 'SENT_TO_RESTAURANT', 'ACCEPTED',
-            'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'CANCELED'
-        );
-END IF;
-END $$;
+    BEGIN
+        IF
+            NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+            CREATE TYPE order_status AS ENUM (
+                'CREATED', 'SENT_TO_RESTAURANT', 'ACCEPTED',
+                'PREPARING', 'READY', 'SERVED', 'COMPLETED', 'CANCELED'
+                );
+        END IF;
+    END $$;
 
 -- 2. Orders Table
 CREATE TABLE orders
@@ -105,15 +106,15 @@ CREATE INDEX IF NOT EXISTS idx_order_tables_table_id ON order_tables (table_id);
 
 -- 6. Trigger for Automated 'updated_at'
 CREATE
-OR REPLACE FUNCTION update_timestamp()
-RETURNS TRIGGER AS $$
+    OR REPLACE FUNCTION update_timestamp()
+    RETURNS TRIGGER AS $$
 BEGIN
-   NEW.updated_at
-= now();
-RETURN NEW;
+    NEW.updated_at
+        = now();
+    RETURN NEW;
 END;
 $$
-language 'plpgsql';
+    language 'plpgsql';
 
 CREATE TRIGGER trg_orders_timestamp
     BEFORE UPDATE

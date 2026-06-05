@@ -22,7 +22,7 @@ services:
       fi
       "
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -151,8 +151,8 @@ services:
       GRAYLOG_ROOT_PASSWORD_SHA2: ***REMOVED***   # "admin"
       GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9002
       GRAYLOG_HTTP_EXTERNAL_URI: http://localhost:9002/
-      GRAYLOG_MONGODB_URI: mongodb://mongodb:27017/graylog
-      GRAYLOG_ELASTICSEARCH_HOSTS: http://opensearch:9200
+      GRAYLOG_MONGODB_URI: mongodb://tuttime-mongodb:27017/graylog
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://tuttime-opensearch:9200
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9002/api/system/lbstatus" ]
       interval: 30s
