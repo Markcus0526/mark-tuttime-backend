@@ -1,37 +1,34 @@
 -- ============================================================================
--- NOTIFICATION SERVICE - Database Schema
--- Database: notification_service_db
--- Schema: notification_service
--- 
--- NOTE: This script runs automatically when the database is first initialized.
--- If the database already exists, you need to drop the volume and recreate it.
+-- Flyway Migration: V1__payment_notification_schema.sql
+-- Description: Core Schema Initialization for Notification Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 CREATE SCHEMA IF NOT EXISTS notification_service;
 SET
-search_path TO notification_service, public;
+    search_path TO notification_service, public;
 
 -- Set timezone to UTC for all timestamp operations
 SET
-timezone = 'UTC';
+    timezone = 'UTC';
 
 -- Set client encoding to UTF-8 to handle Unicode characters
 SET
-client_encoding = 'UTF8';
+    client_encoding = 'UTF8';
 
 -- Suppress NOTICE messages
 SET
-client_min_messages TO WARNING;
+    client_min_messages TO WARNING;
 
 -- Set search_path after schema is created
 SET
-search_path TO notification_service, public;
+    search_path TO notification_service, public;
 
 -- Enable required PostgreSQL extensions
 CREATE
-EXTENSION IF NOT EXISTS "uuid-ossp";
+    EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE
-EXTENSION IF NOT EXISTS "pgcrypto";
+    EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. Custom Types for consistency
 CREATE TYPE notification_channel AS ENUM ('EMAIL', 'SMS', 'PUSH', 'WEB_PUSH', 'IN_APP');
@@ -41,23 +38,23 @@ CREATE TYPE notification_category AS ENUM ('ACCOUNT', 'BOOKING', 'PAYMENT', 'REV
 
 DO
 $$
-BEGIN
-    IF
-NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_template_key') THEN
-CREATE DOMAIN notification_template_key AS VARCHAR(100)
-    CHECK (VALUE IN (
-                     'USER_REGISTER', 'USER_LOGIN', -- Added USER_LOGIN here
-                     'USER_VERIFICATION', 'PASSWORD_RESET', 'MFA_CODE',
-                     'ACCOUNT_LOCKED', 'ADMIN_USER_CREATED', 'ADMIN_USER_BLOCKED', 'ADMIN_USER_UNBLOCKED',
-                     'ADMIN_USER_DELETED',
-                     'BOOKING_CREATED', 'BOOKING_REMINDER', 'BOOKING_CANCELED',
-                     'BOOKING_COMPLETED', 'REVIEW_REQUEST',
-                     'MANAGER_BOOKING_ALERT', 'MANAGER_BOOKING_CANCEL', 'MANAGER_LOW_AVAILABILITY',
-                     'PAYMENT_SUCCESS', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED',
-                     'REVIEW_APPROVED', 'REVIEW_REJECTED'
-        ));
-END IF;
-END $$;
+    BEGIN
+        IF
+            NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_template_key') THEN
+            CREATE DOMAIN notification_template_key AS VARCHAR(100)
+                CHECK (VALUE IN (
+                                 'USER_REGISTER', 'USER_LOGIN', -- Added USER_LOGIN here
+                                 'USER_VERIFICATION', 'PASSWORD_RESET', 'MFA_CODE',
+                                 'ACCOUNT_LOCKED', 'ADMIN_USER_CREATED', 'ADMIN_USER_BLOCKED', 'ADMIN_USER_UNBLOCKED',
+                                 'ADMIN_USER_DELETED',
+                                 'BOOKING_CREATED', 'BOOKING_REMINDER', 'BOOKING_CANCELED',
+                                 'BOOKING_COMPLETED', 'REVIEW_REQUEST',
+                                 'MANAGER_BOOKING_ALERT', 'MANAGER_BOOKING_CANCEL', 'MANAGER_LOW_AVAILABILITY',
+                                 'PAYMENT_SUCCESS', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED',
+                                 'REVIEW_APPROVED', 'REVIEW_REJECTED'
+                    ));
+        END IF;
+    END $$;
 
 -- 2. Templates Table
 -- Stores message structures with placeholders like {{user_name}}
@@ -120,7 +117,7 @@ CREATE INDEX idx_user_pref_lookup ON user_notification_preferences (user_id);
 CREATE INDEX idx_notification_logs_template_id ON notification_logs (template_id);
 
 SET
-search_path TO notification_service, public;
+    search_path TO notification_service, public;
 
 INSERT INTO notification_templates (template_key, channel, language, title, content, active)
 VALUES

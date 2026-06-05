@@ -60,6 +60,7 @@ data:
   JWT_ISSUER: "tuttime-backend"
   JWT_AUDIENCE: "tuttime-frontend"
   JWT_EXPIRATION: "86400000"
+  CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
   # ========== Rate Limiting ==========
   RATE_LIMIT_SIGNIN_CAPACITY: "5"

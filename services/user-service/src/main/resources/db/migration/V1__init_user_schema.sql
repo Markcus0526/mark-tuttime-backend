@@ -1,5 +1,7 @@
 -- ============================================================================
--- USER SERVICE - Full Database Schema (Optimized)
+-- Flyway Migration: V1__init_user_schema.sql
+-- Description: Core Schema Initialization for User Service
+-- Database Engine: PostgreSQL
 -- ============================================================================
 
 -- 1. Create the schema required by your Spring Boot application.yml

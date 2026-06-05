@@ -11,7 +11,6 @@ services:
     volumes:
       - notification_service_db_data:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
-      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/02-init-schema.sql:ro
     deploy:
       resources:
         limits:
@@ -51,11 +50,12 @@ services:
       DB_REPLICA_POOL_MAX_SIZE: 50
       DB_REPLICA_POOL_MIN_IDLE: 10
 
-      # JWT
+      # JWT & CLUSTER INTERNAL SECRET
       JWT_SECRET: ***REMOVED***
       JWT_EXPIRATION: 86400000
       JWT_ISSUER: tuttime-backend
       JWT_AUDIENCE: tuttime-frontend
+      CLUSTER_INTERNAL_SECRET: ***REMOVED***
 
       # Redis (disabled)
       MANAGEMENT_HEALTH_REDIS_ENABLED: false

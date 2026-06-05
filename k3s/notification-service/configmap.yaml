@@ -16,10 +16,11 @@ data:
   DB_REPLICA_POOL_MAX_SIZE: "50"
   DB_REPLICA_POOL_MIN_IDLE: "10"
 
-  # ========== JWT ==========
+  # ========== JWT & Cluster internal secret ==========
   JWT_EXPIRATION: "86400000"
   JWT_ISSUER: "tuttime-backend"
   JWT_AUDIENCE: "tuttime-frontend"
+  CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
   # ========== Redis (disabled via autoconfigure exclude) ==========
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"

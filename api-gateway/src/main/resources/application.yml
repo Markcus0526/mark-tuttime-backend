@@ -59,6 +59,8 @@ spring:
         - AddResponseHeader=X-Frame-Options, DENY
         - AddResponseHeader=X-XSS-Protection, 1; mode=block
         - AddResponseHeader=Referrer-Policy, no-referrer
+        - AddRequestHeader=X-Internal-Gateway-Token, ${CLUSTER_INTERNAL_SECRET:***REMOVED***}
+
 
       # ----------------------------------------------
       # Route definitions
@@ -475,10 +477,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,circuitbreakers
+        include: health,readiness,info,metrics,prometheus,circuitbreakers
   endpoint:
     health:
-      show-details: always
+      probes:
+        enabled: true
+      show-details: always   # optional, for debugging
   tracing:
     sampling:
       probability: 1.0

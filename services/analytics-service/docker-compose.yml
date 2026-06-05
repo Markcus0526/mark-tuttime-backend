@@ -11,7 +11,6 @@ services:
     volumes:
       - analytics_service_db_data:/var/lib/postgresql/data
       - ./docker/init-db.sh:/docker-entrypoint-initdb.d/01-init-db.sh:ro
-      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/02-init-schema.sql:ro
     deploy:
       resources:
         limits:
@@ -50,6 +49,9 @@ services:
       DB_POOL_MIN_IDLE: 20
       DB_REPLICA_POOL_MAX_SIZE: 50
       DB_REPLICA_POOL_MIN_IDLE: 10
+
+      # JWT & CLUSTER INTERNAL SECRET
+      CLUSTER_INTERNAL_SECRET: ***REMOVED***
 
       # Redis
       SPRING_CACHE_TYPE: redis
