@@ -19,8 +19,8 @@ data:
   # ========== Cluster internal secret ==========
   CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
-  # Redis connection settings (not used because RedisAutoConfiguration is excluded)
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  # Redis connection settings
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "true"
   SPRING_CACHE_TYPE: "none"
   SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
   SPRING_DATA_REDIS_PORT: "6379"
@@ -29,8 +29,6 @@ data:
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
   SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
-  # Exclude Redis auto‑configuration – this service does not use Redis
-  SPRING_AUTOCONFIGURE_EXCLUDE: "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration"
 
   # ========== Kafka ==========
   KAFKA_ENABLED: "true"

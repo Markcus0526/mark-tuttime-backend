@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -23,6 +24,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         }
 )
 @EnableScheduling
+@EnableCaching
 @Slf4j
 public class MenuServiceApplication {
 

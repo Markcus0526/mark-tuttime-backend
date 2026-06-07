@@ -2,9 +2,11 @@ package com.tuttime.notification.provider;
 
 import com.tuttime.notification.entity.enums.NotificationStatus;
 import com.tuttime.notification.repository.NotificationLogRepository;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +33,6 @@ public class EmailProvider {
 	@Async("notificationExecutor")
 	public void sendHtmlEmail(String to, String subject, String htmlContent, UUID logId) {
 		try {
-			/* TODO
 			MimeMessage message = mailSender.createMimeMessage();
 			MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -40,7 +41,7 @@ public class EmailProvider {
 			helper.setText(htmlContent, true);
 			helper.setFrom("TutTime <no-reply@tuttime.com>");
 
-			mailSender.send(message);*/
+			mailSender.send(message);
 			log.info("Email successfully sent to: {}, subject: {}, text: {}", to, subject, htmlContent);
 
 			// Update DB status to SENT

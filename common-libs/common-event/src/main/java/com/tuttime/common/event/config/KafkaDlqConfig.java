@@ -6,12 +6,17 @@ import com.tuttime.common.event.kafka.KafkaMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,8 +27,29 @@ import java.util.Map;
  * <p>Provides utility methods for creating Kafka configurations with DLQ and retry support.
  * Services should create their own KafkaConfig that uses these utilities.
  */
+@Configuration
 @Slf4j
 public class KafkaDlqConfig {
+
+    @Bean
+    public DefaultErrorHandler dlqErrorHandler(KafkaTemplate<Object, Object> template) {
+        // 1. Configure the DLQ recoverer. It appends ".DLQ" to the original topic name automatically.
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(template);
+
+        // 2. Define a BackOff policy: Retry 3 times, waiting 2 seconds (2000ms) between attempts.
+        FixedBackOff fixedBackOff = new FixedBackOff(2000L, 3L);
+
+        // 3. Create the error handler combined with your recovery policy
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, fixedBackOff);
+
+        // Optional log trace to watch failed messages exit the active pipeline
+        errorHandler.setRetryListeners((record, ex, deliveryAttempt) -> {
+            log.warn("Kafka Consumer retry attempt #{} failed for topic: {}, key: {}. Error: {}",
+                    deliveryAttempt, record.topic(), record.key(), ex.getMessage());
+        });
+
+        return errorHandler;
+    }
 
     /**
      * Creates a consumer factory with error handling deserializers.

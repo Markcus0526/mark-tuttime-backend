@@ -12,6 +12,7 @@ import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.ModifierRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,9 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MenuGrpcDelegate {
 
     private final MenuCategoryRepository menuCategoryRepository;
@@ -29,9 +30,20 @@ public class MenuGrpcDelegate {
     private final ModifierRepository modifierRepository;
     private final DiscountService discountService;
 
+    // Inject Redis to look up active stop-list rules across all gRPC nodes
+    private final StringRedisTemplate redisTemplate;
+    private static final String STOP_LIST_CACHE_PREFIX = "stoplist:item:";
+
     @Transactional(readOnly = true)
     public GetPriceForOrderResponse getPriceForOrder(GetPriceForOrderRequest request) {
         UUID itemId = UUID.fromString(request.getMenuItemId());
+
+        // Explicitly reject calculating prices for stop-listed items
+        String cacheKey = STOP_LIST_CACHE_PREFIX + itemId.toString();
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(cacheKey))) {
+            throw new InvalidRequestException("Cannot process order pricing. This item is currently unavailable.");
+        }
+
         BigDecimal totalPrice = menuItemRepository.findById(itemId)
                 .map(MenuItem::getPrice)
                 .orElseThrow(() -> new InvalidRequestException("Menu item not found"));
@@ -60,6 +72,12 @@ public class MenuGrpcDelegate {
         for (MenuCategory category : categories) {
             for (MenuItem menuItem : category.getMenuItems()) {
                 if (!menuItem.getAvailable()) continue;
+
+                // Skip item if it is dynamically blacklisted by the Admin Stop-List cache
+                String cacheKey = STOP_LIST_CACHE_PREFIX + menuItem.getId().toString();
+                if (Boolean.TRUE.equals(redisTemplate.hasKey(cacheKey))) {
+                    continue;
+                }
 
                 MenuItemDetailPto.Builder itemBuilder = MenuItemDetailPto.newBuilder()
                         .setMenuItemId(menuItem.getId().toString())
@@ -129,6 +147,10 @@ public class MenuGrpcDelegate {
     }
 
     private MenuItemDetailPto mapToProto(MenuItem entity) {
+        // Calculate dynamic availability to pass to booking-service check blocks
+        String cacheKey = STOP_LIST_CACHE_PREFIX + entity.getId().toString();
+        boolean isCurrentlyAvailable = entity.getAvailable() && !Boolean.TRUE.equals(redisTemplate.hasKey(cacheKey));
+
         MenuItemDetailPto.Builder builder = MenuItemDetailPto.newBuilder()
                 .setMenuItemId(entity.getId().toString())
                 .setName(entity.getName())
@@ -136,7 +158,7 @@ public class MenuGrpcDelegate {
                 .setBasePrice(entity.getPrice().toString())
                 .setCategoryId(entity.getCategory().getId().toString())
                 .setCategoryName(entity.getCategory().getName())
-                .setAvailable(entity.getAvailable());
+                .setAvailable(isCurrentlyAvailable);
 
         if (entity.getModifierGroups() != null) {
             entity.getModifierGroups().forEach(group -> {

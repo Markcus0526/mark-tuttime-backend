@@ -13,7 +13,9 @@ import com.tuttime.menu.repository.MenuItemRepository;
 import com.tuttime.menu.repository.StopListRepository;
 import com.tuttime.menu.service.StopListService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,12 @@ public class StopListServiceImpl implements StopListService {
     private final MenuCategoryRepository menuCategoryRepository;
     private final StopListMapper stopListMapper;
     private final RestaurantGrpcClient restaurantGrpcClient;
+
+    // Redis infrastructure components to link cluster states
+    private final StringRedisTemplate redisTemplate;
+    private final CacheManager cacheManager;
+
+    private static final String STOP_LIST_CACHE_PREFIX = "stoplist:item:";
 
     @Override
     @Transactional
@@ -60,6 +68,14 @@ public class StopListServiceImpl implements StopListService {
                 .build();
 
         StopList saved = stopListRepository.save(stopList);
+
+        // Write the active rule to Redis cache for our high-speed lookup gates
+        String cacheKey = STOP_LIST_CACHE_PREFIX + request.menuItemId().toString();
+        redisTemplate.opsForValue().set(cacheKey, "STOPPED");
+
+        // Manually evict the branch menu cache cleanly to force a reload
+        manuallyEvictCache(request.branchId());
+
         return stopListMapper.toResponse(saved);
     }
 
@@ -79,8 +95,12 @@ public class StopListServiceImpl implements StopListService {
 
         restaurantGrpcClient.validateBranchPermission(stopList.getBranchId(), currentUserId, userRoles);
 
-        // Evict cache before deleting
-        evictCache(stopList.getBranchId());
+        // Erase the rule marker key from Redis to lift the restriction immediately
+        String cacheKey = STOP_LIST_CACHE_PREFIX + stopList.getMenuItem().getId().toString();
+        redisTemplate.delete(cacheKey);
+
+        // Evict branch caches cleanly using our programmatic fixer method
+        manuallyEvictCache(stopList.getBranchId());
 
         stopListRepository.delete(stopList);
     }
@@ -89,5 +109,15 @@ public class StopListServiceImpl implements StopListService {
     @CacheEvict(value = "branch_menus", key = "#branchId")
     public void evictCache(UUID branchId) {
         // Helper for manual eviction
+    }
+
+    /**
+     * Programmatic cache eviction helper that safely runs across internal proxy contexts.
+     */
+    private void manuallyEvictCache(UUID branchId) {
+        var cache = cacheManager.getCache("branch_menus");
+        if (cache != null) {
+            cache.evict(branchId);
+        }
     }
 }

@@ -63,11 +63,12 @@ services:
       SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: 2
 
       # Kafka
+      # Kafka
       KAFKA_ENABLED: true
       SPRING_KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
-      SPRING_KAFKA_SECURITY_PROTOCOL: PLAINTEXT
-      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: ""
-      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: ""
+      SPRING_KAFKA_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: SCRAM-256
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="user-kafka-user" password="***REMOVED***";'
 
       # JWT
       JWT_SECRET: ***REMOVED***
