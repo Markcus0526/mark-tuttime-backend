@@ -29,6 +29,9 @@ public enum NotificationTemplateKey {
     PAYMENT_FAILED,             // Crucial so the user can retry before the booking is timed out.
     PAYMENT_REFUNDED,           // Confirmation of money back.
 
+    // ORDERS
+    ORDER_CREATED,            // Receipt.
+
     // REVIEWS
     REVIEW_REQUEST,             //  Sent 1 hour after COMPLETED to trigger growth.
     REVIEW_APPROVED,            //  Feedback that their comment is live.

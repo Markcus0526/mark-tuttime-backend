@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: order-db-isolation-policy
+  namespace: tuttime
+spec:
+  # 1. Target your existing database deployment pods
+  podSelector:
+    matchLabels:
+      app: order-service-db # Make sure this matches the label inside your db-deployment.yaml
+  policyTypes:
+    - Ingress
+  ingress:
+    # 2. Only allow incoming traffic from your Spring Boot app pod
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service # Make sure this matches the label inside your deployment.yaml
+      ports:
+        - protocol: TCP
+          port: 5432 # The standard PostgreSQL communication port

@@ -127,6 +127,16 @@ public class BookingServiceImpl implements BookingService {
             List<MenuItemDetailPto> menuDetails = menuGrpcClient.getMenuDetails(
                     request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
             );
+
+            // Validate items against the stop-list status
+            for (MenuItemDetailPto menu : menuDetails) {
+                // If menu-service marks this item as false/unavailable due to stop-list enforcement
+                if (!menu.getAvailable()) {
+                    throw new InvalidRequestException("Cannot complete booking. Item is currently out of stock: "
+                            + menu.getMenuItemId());
+                }
+            }
+
             validateModifierSelections(request.preOrderItems(), menuDetails);
             BigDecimal totalAmount = calculateFinalPrice(request.preOrderItems(), menuDetails);
 
@@ -303,6 +313,16 @@ public class BookingServiceImpl implements BookingService {
             menuDetails = menuGrpcClient.getMenuDetails(
                     request.preOrderItems().stream().map(i -> i.menuItemId().toString()).toList()
             );
+
+            // Validate items against the stop-list status
+            for (MenuItemDetailPto menu : menuDetails) {
+                // If menu-service marks this item as false/unavailable due to stop-list enforcement
+                if (!menu.getAvailable()) {
+                    throw new InvalidRequestException("Cannot complete booking. Item is currently out of stock: "
+                            + menu.getMenuItemId());
+                }
+            }
+
             validateModifierSelections(request.preOrderItems(), menuDetails);
             newTotal = calculateFinalPrice(request.preOrderItems(), menuDetails);
             itemsChanged = true;

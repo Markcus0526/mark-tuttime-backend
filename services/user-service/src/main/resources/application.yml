@@ -66,14 +66,14 @@ spring:
           max-wait: -1ms
 
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     security:
-      protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL}
+      protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
     properties:
       sasl:
-        mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:}
+        mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:SCRAM-256}
         jaas:
-          config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:}
+          config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:org.apache.kafka.common.security.scram.ScramLoginModule required;}
       spring.json.add.type.headers: true
     consumer:
       group-id: user-service-group
