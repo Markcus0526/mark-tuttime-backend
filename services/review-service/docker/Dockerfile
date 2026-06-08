@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Review Service
 COPY services/review-service/src ./services/review-service/src
+COPY db-migrations/review-service ./services/review-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/review-service -am -DskipTests
 

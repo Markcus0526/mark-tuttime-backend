@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Order Service
 COPY services/order-service/src ./services/order-service/src
+COPY db-migrations/order-service ./services/order-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/order-service -am -DskipTests
 

@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Menu Service
 COPY services/menu-service/src ./services/menu-service/src
+COPY db-migrations/menu-service ./services/menu-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/menu-service -am -DskipTests
 

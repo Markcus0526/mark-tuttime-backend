@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tuttime-kafka-cluster
+  namespace: tuttime
+spec:
+  # 🛑 MULTI-BROKER CLUSTER: Deploys 3 independent brokers for High Availability
+  replicas: 3
+  serviceName: kafka-service
+  selector:
+    matchLabels:
+      app: kafka-broker
+  template:
+    metadata:
+      labels:
+        app: kafka-broker
+    spec:
+      containers:
+        - name: kafka
+          image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
+          ports:
+            - containerPort: 9093
+              name: internal
+          env:
+            - name: KAFKA_CFG_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_KRAFT_CLUSTER_ID
+              value: "e9hKOjhvRvyeLAlnqZQpFw"
+
+            # Configure listeners for secure SASL internal communication
+            - name: KAFKA_CFG_LISTENERS
+              value: "INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094"
+            - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "INTERNAL:SASL_PLAINTEXT,CONTROLLER:PLAINTEXT"
+            - name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME
+              value: "INTERNAL"
+
+            # 🛑 CONTROLLED TOPIC CREATION: Blocks apps from creating un-replicated topics on the fly
+            - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+              value: "false"
+
+            # Enforce data protection requirements across the 3 brokers
+            - name: KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "2"
+
+            # Enforce SASL/SCRAM mechanism protocols
+            - name: KAFKA_CFG_SASL_ENABLED_MECHANISMS
+              value: "SCRAM-SHA-256"
+            - name: KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL
+              value: "SCRAM-SHA-256"
+
+            # Register usernames matching your microservices' secret environments
+            - name: KAFKA_CLIENT_USERS
+              value: "pos-kafka-user,analytics-kafka-user,order-kafka-user,booking-kafka-user"
+            - name: KAFKA_CLIENT_PASSWORDS
+              value: "***REMOVED***"

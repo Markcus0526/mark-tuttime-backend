@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Pos Service
 COPY services/pos-service/src ./services/pos-service/src
+COPY db-migrations/pos-service ./services/pos-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/pos-service -am -DskipTests
 

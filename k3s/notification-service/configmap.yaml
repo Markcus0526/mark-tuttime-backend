@@ -39,7 +39,7 @@ data:
   # ========== Kafka ==========
   KAFKA_ENABLED: "true"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka.tuttime.svc.cluster.local:9093"
-  SPRING_KAFKA_SECURITY_PROTOCOL: "PLAINTEXT"
+  SPRING_KAFKA_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
 
   # ========== gRPC Service Discovery ==========
   USER_GRPC_SERVICE: "user-service.tuttime.svc.cluster.local:29001"

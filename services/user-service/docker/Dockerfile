@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build User Service
 COPY services/user-service/src ./services/user-service/src
+COPY db-migrations/user-service ./services/user-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/user-service -am -DskipTests
 

@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Payment Service
 COPY services/payment-service/src ./services/payment-service/src
+COPY db-migrations/payment-service ./services/payment-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/payment-service -am -DskipTests
 
