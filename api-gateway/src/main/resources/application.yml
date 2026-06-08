@@ -126,17 +126,10 @@ spring:
             - Path=/api/v1/auth/**
             - Method=POST,GET,OPTIONS
           filters:
-            #            - name: RequestRateLimiter   # ADD this block
-            #              args:
-            #                key-resolver: "#{@userKeyResolver}"
-            #                redis-rate-limiter.replenishRate: 50
-            #                redis-rate-limiter.burstCapacity: 100
             - name: BruteForceProtection           # only on auth (before rate limit)
-            - name: JwtAuthentication
             - name: CircuitBreaker
               args:
                 name: userServiceCircuitBreaker
-                #fallbackUri: forward:/fallback/user-service
 
         - id: user-service-user
           uri: http://${USER_SERVICE}
@@ -271,6 +264,8 @@ spring:
           uri: ws://${NOTIFICATION_SERVICE}
           predicates:
             - Path=/ws-notifications/**
+          filters:
+            - name: JwtAuthentication
 
         # ---------- OpenAPI (Swagger) – no JWT authentication ----------
         - id: user-openapi
@@ -522,6 +517,18 @@ graylog:
   maximum-message-size: ${GRAYLOG_MAX_MESSAGE_SIZE:8192}
   compression-type: ${GRAYLOG_COMPRESSION_TYPE:GZIP}
 
+bruteforce:
+  warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD}
+  ip-block-threshold: ${BRUTEFORCE_IP_BLOCK_THRESHOLD}
+  phone-block-threshold: ${BRUTEFORCE_PHONE_BLOCK_THRESHOLD}
+  permanent-block-threshold: ${BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD}
+  ip-block-duration-minutes: ${BRUTEFORCE_IP_BLOCK_DURATION_MINUTES}
+  phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES}
+
+antifraud:
+  max-devices-per-user: ${ANTIFRAUD_MAX_DEVICES_PER_USER}
+  multi-account-ip-threshold: ${ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD}
+
 rate:
   limit:
     authenticated:
@@ -561,4 +568,6 @@ springdoc:
 
   writer-with-default-pretty-printer: true
   use-fqn: true # Uses Fully Qualified Names to prevent collisions
+
+
 

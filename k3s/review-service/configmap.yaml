@@ -19,19 +19,9 @@ data:
   # ========== Cluster internal secret ==========
   CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
-  # ========== Redis (disabled via autoconfigure exclude) ==========
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
-  SPRING_CACHE_TYPE: "redis"
-  SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_DATA_REDIS_PASSWORD: "password"
-  SPRING_DATA_REDIS_TIMEOUT: "8000ms"
-  SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
-  SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
-  SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
-
-  # Exclude Redis auto‑configuration – this service does not use Redis
-  SPRING_AUTOCONFIGURE_EXCLUDE: "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration"
+  # ========== Redis Override Flags ==========
+  # 🛑 This turns off the shared RedisConfig class beans completely for this service pod!
+  SPRING_CACHE_TYPE: "none"
 
   # ========== Kafka ==========
   KAFKA_ENABLED: "true"
@@ -71,16 +61,6 @@ data:
   GRAYLOG_INCLUDE_CALLER_DATA: "false"
   GRAYLOG_MAX_MESSAGE_SIZE: "8192"
   GRAYLOG_COMPRESSION_TYPE: "GZIP"
-
-  # ========== Security & Anti‑Fraud ==========
-  BRUTEFORCE_WARNING_THRESHOLD: "3"
-  BRUTEFORCE_IP_BLOCK_THRESHOLD: "5"
-  BRUTEFORCE_PHONE_BLOCK_THRESHOLD: "10"
-  BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD: "15"
-  BRUTEFORCE_IP_BLOCK_DURATION_MINUTES: "15"
-  BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES: "60"
-  ANTIFRAUD_MAX_DEVICES_PER_USER: "3"
-  ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD: "3"
 
   # ========== Cloud & Kubernetes Discovery ==========
   CONNECTION_POOL_MONITORING_ENABLED: "false"

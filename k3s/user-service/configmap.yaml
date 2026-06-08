@@ -19,6 +19,18 @@ data:
   # ========== Cluster internal secret ==========
   CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
+  # ========== Redis High-Availability Sentinel Topology Settings ==========
+  REDIS_ENABLED: "true"
+  SPRING_CACHE_TYPE: "redis"
+  SPRING_DATA_REDIS_SENTINEL_MASTER: "tuttime-redis-master"
+  SPRING_DATA_REDIS_SENTINEL_NODE_1: "tuttime-redis-sentinel-1.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_SENTINEL_NODE_2: "tuttime-redis-sentinel-2.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_SENTINEL_NODE_3: "tuttime-redis-sentinel-3.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_TIMEOUT: "8000ms"
+  SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
+  SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
+  SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
+
   # ========== Kafka ==========
   KAFKA_ENABLED: "true"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka.tuttime.svc.cluster.local:9093"
@@ -61,20 +73,6 @@ data:
   NOTIFICATION_GRPC_SERVICE: "notification-service.tuttime.svc.cluster.local:29010"
   GRPC_CLIENT_DEADLINE_SECONDS: "60"
 
-  # ========== Redis (disabled via autoconfigure exclude) ==========
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
-  SPRING_CACHE_TYPE: "none"
-  SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_DATA_REDIS_PASSWORD: "password"
-  SPRING_DATA_REDIS_TIMEOUT: "8000ms"
-  SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
-  SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
-  SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
-
-  # Exclude Redis auto‑configuration – this service does not use Redis
-  SPRING_AUTOCONFIGURE_EXCLUDE: "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration"
-
   # ========== Resilience & Timeouts ==========
   CIRCUIT_BREAKER_TIMEOUT: "305s"
 
@@ -112,7 +110,3 @@ data:
   SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "false"
   SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES: "tuttime"
   SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: "false"
-
-  # ========== OAuth Clients ==========
-  GOOGLE_CLIENT_ID: "815148627550-nsdd7lkipqons554k7crls5c9pd84oh0.apps.googleusercontent.com"
-  APPLE_CLIENT_ID: "your_id"

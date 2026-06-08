@@ -15,6 +15,7 @@ import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -97,11 +98,12 @@ public class RedisConfig {
         return new ReactiveRedisTemplate<>(connectionFactory, context);
     }
 
-    /**
-     * 🛑 FIXED COMPILATION BLOCK:
-     * Injects the core LettuceConnectionFactory as a standard RedisConnectionFactory type.
-     * This fixes the autowire type-mismatch error and resolves the dependency crash inside UserEventConsumer!
-     */
+    @Bean
+    public ReactiveStringRedisTemplate reactiveStringRedisTemplate(
+            @Qualifier("customReactiveRedisConnectionFactory") ReactiveRedisConnectionFactory connectionFactory) {
+        return new ReactiveStringRedisTemplate(connectionFactory);
+    }
+
     @Bean
     public StringRedisTemplate stringRedisTemplate(
             @Qualifier("lettuceConnectionFactory") RedisConnectionFactory connectionFactory) {

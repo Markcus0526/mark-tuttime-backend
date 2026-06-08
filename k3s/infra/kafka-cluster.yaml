@@ -27,6 +27,11 @@ spec:
             - name: KAFKA_KRAFT_CLUSTER_ID
               value: "e9hKOjhvRvyeLAlnqZQpFw"
 
+            # 🛑 INTER-NODE KRAFT DISCOVERY BLUEPRINT
+            # Maps nodes to dynamically scale quorum voting based on StatefulSet replica pod index paths
+            - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
+              value: "0@tuttime-kafka-cluster-0.kafka-service.tuttime.svc.cluster.local:9094,1@tuttime-kafka-cluster-1.kafka-service.tuttime.svc.cluster.local:9094,2@tuttime-kafka-cluster-2.kafka-service.tuttime.svc.cluster.local:9094"
+
             # Configure listeners for secure SASL internal communication
             - name: KAFKA_CFG_LISTENERS
               value: "INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094"
@@ -53,8 +58,16 @@ spec:
             - name: KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL
               value: "SCRAM-SHA-256"
 
-            # Register usernames matching your microservices' secret environments
+            # 🛑 FIX: Securely loads account arrays from public configuration maps
             - name: KAFKA_CLIENT_USERS
-              value: "pos-kafka-user,analytics-kafka-user,order-kafka-user,booking-kafka-user"
+              valueFrom:
+                configMapKeyRef:
+                  name: global-infra-config
+                  key: KAFKA_USERS_LIST
+
+            # 🛑 FIX: Securely loads cluster hashes from encrypted secret namespaces
             - name: KAFKA_CLIENT_PASSWORDS
-              value: "***REMOVED***"
+              valueFrom:
+                secretKeyRef:
+                  name: global-infra-secrets
+                  key: KAFKA_PASSWORDS_LIST

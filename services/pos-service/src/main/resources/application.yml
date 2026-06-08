@@ -242,18 +242,6 @@ springdoc:
     gateway:
       url: ${SWAGGER_API_GATEWAY_URL}
 
-bruteforce:
-  warning-threshold: ${BRUTEFORCE_WARNING_THRESHOLD}
-  ip-block-threshold: ${BRUTEFORCE_IP_BLOCK_THRESHOLD}
-  phone-block-threshold: ${BRUTEFORCE_PHONE_BLOCK_THRESHOLD}
-  permanent-block-threshold: ${BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD}
-  ip-block-duration-minutes: ${BRUTEFORCE_IP_BLOCK_DURATION_MINUTES}
-  phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES}
-
-antifraud:
-  max-devices-per-user: ${ANTIFRAUD_MAX_DEVICES_PER_USER}
-  multi-account-ip-threshold: ${ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD}
-
 resilience4j:
   circuitbreaker:
     instances:

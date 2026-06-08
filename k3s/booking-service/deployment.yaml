@@ -34,10 +34,10 @@ spec:
                 name: booking-service-secrets
           resources:
             requests:
-              memory: "2048Mi"
+              memory: "1024Mi"
               cpu: "200m"
             limits:
-              memory: "4196Mi"
+              memory: "2048Mi"
               cpu: "1000m"
           livenessProbe:
             httpGet:

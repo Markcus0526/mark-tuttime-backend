@@ -35,7 +35,6 @@ services:
     env_file:
       - .env.docker
     environment:
-      # Java options (fixed debug agent)
       JAVA_TOOL_OPTIONS: "-XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5001"
     volumes:
       - ./uploads:/app/uploads:rw

@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tuttime-edge-ingress
+  namespace: tuttime
+  annotations:
+    # 🛑 TLS AT EDGE RESOLUTION: Automatic certificate allocation using Cert-Manager
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
+
+    # Traefik explicit security headers middleware configuration
+    traefik.ingress.kubernetes.io/router.middlewares: "tuttime-security-headers@kubernetescrd"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - ://tuttime.com
+      secretName: tuttime-api-tls-cert # Encrypted certificate secret excluded from Git via .gitignore
+  rules:
+    - host: ://tuttime.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
