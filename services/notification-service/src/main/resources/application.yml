@@ -53,17 +53,6 @@ spring:
       pageable:
         default-page-size: 100
         max-page-size: 1000
-    redis:
-      host: ${SPRING_DATA_REDIS_HOST}
-      port: ${SPRING_DATA_REDIS_PORT}
-      password: ${SPRING_DATA_REDIS_PASSWORD:}
-      timeout: ${SPRING_DATA_REDIS_TIMEOUT:5000ms}
-      lettuce:
-        pool:
-          max-active: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE}
-          max-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE}
-          min-idle: ${SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE}
-          max-wait: -1ms
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -71,7 +60,7 @@ spring:
       protocol: ${SPRING_KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
     properties:
       sasl:
-        mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:SCRAM-256}
+        mechanism: ${SPRING_KAFKA_PROPERTIES_SASL_MECHANISM:SCRAM-SHA-256}
         jaas:
           config: ${SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG:org.apache.kafka.common.security.scram.ScramLoginModule required;}
       spring.json.add.type.headers: true
@@ -126,8 +115,9 @@ spring:
   aop:
     proxy-target-class: false
 
+  # 🛑 CRITICAL REFACTOR: Tell Spring that caching is explicitly disabled
   cache:
-    type: redis
+    type: none
 
   flyway:
     enabled: true

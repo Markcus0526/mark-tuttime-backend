@@ -42,9 +42,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final UserReliabilityRepository reliabilityRepository;
     private final BranchYieldManagementRepository yieldRepository;
     private final FinancialLedgerRepository financialLedgerRepository;
-    private final BranchPerformanceStatRepository branchPerformanceStatRepository;
     private final AdminMapper adminMapper;
-    private final RestaurantMapper restaurantMapper;
     private final RestaurantGrpcClient restaurantGrpcClient;
     private final OrderGrpcClient orderGrpcClient;
     private final MenuGrpcClient menuGrpcClient;

@@ -4,11 +4,13 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
 @Configuration
+@ConditionalOnProperty(name = "redis.enabled", havingValue = "true", matchIfMissing = false)
 public class RedissonConfig {
 
     @Value("${spring.data.redis.host:localhost}")
@@ -23,32 +25,79 @@ public class RedissonConfig {
     @Value("${spring.data.redis.ssl:false}")
     private boolean useSsl;
 
-    @Bean(destroyMethod = "shutdown") // Ensures graceful release of connections on app stop
+    // Sentinel settings
+    @Value("${spring.data.redis.sentinel.master:}")
+    private String sentinelMaster;
+
+    @Value("${spring.data.redis.sentinel.nodes:}")
+    private String sentinelNodes;
+
+    // Connection pool settings
+    @Value("${redisson.connection-min-idle:10}")
+    private int minIdle;
+
+    @Value("${redisson.connection-pool-size:64}")
+    private int poolSize;
+
+    @Value("${redisson.connect-timeout:30000}")
+    private int connectTimeout;
+
+    @Value("${redisson.command-timeout:10000}")
+    private int commandTimeout;
+
+    @Value("${redisson.retry-attempts:3}")
+    private int retryAttempts;
+
+    @Value("${redisson.retry-interval:1500}")
+    private int retryInterval;
+
+    @Bean(destroyMethod = "shutdown")
     @Lazy
     public RedissonClient redissonClient() {
         Config config = new Config();
-
-        // Protocol: "rediss://" for SSL/TLS, "redis://" for standard
         String protocol = useSsl ? "rediss://" : "redis://";
-        String address = String.format("%s%s:%d", protocol, redisHost, redisPort);
 
-        config.useSingleServer()
-                .setAddress(address)
-                .setPassword(redisPassword.isEmpty() ? null : redisPassword)
+        if (sentinelMaster != null && !sentinelMaster.isBlank() && sentinelNodes != null && !sentinelNodes.isBlank()) {
+            // Sentinel HA mode
+            String[] nodes = sentinelNodes.split(",");
+            var sentinelConfig = config.useSentinelServers()
+                    .setMasterName(sentinelMaster)
+                    .setMasterConnectionMinimumIdleSize(minIdle) // Fixed name
+                    .setMasterConnectionPoolSize(poolSize)
+                    .setSlaveConnectionMinimumIdleSize(minIdle)  // Fixed name
+                    .setSlaveConnectionPoolSize(poolSize)
+                    .setConnectTimeout(connectTimeout)
+                    .setTimeout(commandTimeout)
+                    .setRetryAttempts(retryAttempts)
+                    .setRetryInterval(retryInterval);
 
-                // --- Performance & Pooling ---
-                .setConnectionMinimumIdleSize(10)     // Keep 10 connections warm
-                .setConnectionPoolSize(64)            // Scale up to 64 under load
-                .setIdleConnectionTimeout(10000)      // Close idle connections after 10s
+            if (redisPassword != null && !redisPassword.isBlank()) {
+                sentinelConfig.setPassword(redisPassword);
+            }
 
-                // --- Resiliency & Timeouts ---
-                .setConnectTimeout(30000)             // 10s to establish connection
-                .setTimeout(10000)                     // 3s wait for command response
-                .setRetryAttempts(20)                  // Retry failed commands 3 times
-                .setRetryInterval(3000)               // Wait 1.5s between retries
+            for (String node : nodes) {
+                String formattedNode = node.trim();
+                if (!formattedNode.startsWith("redis://") && !formattedNode.startsWith("rediss://")) {
+                    formattedNode = protocol + formattedNode;
+                }
+                sentinelConfig.addSentinelAddress(formattedNode);
+            }
+        } else {
+            // Single Server mode
+            String address = protocol + redisHost + ":" + redisPort;
+            var singleConfig = config.useSingleServer()
+                    .setAddress(address)
+                    .setConnectionMinimumIdleSize(minIdle) // Fixed name
+                    .setConnectionPoolSize(poolSize)
+                    .setConnectTimeout(connectTimeout)
+                    .setTimeout(commandTimeout)
+                    .setRetryAttempts(retryAttempts)
+                    .setRetryInterval(retryInterval);
 
-                // --- Reliability ---
-                .setPingConnectionInterval(30000);    // Keep-alive ping every 30s
+            if (redisPassword != null && !redisPassword.isBlank()) {
+                singleConfig.setPassword(redisPassword);
+            }
+        }
 
         return Redisson.create(config);
     }

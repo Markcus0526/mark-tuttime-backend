@@ -27,12 +27,9 @@ public interface PosAdapter {
      */
     void releaseTable(PosConfig config, UUID tableId, UUID bookingId);
 
-    /**
-     * NEW: Maps to OrderStatus.PAID
-     * Sends the full ticket (items, quantity, price) to the POS kitchen/terminal.
-     * Uses the gRPC OrderDetailResponse for rich data.
-     */
-    void sendOrder(PosConfig config, GetOrderDetailResponse order);
+    void sendToKitchen(PosConfig config, UUID orderId);
+
+    void sendOrder(PosConfig config, UUID orderId);
 
     void cancelOrder(PosConfig config, UUID orderId, String reason);
 

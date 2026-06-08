@@ -7,6 +7,7 @@ import com.tuttime.pos.dto.rkeeper.RK7MenuResponse;
 import com.tuttime.pos.dto.rkeeper.RK7Response;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.enums.PosProvider;
+import com.tuttime.pos.grpc.client.OrderGrpcClient;
 import com.tuttime.pos.service.PosMappingService;
 import com.tuttime.pos.service.PosService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class RKeeperPosAdapter implements PosAdapter {
     private final WebClient webClient; // Configured for R-Keeper XML Gateway
     private final PosService posService;
     private final PosMappingService posMappingService;
+    private final OrderGrpcClient orderGrpcClient;
 
     @Override
     public void reserveTable(PosConfig config, UUID tableId, UUID bookingId) {
@@ -78,7 +80,14 @@ public class RKeeperPosAdapter implements PosAdapter {
     }
 
     @Override
-    public void sendOrder(PosConfig config, GetOrderDetailResponse order) {
+    public void sendToKitchen(PosConfig config, UUID orderId) {
+
+    }
+
+    @Override
+    public void sendOrder(PosConfig config, UUID orderId) {
+        GetOrderDetailResponse order = orderGrpcClient.getOrderDetail(orderId);
+
         // 1. Build the XML Items (Dishes) with validation
         StringBuilder itemsXml = new StringBuilder();
 
