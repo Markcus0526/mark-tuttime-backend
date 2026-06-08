@@ -8,6 +8,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -71,7 +72,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/health", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")));
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/actuator", List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")));
 
-        // Swagger UI static assets (direct paths – also handled by regex below, but kept for completeness)
+        // Swagger UI static assets
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/swagger-ui", List.of("GET")));
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/swagger-ui.html", List.of("GET")));
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/v3/api-docs", List.of("GET")));
@@ -95,52 +96,14 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/auth/register", List.of("POST")));
 
         // Public read-only endpoints (direct)
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurants/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/near", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/restaurants/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-branches/tags", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-zones/branches/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-tables/zones/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-schedules/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/restaurant-medias/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menus/branches/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/categories/", List.of("GET")));
-//		PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/menu-items/tags", List.of("GET")));
         PUBLIC_ENDPOINT_RULES.add(new PublicEndpointRule("/api/v1/payments/webhook", List.of("POST")));
 
-        // -----------------------------------------------------------------
-        // 2. Regex rules (for SwaggerUI prefixed paths)
-        // -----------------------------------------------------------------
-        // The regex matches any path with a service prefix and the exact API path suffix.
-        // For example: /user-docs/v3/api-docs , /restaurant-docs/api/v1/restaurants , etc.
-
-        // OpenAPI spec documents (public)
-        PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-                Pattern.compile("^/(user|payment)-docs/v3/api-docs$"),
-                List.of("GET")));
-
-        // Auth endpoints (POST) – allow any service prefix
-        PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-                Pattern.compile("^/(user|payment)-docs/api/v1/auth/.*"),
-                List.of("POST")));
-
-        // Public GET endpoints under /api/v1/ (restaurants, branches, menus, etc.) – allow any service prefix
-        // This covers direct API paths like /user-docs/api/v1/restaurants, /restaurant-docs/api/v1/restaurant-branches, etc.
-        // PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-        // 		Pattern.compile("^/(user|payment)-docs/api/v1/(restaurants|restaurant-branches|restaurant-zones|restaurant-tables|restaurant-schedules|restaurant-medias|menus|menu-items|health).*"),
-        //		List.of("GET")));
-
-        // Swagger UI assets (prefixed paths)
-        PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(
-                Pattern.compile("^/(user|payment)-docs/(swagger-ui|webjars|v3/api-docs).*"),
-                List.of("GET")));
+        // OpenAPI spec documents
+        PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(Pattern.compile("^/(user|payment)-docs/v3/api-docs$"), List.of("GET")));
+        // Auth endpoints (POST)
+        PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(Pattern.compile("^/(user|payment)-docs/api/v1/auth/.*"), List.of("POST")));
+        // Swagger UI assets
+        PUBLIC_ENDPOINT_REGEX_RULES.add(new PublicEndpointRegexRule(Pattern.compile("^/(user|payment)-docs/(swagger-ui|webjars|v3/api-docs).*"), List.of("GET")));
     }
 
     @Override
@@ -154,10 +117,7 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             String path = request.getURI().getPath();
             String method = request.getMethod().name();
 
-            // =================================================================
-            // CRITICAL FIX: HARD SHORT-CIRCUIT FOR MEDIA PAYLOADS
-            // Bypasses JSON body error handling, header inspections, and logging entirely.
-            // =================================================================
+            // HARD SHORT-CIRCUIT FOR MEDIA PAYLOADS
             if ("GET".equalsIgnoreCase(method) && (
                     path.contains("/user-medias/") ||
                             path.contains("/restaurant-medias/") ||
@@ -165,19 +125,20 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 return chain.filter(exchange);
             }
 
-            log.debug("JWT Filter: path={}, method={}", path, method);
-
             if ("OPTIONS".equalsIgnoreCase(method)) {
                 return chain.filter(exchange);
             }
 
             List<String> skipPaths = config.getSkipPathsList();
             if (isPublicEndpoint(path, method, skipPaths)) {
-                log.debug("JWT Filter: Public endpoint, skipping auth");
-                return chain.filter(exchange);
+                // 🛑 SECURITY FIX 2: Strip user context headers from unauthenticated public traffic
+                ServerHttpRequest cleanedRequest = request.mutate()
+                        .headers(h -> {
+                            h.remove("X-User-Id");
+                            h.remove("X-User-Roles");
+                        }).build();
+                return chain.filter(exchange.mutate().request(cleanedRequest).build());
             }
-
-            log.debug("JWT Filter: Protected endpoint: {}", path);
 
             String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -185,9 +146,15 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
             }
 
             String token = authHeader.substring(7);
+
+            // Execute the pipeline cleanly, short-circuiting the stream immediately upon error rejections
             return validateTokenAndMutateExchange(token, exchange)
                     .flatMap(modifiedExchange -> chain.filter(modifiedExchange))
-                    .switchIfEmpty(Mono.empty());
+                    // Clean escape route if a downstream error signal or empty signal is encountered
+                    .onErrorResume(ex -> {
+                        log.error("Authentication filter pipeline failed", ex);
+                        return onError(exchange, "Authentication subsystem error", HttpStatus.INTERNAL_SERVER_ERROR);
+                    });
         };
     }
 
@@ -195,32 +162,29 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
         try {
             // 1. Basic JWT validation
             if (!jwtTokenUtil.validateToken(token)) {
-                return onErrorMono(exchange, "Invalid token (validateToken)", HttpStatus.UNAUTHORIZED);
+                return Mono.defer(() -> onError(exchange, "Invalid token (validateToken)", HttpStatus.UNAUTHORIZED).then(Mono.empty()));
             }
             if (!jwtTokenUtil.validateIssuer(token) || !jwtTokenUtil.validateAudience(token)) {
-                return onErrorMono(exchange, "Invalid token (validateIssuer)", HttpStatus.UNAUTHORIZED);
+                return Mono.defer(() -> onError(exchange, "Invalid token (validateIssuer)", HttpStatus.UNAUTHORIZED).then(Mono.empty()));
             }
             String jti = jwtTokenUtil.getJtiFromToken(token);
             if (jti == null) {
-                return onErrorMono(exchange, "Invalid token (getJtiFromToken)", HttpStatus.UNAUTHORIZED);
+                return Mono.defer(() -> onError(exchange, "Invalid token (getJtiFromToken)", HttpStatus.UNAUTHORIZED).then(Mono.empty()));
             }
 
             // 2. Extract user info
             UUID userId = jwtTokenUtil.getUserIdFromToken(token);
-            String email = jwtTokenUtil.getEmailFromToken(token);
             String role = jwtTokenUtil.getRoleFromToken(token);
             if (userId == null || role == null) {
-                return onErrorMono(exchange, "Invalid token (userId, role)", HttpStatus.UNAUTHORIZED);
+                return Mono.defer(() -> onError(exchange, "Invalid token (userId, role)", HttpStatus.UNAUTHORIZED).then(Mono.empty()));
             }
 
-            // 3. Redis checks (fail‑closed)
+            // 3. Redis checks (With strict, absolute Fail-Closed error handling)
             Duration timeout = Duration.ofMillis(redisTimeoutMillis);
-            Mono<Boolean> whitelistCheck = tokenValidationService.isTokenWhitelisted(jti)
-                    .timeout(timeout).onErrorReturn(false);
-            Mono<Boolean> blacklistCheck = tokenValidationService.isTokenBlacklisted(jti)
-                    .timeout(timeout).onErrorReturn(true);
-            Mono<Boolean> userBlockCheck = tokenValidationService.isUserBlocked(userId)
-                    .timeout(timeout).onErrorReturn(true);
+
+            Mono<Boolean> whitelistCheck = tokenValidationService.isTokenWhitelisted(jti).timeout(timeout);
+            Mono<Boolean> blacklistCheck = tokenValidationService.isTokenBlacklisted(jti).timeout(timeout);
+            Mono<Boolean> userBlockCheck = tokenValidationService.isUserBlocked(userId).timeout(timeout);
 
             return Mono.zip(whitelistCheck, blacklistCheck, userBlockCheck)
                     .flatMap(tuple -> {
@@ -230,31 +194,31 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
                         if (!isWhitelisted) {
                             log.warn("Token not whitelisted: jti={}", jti);
-                            return onErrorMono(exchange, "Token not whitelisted", HttpStatus.UNAUTHORIZED);
+                            return onError(exchange, "Token session not recognized", HttpStatus.UNAUTHORIZED).then(Mono.empty());
                         }
                         if (isBlacklisted) {
                             log.warn("Token blacklisted: jti={}", jti);
-                            return onErrorMono(exchange, "Token revoked", HttpStatus.UNAUTHORIZED);
+                            return onError(exchange, "Token credentials revoked", HttpStatus.UNAUTHORIZED).then(Mono.empty());
                         }
                         if (isUserBlocked) {
                             log.warn("User blocked: userId={}", userId);
-                            return onErrorMono(exchange, "User account blocked", HttpStatus.FORBIDDEN);
+                            return onError(exchange, "User account blocked", HttpStatus.FORBIDDEN).then(Mono.empty());
                         }
 
-                        // Add user headers to the request
                         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                                 .header("X-User-Id", userId.toString())
                                 .header("X-User-Roles", role)
                                 .build();
-                        ServerWebExchange modifiedExchange = exchange.mutate()
-                                .request(mutatedRequest)
-                                .build();
-                        log.debug("Token valid for user {} ({})", userId, role);
-                        return Mono.just(modifiedExchange);
+
+                        return Mono.just(exchange.mutate().request(mutatedRequest).build());
+                    })
+                    .onErrorResume(ex -> {
+                        log.error("Security Engine Outage: Blocked secure route access due to subsystem failure.", ex);
+                        return onError(exchange, "Security subsystem currently unavailable", HttpStatus.SERVICE_UNAVAILABLE).then(Mono.empty());
                     });
         } catch (Exception e) {
             log.error("Token validation exception", e);
-            return onErrorMono(exchange, "Authentication error", HttpStatus.INTERNAL_SERVER_ERROR);
+            return onError(exchange, "Authentication subsystem error", HttpStatus.INTERNAL_SERVER_ERROR).then(Mono.empty());
         }
     }
 
@@ -289,11 +253,16 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
 
     private Mono<Void> onError(ServerWebExchange exchange, String message, HttpStatus status) {
         ServerHttpResponse response = exchange.getResponse();
-        if (response.isCommitted()) return Mono.empty();
+        if (response.isCommitted())
+            return Mono.empty();
+
         response.setStatusCode(status);
-        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
         String body = String.format("{\"error\":\"%s\",\"status\":%d}", message, status.value());
-        return response.writeWith(Mono.just(response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8))));
+
+        return response.writeWith(
+                Mono.just(response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8)))
+        );
     }
 
     public static class Config {

@@ -7,6 +7,7 @@ import com.tuttime.pos.dto.liko.IikoErrorResponse;
 import com.tuttime.pos.dto.liko.IikoNomenclatureResponse;
 import com.tuttime.pos.entity.PosConfig;
 import com.tuttime.pos.entity.enums.PosProvider;
+import com.tuttime.pos.grpc.client.OrderGrpcClient;
 import com.tuttime.pos.repository.PosMenuMappingRepository;
 import com.tuttime.pos.service.PosMappingService;
 import com.tuttime.pos.service.PosService;
@@ -31,6 +32,7 @@ public class IikoPosAdapter implements PosAdapter {
     private final PosService posService;
     private final PosMenuMappingRepository posMenuMappingRepository;
     private PosMappingService posMappingService;
+    private final OrderGrpcClient orderGrpcClient;
 
     @Override
     public void reserveTable(PosConfig config, UUID tableId, UUID bookingId) {
@@ -91,10 +93,16 @@ public class IikoPosAdapter implements PosAdapter {
     }
 
     @Override
-    public void sendOrder(PosConfig config, GetOrderDetailResponse order) {
-        String url = "/api/1/order/create";
+    public void sendToKitchen(PosConfig config, UUID orderId) {
+        
+    }
 
-        List<Map<String, Object>> items = order.getItemsList().stream()
+    @Override
+    public void sendOrder(PosConfig config, UUID orderId) {
+        String url = "/api/1/order/create";
+        GetOrderDetailResponse details = orderGrpcClient.getOrderDetail(orderId);
+
+        List<Map<String, Object>> items = details.getItemsList().stream()
                 .map(item -> {
                     // 1. VALIDATION: Check if POS ID exists
                     String posId = item.getPosId();
@@ -102,7 +110,7 @@ public class IikoPosAdapter implements PosAdapter {
                     if (!StringUtils.hasText(posId)) {
                         // If the Order Service didn't provide it, try one last lookup in our mapping table
                         posId = posMappingService.getExternalId(
-                                UUID.fromString(order.getBranchId()),
+                                UUID.fromString(details.getBranchId()),
                                 item.getMenuItemId()
                         );
                     }
@@ -122,13 +130,13 @@ public class IikoPosAdapter implements PosAdapter {
                 "organizationId", config.getOrganizationId(),
                 "terminalGroupId", config.getTerminalGroupId(),
                 "order", Map.of(
-                        "id", order.getOrderId(),
+                        "id", orderId,
                         "items", items,
-                        "tableIds", List.of(order.getTableId())
+                        "tableIds", List.of(UUID.fromString(details.getTableId()))
                 )
         );
 
-        executeSync(config, url, body, "SEND_ORDER", UUID.fromString(order.getOrderId()), "ORDER");
+        executeSync(config, url, body, "SEND_ORDER", orderId, "ORDER");
     }
 
     @Override

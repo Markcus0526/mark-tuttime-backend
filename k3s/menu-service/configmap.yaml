@@ -19,8 +19,8 @@ data:
   # ========== Cluster internal secret ==========
   CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
-  # ========== Redis Connection Settings ==========
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "true"
+  # ========== Redis High-Availability Sentinel Topology Settings ==========
+  REDIS_ENABLED: "true"
   SPRING_CACHE_TYPE: "redis"
   SPRING_DATA_REDIS_SENTINEL_MASTER: "tuttime-redis-master"
   SPRING_DATA_REDIS_SENTINEL_NODE_1: "tuttime-redis-sentinel-1.tuttime.svc.cluster.local:26379"
@@ -30,7 +30,6 @@ data:
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
   SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
-  # REMOVED: SPRING_DATA_REDIS_HOST/PASSWORD have been removed out of here safely to prevent password leaks.
 
   # ========== Kafka ==========
   KAFKA_ENABLED: "true"
@@ -90,17 +89,8 @@ data:
   GRAYLOG_MAX_MESSAGE_SIZE: "8192"
   GRAYLOG_COMPRESSION_TYPE: "GZIP"
 
-  # ========== Security & Anti‑Fraud ==========
-  BRUTEFORCE_WARNING_THRESHOLD: "3"
-  BRUTEFORCE_IP_BLOCK_THRESHOLD: "5"
-  BRUTEFORCE_PHONE_BLOCK_THRESHOLD: "10"
-  BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD: "15"
-  BRUTEFORCE_IP_BLOCK_DURATION_MINUTES: "15"
-  BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES: "60"
-  ANTIFRAUD_MAX_DEVICES_PER_USER: "3"
-  ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD: "3"
-
   # ========== Cloud & Kubernetes Discovery ==========
   CONNECTION_POOL_MONITORING_ENABLED: "false"
   SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "false"
+  SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES: "tuttime"
   SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: "false"

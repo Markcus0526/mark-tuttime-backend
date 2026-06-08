@@ -1,12 +1,15 @@
 package com.tuttime.gateway.filter;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -14,6 +17,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,8 +26,12 @@ import java.util.List;
 public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<BruteForceProtectionFilter.Config> {
 
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
+    private final Duration redisTimeout;
+    private final int ipThreshold;
+    private final Duration ipBlockDuration;
+
     private static final String BLOCKED_IP_PREFIX = "bruteforce:blocked:ip:";
-    private static final String BLOCKED_PHONE_PREFIX = "bruteforce:blocked:phone:";
+    private static final String ATTEMPTS_IP_PREFIX = "bruteforce:attempts:ip:";
 
     private static final List<String> PROTECTED_ENDPOINTS = Arrays.asList(
             "/api/v1/auth/login",
@@ -36,9 +44,16 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
             "/api/v1/auth/oauth-login"
     );
 
-    public BruteForceProtectionFilter(ReactiveRedisTemplate<String, String> reactiveRedisTemplate) {
+    public BruteForceProtectionFilter(
+            ReactiveRedisTemplate<String, String> reactiveRedisTemplate,
+            @Value("${jwt.redis-timeout-ms:2000}") long redisTimeoutMillis,
+            @Value("${bruteforce.ip-block-threshold:5}") int ipThreshold,
+            @Value("${bruteforce.ip-block-duration-minutes:15}") int ipBlockMinutes) {
         super(Config.class);
         this.reactiveRedisTemplate = reactiveRedisTemplate;
+        this.redisTimeout = Duration.ofMillis(redisTimeoutMillis);
+        this.ipThreshold = ipThreshold;
+        this.ipBlockDuration = Duration.ofMinutes(ipBlockMinutes);
     }
 
     @Override
@@ -46,29 +61,59 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
         return "BruteForceProtection";
     }
 
+    @Data
+    public static class Config {
+        // No extra configuration attributes required
+    }
+
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
             String path = request.getURI().getPath();
+            String method = request.getMethod().name();
 
-            if (!isProtectedEndpoint(path)) {
+            if (!isProtectedEndpoint(path) || "OPTIONS".equalsIgnoreCase(method)) {
                 return chain.filter(exchange);
             }
 
             String ip = extractIpAddress(request);
-            String phone = extractPhoneNumber(request);
+            String blockKey = BLOCKED_IP_PREFIX + ip;
+            String attemptsKey = ATTEMPTS_IP_PREFIX + ip;
 
-            return checkBlocked(ip, phone)
-                    .flatMap(blocked -> {
-                        if (blocked) {
-                            log.warn("Blocked request – IP={}, phone={}, path={}", ip, phone, path);
+            // 1. 🛑 RESILIENT HIGH-SPEED CHECK WITH TIMEOUT
+            return reactiveRedisTemplate.hasKey(blockKey)
+                    .timeout(redisTimeout) // 🛑 STABILITY FIX 1: Prevent gateway pool freezes if Redis hangs
+                    .flatMap(isBlocked -> {
+                        if (Boolean.TRUE.equals(isBlocked)) {
+                            log.warn("BruteForce Blocked: IP {} attempted access to secure path {}", ip, path);
                             return onBlocked(exchange);
                         }
-                        return chain.filter(exchange);
+
+                        // 2. 🛑 MONITOR DOWNSTREAM RESPONSE UN-AUTHORIZED HANDSHAKES TO COUNT FAILURES
+                        return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+                            HttpStatus statusCode = (HttpStatus) exchange.getResponse().getStatusCode();
+                            if (statusCode == HttpStatus.UNAUTHORIZED) {
+                                log.info("Un-authorized login event registered from IP: {}", ip);
+
+                                // Increment failure outbox counters asynchronously off the main execution thread
+                                reactiveRedisTemplate.opsForValue().increment(attemptsKey)
+                                        .flatMap(attempts -> {
+                                            if (attempts == 1) {
+                                                return reactiveRedisTemplate.expire(attemptsKey, Duration.ofHours(1));
+                                            }
+                                            if (attempts >= ipThreshold) {
+                                                log.error("SECURITY ALERT: IP {} exceeded login thresholds. Enforcing a {}-minute lock.", ip, ipBlockDuration.toMinutes());
+                                                return reactiveRedisTemplate.opsForValue().set(blockKey, "BLOCKED", ipBlockDuration);
+                                            }
+                                            return Mono.just(true);
+                                        }).subscribe();
+                            }
+                        }));
                     })
                     .onErrorResume(e -> {
-                        log.error("Brute force check failed, allowing request (fail‑open): {}", e.getMessage());
+                        // 🛑 RESILIENCY FIX 2: True Fail-Open capability ensures service availability during cloud failovers
+                        log.error("Brute force protection subsystem unreachable. Bypassing check for stability: {}", e.getMessage());
                         return chain.filter(exchange);
                     });
         };
@@ -93,43 +138,17 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
         return "unknown";
     }
 
-    private String extractPhoneNumber(ServerHttpRequest request) {
-        String phone = request.getHeaders().getFirst("X-Phone-Number");
-        return (phone != null && !phone.trim().isEmpty()) ? phone.trim() : null;
-    }
-
-    private Mono<Boolean> checkBlocked(String ip, String phone) {
-        Mono<Boolean> ipBlocked = isKeyPresent(BLOCKED_IP_PREFIX + ip);
-        if (phone != null && !phone.isEmpty()) {
-            Mono<Boolean> phoneBlocked = isKeyPresent(BLOCKED_PHONE_PREFIX + phone);
-            return Mono.zip(ipBlocked, phoneBlocked)
-                    .map(tuple -> tuple.getT1() || tuple.getT2());
-        }
-        return ipBlocked;
-    }
-
-    private Mono<Boolean> isKeyPresent(String key) {
-        return reactiveRedisTemplate.hasKey(key)
-                .flatMap(exists -> {
-                    if (!exists) return Mono.just(false);
-                    return reactiveRedisTemplate.getExpire(key)
-                            .map(ttl -> ttl != null && ttl.getSeconds() > 0)
-                            .defaultIfEmpty(false);
-                })
-                .defaultIfEmpty(false)
-                .onErrorReturn(false);
-    }
-
     private Mono<Void> onBlocked(ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
-        String body = "{\"error\":\"Too many failed attempts\",\"status\":429,\"message\":\"Your IP address or phone number has been temporarily blocked. Please try again later.\"}";
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        String body = String.format(
+                "{\"error\":\"Too many failed attempts\",\"status\":429,\"message\":\"Your network address has been temporarily blocked for %d minutes due to unusual login failures.\"}",
+                ipBlockDuration.toMinutes()
+        );
+
         DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(buffer));
-    }
-
-    public static class Config {
-        // No configuration needed for now
     }
 }

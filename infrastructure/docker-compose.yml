@@ -11,8 +11,10 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    env_file:
+      - .env.docker
     environment:
-      REDIS_PASSWORD: password
+      REDIS_PASSWORD: ${INFRA_REDIS_PASSWORD}
     command: >
       sh -c "
       if [ -n \"$$REDIS_PASSWORD\" ]; then
@@ -36,6 +38,8 @@ services:
     ports:
       - "29092:9092"
       - "9093:9093"
+    env_file:
+      - .env.docker
     environment:
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_NODE_ID: 1
@@ -43,9 +47,16 @@ services:
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@tuttime-kafka:9094
       KAFKA_CFG_LISTENERS: INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9094
       KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://tuttime-kafka:9093,EXTERNAL://localhost:29092
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:SASL_PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CFG_SASL_ENABLED_MECHANISMS: SCRAM-SHA-256
+      KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL: SCRAM-SHA-256
+
+      KAFKA_CLIENT_USERS: ${KAFKA_USERS_LIST}
+      KAFKA_CLIENT_PASSWORDS: ${KAFKA_PASSWORDS_LIST}
+
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -54,7 +65,7 @@ services:
     volumes:
       - kafka-data:/bitnami/kafka/data
     healthcheck:
-      test: [ "CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9093 || exit 1" ]
+      test: [ "CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -68,9 +79,15 @@ services:
     container_name: tuttime-kafka-ui
     ports:
       - "9001:8080"
+    env_file:
+      - .env.docker
     environment:
       KAFKA_CLUSTERS_0_NAME: tuttime-local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: tuttime-kafka:9093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="user-kafka-user" password="***REMOVED***";'
+
     depends_on:
       kafka:
         condition: service_healthy
@@ -146,9 +163,11 @@ services:
     ports:
       - "9002:9002/tcp"
       - "12201:12201/udp"
+    env_file:
+      - .env.docker
     environment:
-      GRAYLOG_PASSWORD_SECRET: ***REMOVED***
-      GRAYLOG_ROOT_PASSWORD_SHA2: ***REMOVED***   # "admin"
+      GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET}
+      GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2}
       GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9002
       GRAYLOG_HTTP_EXTERNAL_URI: http://localhost:9002/
       GRAYLOG_MONGODB_URI: mongodb://tuttime-mongodb:27017/graylog

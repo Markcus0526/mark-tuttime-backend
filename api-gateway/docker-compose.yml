@@ -5,92 +5,11 @@ services:
       dockerfile: api-gateway/docker/Dockerfile
     image: tuttime/api-gateway:v1
     container_name: tuttime-api-gateway
+    env_file:
+      - .env.docker
     environment:
-      # Spring Boot core
-      SPRING_PROFILES_ACTIVE: docker,graylog-enabled
-      SERVER_PORT: 8080
-
-      # Gateway timeouts & limits
-      SPRING_CODEC_MAX_IN_MEMORY_SIZE: 500MB
-      GATEWAY_HTTP_KEEP_ALIVE: 3600s
-      GATEWAY_HTTP_CONNECT_TIMEOUT: 60000
-      GATEWAY_HTTP_RESPONSE_TIMEOUT: 30s
-      GATEWAY_POOL_MAX_CONNECTIONS: 5000
-      CIRCUIT_BREAKER_TIMEOUT: 305s
-
-      # HTTP service discovery – use service names (not container names)
-      USER_SERVICE: user-service:28001
-      RESTAURANT_SERVICE: restaurant-service:28002
-      MENU_SERVICE: menu-service:28003
-      BOOKING_SERVICE: booking-service:28004
-      ORDER_SERVICE: order-service:28005
-      PAYMENT_SERVICE: payment-service:28006
-      POS_SERVICE: pos-service:28007
-      REVIEW_SERVICE: review-service:28008
-      ANALYTICS_SERVICE: analytics-service:28009
-      NOTIFICATION_SERVICE: notification-service:28010
-
-      # gRPC service discovery – use service names
-      USER_GRPC_SERVICE: user-service:29001
-      RESTAURANT_GRPC_SERVICE: restaurant-service:29002
-      MENU_GRPC_SERVICE: menu-service:29003
-      BOOKING_GRPC_SERVICE: booking-service:29004
-      ORDER_GRPC_SERVICE: order-service:29005
-      PAYMENT_GRPC_SERVICE: payment-service:29006
-      POS_GRPC_SERVICE: pos-service:29007
-      REVIEW_GRPC_SERVICE: review-service:29008
-      ANALYTICS_GRPC_SERVICE: analytics-service:29009
-      NOTIFICATION_GRPC_SERVICE: notification-service:29010
-      GRPC_CLIENT_DEADLINE_SECONDS: 60
-
-      # Redis
-      SPRING_CACHE_TYPE: redis
-      SPRING_DATA_REDIS_HOST: tuttime-redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: password
-      SPRING_DATA_REDIS_TIMEOUT: 8000ms
-      SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: 20
-      SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: 10
-      SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: 2
-
-      # Kafka
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: tuttime-kafka:9093
-      SPRING_KAFKA_SECURITY_PROTOCOL: PLAINTEXT
-      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: ""
-      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: ""
-
-      # Cors
-      APP_CORS_ALLOWED_ORIGINS: https://tuttime-web.vercel.app,http://localhost:8080,http://localhost:18080,http://localhost:5173,http://localhost:8081
-
-      # JWT & CLUSTER INTERNAL SECRET
-      JWT_SECRET: ***REMOVED***
-      JWT_EXPIRATION: 86400000
-      JWT_ISSUER: tuttime-backend
-      JWT_AUDIENCE: tuttime-frontend
-      CLUSTER_INTERNAL_SECRET: ***REMOVED***
-
-      # Rate limiting (optional, used by built‑in RequestRateLimiter)
-      RATE_LIMIT_SIGNIN_CAPACITY: 5
-      RATE_LIMIT_SIGNUP_CAPACITY: 3
-
-      # Monitoring & logging
-      ZIPKIN_URL: http://zipkin:9411/api/v2/spans
-      LOG_LEVEL: INFO
-      GRAYLOG_HOST: graylog
-      GRAYLOG_PORT: 12203
-      GRAYLOG_ORIGIN_HOST: api-gateway
-      GRAYLOG_FACILITY: api-gateway
-      GRAYLOG_INCLUDE_SOURCE: true
-      GRAYLOG_MAX_MESSAGE_SIZE: 8192
-      GRAYLOG_COMPRESSION_TYPE: GZIP
-
-      # Cloud & infrastructure
-      SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: false
-      SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: false
-
       # Java options (corrected syntax)
       JAVA_TOOL_OPTIONS: "-Xss2m -XX:+UseG1GC -XX:InitialRAMPercentage=50.0 -XX:ActiveProcessorCount=2 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5000"
-
     ports:
       - "8080:8080"
       - "5000:5000"   # debug port

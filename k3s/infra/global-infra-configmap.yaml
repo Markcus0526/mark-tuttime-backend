@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: global-infra-config
+  namespace: tuttime
+data:
+  # Public Kafka Username Index (Safe to commit to Git)
+  KAFKA_USERS_LIST: "gateway-kafka-user,user-kafka-user,restaurant-kafka-user,menu-kafka-user,booking-kafka-user,payment-kafka-user,order-kafka-user,pos-kafka-user,review-kafka-user,analytics-kafka-user"

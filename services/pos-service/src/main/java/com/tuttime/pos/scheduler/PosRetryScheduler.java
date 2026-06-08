@@ -53,6 +53,8 @@ public class PosRetryScheduler {
             case "RESERVE_TABLE" -> adapter.reserveTable(config, null, task.getBookingId());
             case "OCCUPY_TABLE" -> adapter.occupyTable(config, null, task.getBookingId());
             case "RELEASE_TABLE" -> adapter.releaseTable(config, null, task.getBookingId());
+            case "SEND_TO_KITCHEN" -> adapter.sendToKitchen(config, task.getOrderId());
+            case "SEND_ORDER" -> adapter.sendOrder(config, task.getOrderId());
             default -> log.error("Unknown action in queue: {}", task.getAction());
         }
     }

@@ -19,19 +19,17 @@ data:
   # ========== Cluster internal secret ==========
   CLUSTER_INTERNAL_SECRET: "***REMOVED***"
 
-  # ========== Redis (disabled via autoconfigure exclude) ==========
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
-  SPRING_CACHE_TYPE: "none"
-  SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
-  SPRING_DATA_REDIS_PASSWORD: "password"
+  # ========== Redis High-Availability Sentinel Topology Settings ==========
+  REDIS_ENABLED: "true"
+  SPRING_CACHE_TYPE: "redis"
+  SPRING_DATA_REDIS_SENTINEL_MASTER: "tuttime-redis-master"
+  SPRING_DATA_REDIS_SENTINEL_NODE_1: "tuttime-redis-sentinel-1.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_SENTINEL_NODE_2: "tuttime-redis-sentinel-2.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_SENTINEL_NODE_3: "tuttime-redis-sentinel-3.tuttime.svc.cluster.local:26379"
   SPRING_DATA_REDIS_TIMEOUT: "8000ms"
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_IDLE: "10"
   SPRING_DATA_REDIS_LETTUCE_POOL_MIN_IDLE: "2"
-
-  # Exclude Redis auto‑configuration – this service does not use Redis
-  SPRING_AUTOCONFIGURE_EXCLUDE: "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisHealthContributorAutoConfiguration,org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration"
 
   # ========== Kafka ==========
   KAFKA_ENABLED: "true"
@@ -73,9 +71,10 @@ data:
   # ========== Resilience & Timeouts ==========
   CIRCUIT_BREAKER_TIMEOUT: "305s"
 
-  # ========== Monitoring & OpenAPI ==========
-  MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
+  # ========== OpenAPI / Swagger ==========
   SWAGGER_API_GATEWAY_URL: "http://api-gateway.tuttime.svc.cluster.local:8080"
+
+  # ========== Monitoring & Tracing ==========
   ZIPKIN_URL: "http://zipkin.tuttime.svc.cluster.local:9411/api/v2/spans"
   LOG_LEVEL: "INFO"
 
@@ -91,17 +90,8 @@ data:
   GRAYLOG_MAX_MESSAGE_SIZE: "8192"
   GRAYLOG_COMPRESSION_TYPE: "GZIP"
 
-  # ========== Security & Anti‑Fraud ==========
-  BRUTEFORCE_WARNING_THRESHOLD: "3"
-  BRUTEFORCE_IP_BLOCK_THRESHOLD: "5"
-  BRUTEFORCE_PHONE_BLOCK_THRESHOLD: "10"
-  BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD: "15"
-  BRUTEFORCE_IP_BLOCK_DURATION_MINUTES: "15"
-  BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES: "60"
-  ANTIFRAUD_MAX_DEVICES_PER_USER: "3"
-  ANTIFRAUD_MULTI_ACCOUNT_IP_THRESHOLD: "3"
-
   # ========== Cloud & Kubernetes Discovery ==========
   CONNECTION_POOL_MONITORING_ENABLED: "false"
   SPRING_CLOUD_KUBERNETES_DISCOVERY_ENABLED: "false"
+  SPRING_CLOUD_KUBERNETES_DISCOVERY_NAMESPACES: "tuttime"
   SPRING_CLOUD_KUBERNETES_CONFIG_ENABLED: "false"
