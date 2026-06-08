@@ -4,7 +4,7 @@ metadata:
   name: menu-service
   namespace: tuttime
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: menu-service

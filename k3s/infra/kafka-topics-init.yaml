@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topic-initializer
+  namespace: tuttime
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: topic-creator
+          image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # Create your core transaction topic with a replication factor of 3 for High Availability
+              /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists \
+                --bootstrap-server tuttime-kafka-cluster:9093 \
+                --topic tuttime.order.created \
+                --partitions 3 \
+                --replication-factor 3

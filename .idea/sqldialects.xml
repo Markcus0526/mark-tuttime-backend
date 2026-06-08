@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/db-migrations/analytics-service/V1__init_analytics_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/booking-service/V1__init_booking_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/menu-service/V1__init_menu_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/notification-service/V1__init_notification_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/order-service/V1__init_order_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/payment-service/V1__init_payment_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/pos-service/V1__init_pos_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/restaurant-service/V1__init_restaurant_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/review-service/V1__init_review_schema.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db-migrations/user-service/V1__init_user_schema.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/k3s/analytics-service/db-init-configmap.yaml" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/k3s/booking-service/db-init-configmap.yaml" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/k3s/menu-service/db-init-configmap.yaml" dialect="PostgreSQL" />
@@ -11,15 +21,5 @@
     <file url="file://$PROJECT_DIR$/k3s/restaurant-service/db-init-configmap.yaml" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/k3s/review-service/db-init-configmap.yaml" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/k3s/user-service/db-init-configmap.yaml" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/analytics-service/src/main/resources/db/migration/V1__init_analytics_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/booking-service/src/main/resources/db/migration/V1__init_booking_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/menu-service/src/main/resources/db/migration/V1__init_menu_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/notification-service/src/main/resources/db/migration/V1__init_notification_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/order-service/src/main/resources/db/migration/V1__init_order_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/payment-service/src/main/resources/db/migration/V1__init_payment_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/pos-service/src/main/resources/db/migration/V1__init_pos_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/restaurant-service/src/main/resources/db/migration/V1__init_restaurant_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/review-service/src/main/resources/db/migration/V1__init_review_schema.sql" dialect="PostgreSQL" />
-    <file url="file://$PROJECT_DIR$/services/user-service/src/main/resources/db/migration/V1__init_user_schema.sql" dialect="PostgreSQL" />
   </component>
 </project>

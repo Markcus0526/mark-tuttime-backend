@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Notification Service
 COPY services/notification-service/src ./services/notification-service/src
+COPY db-migrations/notification-service ./services/notification-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/notification-service -am -DskipTests
 

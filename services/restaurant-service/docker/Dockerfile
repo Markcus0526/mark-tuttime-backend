@@ -35,6 +35,7 @@ RUN --mount=type=cache,target=/root/.m2 mvn clean install -pl common-libs/common
 
 # 3. Build Restaurant Service
 COPY services/restaurant-service/src ./services/restaurant-service/src
+COPY db-migrations/restaurant-service ./services/restaurant-service/src/main/resources/db/migration/
 RUN --mount=type=cache,target=/root/.m2 \
     mvn clean package -pl services/restaurant-service -am -DskipTests
 
