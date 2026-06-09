@@ -6,7 +6,6 @@ import com.tuttime.common.event.kafka.EventProducer;
 import com.tuttime.common.event.kafka.event.OrderEvent;
 import com.tuttime.common.event.kafka.event.PaymentEvent;
 import com.tuttime.order.entity.Order;
-import com.tuttime.order.grpc.client.PosGrpcClient;
 import com.tuttime.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,0 +1,15 @@
+# Local storage for nightly pg_dump archives.
+# NOTE: A node-local PVC is NOT off-site DR. For real disaster recovery, ship these dumps to
+# object storage (S3/GCS) — see docs/DISASTER_RECOVERY.md. This PVC is the staging area.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backups
+  namespace: tuttime
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi

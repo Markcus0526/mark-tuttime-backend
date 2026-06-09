@@ -81,6 +81,7 @@ public class BookingEventConsumer {
             // 5. Final safety net to prevent infinite retries of bad messages
             log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
                     TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+            throw new RuntimeException("pos-service failed to process " + TOPIC_BOOKING_STATUS_UPDATED, e);
         }
     }
 

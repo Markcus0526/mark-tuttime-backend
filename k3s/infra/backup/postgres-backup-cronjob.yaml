@@ -1,0 +1,70 @@
+# Nightly logical backup (pg_dump) TEMPLATE for ONE database (user-service-db).
+#
+# Replicate this CronJob per database service (restaurant-service-db, menu-service-db, ...),
+# changing: metadata.name, PGHOST, PGDATABASE, and the db-secret name. Each runs pg_dump and
+# writes a timestamped, gzipped archive to the shared postgres-backups PVC, pruning files older
+# than RETENTION_DAYS.
+#
+# Credentials are read from the existing per-DB secret (POSTGRES_PASSWORD). The DB user defaults
+# to "postgres" (matches the service configmaps). See docs/DISASTER_RECOVERY.md for restore steps
+# and the off-site shipping requirement.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: user-service-db-backup
+  namespace: tuttime
+spec:
+  schedule: "0 2 * * *"            # 02:00 daily
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: postgres:15-alpine
+              env:
+                - name: PGHOST
+                  value: "user-service-db"
+                - name: PGPORT
+                  value: "5432"
+                - name: PGDATABASE
+                  value: "user_service_db"
+                - name: PGUSER
+                  value: "postgres"
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: user-service-db-secret
+                      key: POSTGRES_PASSWORD
+                - name: RETENTION_DAYS
+                  value: "7"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  TS=$(date +%Y%m%d-%H%M%S)
+                  OUT="/backups/${PGDATABASE}-${TS}.sql.gz"
+                  echo "Backing up ${PGDATABASE} -> ${OUT}"
+                  pg_dump --no-owner --no-privileges "$PGDATABASE" | gzip > "$OUT"
+                  echo "Pruning backups older than ${RETENTION_DAYS} days"
+                  find /backups -name "${PGDATABASE}-*.sql.gz" -mtime +${RETENTION_DAYS} -delete
+                  echo "Done."
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: postgres-backups

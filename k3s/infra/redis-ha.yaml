@@ -1,0 +1,194 @@
+# =============================================================================
+# HA Redis — 1 master + 2 replicas + 3 Sentinels (quorum 2).
+# Names are chosen to MATCH what the service configmaps already expect:
+#   SPRING_DATA_REDIS_SENTINEL_MASTER = "tuttime-redis-master"
+#   SPRING_DATA_REDIS_SENTINEL_NODE_{1,2,3} = "tuttime-redis-sentinel-{1,2,3}.tuttime.svc.cluster.local:26379"
+#
+# Replaces the broken 3-independent-node redis-deployment.yaml + redis-service.yaml + redis-pvc.yaml.
+# ⚠️ Validate failover on a test cluster before relying on it (Redis backs rate-limiting,
+#    booking locks, and the gateway token whitelist).
+# Production tip: the Bitnami Redis Helm chart (architecture=replication, sentinel.enabled=true)
+# is the lower-risk path for this exact topology.
+# =============================================================================
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-ha-scripts
+  namespace: tuttime
+data:
+  start-redis.sh: |
+    #!/bin/sh
+    set -e
+    ORDINAL="${HOSTNAME##*-}"
+    COMMON="--requirepass $REDIS_PASSWORD --masterauth $REDIS_PASSWORD --appendonly yes \
+            --maxmemory 1500mb --maxmemory-policy allkeys-lru --protected-mode no"
+    if [ "$ORDINAL" = "0" ]; then
+      exec redis-server $COMMON
+    else
+      exec redis-server $COMMON --replicaof tuttime-redis-0.tuttime-redis.tuttime.svc.cluster.local 6379
+    fi
+  start-sentinel.sh: |
+    #!/bin/sh
+    set -e
+    cat > /tmp/sentinel.conf <<EOF
+    port 26379
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel monitor tuttime-redis-master tuttime-redis-0.tuttime-redis.tuttime.svc.cluster.local 6379 2
+    sentinel auth-pass tuttime-redis-master $REDIS_PASSWORD
+    sentinel down-after-milliseconds tuttime-redis-master 5000
+    sentinel failover-timeout tuttime-redis-master 60000
+    sentinel parallel-syncs tuttime-redis-master 1
+    requirepass $REDIS_PASSWORD
+    EOF
+    exec redis-sentinel /tmp/sentinel.conf
+---
+# Headless service: stable per-pod DNS for redis nodes (tuttime-redis-0.tuttime-redis...)
+apiVersion: v1
+kind: Service
+metadata:
+  name: tuttime-redis
+  namespace: tuttime
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: redis
+  ports:
+    - { name: redis, port: 6379 }
+---
+# Headless service for the sentinel StatefulSet's own pod DNS.
+apiVersion: v1
+kind: Service
+metadata:
+  name: tuttime-redis-sentinel
+  namespace: tuttime
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: redis-sentinel
+  ports:
+    - { name: sentinel, port: 26379 }
+---
+# Per-sentinel stable Services matching the names the apps resolve (1-indexed -> pod ordinal 0..2).
+apiVersion: v1
+kind: Service
+metadata: { name: tuttime-redis-sentinel-1, namespace: tuttime }
+spec:
+  selector:
+    statefulset.kubernetes.io/pod-name: tuttime-redis-sentinel-0
+  ports: [ { name: sentinel, port: 26379, targetPort: 26379 } ]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: tuttime-redis-sentinel-2, namespace: tuttime }
+spec:
+  selector:
+    statefulset.kubernetes.io/pod-name: tuttime-redis-sentinel-1
+  ports: [ { name: sentinel, port: 26379, targetPort: 26379 } ]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: tuttime-redis-sentinel-3, namespace: tuttime }
+spec:
+  selector:
+    statefulset.kubernetes.io/pod-name: tuttime-redis-sentinel-2
+  ports: [ { name: sentinel, port: 26379, targetPort: 26379 } ]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tuttime-redis
+  namespace: tuttime
+spec:
+  serviceName: tuttime-redis
+  replicas: 3
+  selector:
+    matchLabels: { app: redis }
+  template:
+    metadata:
+      labels: { app: redis }
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["sh", "/scripts/start-redis.sh"]
+          ports: [ { containerPort: 6379, name: redis } ]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: global-infra-secrets, key: INFRA_REDIS_PASSWORD }
+          volumeMounts:
+            - { name: redis-data, mountPath: /data }
+            - { name: scripts, mountPath: /scripts }
+          livenessProbe:
+            exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep -q PONG"] }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            exec: { command: ["sh", "-c", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep -q PONG"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { memory: "1Gi", cpu: "250m" }
+            limits: { memory: "2Gi", cpu: "1000m" }
+      volumes:
+        - name: scripts
+          configMap: { name: redis-ha-scripts, defaultMode: 0755 }
+  volumeClaimTemplates:
+    - metadata: { name: redis-data }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests: { storage: 10Gi }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tuttime-redis-sentinel
+  namespace: tuttime
+spec:
+  serviceName: tuttime-redis-sentinel
+  replicas: 3
+  selector:
+    matchLabels: { app: redis-sentinel }
+  template:
+    metadata:
+      labels: { app: redis-sentinel }
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: sentinel
+          image: redis:7-alpine
+          command: ["sh", "/scripts/start-sentinel.sh"]
+          ports: [ { containerPort: 26379, name: sentinel } ]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: global-infra-secrets, key: INFRA_REDIS_PASSWORD }
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts }
+          readinessProbe:
+            tcpSocket: { port: 26379 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests: { memory: "128Mi", cpu: "50m" }
+            limits: { memory: "256Mi", cpu: "250m" }
+      volumes:
+        - name: scripts
+          configMap: { name: redis-ha-scripts, defaultMode: 0755 }

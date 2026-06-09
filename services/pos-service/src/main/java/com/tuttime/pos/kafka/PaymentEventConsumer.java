@@ -48,6 +48,7 @@ public class PaymentEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
                     TOPIC_PAYMENT_REFUND, e.getMessage());
+            throw new RuntimeException("pos-service failed to process " + TOPIC_PAYMENT_REFUND, e);
         }
     }
 }

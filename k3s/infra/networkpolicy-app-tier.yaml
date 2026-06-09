@@ -1,0 +1,41 @@
+# App-tier ingress segmentation.
+#
+# Selecting these pods makes them "isolated" for ingress: they accept traffic ONLY from
+#   (a) other pods in the tuttime namespace (api-gateway -> service, service -> service gRPC), and
+#   (b) the kube-system namespace (the bundled Traefik ingress controller -> api-gateway).
+# Traffic from any other namespace is denied.
+#
+# Infra pods (redis/kafka/zipkin) are intentionally NOT selected here so this policy cannot
+# black-hole them; the database tier is locked down separately by each *-db-isolation-policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: app-tier-ingress
+  namespace: tuttime
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - api-gateway
+          - user-service
+          - restaurant-service
+          - menu-service
+          - booking-service
+          - payment-service
+          - order-service
+          - pos-service
+          - review-service
+          - analytics-service
+          - notification-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        # Any pod within the tuttime namespace (gateway + sibling services)
+        - podSelector: {}
+        # The bundled Traefik ingress controller lives in kube-system
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system

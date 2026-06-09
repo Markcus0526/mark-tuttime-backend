@@ -7,6 +7,8 @@ data:
   # ========== Spring Boot Core ==========
   SPRING_PROFILES_ACTIVE: "k3s"
   SERVER_PORT: "8080"
+  # Disable unauthenticated Swagger UI / aggregated API docs in the cluster
+  SPRINGDOC_ENABLED: "false"
   SPRING_CODEC_MAX_IN_MEMORY_SIZE: "500MB"
   GATEWAY_HTTP_KEEP_ALIVE: "3600s"
   GATEWAY_HTTP_CONNECT_TIMEOUT: "60000"
@@ -41,8 +43,11 @@ data:
 
   # ========== Redis (Spring Data properties) ==========
   SPRING_CACHE_TYPE: "redis"
-  SPRING_DATA_REDIS_HOST: "redis.tuttime.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
+  # HA Redis via Sentinel (matches infra/redis-ha.yaml)
+  SPRING_DATA_REDIS_SENTINEL_MASTER: "tuttime-redis-master"
+  SPRING_DATA_REDIS_SENTINEL_NODE_1: "tuttime-redis-sentinel-1.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_SENTINEL_NODE_2: "tuttime-redis-sentinel-2.tuttime.svc.cluster.local:26379"
+  SPRING_DATA_REDIS_SENTINEL_NODE_3: "tuttime-redis-sentinel-3.tuttime.svc.cluster.local:26379"
   SPRING_DATA_REDIS_PASSWORD: "password"
   SPRING_DATA_REDIS_TIMEOUT: "8000ms"
   SPRING_DATA_REDIS_LETTUCE_POOL_MAX_ACTIVE: "20"
@@ -65,6 +70,11 @@ data:
   # ========== Rate Limiting ==========
   RATE_LIMIT_SIGNIN_CAPACITY: "5"
   RATE_LIMIT_SIGNUP_CAPACITY: "3"
+  # Global Redis token-bucket (RequestRateLimiter): tokens/sec and burst per user/IP
+  RATE_LIMIT_REPLENISH_RATE: "50"
+  RATE_LIMIT_BURST_CAPACITY: "100"
+  # Brute-force protection fail mode on Redis outage (false = fail-closed/reject)
+  BRUTEFORCE_FAIL_OPEN: "false"
 
   # ========== Monitoring & Tracing ==========
   ZIPKIN_URL: "http://zipkin.tuttime.svc.cluster.local:9411/api/v2/spans"

@@ -13,10 +13,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - ://tuttime.com
+        - api.tuttime.com
       secretName: tuttime-api-tls-cert # Encrypted certificate secret excluded from Git via .gitignore
   rules:
-    - host: ://tuttime.com
+    - host: api.tuttime.com
       http:
         paths:
           - path: /

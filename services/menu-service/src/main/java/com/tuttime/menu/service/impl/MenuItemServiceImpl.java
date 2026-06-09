@@ -14,6 +14,8 @@ import com.tuttime.menu.service.MenuItemService;
 import com.tuttime.menu.service.ModifierService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
@@ -40,6 +42,7 @@ public class MenuItemServiceImpl implements MenuItemService {
     private final ModifierService modifierService;
     private final MediaRepository mediaRepository;
     private final StorageProvider storageProvider;
+    private final CacheManager cacheManager;
 
     @Override
     @Transactional
@@ -275,6 +278,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "branch_menus", key = "#branchId")
     public void updateAvailabilityFromPos(List<UUID> itemIds, boolean isAvailable, UUID branchId) {
         log.info("POS Sync: Setting availability to {} for {} items in branch {}",
                 isAvailable, itemIds.size(), branchId);
@@ -294,12 +298,12 @@ public class MenuItemServiceImpl implements MenuItemService {
         } else {
             menuItemRepository.deactivateItemsFromPos(itemIds);
         }
-
-        evictCacheByBranch(branchId);
+        // Cache eviction handled by @CacheEvict on this method (proxy-invoked from the POS Kafka consumer).
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "branch_menus", key = "#branchId")
     public void updatePriceFromPos(UUID itemId, BigDecimal newPrice, UUID branchId) {
         log.info("POS Sync: Updating price for item {} to {}", itemId, newPrice);
 
@@ -313,7 +317,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 
         item.setPrice(newPrice);
         menuItemRepository.save(item);
-        evictCacheByBranch(branchId);
+        // Cache eviction handled by @CacheEvict on this method (proxy-invoked from the POS Kafka consumer).
     }
 
     @Override
@@ -368,10 +372,15 @@ public class MenuItemServiceImpl implements MenuItemService {
     }
 
     // ---------- cache eviction helper ----------
-    @Transactional(readOnly = true)
-    @CacheEvict(value = "branch_menus", key = "#branchId")
+    // Programmatic eviction (NOT @CacheEvict): this is called from sibling methods within the
+    // same bean (deleteMenuItem/linkModifierGroup/unlinkModifierGroup), and Spring's @CacheEvict
+    // proxy does not intercept self-invocation. Evicting via CacheManager works regardless.
     public void evictCacheByBranch(UUID branchId) {
-        // method body empty; annotation does the work
+        if (branchId == null) return;
+        Cache cache = cacheManager.getCache("branch_menus");
+        if (cache != null) {
+            cache.evict(branchId);
+        }
     }
 
     // ---------- helpers for SpEL and validation ----------

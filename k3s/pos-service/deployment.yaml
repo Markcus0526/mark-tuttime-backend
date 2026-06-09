@@ -4,7 +4,7 @@ metadata:
   name: pos-service
   namespace: tuttime
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: pos-service
@@ -18,6 +18,13 @@ spec:
         prometheus.io/path: "/actuator/prometheus"
     spec:
       terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: pos-service
           image: tuttime/pos-service:v1

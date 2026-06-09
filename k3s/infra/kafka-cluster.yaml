@@ -1,12 +1,62 @@
+# =============================================================================
+# HA Kafka — 3-broker KRaft cluster with SASL/SCRAM-SHA-256 on the client/inter-broker
+# listener. Replaces the single-broker infra/kafka-deployment.yaml + kafka-service.yaml + kafka-pvc.yaml.
+#
+# ⚠️ MUST be validated on a test cluster before production. KRaft quorum + SASL bring-up is
+#    timing/DNS-sensitive; expect to iterate on readiness timings and advertised listeners.
+#
+# Services already expect this: their configmaps set SPRING_KAFKA_SECURITY_PROTOCOL=SASL_PLAINTEXT
+# and bootstrap kafka:9093; their secrets carry per-service SCRAM creds (SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG).
+# The SCRAM users are provisioned from global-infra-config (KAFKA_USERS_LIST) +
+# global-infra-secrets (KAFKA_PASSWORDS_LIST). NOTE: add notification-kafka-user / its password to
+# those lists (currently missing) — notification-service is a Kafka consumer.
+# =============================================================================
+---
+# Headless service: stable per-pod DNS for the KRaft quorum (tuttime-kafka-cluster-N.kafka-headless...)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-headless
+  namespace: tuttime
+  labels:
+    app: kafka-broker
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: kafka-broker
+  ports:
+    - name: internal
+      port: 9093
+    - name: controller
+      port: 9094
+---
+# Client service: stable bootstrap endpoint the apps connect to (kafka:9093)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: tuttime
+  labels:
+    app: kafka-broker
+spec:
+  selector:
+    app: kafka-broker
+  ports:
+    - name: internal
+      port: 9093
+      targetPort: 9093
+  type: ClusterIP
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: tuttime-kafka-cluster
   namespace: tuttime
 spec:
-  # 🛑 MULTI-BROKER CLUSTER: Deploys 3 independent brokers for High Availability
+  serviceName: kafka-headless
   replicas: 3
-  serviceName: kafka-service
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app: kafka-broker
@@ -15,59 +65,85 @@ spec:
       labels:
         app: kafka-broker
     spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001          # bitnami kafka runs as uid 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: kafka
           image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
           ports:
-            - containerPort: 9093
-              name: internal
+            - { containerPort: 9093, name: internal }
+            - { containerPort: 9094, name: controller }
+          # Derive per-pod node id + advertised listener from the StatefulSet ordinal, then hand
+          # off to the bitnami entrypoint.
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              ORDINAL="${HOSTNAME##*-}"
+              export KAFKA_CFG_NODE_ID="${ORDINAL}"
+              export KAFKA_CFG_ADVERTISED_LISTENERS="INTERNAL://${HOSTNAME}.kafka-headless.tuttime.svc.cluster.local:9093"
+              exec /opt/bitnami/scripts/kafka/entrypoint.sh /opt/bitnami/scripts/kafka/run.sh
           env:
-            - name: KAFKA_CFG_PROCESS_ROLES
-              value: "broker,controller"
-            - name: KAFKA_KRAFT_CLUSTER_ID
-              value: "e9hKOjhvRvyeLAlnqZQpFw"
-
-            # 🛑 INTER-NODE KRAFT DISCOVERY BLUEPRINT
-            # Maps nodes to dynamically scale quorum voting based on StatefulSet replica pod index paths
+            - { name: KAFKA_CFG_PROCESS_ROLES, value: "broker,controller" }
+            - { name: KAFKA_KRAFT_CLUSTER_ID, value: "e9hKOjhvRvyeLAlnqZQpFw" }
+            # 3-node quorum (node ids 0,1,2 map to pod ordinals)
             - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
-              value: "0@tuttime-kafka-cluster-0.kafka-service.tuttime.svc.cluster.local:9094,1@tuttime-kafka-cluster-1.kafka-service.tuttime.svc.cluster.local:9094,2@tuttime-kafka-cluster-2.kafka-service.tuttime.svc.cluster.local:9094"
-
-            # Configure listeners for secure SASL internal communication
-            - name: KAFKA_CFG_LISTENERS
-              value: "INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094"
-            - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
-              value: "INTERNAL:SASL_PLAINTEXT,CONTROLLER:PLAINTEXT"
-            - name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME
-              value: "INTERNAL"
-
-            # 🛑 CONTROLLED TOPIC CREATION: Blocks apps from creating un-replicated topics on the fly
-            - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
-              value: "false"
-
-            # Enforce data protection requirements across the 3 brokers
-            - name: KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR
-              value: "3"
-            - name: KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
-              value: "3"
-            - name: KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR
-              value: "2"
-
-            # Enforce SASL/SCRAM mechanism protocols
-            - name: KAFKA_CFG_SASL_ENABLED_MECHANISMS
-              value: "SCRAM-SHA-256"
-            - name: KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL
-              value: "SCRAM-SHA-256"
-
-            # 🛑 FIX: Securely loads account arrays from public configuration maps
+              value: "0@tuttime-kafka-cluster-0.kafka-headless.tuttime.svc.cluster.local:9094,1@tuttime-kafka-cluster-1.kafka-headless.tuttime.svc.cluster.local:9094,2@tuttime-kafka-cluster-2.kafka-headless.tuttime.svc.cluster.local:9094"
+            - { name: KAFKA_CFG_LISTENERS, value: "INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094" }
+            - { name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP, value: "INTERNAL:SASL_PLAINTEXT,CONTROLLER:PLAINTEXT" }
+            - { name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES, value: "CONTROLLER" }
+            - { name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME, value: "INTERNAL" }
+            # SASL/SCRAM for clients + inter-broker
+            - { name: KAFKA_CFG_SASL_ENABLED_MECHANISMS, value: "SCRAM-SHA-256" }
+            - { name: KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL, value: "SCRAM-SHA-256" }
+            - { name: KAFKA_INTER_BROKER_USER, value: "inter_broker_user" }
+            - name: KAFKA_INTER_BROKER_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: global-infra-secrets, key: KAFKA_INTER_BROKER_PASSWORD }
+            # SCRAM client users created at boot from the public list + secret password list
             - name: KAFKA_CLIENT_USERS
               valueFrom:
-                configMapKeyRef:
-                  name: global-infra-config
-                  key: KAFKA_USERS_LIST
-
-            # 🛑 FIX: Securely loads cluster hashes from encrypted secret namespaces
+                configMapKeyRef: { name: global-infra-config, key: KAFKA_USERS_LIST }
             - name: KAFKA_CLIENT_PASSWORDS
               valueFrom:
-                secretKeyRef:
-                  name: global-infra-secrets
-                  key: KAFKA_PASSWORDS_LIST
+                secretKeyRef: { name: global-infra-secrets, key: KAFKA_PASSWORDS_LIST }
+            # Controlled topic creation + HA durability
+            - { name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE, value: "false" }
+            - { name: KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR, value: "3" }
+            - { name: KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, value: "3" }
+            - { name: KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR, value: "2" }
+            - { name: KAFKA_CFG_DEFAULT_REPLICATION_FACTOR, value: "3" }
+            - { name: KAFKA_CFG_MIN_INSYNC_REPLICAS, value: "2" }
+            - { name: KAFKA_CFG_LOG_DIRS, value: "/bitnami/kafka/data" }
+            - { name: KAFKA_HEAP_OPTS, value: "-Xmx2g -Xms2g" }
+          volumeMounts:
+            - { name: kafka-data, mountPath: /bitnami/kafka/data }
+          livenessProbe:
+            tcpSocket: { port: 9093 }
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            tcpSocket: { port: 9093 }
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests: { memory: "2Gi", cpu: "500m" }
+            limits: { memory: "3Gi", cpu: "1500m" }
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 20Gi

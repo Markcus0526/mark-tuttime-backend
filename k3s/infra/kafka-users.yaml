@@ -1,8 +1,0 @@
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaUser
-metadata:
-  name: analytics-service-user # The Username Kafka looks for
-  namespace: tuttime # Must be the same namespace your Kafka broker sits in
-spec:
-  authentication:
-    type: scram-sha-256 # Enforces secure password hashing

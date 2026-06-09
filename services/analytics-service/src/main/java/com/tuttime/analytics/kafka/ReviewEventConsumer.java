@@ -52,6 +52,7 @@ public class ReviewEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
                     TOPIC_REVIEW_UPDATED, e.getMessage());
+            throw new RuntimeException("analytics-service failed to process " + TOPIC_REVIEW_UPDATED, e);
         }
     }
 }

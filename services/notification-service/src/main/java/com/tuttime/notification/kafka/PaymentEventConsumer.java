@@ -61,6 +61,7 @@ public class PaymentEventConsumer {
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}",
 					TOPIC_PAYMENT_COMPLETED, e.getMessage());
+			throw new RuntimeException("notification-service failed to process " + TOPIC_PAYMENT_COMPLETED, e);
 		}
 	}
 
@@ -94,6 +95,7 @@ public class PaymentEventConsumer {
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}",
 					TOPIC_PAYMENT_REFUND, e.getMessage());
+			throw new RuntimeException("notification-service failed to process " + TOPIC_PAYMENT_REFUND, e);
 		}
 	}
 

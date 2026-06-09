@@ -56,6 +56,7 @@ public class BookingEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[analytics-service], Error: {}",
                     TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+            throw new RuntimeException("analytics-service failed to process " + TOPIC_BOOKING_STATUS_UPDATED, e);
         }
     }
 }

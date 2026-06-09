@@ -4,7 +4,7 @@ metadata:
   name: api-gateway
   namespace: tuttime
 spec:
-  replicas: 1   # adjust to 1 if single node
+  replicas: 2   # adjust to 1 if single node
   selector:
     matchLabels:
       app: api-gateway
@@ -19,6 +19,13 @@ spec:
         prometheus.io/path: "/actuator/prometheus"
     spec:
       terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: api-gateway
           image: tuttime/api-gateway:v1   # change to your registry/image
