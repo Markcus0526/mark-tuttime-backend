@@ -50,10 +50,29 @@ spring:
         pool:
           max-connections: ${GATEWAY_POOL_MAX_CONNECTIONS:5000}
 
+      # -------------------------------------------------------------
+      # GLOBAL CORS CONFIGURATION FOR Httponly CREDENTIALS
+      # -------------------------------------------------------------
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true # Allows browser to send the HttpOnly cookies
+
       # ----------------------------------------------
       # Global default filters (applied to all routes)
       # ----------------------------------------------
       default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
         - name: Retry
           args:
             retries: 3

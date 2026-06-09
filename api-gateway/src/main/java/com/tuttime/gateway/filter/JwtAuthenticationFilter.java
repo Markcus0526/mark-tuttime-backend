@@ -140,12 +140,13 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 return chain.filter(exchange.mutate().request(cleanedRequest).build());
             }
 
-            String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return onError(exchange, "Missing or invalid Authorization header", HttpStatus.UNAUTHORIZED);
+            org.springframework.http.HttpCookie cookie = request.getCookies().getFirst("access_token");
+
+            if (cookie == null || cookie.getValue().isEmpty()) {
+                return onError(exchange, "Missing or expired session cookie", HttpStatus.UNAUTHORIZED);
             }
 
-            String token = authHeader.substring(7);
+            String token = cookie.getValue();
 
             // Execute the pipeline cleanly, short-circuiting the stream immediately upon error rejections
             return validateTokenAndMutateExchange(token, exchange)

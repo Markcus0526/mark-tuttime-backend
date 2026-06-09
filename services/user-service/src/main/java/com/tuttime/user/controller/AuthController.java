@@ -14,9 +14,13 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -70,11 +74,42 @@ public class AuthController {
     })
     @PostMapping("/logout")
     public ResponseEntity<ApiRes<Void>> logout(
-            @Parameter(description = "Logout request with refresh token", required = true)
-            @Valid @RequestBody AuthDto.LogoutRequest request) {
+            HttpServletRequest request,
+            @Parameter(description = "Optional FCM token to unregister notifications")
+            @RequestBody(required = false) String fcmToken) {
 
-        authService.logoutUser(request.refreshToken(), request.fcmToken());
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiRes.success(null));
+        String refreshTokenString = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    refreshTokenString = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (refreshTokenString != null) {
+            authService.logoutUser(refreshTokenString, fcmToken);
+        }
+
+        ResponseCookie clearAccess = ResponseCookie.from("access_token", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .build();
+        ResponseCookie clearRefresh = ResponseCookie.from("refresh_token", "")
+                .path("/api/v1/auth/refresh")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, clearAccess.toString());
+        headers.add(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success("Logged out successfully", null));
     }
 
     @Operation(summary = "Login user via OAuth providers (Google, Apple, etc.)")
@@ -88,7 +123,9 @@ public class AuthController {
             @Valid @RequestBody AuthDto.OAuthLoginRequest request) {
 
         AuthDto.AuthResponse response = authService.authenticateOAuthUser(request);
-        return ResponseEntity.ok(ApiRes.success(response));
+        HttpHeaders headers = createAuthCookieHeaders(response.accessToken(), response.refreshToken());
+
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success("OAuth login successful", null));
     }
 
     @Operation(summary = "Refresh JWT access token using refresh token.")
@@ -97,12 +134,26 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token", content = @Content)
     })
     @PostMapping("/refresh")
-    public ResponseEntity<ApiRes<AuthDto.AuthResponse>> refreshToken(
-            @Parameter(description = "Token refresh request with refresh token", required = true)
-            @Valid @RequestBody AuthDto.TokenRefreshRequest request) {
+    public ResponseEntity<ApiRes<AuthDto.AuthResponse>> refreshToken(HttpServletRequest request) {
 
-        AuthDto.AuthResponse response = authService.refreshJwtToken(request.refreshToken());
-        return ResponseEntity.ok(ApiRes.success(response));
+        String refreshTokenString = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    refreshTokenString = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (refreshTokenString == null || refreshTokenString.isEmpty()) {
+            throw new UnauthorizedException("Missing refresh token cookie");
+        }
+
+        AuthDto.AuthResponse response = authService.refreshJwtToken(refreshTokenString);
+        HttpHeaders headers = createAuthCookieHeaders(response.accessToken(), response.refreshToken());
+
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success("Token refreshed successfully", null));
     }
 
     @Operation(summary = "Request password reset. Sends email or phone reset depending on contact.")
@@ -158,7 +209,9 @@ public class AuthController {
             @Valid @RequestBody AuthDto.OtpVerificationConfirmRequest request) {
 
         AuthDto.AuthResponse response = authService.loginWithOtp(request);
-        return ResponseEntity.ok(ApiRes.success(response));
+        HttpHeaders headers = createAuthCookieHeaders(response.accessToken(), response.refreshToken());
+
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success("OTP login successful", null));
     }
 
     @Operation(summary = "Register or update FCM device token for the current user.")
@@ -204,5 +257,30 @@ public class AuthController {
                 || !(UserContext.isRoleAdmin() || UserContext.isRoleOwner() || UserContext.isRoleManager())) {
             throw new ForbiddenException("Access forbidden: Insufficient permissions");
         }
+    }
+
+    private HttpHeaders createAuthCookieHeaders(String accessToken, String refreshToken) {
+        // 1. Create Access Token Cookie (Short-lived, e.g., 15 minutes)
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(true) // Set to false ONLY during localhost HTTP development if needed
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(24 * 60 * 60) // 24 Hours in seconds to prevent early browser flushes
+                .build();
+
+        // 2. Create Refresh Token Cookie (Long-lived, e.g., 7 days)
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/api/v1/auth/refresh") // Restrict to only the refresh route for safety
+                .maxAge(7 * 24 * 60 * 60)
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        return headers;
     }
 }
