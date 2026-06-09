@@ -9,10 +9,14 @@ import com.tuttime.booking.entity.BookingItem;
 import com.tuttime.booking.entity.BookingStatusHistory;
 import com.tuttime.booking.entity.WaitlistEntry;
 import com.tuttime.booking.entity.enums.WaitlistStatus;
+import com.google.protobuf.Struct;
 import com.tuttime.booking.grpc.client.MenuGrpcClient;
+import com.tuttime.booking.grpc.client.NotificationGrpcClient;
 import com.tuttime.booking.grpc.client.OrderGrpcClient;
 import com.tuttime.booking.grpc.client.RestaurantGrpcClient;
 import com.tuttime.booking.grpc.client.UserGrpcClient;
+import com.tuttime.common.enums.NotificationTemplateKey;
+import com.tuttime.common.event.proto.SendNotificationRequest;
 import com.tuttime.booking.mapper.BookingHistoryMapper;
 import com.tuttime.booking.mapper.BookingMapper;
 import com.tuttime.booking.repository.BookingItemRepository;
@@ -71,6 +75,7 @@ public class BookingServiceImpl implements BookingService {
     private final UserGrpcClient userGrpcClient;
     private final MenuGrpcClient menuGrpcClient;
     private final OrderGrpcClient orderGrpcClient;
+    private final NotificationGrpcClient notificationGrpcClient;
     private final RedissonClient redissonClient;
     private final EventProducer eventProducer;
 
@@ -1024,7 +1029,30 @@ public class BookingServiceImpl implements BookingService {
         entry.setNotifiedAt(OffsetDateTime.now());
         waitlistRepository.save(entry);
         log.info("Notified user {} for waitlist entry {}", entry.getUserId(), entry.getId());
-        // TODO: send push notification via Notification Service (gRPC or Kafka)
+
+        // Push notification via Notification Service (gRPC) that a table is now available.
+        try {
+            Map<String, Object> params = Map.of(
+                    "branchId", branchId.toString(),
+                    "zoneId", zoneId != null ? zoneId.toString() : "",
+                    "partySize", String.valueOf(partySize),
+                    "waitlistId", entry.getId().toString()
+            );
+            Struct.Builder structBuilder = Struct.newBuilder();
+            params.forEach((k, v) -> structBuilder.putFields(k,
+                    com.google.protobuf.Value.newBuilder().setStringValue(v.toString()).build()));
+
+            SendNotificationRequest request = SendNotificationRequest.newBuilder()
+                    .setUserId(entry.getUserId().toString())
+                    .setTemplateKey(NotificationTemplateKey.WAITLIST_AVAILABLE.name())
+                    .setParams(structBuilder.build())
+                    .build();
+
+            notificationGrpcClient.sendNotification(request);
+        } catch (Exception e) {
+            // Do not fail the table-release transaction if notification dispatch has an issue.
+            log.error("Failed to send waitlist availability notification for entry {}: {}", entry.getId(), e.getMessage());
+        }
     }
 
     @Override

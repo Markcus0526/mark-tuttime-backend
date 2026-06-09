@@ -48,6 +48,7 @@ public class PosEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[menu-service], Error: {}",
                     TOPIC_POS_ITEMS_UPDATED, e.getMessage());
+            throw new RuntimeException("menu-service failed to process " + TOPIC_POS_ITEMS_UPDATED, e);
         }
     }
 
@@ -70,6 +71,7 @@ public class PosEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[menu-service], Error: {}",
                     TOPIC_POS_PRICE_UPDATED, e.getMessage());
+            throw new RuntimeException("menu-service failed to process " + TOPIC_POS_PRICE_UPDATED, e);
         }
     }
 }

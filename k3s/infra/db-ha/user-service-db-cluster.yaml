@@ -1,0 +1,50 @@
+# HA Postgres for user-service via the CloudNativePG operator (StatefulSet-backed: 1 primary +
+# 2 hot standbys with automatic failover, streaming replication, and managed backups).
+#
+# TEMPLATE — replicate per service DB (restaurant/menu/booking/...), changing: metadata.name,
+# bootstrap.initdb.database, the post-init schema, and the credential secret. user-service uses
+# PostGIS, hence the -postgis operator image; other services can use ghcr.io/cloudnative-pg/postgresql.
+#
+# ⚠️ Requires the CloudNativePG operator installed (CRDs). NOT wired into kustomization.yaml because
+#    `kubectl apply` would fail without the CRDs present. See docs/DB_HA.md for install + cutover.
+#
+# This REPLACES the per-service db-deployment.yaml + db-pvc.yaml + db-service.yaml once you cut over.
+# CNPG publishes services: <name>-rw (primary, read/write), <name>-ro (replicas), <name>-r (any).
+# Point the service's DATABASE_URL host at "user-service-db-rw".
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: user-service-db
+  namespace: tuttime
+spec:
+  instances: 3                      # 1 primary + 2 standbys; operator handles failover
+  imageName: ghcr.io/cloudnative-pg/postgis:15
+
+  primaryUpdateStrategy: unsupervised
+
+  bootstrap:
+    initdb:
+      database: user_service_db
+      owner: postgres
+      secret:
+        name: user-service-db-app          # CNPG-format secret (username/password keys) — see docs
+      postInitApplicationSQL:
+        - CREATE SCHEMA IF NOT EXISTS user_service;
+        - CREATE EXTENSION IF NOT EXISTS postgis;
+
+  storage:
+    size: 20Gi
+    storageClass: local-path
+
+  resources:
+    requests: { memory: "512Mi", cpu: "250m" }
+    limits: { memory: "1Gi", cpu: "500m" }
+
+  # Continuous backup to object storage (real DR / point-in-time recovery). Fill in your bucket+creds.
+  # backup:
+  #   barmanObjectStore:
+  #     destinationPath: "s3://<bucket>/user-service-db"
+  #     s3Credentials:
+  #       accessKeyId:     { name: backup-creds, key: ACCESS_KEY_ID }
+  #       secretAccessKey: { name: backup-creds, key: ACCESS_SECRET_KEY }
+  #   retentionPolicy: "14d"

@@ -39,6 +39,7 @@ public class BookingEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[order-service], Error: {}",
                     TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+            throw new RuntimeException("order-service failed to process " + TOPIC_BOOKING_STATUS_UPDATED, e);
         }
     }
 }

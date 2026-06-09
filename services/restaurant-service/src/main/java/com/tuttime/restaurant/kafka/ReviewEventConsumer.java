@@ -62,6 +62,7 @@ public class ReviewEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[restaurant-service], Error: {}",
                     TOPIC_REVIEW_UPDATED, e.getMessage());
+            throw new RuntimeException("restaurant-service failed to process " + TOPIC_REVIEW_UPDATED, e);
         }
     }
 

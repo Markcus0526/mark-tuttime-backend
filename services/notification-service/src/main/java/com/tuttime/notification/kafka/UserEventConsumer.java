@@ -59,6 +59,7 @@ public class UserEventConsumer {
 
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", topic, e.getMessage());
+			throw new RuntimeException("notification-service failed to process " + topic, e);
 		}
 	}
 
@@ -93,7 +94,8 @@ public class UserEventConsumer {
 					params);
 
 		} catch (Exception e) {
-			log.error("<<< KAFKA[{}] >>> Consumer:[api-gateway], Error: {}", TOPIC_USER_SECURITY_UPDATED, e.getMessage());
+			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_USER_SECURITY_UPDATED, e.getMessage());
+			throw new RuntimeException("notification-service failed to process " + TOPIC_USER_SECURITY_UPDATED, e);
 		}
 	}
 }

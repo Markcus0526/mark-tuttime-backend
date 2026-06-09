@@ -95,6 +95,7 @@ public class BookingEventConsumer {
 			}
 		} catch (Exception e) {
 			log.error("<<< KAFKA[{}] >>> Consumer:[notification-service], Error: {}", TOPIC_BOOKING_STATUS_UPDATED, e.getMessage());
+			throw new RuntimeException("notification-service failed to process " + TOPIC_BOOKING_STATUS_UPDATED, e);
 		}
 	}
 

@@ -173,6 +173,7 @@ public class OrderEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[pos-service], Error: {}",
                     TOPIC_ORDER_STATUS_UPDATED, e.getMessage());
+            throw new RuntimeException("pos-service failed to process " + TOPIC_ORDER_STATUS_UPDATED, e);
         }
     }
 }

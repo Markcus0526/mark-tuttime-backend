@@ -1,22 +1,66 @@
+# Pre-creates all application topics (+ their .DLT dead-letter topics) on the SASL cluster.
+# Required because the cluster runs with KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false.
+# Uses the inter-broker SCRAM account as an admin client. Idempotent (--if-not-exists).
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: kafka-topic-initializer
   namespace: tuttime
 spec:
+  backoffLimit: 10
   template:
     spec:
       restartPolicy: OnFailure
       containers:
         - name: topic-creator
           image: docker.io/bitnamilegacy/kafka:4.0.0-debian-12-r10
+          env:
+            - name: KAFKA_INTER_BROKER_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: global-infra-secrets, key: KAFKA_INTER_BROKER_PASSWORD }
           command:
             - /bin/bash
             - -c
             - |
-              # Create your core transaction topic with a replication factor of 3 for High Availability
-              /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists \
-                --bootstrap-server tuttime-kafka-cluster:9093 \
-                --topic tuttime.order.created \
-                --partitions 3 \
-                --replication-factor 3
+              set -euo pipefail
+              BOOTSTRAP="kafka:9093"
+              CFG=/tmp/client.properties
+              cat > "$CFG" <<EOF
+              security.protocol=SASL_PLAINTEXT
+              sasl.mechanism=SCRAM-SHA-256
+              sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="inter_broker_user" password="${KAFKA_INTER_BROKER_PASSWORD}";
+              EOF
+
+              echo "Waiting for Kafka cluster to accept connections..."
+              for i in $(seq 1 60); do
+                if /opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server "$BOOTSTRAP" --command-config "$CFG" >/dev/null 2>&1; then
+                  echo "Cluster is up."; break
+                fi
+                echo "  ...retry $i"; sleep 5
+              done
+
+              TOPICS="
+              tuttime.user.registered
+              tuttime.user.verification.requested
+              tuttime.user.profile.updated
+              tuttime.user.security.updated
+              tuttime.restaurant.staff.updated
+              tuttime.booking.status.updated
+              tuttime.booking.branch.availability
+              tuttime.order.created
+              tuttime.order.status.updated
+              tuttime.payment.completed
+              tuttime.payment.refund
+              tuttime.pos.items.updated
+              tuttime.pos.price.updated
+              tuttime.review.updated
+              "
+              for t in $TOPICS; do
+                for name in "$t" "${t}.DLT"; do
+                  echo "Creating topic: $name"
+                  /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists \
+                    --bootstrap-server "$BOOTSTRAP" --command-config "$CFG" \
+                    --topic "$name" --partitions 3 --replication-factor 3
+                done
+              done
+              echo "Topic initialization complete."

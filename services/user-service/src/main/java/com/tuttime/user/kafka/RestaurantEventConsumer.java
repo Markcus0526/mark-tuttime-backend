@@ -81,6 +81,7 @@ public class RestaurantEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[user-service], Error: {}",
                     TOPIC_RESTAURANT_STAFF_UPDATED, e.getMessage());
+            throw new RuntimeException("user-service failed to process " + TOPIC_RESTAURANT_STAFF_UPDATED, e);
         }
     }
 }

@@ -18,6 +18,7 @@ public enum NotificationTemplateKey {
     BOOKING_REMINDER,           // Sent 2–24 hours before the booking. Crucial for reducing no-shows.
     BOOKING_CANCELED,           // Cancellation confirmation.
     BOOKING_COMPLETED,          // Summary after the meal.
+    WAITLIST_AVAILABLE,         // A table matching the user's waitlist entry has freed up.
 
     // BOOKING (Manager Fan-out)
     MANAGER_BOOKING_ALERT,      // For new incoming bookings.

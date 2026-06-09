@@ -5,16 +5,34 @@ namespace: tuttime
 
 resources:
   # Infrastructure
-  - infra/redis-deployment.yaml
-  - infra/redis-pvc.yaml
-  - infra/redis-service.yaml
-  - infra/kafka-deployment.yaml
-  - infra/kafka-pvc.yaml
-  - infra/kafka-service.yaml
-  - infra/kafka-ui-deployment.yaml
-  - infra/kafka-ui-service.yaml
+  # Shared infra config/secrets (Kafka SCRAM users + Redis password)
+  - infra/global-infra-configmap.yaml
+  - infra/global-infra-secret.yaml
+  # HA Redis: 1 master + 2 replicas + 3 Sentinels
+  - infra/redis-ha.yaml
+  # HA Kafka: 3-broker KRaft cluster (SASL/SCRAM) + topic initializer
+  - infra/kafka-cluster.yaml
+  - infra/kafka-topics-init.yaml
   - infra/zipkin-deployment.yaml
   - infra/zipkin-service.yaml
+
+  # Edge / TLS (Traefik + cert-manager)
+  - infra/cluster-issuer.yaml
+  - infra/traefik-middleware.yaml
+  - infra/ingress-secure.yaml
+
+  # Network segmentation (app-tier ingress + per-DB isolation)
+  - infra/networkpolicy-app-tier.yaml
+  - analytics-service/networkpolicy.yaml
+  - booking-service/networkpolicy.yaml
+  - menu-service/networkpolicy.yaml
+  - notification-service/networkpolicy.yaml
+  - order-service/networkpolicy.yaml
+  - payment-service/networkpolicy.yaml
+  - pos-service/networkpolicy.yaml
+  - restaurant-service/networkpolicy.yaml
+  - review-service/networkpolicy.yaml
+  - user-service/networkpolicy.yaml
 
   # API Gateway
   - api-gateway/configmap.yaml
@@ -159,6 +177,35 @@ images:
     newTag: v1
   - name: tuttime/notification-service
     newTag: v1
+
+# Service-to-service mTLS via Linkerd: inject the data-plane proxy into every workload pod.
+# Requires the Linkerd control plane to be installed (see docs/MTLS.md). Until then these
+# annotations are inert. Strategic-merge so the annotations map is created where absent.
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: linkerd-inject-all
+      spec:
+        template:
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
+  - target:
+      kind: StatefulSet
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: linkerd-inject-all
+      spec:
+        template:
+          metadata:
+            annotations:
+              linkerd.io/inject: enabled
 
 # Common labels to add to all resources
 #commonLabels:

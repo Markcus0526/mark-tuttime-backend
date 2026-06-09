@@ -48,9 +48,10 @@ $$
                                  'ACCOUNT_LOCKED', 'ADMIN_USER_CREATED', 'ADMIN_USER_BLOCKED', 'ADMIN_USER_UNBLOCKED',
                                  'ADMIN_USER_DELETED',
                                  'BOOKING_CREATED', 'BOOKING_REMINDER', 'BOOKING_CANCELED',
-                                 'BOOKING_COMPLETED', 'REVIEW_REQUEST',
+                                 'BOOKING_COMPLETED', 'WAITLIST_AVAILABLE', 'REVIEW_REQUEST',
                                  'MANAGER_BOOKING_ALERT', 'MANAGER_BOOKING_CANCEL', 'MANAGER_LOW_AVAILABILITY',
                                  'PAYMENT_SUCCESS', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED',
+                                 'ORDER_CREATED',
                                  'REVIEW_APPROVED', 'REVIEW_REJECTED'
                     ));
         END IF;
@@ -209,6 +210,14 @@ VALUES
 ('BOOKING_REMINDER', 'EMAIL', 'en', 'Reminder: Your table is waiting', 'Don''t forget your reservation at {{restaurantName}} today at {{bookingTime}}.',
  true),
 ('BOOKING_REMINDER', 'SMS', 'en', NULL, 'TutTime reminder: Your table at {{restaurantName}} at {{bookingTime}}.',
+ true),
+
+-- 12b. WAITLIST_AVAILABLE (a table matching the guest's waitlist entry freed up)
+('WAITLIST_AVAILABLE', 'EMAIL', 'en', 'A table just opened up!', 'Good news! A table for {{partySize}} is now available. Open the TutTime app to claim your spot before it''s offered to the next guest.',
+ true),
+('WAITLIST_AVAILABLE', 'SMS', 'en', NULL, 'TutTime: A table for {{partySize}} just opened up! Open the app to claim it before it''s gone.',
+ true),
+('WAITLIST_AVAILABLE', 'IN_APP', 'en', 'Table available', 'A table for {{partySize}} is now available. Tap to confirm your spot.',
  true),
 
 -- 13. PAYMENT_SUCCESS

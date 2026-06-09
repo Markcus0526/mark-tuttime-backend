@@ -67,6 +67,7 @@ public class RestaurantEventConsumer {
 			});
 		} catch (Exception e) {
 			log.error("Error processing availability event: {}", e.getMessage());
+			throw new RuntimeException("notification-service failed to process restaurant availability event", e);
 		}
 	}
 }

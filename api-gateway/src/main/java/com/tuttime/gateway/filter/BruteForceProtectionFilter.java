@@ -29,6 +29,7 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
     private final Duration redisTimeout;
     private final int ipThreshold;
     private final Duration ipBlockDuration;
+    private final boolean failOpen;
 
     private static final String BLOCKED_IP_PREFIX = "bruteforce:blocked:ip:";
     private static final String ATTEMPTS_IP_PREFIX = "bruteforce:attempts:ip:";
@@ -48,12 +49,14 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
             ReactiveRedisTemplate<String, String> reactiveRedisTemplate,
             @Value("${jwt.redis-timeout-ms:2000}") long redisTimeoutMillis,
             @Value("${bruteforce.ip-block-threshold:5}") int ipThreshold,
-            @Value("${bruteforce.ip-block-duration-minutes:15}") int ipBlockMinutes) {
+            @Value("${bruteforce.ip-block-duration-minutes:15}") int ipBlockMinutes,
+            @Value("${bruteforce.fail-open:false}") boolean failOpen) {
         super(Config.class);
         this.reactiveRedisTemplate = reactiveRedisTemplate;
         this.redisTimeout = Duration.ofMillis(redisTimeoutMillis);
         this.ipThreshold = ipThreshold;
         this.ipBlockDuration = Duration.ofMinutes(ipBlockMinutes);
+        this.failOpen = failOpen;
     }
 
     @Override
@@ -112,11 +115,29 @@ public class BruteForceProtectionFilter extends AbstractGatewayFilterFactory<Bru
                         }));
                     })
                     .onErrorResume(e -> {
-                        // 🛑 RESILIENCY FIX 2: True Fail-Open capability ensures service availability during cloud failovers
-                        log.error("Brute force protection subsystem unreachable. Bypassing check for stability: {}", e.getMessage());
-                        return chain.filter(exchange);
+                        if (failOpen) {
+                            // Fail-OPEN (availability over security): allow auth traffic through during Redis outages.
+                            log.error("Brute force protection subsystem unreachable. Fail-OPEN bypass enabled: {}", e.getMessage());
+                            return chain.filter(exchange);
+                        }
+                        // Fail-CLOSED (default): reject auth traffic with 503 so brute-force protection is never silently disabled.
+                        log.error("Brute force protection subsystem unreachable. Fail-CLOSED, rejecting auth request: {}", e.getMessage());
+                        return onSubsystemUnavailable(exchange);
                     });
         };
+    }
+
+    private Mono<Void> onSubsystemUnavailable(ServerWebExchange exchange) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        response.getHeaders().add(HttpHeaders.RETRY_AFTER, "30");
+
+        String body = "{\"error\":\"Authentication temporarily unavailable\",\"status\":503,"
+                + "\"message\":\"Login protection subsystem is unreachable. Please retry shortly.\"}";
+
+        DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
+        return response.writeWith(Mono.just(buffer));
     }
 
     private boolean isProtectedEndpoint(String path) {

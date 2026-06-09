@@ -40,7 +40,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/otp/request",
                                 "/api/v1/auth/otp/verify",
                                 "/api/v1/auth/device-token").permitAll()
-                        .pathMatchers("/ws/notifications/**").permitAll()
+                        .pathMatchers("/ws-notifications/**").permitAll()
                         .pathMatchers(
                                 "/user-medias/**",
                                 "/restaurant-medias/**",

@@ -86,6 +86,13 @@ spring:
         - AddResponseHeader=X-XSS-Protection, 1; mode=block
         - AddResponseHeader=Referrer-Policy, no-referrer
         - AddRequestHeader=X-Internal-Gateway-Token, ${CLUSTER_INTERNAL_SECRET:***REMOVED***}
+        # Redis token-bucket rate limiting (keyed by X-User-Id, falls back to client IP via userKeyResolver)
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: ${RATE_LIMIT_REPLENISH_RATE:50}
+            redis-rate-limiter.burstCapacity: ${RATE_LIMIT_BURST_CAPACITY:100}
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@userKeyResolver}"
 
 
       # ----------------------------------------------
@@ -543,6 +550,8 @@ bruteforce:
   permanent-block-threshold: ${BRUTEFORCE_PERMANENT_BLOCK_THRESHOLD}
   ip-block-duration-minutes: ${BRUTEFORCE_IP_BLOCK_DURATION_MINUTES}
   phone-block-duration-minutes: ${BRUTEFORCE_PHONE_BLOCK_DURATION_MINUTES}
+  # On Redis outage: false = fail-closed (reject auth with 503), true = fail-open (bypass check)
+  fail-open: ${BRUTEFORCE_FAIL_OPEN:false}
 
 antifraud:
   max-devices-per-user: ${ANTIFRAUD_MAX_DEVICES_PER_USER}
@@ -556,9 +565,14 @@ rate:
           minutes: 1
 
 springdoc:
+  # Aggregated API docs / Swagger UI are exposed UNAUTHENTICATED, so disable in production
+  # (set SPRINGDOC_ENABLED=false). Downstream services also @Profile("!production")-guard their docs.
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:true}
   cache:
     disabled: true
   swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:true}
     path: /swagger-ui.html
     config-url: /v3/api-docs
     operations-sorter: alpha

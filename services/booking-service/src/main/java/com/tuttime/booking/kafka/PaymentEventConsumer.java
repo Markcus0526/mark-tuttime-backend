@@ -40,6 +40,7 @@ public class PaymentEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
                     TOPIC_PAYMENT_COMPLETED, e.getMessage());
+            throw new RuntimeException("booking-service failed to process " + TOPIC_PAYMENT_COMPLETED, e);
         }
     }
 
@@ -66,6 +67,7 @@ public class PaymentEventConsumer {
         } catch (Exception e) {
             log.error("<<< KAFKA[{}] >>> Consumer:[booking-service], Error: {}",
                     TOPIC_PAYMENT_REFUND, e.getMessage());
+            throw new RuntimeException("booking-service failed to process " + TOPIC_PAYMENT_REFUND, e);
         }
     }
 }

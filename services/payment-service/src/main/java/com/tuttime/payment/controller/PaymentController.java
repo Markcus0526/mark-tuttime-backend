@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +31,12 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+    // Test-only endpoints are disabled by default. Enable explicitly in local/dev via
+    // APP_TEST_ENDPOINTS_ENABLED=true. NOTE: @Profile does NOT work on handler methods,
+    // which is why this is a runtime guard rather than an annotation.
+    @Value("${app.test-endpoints.enabled:false}")
+    private boolean testEndpointsEnabled;
 
     @PostMapping("/checkout")
     @Operation(summary = "Create a YooKassa payment session")
@@ -80,8 +86,10 @@ public class PaymentController {
 
     @PostMapping("/test/confirm-booking/{bookingId}")
     @Operation(summary = "FOR TESTING: Manually confirms a YooKassa payment and triggers Kafka event")
-    @Profile("!production")
     public ResponseEntity<ApiRes<String>> testConfirmPayment(@PathVariable UUID bookingId) {
+        if (!testEndpointsEnabled) {
+            throw new ForbiddenException("Test endpoints are disabled in this environment.");
+        }
         // In dev mode, we skip YooKassa and force the 'COMPLETED' state
         String mockYooId = "test_pay_" + UUID.randomUUID();
 
