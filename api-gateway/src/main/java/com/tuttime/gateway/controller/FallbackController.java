@@ -17,7 +17,6 @@ import java.util.Map;
  * Fallback Controller for Circuit Breaker - provides fallback responses when services are unavailable.
  */
 @RestController
-@RequestMapping("/fallback")
 public class FallbackController {
 
     @RequestMapping("/fallback/{service}")
