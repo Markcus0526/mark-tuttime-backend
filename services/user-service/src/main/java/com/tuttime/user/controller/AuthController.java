@@ -125,7 +125,7 @@ public class AuthController {
         AuthDto.AuthResponse response = authService.authenticateOAuthUser(request);
         HttpHeaders headers = createAuthCookieHeaders(response.accessToken(), response.refreshToken());
 
-        return ResponseEntity.ok().headers(headers).body(ApiRes.success("OAuth login successful", null));
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success(response));
     }
 
     @Operation(summary = "Refresh JWT access token using refresh token.")
@@ -153,7 +153,7 @@ public class AuthController {
         AuthDto.AuthResponse response = authService.refreshJwtToken(refreshTokenString);
         HttpHeaders headers = createAuthCookieHeaders(response.accessToken(), response.refreshToken());
 
-        return ResponseEntity.ok().headers(headers).body(ApiRes.success("Token refreshed successfully", null));
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success(response));
     }
 
     @Operation(summary = "Request password reset. Sends email or phone reset depending on contact.")
@@ -211,7 +211,7 @@ public class AuthController {
         AuthDto.AuthResponse response = authService.loginWithOtp(request);
         HttpHeaders headers = createAuthCookieHeaders(response.accessToken(), response.refreshToken());
 
-        return ResponseEntity.ok().headers(headers).body(ApiRes.success("OTP login successful", null));
+        return ResponseEntity.ok().headers(headers).body(ApiRes.success(response));
     }
 
     @Operation(summary = "Register or update FCM device token for the current user.")
