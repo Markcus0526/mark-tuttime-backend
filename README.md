@@ -18,6 +18,8 @@ TutTime is a pre‑order and smart restaurant booking platform that combines onl
   - [Expose API Gateway](#expose-api-gateway)
   - [Monitoring in K3s](#environment-variables--configuration)
 - [Environment Variables & Configuration](#environment-variables--configuration)
+- [Testing](#testing)
+- [Operations & Runbooks](#operations--runbooks)
 - [Useful Commands](#useful-commands)
 - [Troubleshooting](#troubleshooting)
 
@@ -25,7 +27,7 @@ TutTime is a pre‑order and smart restaurant booking platform that combines onl
 
 ## Architecture Overview
 
-TutTime consists of 11 microservices plus an API Gateway:
+TutTime consists of 10 microservices plus an API Gateway:
 
 | Service | Port (REST) | gRPC Port | Description |
 |---------|-------------|-----------|-------------|
@@ -41,7 +43,16 @@ TutTime consists of 11 microservices plus an API Gateway:
 | analytics-service | 28009 | 29009 | Event aggregation, reports, forecasting |
 | notification-service | 28010 | 29010 | Email, SMS, push, WebSocket notifications |
 
-Infrastructure: PostgreSQL (each service has its own DB), Redis (caching & rate limiting), Kafka (event bus), Zipkin (tracing), Graylog (logging), OpenSearch + MongoDB (Graylog backend).
+Infrastructure: PostgreSQL (each service has its own DB), Redis (caching, rate limiting, booking locks, token whitelist), Kafka (event bus), Zipkin (tracing), Graylog (logging), OpenSearch + MongoDB (Graylog backend).
+
+**Production / HA posture (k3s):**
+- **Kafka** — 3-broker KRaft cluster with SASL/SCRAM-SHA-256, RF=3 / minISR=2, controlled topic creation (auto-create off), and per-topic `.DLT` dead-letter topics. Consumers rethrow on failure so the DLQ engages.
+- **Redis** — 1 master + 2 replicas + 3 Sentinels (automatic failover); clients are Sentinel-aware.
+- **Edge** — Traefik ingress with cert-manager TLS (`letsencrypt-production`) + security-headers middleware.
+- **Security** — per-DB + app-tier NetworkPolicies, non-root pods (`runAsNonRoot`, seccomp), gateway rate limiting + brute-force protection (fail-closed), and optional service-to-service **mTLS via Linkerd**.
+- **Stateless tier** runs ≥2 replicas. See the runbooks in [`docs/`](docs/).
+
+> See [docs/HA_INFRA.md](docs/HA_INFRA.md) (Kafka/Redis), [docs/MTLS.md](docs/MTLS.md), [docs/DB_HA.md](docs/DB_HA.md) (CloudNativePG), and [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md) (backup/restore).
 
 ---
 
@@ -169,21 +180,28 @@ docker save tuttime/user-service:v1 | sudo k3s ctr image import -
 
 ## Deploy Manifests
 
-All Kubernetes YAMLs are in k3s/. Apply in order:
+All Kubernetes YAMLs are in `k3s/` and are wired together with **Kustomize** — this is the
+supported way to deploy everything (infra, services, edge TLS, NetworkPolicies):
 
 ```bash
 kubectl create namespace tuttime
-kubectl apply -f k8s/infra/ -n tuttime
-kubectl apply -f k8s/api-gateway/ -n tuttime
-kubectl apply -f k8s/user-service/ -n tuttime
-# ... repeat for other services
+kubectl apply -k k3s/
+
+# Wait for HA infra to stabilise before the services hammer it:
+kubectl -n tuttime rollout status statefulset/tuttime-redis
+kubectl -n tuttime rollout status statefulset/tuttime-redis-sentinel
+kubectl -n tuttime rollout status statefulset/tuttime-kafka-cluster
+kubectl -n tuttime wait --for=condition=complete job/kafka-topic-initializer --timeout=300s
 ```
 
-Alternatively, use Kustomize:
+You can preview the fully-rendered manifests offline with `kubectl kustomize k3s/`.
 
-```bash
-kubectl apply -k k8s/
-```
+**Prerequisites that are NOT applied by Kustomize** (install first; see the linked runbooks):
+- **cert-manager** — required by `infra/cluster-issuer.yaml` for edge TLS.
+- **CloudNativePG operator** — required only if you adopt DB HA ([docs/DB_HA.md](docs/DB_HA.md)).
+- **Linkerd** — required only if you enable service mesh mTLS ([docs/MTLS.md](docs/MTLS.md)).
+- **Real secrets** — the committed `*-secret.yaml` / `global-infra-secret.yaml` hold default
+  credentials; replace them out-of-band before production (do not commit real secrets).
 ---
 
 ## Expose API Gateway
@@ -267,12 +285,54 @@ Each microservice uses a ConfigMap (for non‑sensitive) and a Secret (for sensi
 | Variable | Purpose                                             |
 |----------|-----------------------------------------------------|
 | `DATABASE_URL` | PostgreSQL JDBC URL (includes schema)               |
-| `SPRING_PROFILES_ACTIVE` | `k8s` for Kubernetes, `graylog-enabled` for logging |
+| `SPRING_PROFILES_ACTIVE` | `k3s` for the cluster, `graylog-enabled` for logging |
 | `JWT_SECRET` | Secret key for JWT signing                          |
-| `SPRING_DATA_REDIS_HOST` | Redis service name (`redis`)                        |
-| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka broker (`kafka:9093`)                         |
+| `SPRING_DATA_REDIS_SENTINEL_MASTER` | Sentinel master name (`tuttime-redis-master`)        |
+| `SPRING_DATA_REDIS_SENTINEL_NODE_1..3` | Sentinel endpoints (`tuttime-redis-sentinel-N.tuttime.svc.cluster.local:26379`) |
+| `SPRING_DATA_REDIS_PASSWORD` | Redis auth (`= INFRA_REDIS_PASSWORD`)                |
+| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap (`kafka:9093`)                       |
+| `SPRING_KAFKA_SECURITY_PROTOCOL` | `SASL_PLAINTEXT` on the cluster                      |
+| `SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG` | Per-service SCRAM credentials (in each Secret)       |
 | `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` | Payment gateway credentials                         |
-| `GOOGLE_CLIENT_ID` / `APPLE_CLIENT_ID` | Email Sender credentials                    |
+| `GOOGLE_CLIENT_ID` / `APPLE_CLIENT_ID` | OAuth / email sender credentials                    |
+| `RATE_LIMIT_REPLENISH_RATE` / `RATE_LIMIT_BURST_CAPACITY` | Gateway Redis rate-limiter (tokens/sec, burst) |
+| `BRUTEFORCE_FAIL_OPEN` | Auth brute-force behaviour on Redis outage (`false` = fail-closed) |
+| `SPRINGDOC_ENABLED` | Gateway Swagger/API-docs toggle (`false` in cluster) |
+| `APP_TEST_ENDPOINTS_ENABLED` | Enables `/payments/test/**` (dev only; `false`/unset in cluster) |
+
+> Cluster-wide Kafka SCRAM users/passwords live in `k3s/infra/global-infra-config*` /
+> `global-infra-secret*` (lists are positionally aligned). Defaults are placeholders — replace before production.
+---
+
+## Testing
+
+Unit tests run in the CI pipeline (`mvn clean test`) and locally:
+
+```bash
+mvn clean test                                   # all modules
+mvn clean test -pl services/booking-service -am  # a single service (+ its deps)
+```
+
+> Tests use JUnit 5 + Mockito (via `spring-boot-starter-test`). The root POM pins
+> `maven-surefire-plugin` 3.x so Jupiter tests are actually discovered — older surefire silently
+> reports `Tests run: 0`.
+
+---
+
+## Operations & Runbooks
+
+Detailed, step-by-step guides for the production/HA concerns live in [`docs/`](docs/):
+
+| Runbook | Covers |
+|---------|--------|
+| [docs/HA_INFRA.md](docs/HA_INFRA.md) | 3-broker Kafka (SASL) + Redis Sentinel: apply order, validation, rollback |
+| [docs/MTLS.md](docs/MTLS.md) | Service-to-service mTLS with Linkerd: install, verify, caveats |
+| [docs/DB_HA.md](docs/DB_HA.md) | PostgreSQL HA via CloudNativePG: operator install, per-service cutover |
+| [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md) | Backup (pg_dump CronJob), restore, full-cluster rebuild, RPO/RTO |
+
+> ⚠️ The HA/mTLS/DB-HA manifests render with `kubectl kustomize` but must be validated on a test
+> cluster (quorum/failover/cert issuance) before production.
+
 ---
 
 ## Useful Commands
