@@ -20,16 +20,3 @@ services/restaurant-service/uploads
 services/user-service/uploads
 dbbackup
 migrations
-
-/api-gateway/.env
-/infrastructure/.env
-/services/analytics-service/.env
-/services/booking-service/.env
-/services/menu-service/.env
-/services/notification-service/.env
-/services/order-service/.env
-/services/payment-service/.env
-/services/pos-service/.env
-/services/restaurant-service/.env
-/services/review-service/.env
-/services/user-service/.env
