@@ -23,7 +23,7 @@ an advisory and credit you, unless you prefer to stay anonymous.
 
 ## Deployment hardening
 
-TutTime ships with development defaults. Before running it in production:
+Mark Tuttime ships with development defaults. Before running it in production:
 
 - Replace every `dev-only-…` value and default password with a long random secret (`openssl rand -base64 48`).
 - Keep secrets out of git: use `.env` files locally and Kubernetes Secrets (or an external secret manager) in clusters.

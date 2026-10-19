@@ -1,6 +1,6 @@
-# Contributing to TutTime Backend
+# Contributing to Mark Tuttime Backend
 
-Thanks for your interest in TutTime! Bug reports, features, documentation fixes and ideas are all welcome.
+Thanks for your interest in Mark Tuttime! Bug reports, features, documentation fixes and ideas are all welcome.
 
 ## Ways to contribute
 

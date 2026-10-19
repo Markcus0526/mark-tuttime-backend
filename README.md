@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🍽️ TutTime Backend
+# 🍽️ Mark Tuttime Backend
 
 **Production-grade restaurant booking & pre-order platform built with Spring Boot microservices, Kafka, gRPC and Kubernetes (K3s).**
 
@@ -29,7 +29,7 @@ Book a table, pre-order from the menu, pay online, and have the order land in th
 
 ## 💡 Why this project?
 
-Most microservice examples stop at "hello world". TutTime is a **complete, real-world backend** you can read,
+Most microservice examples stop at "hello world". Mark Tuttime is a **complete, real-world backend** you can read,
 run and reuse: 10 domain services and an API gateway, each with its own database, talking over **REST, gRPC and
 Kafka**, and shipped with **production Kubernetes manifests** (HA Kafka, Redis Sentinel, TLS, NetworkPolicies, mTLS).
 
@@ -345,6 +345,6 @@ Released under the [MIT License](LICENSE.md). You are free to use it in your own
 
 <div align="center">
 
-**If TutTime saved you time, give it a ⭐ — it keeps the project going!**
+**If Mark Tuttime saved you time, give it a ⭐ — it keeps the project going!**
 
 </div>
