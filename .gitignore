@@ -20,3 +20,11 @@ services/restaurant-service/uploads
 services/user-service/uploads
 dbbackup
 migrations
+
+# Secrets: never commit real credentials (use the *.example files as templates)
+.env
+.env.docker
+!.env.example
+/k3s/**/secret.yaml
+/k3s/**/db-secret.yaml
+/k3s/infra/global-infra-secret.yaml
