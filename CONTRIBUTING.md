@@ -4,7 +4,7 @@ Thanks for your interest in Mark Tuttime! Bug reports, features, documentation f
 
 ## Ways to contribute
 
-- **Report a bug** — open an [issue](https://github.com/Markcus0526/tuttime-backend/issues/new/choose) with steps to reproduce.
+- **Report a bug** — open an [issue](https://github.com/Markcus0526/mark-tuttime-backend/issues/new/choose) with steps to reproduce.
 - **Suggest a feature** — open an issue and describe the problem it solves.
 - **Improve the docs** — typos, unclear steps and missing examples are great first contributions.
 - **Send code** — look for issues labelled `good first issue` or `help wanted`.

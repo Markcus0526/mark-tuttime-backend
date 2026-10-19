@@ -9,7 +9,7 @@ Security fixes are applied to the latest code on the `main` branch.
 **Please do not open a public issue for security problems.**
 
 Report vulnerabilities privately through GitHub:
-[**Report a vulnerability**](https://github.com/Markcus0526/tuttime-backend/security/advisories/new)
+[**Report a vulnerability**](https://github.com/Markcus0526/mark-tuttime-backend/security/advisories/new)
 (Security tab → *Report a vulnerability*).
 
 Please include:

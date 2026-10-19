@@ -6,7 +6,7 @@
 
 Book a table, pre-order from the menu, pay online, and have the order land in the restaurant's POS — with dynamic off-peak discounts to fill empty tables.
 
-[![CI](https://github.com/Markcus0526/tuttime-backend/actions/workflows/ci-cd-pipeline.yaml/badge.svg)](https://github.com/Markcus0526/tuttime-backend/actions/workflows/ci-cd-pipeline.yaml)
+[![CI](https://github.com/Markcus0526/mark-tuttime-backend/actions/workflows/ci-cd-pipeline.yaml/badge.svg)](https://github.com/Markcus0526/mark-tuttime-backend/actions/workflows/ci-cd-pipeline.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 ![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
 ![Spring Boot 3.3](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white)
@@ -14,7 +14,7 @@ Book a table, pre-order from the menu, pay online, and have the order land in th
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-KRaft-231F20?logo=apachekafka)
 ![Kubernetes](https://img.shields.io/badge/K3s-Kubernetes-FFC61C?logo=k3s&logoColor=black)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![GitHub stars](https://img.shields.io/github/stars/Markcus0526/tuttime-backend?style=social)](https://github.com/Markcus0526/tuttime-backend/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/Markcus0526/mark-tuttime-backend?style=social)](https://github.com/Markcus0526/mark-tuttime-backend/stargazers)
 
 [Features](#-features) •
 [Architecture](#-architecture) •
@@ -171,8 +171,8 @@ tuttime-backend/
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/Markcus0526/tuttime-backend.git
-cd tuttime-backend
+git clone https://github.com/Markcus0526/mark-tuttime-backend.git
+cd mark-tuttime-backend
 ```
 
 Each module reads its settings from a `.env.docker` file (Docker) or a `.env` file (running from the IDE).
@@ -334,7 +334,7 @@ All scripts live in [`scripts/linux/`](scripts/linux).
 
 Contributions are welcome — bug reports, features, docs and ideas.
 Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started and check the
-[open issues](https://github.com/Markcus0526/tuttime-backend/issues).
+[open issues](https://github.com/Markcus0526/mark-tuttime-backend/issues).
 Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), and report security issues privately as described in [SECURITY.md](SECURITY.md).
 
 ## 📄 License
