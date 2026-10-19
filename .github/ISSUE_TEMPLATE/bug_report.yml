@@ -1,0 +1,39 @@
+name: Bug report
+description: Something is not working as expected
+labels: [bug]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options: [api-gateway, user-service, restaurant-service, menu-service, booking-service, order-service, payment-service, pos-service, review-service, analytics-service, notification-service, infrastructure / Docker, K3s / Helm, docs, other]
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the stack with ...
+        2. Call POST /api/...
+        3. See error ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace
+      description: Remove any secrets before pasting.
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "Docker Compose on Ubuntu 24.04 / K3s v1.30 / commit abc1234"
