@@ -1,388 +1,350 @@
-# TutTime Backend
+<div align="center">
 
-TutTime is a pre‑order and smart restaurant booking platform that combines online table reservations, menu pre‑orders, and dynamic discounts during off‑peak hours. It integrates with POS systems (iiko, R‑Keeper) and provides a yield management solution for restaurants.
+# 🍽️ Mark Tuttime Backend
 
----
+**Production-grade restaurant booking & pre-order platform built with Spring Boot microservices, Kafka, gRPC and Kubernetes (K3s).**
 
-## 📋 Table of Contents
+Book a table, pre-order from the menu, pay online, and have the order land in the restaurant's POS — with dynamic off-peak discounts to fill empty tables.
 
-- [Architecture Overview](#architecture-overview)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Development with Docker Compose](#development-with-docker-compose)
-- [Production with K3s (Kubernetes)](#production-with-k3s-kubernetes)
-  - [Install K3s](#install-k3s)
-  - [Build and Import Images](#build-and-import-images)
-  - [Deploy Manifests](#deploy-manifests)
-  - [Expose API Gateway](#expose-api-gateway)
-  - [Monitoring in K3s](#environment-variables--configuration)
-- [Environment Variables & Configuration](#environment-variables--configuration)
-- [Testing](#testing)
-- [Operations & Runbooks](#operations--runbooks)
-- [Useful Commands](#useful-commands)
-- [Troubleshooting](#troubleshooting)
+[![CI](https://github.com/Markcus0526/mark-tuttime-backend/actions/workflows/ci-cd-pipeline.yaml/badge.svg)](https://github.com/Markcus0526/mark-tuttime-backend/actions/workflows/ci-cd-pipeline.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
+![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
+![Spring Boot 3.3](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white)
+![Spring Cloud 2023](https://img.shields.io/badge/Spring%20Cloud-2023.0-6DB33F?logo=spring&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache%20Kafka-KRaft-231F20?logo=apachekafka)
+![Kubernetes](https://img.shields.io/badge/K3s-Kubernetes-FFC61C?logo=k3s&logoColor=black)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![GitHub stars](https://img.shields.io/github/stars/Markcus0526/mark-tuttime-backend?style=social)](https://github.com/Markcus0526/mark-tuttime-backend/stargazers)
 
----
+[Features](#-features) •
+[Architecture](#-architecture) •
+[Quick start](#-quick-start-docker) •
+[Kubernetes](#-deploy-to-kubernetes-k3s) •
+[Configuration](#-configuration) •
+[Contributing](#-contributing)
 
-## Architecture Overview
-
-TutTime consists of 10 microservices plus an API Gateway:
-
-| Service | Port (REST) | gRPC Port | Description |
-|---------|-------------|-----------|-------------|
-| api-gateway | 8080 | – | Spring Cloud Gateway, JWT auth, rate limiting |
-| user-service | 28001 | 29001 | User management, authentication, OAuth2 |
-| restaurant-service | 28002 | 29002 | Restaurants, branches, tables, schedules, PostGIS |
-| menu-service | 28003 | 29003 | Menu categories, items, modifiers, discounts |
-| booking-service | 28004 | 29004 | Table reservations, slot management, Redis locks |
-| payment-service | 28006 | 29006 | YooKassa integration, payments, refunds |
-| order-service | 28005 | 29005 | Pre‑orders, order status, kitchen sync |
-| pos-service | 28007 | 29007 | iiko / R‑Keeper integration |
-| review-service | 28008 | 29008 | Reviews, ratings, moderation |
-| analytics-service | 28009 | 29009 | Event aggregation, reports, forecasting |
-| notification-service | 28010 | 29010 | Email, SMS, push, WebSocket notifications |
-
-Infrastructure: PostgreSQL (each service has its own DB), Redis (caching, rate limiting, booking locks, token whitelist), Kafka (event bus), Zipkin (tracing), Graylog (logging), OpenSearch + MongoDB (Graylog backend).
-
-**Production / HA posture (k3s):**
-- **Kafka** — 3-broker KRaft cluster with SASL/SCRAM-SHA-256, RF=3 / minISR=2, controlled topic creation (auto-create off), and per-topic `.DLT` dead-letter topics. Consumers rethrow on failure so the DLQ engages.
-- **Redis** — 1 master + 2 replicas + 3 Sentinels (automatic failover); clients are Sentinel-aware.
-- **Edge** — Traefik ingress with cert-manager TLS (`letsencrypt-production`) + security-headers middleware.
-- **Security** — per-DB + app-tier NetworkPolicies, non-root pods (`runAsNonRoot`, seccomp), gateway rate limiting + brute-force protection (fail-closed), and optional service-to-service **mTLS via Linkerd**.
-- **Stateless tier** runs ≥2 replicas. See the runbooks in [`docs/`](docs/).
-
-> See [docs/HA_INFRA.md](docs/HA_INFRA.md) (Kafka/Redis), [docs/MTLS.md](docs/MTLS.md), [docs/DB_HA.md](docs/DB_HA.md) (CloudNativePG), and [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md) (backup/restore).
+</div>
 
 ---
 
-## Tech Stack
+## 💡 Why this project?
 
-- **Java 21** with Spring Boot 3.3.13
-- **Spring Cloud Gateway** (WebFlux reactive gateway)
-- **Spring Security** + JWT
-- **Spring Data JPA** + Hibernate + PostGIS
-- **gRPC** with `grpc-spring-boot-starter`
-- **Apache Kafka** for event‑driven communication
-- **Redis** (Lettuce) for caching & rate limiting
-- **Resilience4j** for circuit breakers & retries
-- **Micrometer** + Prometheus + Grafana (optional)
-- **MapStruct** + Lombok
-- **Maven** multi‑module project
+Most microservice examples stop at "hello world". Mark Tuttime is a **complete, real-world backend** you can read,
+run and reuse: 10 domain services and an API gateway, each with its own database, talking over **REST, gRPC and
+Kafka**, and shipped with **production Kubernetes manifests** (HA Kafka, Redis Sentinel, TLS, NetworkPolicies, mTLS).
 
----
+Use it as:
 
-## Project Structure
+- a **reference architecture** for Spring Boot / Spring Cloud microservices,
+- a **starter** for booking, ordering or marketplace products,
+- a **learning resource** for Kafka event-driven design, gRPC, JWT security and K3s operations.
 
-```markdown
+If it helps you, please **⭐ star the repo** — it really helps others find it.
+
+## ✨ Features
+
+**Business**
+- 🪑 Table reservations with slot management and Redis-based booking locks (no double booking)
+- 🧾 Menu pre-orders with categories, items, modifiers and discounts
+- 📉 Yield management: dynamic discounts during off-peak hours
+- 💳 Online payments and refunds (YooKassa integration)
+- 🖥️ POS integration with **iiko** and **R-Keeper**
+- ⭐ Reviews, ratings and moderation
+- 📊 Analytics: event aggregation, reports and forecasting
+- 🔔 Notifications: email, SMS, push and WebSocket
+- 📍 Geo search for restaurants and branches (PostGIS)
+
+**Engineering**
+- 🧩 Database-per-service with **Flyway** migrations
+- 📨 Event-driven communication with **Apache Kafka** (dead-letter topics, retry)
+- ⚡ Fast internal calls over **gRPC**
+- 🔐 **JWT** authentication, Google / Apple sign-in, rate limiting and brute-force protection at the gateway
+- 🛡️ **Resilience4j** circuit breakers and retries
+- 🔭 Observability: **Micrometer + Prometheus + Grafana**, **Zipkin** tracing, **Graylog** centralized logs
+- ☸️ **K3s / Kubernetes** manifests (Kustomize) and **Helm** charts
+- 🏗️ High availability: 3-broker KRaft Kafka with SASL/SCRAM, Redis Sentinel, CloudNativePG, Linkerd mTLS
+- 🤖 CI/CD with GitHub Actions (build, test, Docker images)
+
+## 🏛️ Architecture
+
+```mermaid
+flowchart LR
+    Client["📱 Web / Mobile clients"] --> GW["API Gateway<br/>Spring Cloud Gateway<br/>JWT · rate limiting"]
+
+    GW --> US[user-service]
+    GW --> RS[restaurant-service]
+    GW --> MS[menu-service]
+    GW --> BS[booking-service]
+    GW --> OS[order-service]
+    GW --> PS[payment-service]
+    GW --> POS[pos-service]
+    GW --> REV[review-service]
+    GW --> AS[analytics-service]
+    GW --> NS[notification-service]
+
+    BS -. gRPC .-> RS
+    OS -. gRPC .-> MS
+    OS -. gRPC .-> PS
+    POS -. gRPC .-> OS
+
+    subgraph Bus["Apache Kafka (event bus)"]
+        K[(topics + DLT)]
+    end
+    US & RS & BS & OS & PS & POS & REV -- events --> K
+    K --> AS & NS
+
+    PS --> YK["YooKassa"]
+    POS --> IIKO["iiko / R-Keeper"]
+    NS --> CH["Email · SMS · Push · WebSocket"]
+
+    subgraph Data["Storage"]
+        PG[("PostgreSQL per service<br/>+ PostGIS")]
+        R[("Redis<br/>cache · locks · rate limits")]
+    end
+    US & RS & MS & BS & OS & PS & POS & REV & AS & NS --> PG
+    GW --> R
+```
+
+> Simplified view. In the code, services call each other synchronously over **gRPC** (contracts in
+> `common-libs/common-event`) and publish domain events to **Kafka**; analytics and notifications consume
+> most events, and other services react to the ones they need. Every service uses Redis for caching.
+
+### Services
+
+| Service | REST | gRPC | Responsibility |
+|---------|-----:|-----:|----------------|
+| [api-gateway](api-gateway) | 8080 | – | Routing, JWT auth, rate limiting, brute-force protection, aggregated Swagger |
+| [user-service](services/user-service) | 28001 | 29001 | Users, authentication, Google / Apple sign-in |
+| [restaurant-service](services/restaurant-service) | 28002 | 29002 | Restaurants, branches, tables, schedules, geo search (PostGIS) |
+| [menu-service](services/menu-service) | 28003 | 29003 | Menu categories, items, modifiers, discounts |
+| [booking-service](services/booking-service) | 28004 | 29004 | Table reservations, slot management, Redis locks |
+| [order-service](services/order-service) | 28005 | 29005 | Pre-orders, order status, kitchen sync |
+| [payment-service](services/payment-service) | 28006 | 29006 | Payments and refunds (YooKassa) |
+| [pos-service](services/pos-service) | 28007 | 29007 | iiko / R-Keeper POS integration |
+| [review-service](services/review-service) | 28008 | 29008 | Reviews, ratings, moderation |
+| [analytics-service](services/analytics-service) | 28009 | 29009 | Event aggregation, reports, forecasting |
+| [notification-service](services/notification-service) | 28010 | 29010 | Email, SMS, push, WebSocket |
+
+**Infrastructure:** PostgreSQL (one database per service), Redis, Kafka (KRaft), Zipkin, Graylog (+ OpenSearch, MongoDB), Kafka UI.
+
+## 🧰 Tech stack
+
+| Area | Technologies |
+|------|--------------|
+| Language & framework | Java 21, Spring Boot 3.3, Spring Cloud 2023.0 |
+| API | Spring Cloud Gateway (WebFlux), REST, gRPC (`grpc-spring-boot-starter`), OpenAPI / Swagger |
+| Security | Spring Security, JWT, Redis rate limiter, Linkerd mTLS (optional) |
+| Data | Spring Data JPA, Hibernate, PostgreSQL, PostGIS, Flyway, Redis (Lettuce) |
+| Messaging | Apache Kafka (KRaft, SASL/SCRAM, dead-letter topics) |
+| Resilience | Resilience4j (circuit breaker, retry) |
+| Observability | Micrometer, Prometheus, Grafana, Zipkin, Graylog |
+| Build & tooling | Maven multi-module, MapStruct, Lombok, JUnit 5, Mockito |
+| Delivery | Docker, Docker Compose, K3s, Kustomize, Helm, GitHub Actions |
+
+## 📁 Project structure
+
+```text
 tuttime-backend/
-├── api-gateway/
+├── api-gateway/            # Spring Cloud Gateway (entry point)
 ├── common-libs/
-│ ├── common/ # shared DTOs, utils
-│ ├── common-event/ # gRPC stubs, Kafka events
-│ └── common-auth/ # JWT & security utilities
-├── services/
-│ ├── user-service/
-│ ├── restaurant-service/
-│ ├── menu-service/
-│ ├── booking-service/
-│ ├── payment-service/
-│ ├── order-service/
-│ ├── pos-service/
-│ ├── review-service/
-│ ├── analytics-service/
-│ └── notification-service/
-├── infrastructure/ # Docker Compose for dev
-├── k3s/ # Kubernetes manifests (Kustomize)
-├── scripts/ # Helper scripts (build, import, deploy)
-├── docker-compose.yml # root compose (optional)
-└── pom.xml # parent Maven POM
+│   ├── common/             # shared DTOs and utilities
+│   ├── common-event/       # gRPC stubs and Kafka event schemas
+│   └── common-auth/        # JWT and security utilities
+├── services/               # 10 domain microservices (each with its own docker-compose.yml)
+├── db-migrations/          # Flyway SQL migrations per service
+├── infrastructure/         # Docker Compose: Redis, Kafka, Zipkin, Graylog, Kafka UI
+├── k3s/                    # Kubernetes manifests (Kustomize)
+├── tuttime-charts/         # Helm charts
+├── docs/                   # HA, mTLS, DB HA and disaster-recovery runbooks
+├── scripts/linux/          # build, start/stop, deploy and maintenance scripts
+└── pom.xml                 # parent Maven POM
 ```
 
----
+## 🚀 Quick start (Docker)
 
-## Prerequisites
+### Prerequisites
 
-- **Ubuntu 22.04 / 24.04** VPS (8+ CPU, 24+ GB RAM recommended)
-- **Docker** & **Docker Compose** (for development)
-- **K3s** (for production cluster)
-- **kubectl** (configured for K3s)
-- **Maven** 3.9+ with Java 21
-- **Git**
+- Docker and Docker Compose v2
+- Java 21 and Maven 3.9+ (only to build or run services outside Docker)
+- ~16 GB RAM for the full stack
 
----
-
-## Development with Docker Compose
-
-For local development or quick testing, use Docker Compose.
+### 1. Clone and configure
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/tuttime-backend.git
-cd tuttime-backend
-
-# Start all services (infrastructure + microservices)
-docker compose up -d --build
-
-# Watch logs
-docker compose logs -f
+git clone https://github.com/Markcus0526/mark-tuttime-backend.git
+cd mark-tuttime-backend
 ```
-Services are exposed on ports 28001–28010 (REST) and 29001–29010 (gRPC). The API Gateway is on port 8080.
-To stop:
+
+Each module reads its settings from a `.env.docker` file (Docker) or a `.env` file (running from the IDE).
+These files are **not committed**. Create them from the templates:
 
 ```bash
-docker compose down
-```
----
-
-## Production with K3s (Kubernetes)
-
-Install K3s
-
-```bash
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-backend=flannel --write-kubeconfig-mode 644" sh -
+for dir in infrastructure api-gateway services/*; do
+  cp "$dir/.env.docker.example" "$dir/.env.docker"   # used by docker compose
+  cp "$dir/.env.example"        "$dir/.env"          # used when running from the IDE
+done
 ```
 
-Configure kubectl for your user:
+The `.env.docker.example` templates contain working **development-only** values (`dev-only-…`), so the
+stack starts as-is. Third-party integrations (YooKassa, Twilio, e-mail, S3, Google sign-in) need your own
+credentials to work.
 
-```bash
-mkdir -p ~/.kube
-sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-sudo chown $USER:$USER ~/.kube/config
-chmod 600 ~/.kube/config
-export KUBECONFIG=~/.kube/config
-echo 'export KUBECONFIG=~/.kube/config' >> ~/.bashrc
-```
----
+> 🔒 Never commit real credentials. `.env`, `.env.docker` and the K3s `secret.yaml` files are git-ignored.
+> Use long random secrets in production, e.g. `openssl rand -base64 48`.
 
-## Build and Import Custom Images
-
-First, build all JARs (outside Docker):
-
-```bash
-mvn clean install -DskipTests
-```
-
-Then build each service’s Docker image and import into K3s containerd. Use the helper script:
-
-```bash
-chmod +x scripts/linux/build-all-images.sh
-./scripts/linux/build-all-images.sh
-```
-
-Or do it manually:
-
-```bash
-docker build -f services/user-service/docker/Dockerfile -t tuttime/user-service:v1 .
-docker save tuttime/user-service:v1 | sudo k3s ctr image import -
-```
----
-
-## Deploy Manifests
-
-All Kubernetes YAMLs are in `k3s/` and are wired together with **Kustomize** — this is the
-supported way to deploy everything (infra, services, edge TLS, NetworkPolicies):
-
-```bash
-kubectl create namespace tuttime
-kubectl apply -k k3s/
-
-# Wait for HA infra to stabilise before the services hammer it:
-kubectl -n tuttime rollout status statefulset/tuttime-redis
-kubectl -n tuttime rollout status statefulset/tuttime-redis-sentinel
-kubectl -n tuttime rollout status statefulset/tuttime-kafka-cluster
-kubectl -n tuttime wait --for=condition=complete job/kafka-topic-initializer --timeout=300s
-```
-
-You can preview the fully-rendered manifests offline with `kubectl kustomize k3s/`.
-
-**Prerequisites that are NOT applied by Kustomize** (install first; see the linked runbooks):
-- **cert-manager** — required by `infra/cluster-issuer.yaml` for edge TLS.
-- **CloudNativePG operator** — required only if you adopt DB HA ([docs/DB_HA.md](docs/DB_HA.md)).
-- **Linkerd** — required only if you enable service mesh mTLS ([docs/MTLS.md](docs/MTLS.md)).
-- **Real secrets** — the committed `*-secret.yaml` / `global-infra-secret.yaml` hold default
-  credentials; replace them out-of-band before production (do not commit real secrets).
----
-
-## Expose API Gateway
-
-The gateway Service uses type: NodePort with nodePort: 30080. Access your API at:
-
-```bash
-http://<VPS-IP>:30080
-```
----
-
-## Monitoring in K3s
-
-### Install the kube-prometheus-stack (includes Prometheus, Grafana, Alertmanager)
-
-```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-
-# Create a namespace for monitoring
-kubectl create namespace monitoring
-
-# Install the stack
-helm install monitoring prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --set grafana.service.type=NodePort \
-  --set grafana.service.nodePort=32000 \
-  --set prometheus.service.type=NodePort \
-  --set prometheus.service.nodePort=32001
-```
-
-> **Note:** The `NodePort` settings allow you to access Grafana and Prometheus directly from your VPS IP. Adjust ports if needed (must be in range 30000-32767).
-
-### Access Grafana
-
-After installation, get the Node IP and port:
-
-```bash
-kubectl get svc -n monitoring monitoring-grafana
-```
-
-Open your browser at `http://<VPS‑IP>:32000` (or the nodePort you set).
-
-- **Username:** `admin`
-- **Password:** To retrieve the auto‑generated password:
-
-```bash
-kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-```
-
-> Change the password after first login.
-
-### Default Dashboards
-
-The stack comes with many pre‑configured dashboards for Kubernetes clusters. To view them:
-
-- Log into Grafana.
-- Click the **Dashboards** icon (four squares) → **Browse**.
-- Look for dashboards like:
-  - **Kubernetes / Compute Resources / Pod**
-  - **Kubernetes / Networking / Pod**
-  - **Spring Boot Statistics** (if you import a Spring Boot dashboard)
-
-### Import a Spring Boot Dashboard
-
-To see detailed JVM, HTTP request, and database metrics:
-
-1. In Grafana, go to **Dashboards** → **Import**.
-2. Enter dashboard ID **12900** (Spring Boot 2.1+ Statistics) or **4701** (Spring Boot 2.1+).
-3. Select the Prometheus data source (named `Prometheus`).
-4. Click **Import**.
-
-Now you can see metrics from each of your microservices.
-
----
-
-## Environment Variables & Configuration
-
-Each microservice uses a ConfigMap (for non‑sensitive) and a Secret (for sensitive values). Key variables:
-
-| Variable | Purpose                                             |
-|----------|-----------------------------------------------------|
-| `DATABASE_URL` | PostgreSQL JDBC URL (includes schema)               |
-| `SPRING_PROFILES_ACTIVE` | `k3s` for the cluster, `graylog-enabled` for logging |
-| `JWT_SECRET` | Secret key for JWT signing                          |
-| `SPRING_DATA_REDIS_SENTINEL_MASTER` | Sentinel master name (`tuttime-redis-master`)        |
-| `SPRING_DATA_REDIS_SENTINEL_NODE_1..3` | Sentinel endpoints (`tuttime-redis-sentinel-N.tuttime.svc.cluster.local:26379`) |
-| `SPRING_DATA_REDIS_PASSWORD` | Redis auth (`= INFRA_REDIS_PASSWORD`)                |
-| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap (`kafka:9093`)                       |
-| `SPRING_KAFKA_SECURITY_PROTOCOL` | `SASL_PLAINTEXT` on the cluster                      |
-| `SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG` | Per-service SCRAM credentials (in each Secret)       |
-| `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` | Payment gateway credentials                         |
-| `GOOGLE_CLIENT_ID` / `APPLE_CLIENT_ID` | OAuth / email sender credentials                    |
-| `RATE_LIMIT_REPLENISH_RATE` / `RATE_LIMIT_BURST_CAPACITY` | Gateway Redis rate-limiter (tokens/sec, burst) |
-| `BRUTEFORCE_FAIL_OPEN` | Auth brute-force behaviour on Redis outage (`false` = fail-closed) |
-| `SPRINGDOC_ENABLED` | Gateway Swagger/API-docs toggle (`false` in cluster) |
-| `APP_TEST_ENDPOINTS_ENABLED` | Enables `/payments/test/**` (dev only; `false`/unset in cluster) |
-
-> Cluster-wide Kafka SCRAM users/passwords live in `k3s/infra/global-infra-config*` /
-> `global-infra-secret*` (lists are positionally aligned). Defaults are placeholders — replace before production.
----
-
-## Testing
-
-Unit tests run in the CI pipeline (`mvn clean test`) and locally:
-
-```bash
-mvn clean test                                   # all modules
-mvn clean test -pl services/booking-service -am  # a single service (+ its deps)
-```
-
-> Tests use JUnit 5 + Mockito (via `spring-boot-starter-test`). The root POM pins
-> `maven-surefire-plugin` 3.x so Jupiter tests are actually discovered — older surefire silently
-> reports `Tests run: 0`.
-
----
-
-## Operations & Runbooks
-
-Detailed, step-by-step guides for the production/HA concerns live in [`docs/`](docs/):
-
-| Runbook | Covers |
-|---------|--------|
-| [docs/HA_INFRA.md](docs/HA_INFRA.md) | 3-broker Kafka (SASL) + Redis Sentinel: apply order, validation, rollback |
-| [docs/MTLS.md](docs/MTLS.md) | Service-to-service mTLS with Linkerd: install, verify, caveats |
-| [docs/DB_HA.md](docs/DB_HA.md) | PostgreSQL HA via CloudNativePG: operator install, per-service cutover |
-| [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md) | Backup (pg_dump CronJob), restore, full-cluster rebuild, RPO/RTO |
-
-> ⚠️ The HA/mTLS/DB-HA manifests render with `kubectl kustomize` but must be validated on a test
-> cluster (quorum/failover/cert issuance) before production.
-
----
-
-## Useful Commands
-
-### Build images (all services)
-
-```bash
-./scripts/linux/docker-image-build-all.sh
-```
-
-### Delete images (all services)
-
-```bash
-./scripts/linux/docker-image-remove-all.sh
-```
-
-### Start Plain Docker mode (all services)
+### 2. Start everything
 
 ```bash
 ./scripts/linux/docker-start-all.sh
 ```
 
-### Stop all Docker (all services)
+This starts the infrastructure first, then the API gateway and all services, and waits for each container to become healthy.
+
+### 3. Explore the API
+
+| What | URL |
+|------|-----|
+| API gateway | http://localhost:8080 |
+| Swagger UI (aggregated) | http://localhost:8080/swagger-ui.html |
+| Swagger UI (single service) | http://localhost:28001/swagger-ui.html (user-service, etc.) |
+| Kafka UI | http://localhost:9001 |
+| Zipkin | http://localhost:9411 |
+
+Stop everything with `./scripts/linux/docker-stop-all.sh`.
+
+### Run a single service from your IDE
+
+Start the infrastructure with Docker, then run the service with the variables from its `.env`
+(or load the file with your IDE's EnvFile plugin). Set `JWT_SECRET`, `CLUSTER_INTERNAL_SECRET` and the Kafka
+password in `.env` to the same values as in `.env.docker`:
 
 ```bash
-./scripts/linux/docker-stop-all.sh
+mvn clean install -DskipTests                  # build shared libs once
+cd services/user-service
+set -a; source .env; set +a                    # export the service's variables
+mvn spring-boot:run
 ```
 
-### Cleanup and reinstall K3s
+## ☸️ Deploy to Kubernetes (K3s)
+
+The full, step-by-step guide is in **[K3S_GUIDE.md](K3S_GUIDE.md)**. The short version:
 
 ```bash
-./scripts/linux/k3s-reinstall.sh
+# 1. Install K3s
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644" sh -
+
+# 2. Build JARs and images, import them into K3s containerd
+mvn clean install -DskipTests
+./scripts/linux/docker-image-build-all.sh
+./scripts/linux/k3s-import-image-all.sh
+
+# 3. Create secrets from the templates (never commit them)
+for f in k3s/*/secret.yaml.example k3s/*/db-secret.yaml.example k3s/infra/global-infra-secret.yaml.example; do
+  cp "$f" "${f%.example}"
+done
+# ...edit the copied files with your own values...
+
+# 4. Deploy everything with Kustomize
+kubectl create namespace tuttime
+kubectl apply -k k3s/
 ```
 
-### Import images into K3s containerd
+Or run the all-in-one script: `./scripts/linux/k3s-deploy-all.sh`.
+
+Install these **before** deploying (they are not part of the Kustomize bundle):
+
+- **cert-manager** — edge TLS (`k3s/infra/cluster-issuer.yaml`)
+- **CloudNativePG** — only if you use database HA ([docs/DB_HA.md](docs/DB_HA.md))
+- **Linkerd** — only if you enable service mTLS ([docs/MTLS.md](docs/MTLS.md))
+
+The gateway is exposed as a NodePort on `http://<node-ip>:30080`. Helm charts are available in [`tuttime-charts/`](tuttime-charts).
+
+### Production / HA posture
+
+- **Kafka** — 3 brokers (KRaft), SASL/SCRAM-SHA-256, RF=3 / minISR=2, auto-create off, per-topic `.DLT` dead-letter topics
+- **Redis** — 1 master + 2 replicas + 3 Sentinels with automatic failover
+- **Edge** — Traefik ingress with cert-manager TLS and security-header middleware
+- **Security** — NetworkPolicies, non-root pods with seccomp, fail-closed brute-force protection, optional Linkerd mTLS
+- **Stateless services** run with ≥ 2 replicas
+
+### Monitoring
+
+Install `kube-prometheus-stack` and import Grafana dashboard **12900** (Spring Boot statistics).
+See [GRAFANA_README.md](GRAFANA_README.md) or run `./scripts/linux/grafana-install.sh`.
+
+## ⚙️ Configuration
+
+Each service uses a ConfigMap for non-sensitive values and a Secret for credentials (or `.env` files locally). Key variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL JDBC URL |
+| `SPRING_PROFILES_ACTIVE` | `k3s` in the cluster, `graylog-enabled` for central logging |
+| `JWT_SECRET` | JWT signing key (use a long random value) |
+| `CLUSTER_INTERNAL_SECRET` | Shared secret for internal service-to-service calls |
+| `SPRING_DATA_REDIS_*` | Redis host / Sentinel nodes and password |
+| `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap servers |
+| `SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG` | Per-service Kafka SCRAM credentials |
+| `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` | Payment provider credentials |
+| `GOOGLE_CLIENT_ID` / `APPLE_CLIENT_ID` | Social sign-in |
+| `RATE_LIMIT_REPLENISH_RATE` / `RATE_LIMIT_BURST_CAPACITY` | Gateway rate limiter |
+| `BRUTEFORCE_FAIL_OPEN` | Behaviour on Redis outage (`false` = fail-closed) |
+| `SPRINGDOC_ENABLED` | Enable Swagger / OpenAPI docs |
+| `APP_TEST_ENDPOINTS_ENABLED` | Enable `/payments/test/**` (development only) |
+
+The full list for each service is in its `.env.example`.
+
+## 🧪 Testing
 
 ```bash
-./scripts/linux/import-image-all.sh
+mvn clean test                                   # all modules
+mvn clean test -pl services/booking-service -am  # one service and its dependencies
 ```
 
-### Deploy everything from scratch
+Tests use JUnit 5 and Mockito and run in CI on every push.
 
-```bash
-./scripts/linux/k3s-deploy-all.sh
-```
+## 🛠️ Scripts
 
-### Start and test API Endpoint in Docker mode
+| Script | What it does |
+|--------|--------------|
+| `docker-start-all.sh` / `docker-stop-all.sh` | Start / stop the full stack with Docker Compose |
+| `docker-image-build-all.sh` / `docker-image-remove-all.sh` | Build / remove all service images |
+| `k3s-import-image-all.sh` | Import images into K3s containerd |
+| `k3s-deploy-all.sh` | Deploy everything to K3s from scratch |
+| `k3s-reinstall.sh` / `k3s-cleanup-all.sh` | Reinstall K3s / remove all resources |
+| `databases-backup.sh` / `database-restore.sh` | Back up / restore all PostgreSQL databases |
+| `redis-cache-clear-all.sh` | Flush Redis caches |
+| `swagger-ui-run.sh` / `swagger-ui-stop.sh` | Start / stop a standalone Swagger UI |
+| `grafana-install.sh` | Install Prometheus + Grafana monitoring |
 
-```bash
-./scripts/linux/swagger-ui-run.sh
-```
+All scripts live in [`scripts/linux/`](scripts/linux).
 
-Swagger UI (aggregated) is available at http://<VPS-IP>:8080/swagger-ui.html if the gateway serves it, or per‑service at http://<VPS-IP>:28001/swagger-ui.html etc.
+## 📚 Documentation
+
+| Document | Covers |
+|----------|--------|
+| [K3S_GUIDE.md](K3S_GUIDE.md) | Full K3s installation and deployment guide |
+| [GRAFANA_README.md](GRAFANA_README.md) | Monitoring with Prometheus and Grafana |
+| [docs/HA_INFRA.md](docs/HA_INFRA.md) | 3-broker Kafka and Redis Sentinel: apply order, validation, rollback |
+| [docs/MTLS.md](docs/MTLS.md) | Service-to-service mTLS with Linkerd |
+| [docs/DB_HA.md](docs/DB_HA.md) | PostgreSQL HA with CloudNativePG |
+| [docs/DISASTER_RECOVERY.md](docs/DISASTER_RECOVERY.md) | Backup, restore, full-cluster rebuild, RPO / RTO |
+
+## 🤝 Contributing
+
+Contributions are welcome — bug reports, features, docs and ideas.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) to get started and check the
+[open issues](https://github.com/Markcus0526/mark-tuttime-backend/issues).
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), and report security issues privately as described in [SECURITY.md](SECURITY.md).
+
+## 📄 License
+
+Released under the [MIT License](LICENSE.md). You are free to use it in your own projects, commercial or not.
+
+---
+
+<div align="center">
+
+**If Mark Tuttime saved you time, give it a ⭐ — it keeps the project going!**
+
+</div>

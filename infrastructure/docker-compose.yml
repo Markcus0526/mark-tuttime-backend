@@ -86,7 +86,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: tuttime-kafka:9093
       KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
       KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
-      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="user-kafka-user" password="***REMOVED***";'
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="user-kafka-user" password="${KAFKA_UI_PASSWORD:-***REMOVED***}";'
 
     depends_on:
       kafka:

@@ -1,28 +1,59 @@
-# Internal Contributing Guide
+# Contributing to Mark Tuttime Backend
 
-## Branching Strategy
+Thanks for your interest in Mark Tuttime! Bug reports, features, documentation fixes and ideas are all welcome.
 
-- `main` – production‑ready code
-- `develop` – integration branch
-- Feature branches: `feature/description`
+## Ways to contribute
 
-## Pull Requests
+- **Report a bug** — open an [issue](https://github.com/Markcus0526/mark-tuttime-backend/issues/new/choose) with steps to reproduce.
+- **Suggest a feature** — open an issue and describe the problem it solves.
+- **Improve the docs** — typos, unclear steps and missing examples are great first contributions.
+- **Send code** — look for issues labelled `good first issue` or `help wanted`.
 
-All changes must go through a pull request with at least one approval from a senior developer.
+For larger changes, please open an issue first so we can agree on the approach before you spend time on it.
 
-## Code Style
+## Development setup
 
-- Follow the existing formatting (IntelliJ default with Java 21)
-- Use Lombok, MapStruct, and Spring idioms consistently
-- Write unit tests for new functionality (minimum 80% coverage)
+1. Fork the repository and clone your fork.
+2. Install **Java 21**, **Maven 3.9+** and **Docker** with Compose v2.
+3. Create your local config files from the templates (see the [Quick start](README.md#-quick-start-docker)).
+4. Build and run the tests:
 
-## Commit Messages
+   ```bash
+   mvn clean install
+   ```
 
-Use clear, descriptive messages. Reference internal ticket IDs when applicable.
+5. Start the stack with `./scripts/linux/docker-start-all.sh`.
 
-## Security & Compliance
+## Making a change
 
-- Never commit secrets (use environment variables or Kubernetes Secrets)
-- Run `mvn dependency:check` before pushing to avoid vulnerable libraries
+1. Create a branch from `main`: `feature/short-description` or `fix/short-description`.
+2. Keep the change focused — one feature or fix per pull request.
+3. Follow the existing code style (IntelliJ defaults, Java 21, Lombok, MapStruct, Spring idioms).
+4. Add or update unit tests (JUnit 5 + Mockito) for new behaviour.
+5. If you change a database schema, add a new Flyway migration in `db-migrations/<service>/` — never edit an existing one.
+6. If you change a Kafka event or gRPC contract in `common-libs/common-event`, keep it backward compatible or update every consumer.
+7. Update the README or docs when behaviour or configuration changes.
 
-**This guide is for internal use only.**
+## Commit messages
+
+Write clear, imperative messages, for example:
+
+```text
+Add slot capacity check to booking-service
+Fix refund status not updated after YooKassa webhook
+```
+
+## Pull requests
+
+- Make sure `mvn clean test` passes.
+- Fill in the pull request template and link the related issue (`Closes #123`).
+- Be ready to discuss and adjust the change — reviews are a conversation.
+
+## Security
+
+- **Never commit secrets.** Use `.env` / `.env.docker` files and Kubernetes Secrets (all git-ignored).
+- Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
+
+## Code of Conduct
+
+By participating you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md).

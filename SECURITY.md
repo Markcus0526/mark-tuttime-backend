@@ -1,23 +1,31 @@
-# Security Policy (Internal)
+# Security Policy
 
-## Reporting a Vulnerability
+## Supported versions
 
-If you discover a security vulnerability in the TutTime backend:
+Security fixes are applied to the latest code on the `main` branch.
 
-1. **Do not** create a public issue.
-2. Send an encrypted email to **security@internal-tuttime.com** (or use the internal security Jira project).
-3. Include:
-    - Affected service and version
-    - Steps to reproduce
-    - Potential impact
-4. You will receive a response within **2 business days**.
+## Reporting a vulnerability
 
-## Supported Versions
+**Please do not open a public issue for security problems.**
 
-Only the latest released version receives security fixes. Older versions are not supported.
+Report vulnerabilities privately through GitHub:
+[**Report a vulnerability**](https://github.com/Markcus0526/mark-tuttime-backend/security/advisories/new)
+(Security tab → *Report a vulnerability*).
 
-## Internal Disclosure
+Please include:
 
-After a fix is deployed, an internal security advisory will be published in the company knowledge base.
+- the affected service or component,
+- steps to reproduce or a proof of concept,
+- the potential impact.
 
-**This policy applies only to internal team members. Do not share outside the organisation.**
+You can expect an acknowledgement within a few days. Once the issue is confirmed and fixed, we will publish
+an advisory and credit you, unless you prefer to stay anonymous.
+
+## Deployment hardening
+
+Mark Tuttime ships with development defaults. Before running it in production:
+
+- Replace every `dev-only-…` value and default password with a long random secret (`openssl rand -base64 48`).
+- Keep secrets out of git: use `.env` files locally and Kubernetes Secrets (or an external secret manager) in clusters.
+- Disable Swagger (`SPRINGDOC_ENABLED=false`) and test endpoints (`APP_TEST_ENDPOINTS_ENABLED=false`).
+- Enable TLS at the edge (cert-manager) and, ideally, service-to-service mTLS ([docs/MTLS.md](docs/MTLS.md)).
